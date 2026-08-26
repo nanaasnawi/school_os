@@ -1,0 +1,4 @@
+- [ ] Update Hilt and KSP versions in `libs.versions.toml`
+- [ ] Disable KSP incremental processing in `gradle.properties`
+- [ ] Sync Gradle project
+- [ ] Verify build with `./gradlew clean :core:kspDebugKotlin`

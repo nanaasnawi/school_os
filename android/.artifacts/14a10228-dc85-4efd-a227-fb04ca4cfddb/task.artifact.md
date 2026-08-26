@@ -1,0 +1,6 @@
+- [ ] Refine `Theme.kt` light mode colors
+- [ ] Update `HomeComponents.kt` with refined styles
+- [ ] Update `StudentContent.kt` toolbox and header styles
+- [ ] Update `StudentAgendaContent.kt` session card contrast
+- [ ] Update `TeacherAgendaContent.kt` for consistency
+- [ ] Verify build and visual consistency
