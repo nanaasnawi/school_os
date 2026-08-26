@@ -1,0 +1,102 @@
+/* ── Enrollment Detail — Dark Premium ── */
+.page {
+  padding: 2.25rem 2.5rem;
+  max-width: 1000px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  animation: fadeInUp 0.4s var(--ease-out) forwards;
+}
+
+.loadingScreen {
+  min-height: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  color: var(--text-muted);
+}
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid rgba(99, 102, 241, 0.2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.breadcrumb { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: var(--text-muted); }
+.breadLink { color: var(--text-muted); text-decoration: none; }
+.breadLink:hover { color: var(--accent-hover); }
+.breadSep { opacity: 0.4; }
+.breadCurrent { color: var(--text-secondary); font-weight: 600; }
+
+.heroCard {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-dim);
+  border-radius: var(--radius-lg);
+  padding: 1.75rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.heroLeft { display: flex; align-items: center; gap: 1.25rem; }
+.avatarBox {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  font-size: 1.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.35);
+  flex-shrink: 0;
+}
+
+.heroInfo { display: flex; flex-direction: column; gap: 0.35rem; }
+.nameRow { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+.studentName { font-size: 1.75rem; font-weight: 800; letter-spacing: -0.03em; color: var(--text-primary); }
+
+.activeChip {
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 0.2rem 0.65rem;
+  border-radius: var(--radius-full);
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--emerald);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.enrollSub { font-size: 0.85rem; color: var(--text-muted); }
+.heroActions { display: flex; align-items: center; gap: 0.75rem; }
+
+.card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-dim);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.125rem;
+}
+
+.cardTitle {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+  padding-bottom: 0.625rem;
+  border-bottom: 1px solid var(--border-dim);
+}
+
+.infoGrid { display: flex; flex-direction: column; gap: 0.75rem; }
+.infoRow { display: flex; align-items: center; justify-content: space-between; gap: 1rem; font-size: 0.85rem; }
+.infoLabel { color: var(--text-muted); font-weight: 500; }
+.infoVal { color: var(--text-primary); font-weight: 600; }

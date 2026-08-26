@@ -1,0 +1,7 @@
+Cannot read properties of undefined (reading 'name')
+TypeError: Cannot read properties of undefined (reading 'name')
+    at C:\Users\USER\AppData\Local\npm-cache\_npx\62a656a7a3c9fe9f\node_modules\@hey-api\openapi-ts\dist\node\index.cjs:1:49346
+    at Yt (C:\Users\USER\AppData\Local\npm-cache\_npx\62a656a7a3c9fe9f\node_modules\@hey-api\openapi-ts\dist\node\index.cjs:1:50039)
+    at async C:\Users\USER\AppData\Local\npm-cache\_npx\62a656a7a3c9fe9f\node_modules\@hey-api\openapi-ts\dist\node\index.cjs:1:173803
+    at async exports.createClient (C:\Users\USER\AppData\Local\npm-cache\_npx\62a656a7a3c9fe9f\node_modules\@hey-api\openapi-ts\dist\node\index.cjs:1:174205)
+    at async start (C:\Users\USER\AppData\Local\npm-cache\_npx\62a656a7a3c9fe9f\node_modules\@hey-api\openapi-ts\bin\index.cjs:80:5)

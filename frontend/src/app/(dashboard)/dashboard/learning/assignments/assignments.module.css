@@ -1,0 +1,77 @@
+/* ── Assignments Workspace — Light Premium Compact ── */
+.page {
+  padding: 1.25rem 1.5rem;
+  max-width: 1360px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  animation: fadeInUp 0.35s var(--ease-out) forwards;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.headerLeft { display: flex; flex-direction: column; gap: 0.25rem; }
+.title { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.03em; color: var(--text-primary); }
+.subtitle { font-size: 0.8rem; color: var(--text-muted); }
+
+.gridSplit { display: grid; grid-template-columns: 340px 1fr; gap: 1rem; }
+@media (max-width: 900px) { .gridSplit { grid-template-columns: 1fr; } }
+
+.card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-dim);
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.125rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.cardTitle { font-size: 0.95rem; font-weight: 700; color: var(--text-primary); }
+
+.assignmentList { display: flex; flex-direction: column; gap: 0.5rem; }
+.assignmentItem {
+  padding: 0.625rem 0.75rem;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-dim);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  transition: all var(--dur-fast) ease;
+}
+.assignmentItem:hover, .assignmentActive {
+  background: var(--bg-surface);
+  border-color: var(--accent);
+  box-shadow: var(--shadow-sm);
+}
+
+.itemTitle { font-size: 0.8rem; font-weight: 700; color: var(--text-primary); }
+.itemSub { font-size: 0.72rem; color: var(--text-muted); }
+
+.submissionTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+.submissionTable th {
+  background: var(--bg-elevated);
+  padding: 0.55rem 0.75rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border-dim);
+  text-align: left;
+}
+.submissionTable td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--border-dim);
+  color: var(--text-primary);
+}

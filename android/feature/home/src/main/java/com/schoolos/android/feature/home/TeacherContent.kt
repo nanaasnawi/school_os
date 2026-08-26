@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Assignment
@@ -23,23 +24,25 @@ import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.Grade
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Quiz
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.schoolos.android.core.designsystem.AccentNeonCoral
+import com.schoolos.android.core.designsystem.CosmicNavy
 import com.schoolos.android.core.designsystem.GlassBorder
-import com.schoolos.android.core.designsystem.MetricRing
 import com.schoolos.android.core.designsystem.NeonBlue
 import com.schoolos.android.core.designsystem.NeonError
+import com.schoolos.android.core.designsystem.NeonSuccess
 import com.schoolos.android.core.designsystem.NeonWarning
 import com.schoolos.android.core.designsystem.StudentNeon
 import com.schoolos.android.core.designsystem.TeacherNeon
@@ -53,96 +56,195 @@ fun LazyListScope.teacherContent(
     onNavigateToQuizzes: () -> Unit,
     onNavigateToGrades: () -> Unit,
     onNavigateToNotifications: () -> Unit,
+    onNavigateToAssignmentCreator: () -> Unit,
+    onNavigateToQuizBuilder: () -> Unit,
+    onNavigateToBroadcastCenter: () -> Unit,
+    isHomeroom: Boolean = false,
 ) {
+    // ── 1. GLASSMORPHIC LIVE HUB (Top Priority) ──
     item {
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            LightTeacherRingCard("4",   "Kelas\nHari Ini",     TeacherNeon,   0.80f, Modifier.weight(1f))
-            LightTeacherRingCard("85%", "Kehadiran\nRata-rata", NeonBlue,      0.85f, Modifier.weight(1f))
-            LightTeacherRingCard("2",   "Dikumpul-\nkan",       NeonWarning,   0.4f,  Modifier.weight(1f))
-            LightTeacherRingCard("10",  "Belum\nDinilai",       AccentNeonCoral,0.3f, Modifier.weight(1f))
+        TeacherLiveHubGlass(
+            subject = "-",
+            kelas = "-",
+            timeLeft = "-",
+            attendance = "-",
+            onClick = onNavigateToSessions
+        )
+    }
+
+    // ── 2. MANAGEMENT TOOLBOX (Minimalist Circular) ──
+    item {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            val tools = listOf(
+                QuickAction("Absen", Icons.Default.Group, NeonBlue, onNavigateToSessions),
+                QuickAction("Tugas", Icons.AutoMirrored.Filled.Assignment, StudentNeon, onNavigateToAssignmentCreator),
+                QuickAction("Nilai", Icons.Default.Grade, com.schoolos.android.core.designsystem.TeacherNeon, onNavigateToGrades),
+                QuickAction("Kuis", Icons.Default.Quiz, NeonWarning, onNavigateToQuizBuilder),
+                QuickAction("Pesan", Icons.Default.Campaign, NeonError, onNavigateToBroadcastCenter),
+            )
+            tools.forEach { tool -> ToolboxButton(tool) }
         }
     }
 
+    // ── 3. CLASS MANAGEMENT GRID (2-Column Compact) ──
     item {
-        LightCard {
-            Column(modifier = Modifier.padding(18.dp)) {
-                LightSectionHeader("Kelas yang Diampu", "", onSeeAll = onNavigateToSessions)
-                Spacer(Modifier.height(12.dp))
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    items(listOf(
-                        Triple("7A", "Matematika", "28 Siswa"),
-                        Triple("8B", "Matematika", "30 Siswa"),
-                        Triple("9C", "Matematika", "29 Siswa"),
-                    )) { (kelas, mapel, siswa) ->
-                        LightClassCard(kelas, mapel, siswa, onClick = onNavigateToSessions)
+        Text("Kelola Kelas Managed", fontWeight = FontWeight.Black, fontSize = 15.sp, color = TextPrimary, modifier = Modifier.padding(start = 4.dp, top = 8.dp))
+    }
+    
+    item {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            val managedClasses = emptyList<Triple<String, String, String>>()
+            
+            managedClasses.chunked(2).forEach { rowItems ->
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    rowItems.forEach { (kelas, mapel, siswa) ->
+                        ManagementTile(kelas, mapel, siswa, "Avg: 88.2", Modifier.weight(1f), onClick = onNavigateToGrades)
                     }
+                    if (rowItems.size == 1) Box(Modifier.weight(1f))
                 }
             }
         }
     }
 
+    // ── 4. VERTICAL MANAGEMENT TIMELINE (Latest Activity) ──
     item {
-        LightCard {
-            Column(modifier = Modifier.padding(18.dp)) {
-                Text("Aksi Cepat Guru", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = TextPrimary)
-                Spacer(Modifier.height(14.dp))
-                val actions = listOf(
-                    QuickAction("Absensi",    Icons.Default.Group,                         NeonBlue,    onNavigateToSessions),
-                    QuickAction("Buat PR",    Icons.AutoMirrored.Filled.Assignment,        StudentNeon, onNavigateToAssignments),
-                    QuickAction("Nilai",      Icons.Default.Grade,                         TeacherNeon, onNavigateToGrades),
-                    QuickAction("Input Soal", Icons.Default.Quiz,                          NeonWarning, onNavigateToQuizzes),
-                    QuickAction("Pengumuman", Icons.Default.Campaign,                      NeonError,   onNavigateToNotifications),
-                )
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                    actions.forEach { action -> LightQuickActionBtn(action) }
-                }
-            }
-        }
+        Text("Log Aktivitas Siswa", fontWeight = FontWeight.Black, fontSize = 15.sp, color = TextPrimary, modifier = Modifier.padding(start = 4.dp, top = 12.dp))
     }
+    
+    items(emptyList<Triple<String, String, String>>()) { (name, act, time) ->
+        TimelineActivityItem(name, act, time)
+    }
+    
+    item { Spacer(Modifier.height(20.dp)) }
 }
 
 @Composable
-fun LightClassCard(kelas: String, mapel: String, siswa: String, onClick: () -> Unit) {
-    val color = when (kelas) {
-        "7A" -> StudentNeon
-        "8B" -> NeonBlue
-        "9C" -> NeonWarning
-        else -> TextTertiary
-    }
+private fun TeacherLiveHubGlass(
+    subject: String,
+    kelas: String,
+    timeLeft: String,
+    attendance: String,
+    onClick: () -> Unit
+) {
     Box(
         modifier = Modifier
-            .width(110.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(color.copy(alpha = 0.08f))
-            .border(1.dp, color.copy(alpha = 0.25f), RoundedCornerShape(16.dp))
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(24.dp))
+            .background(Brush.horizontalGradient(listOf(TeacherNeon, Color(0xFF0D9488))))
             .clickable(onClick = onClick)
-            .padding(12.dp),
+            .padding(20.dp)
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-            Text(kelas, fontWeight = FontWeight.ExtraBold, fontSize = 22.sp, color = color)
-            Spacer(Modifier.height(2.dp))
-            Text(mapel, fontSize = 10.sp, color = TextSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center)
-            Spacer(Modifier.height(4.dp))
-            Box(
-                modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(color.copy(alpha = 0.15f)).padding(horizontal = 6.dp, vertical = 2.dp)
-            ) {
-                Text(siswa, fontSize = 9.sp, color = color, fontWeight = FontWeight.Bold)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(modifier = Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.size(6.dp).clip(CircleShape).background(Color.White))
+                    Spacer(Modifier.width(8.dp))
+                    Text("SEDANG BERLANGSUNG", color = Color.White.copy(alpha = 0.9f), fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp)
+                }
+                Spacer(Modifier.height(8.dp))
+                Text("$subject — $kelas", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Black)
+                Text("Selesai dalam $timeLeft", color = Color.White.copy(alpha = 0.8f), fontSize = 12.sp, fontWeight = FontWeight.Medium)
+            }
+            
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Box(
+                    modifier = Modifier
+                        .size(52.dp)
+                        .clip(CircleShape)
+                        .background(Color.White.copy(alpha = 0.2f))
+                        .border(1.dp, Color.White.copy(alpha = 0.4f), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(attendance, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Black)
+                }
+                Text("HADIR", color = Color.White.copy(alpha = 0.8f), fontSize = 8.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 4.dp))
             }
         }
     }
 }
 
 @Composable
-fun LightTeacherRingCard(value: String, label: String, color: Color, progress: Float, modifier: Modifier = Modifier) {
+private fun ManagementTile(
+    kelas: String, 
+    mapel: String, 
+    siswa: String, 
+    avg: String,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    val accent = if (kelas == "7A") StudentNeon else if (kelas == "8B") NeonBlue else NeonWarning
+    
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(16.dp))
-            .background(Color.White)
-            .border(1.dp, GlassBorder, RoundedCornerShape(16.dp))
-            .shadow(2.dp, RoundedCornerShape(16.dp))
-            .padding(10.dp),
-        contentAlignment = Alignment.Center,
+            .clip(RoundedCornerShape(20.dp))
+            .background(CosmicNavy)
+            .border(1.dp, GlassBorder, RoundedCornerShape(20.dp))
+            .clickable(onClick = onClick)
+            .padding(14.dp)
     ) {
-        MetricRing(progress = progress, label = label, value = value, color = color, size = 74.dp, strokeWidth = 7f)
+        Column {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Top) {
+                Box(
+                    modifier = Modifier.size(36.dp).clip(RoundedCornerShape(10.dp)).background(accent.copy(alpha = 0.08f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(if (mapel == "Matematika") "🧮" else "📖", fontSize = 18.sp)
+                }
+                Text(kelas, fontWeight = FontWeight.Black, fontSize = 18.sp, color = accent)
+            }
+            Spacer(Modifier.height(12.dp))
+            Text(siswa, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+            Text(avg, fontSize = 11.sp, color = NeonSuccess, fontWeight = FontWeight.Black)
+        }
+    }
+}
+
+@Composable
+private fun ToolboxButton(action: QuickAction) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.clickable(onClick = action.onClick)) {
+        Box(
+            modifier = Modifier
+                .size(54.dp)
+                .clip(CircleShape)
+                .background(action.accentColor.copy(alpha = 0.08f))
+                .border(1.dp, action.accentColor.copy(alpha = 0.2f), CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(action.icon, null, tint = action.accentColor, modifier = Modifier.size(24.dp))
+        }
+        Spacer(Modifier.height(6.dp))
+        Text(action.label, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = TextSecondary)
+    }
+}
+
+@Composable
+private fun TimelineActivityItem(name: String, act: String, time: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+        verticalAlignment = Alignment.Top
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Box(Modifier.size(10.dp).clip(CircleShape).background(NeonBlue))
+            Box(Modifier.width(2.dp).height(36.dp).background(GlassBorder))
+        }
+        Spacer(Modifier.width(14.dp))
+        Column(modifier = Modifier.padding(bottom = 12.dp)) {
+            Text(
+                text = name,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Black,
+                color = TextPrimary
+            )
+            Text(
+                text = act,
+                fontSize = 12.sp,
+                color = TextSecondary,
+                lineHeight = 16.sp
+            )
+            Text(time, fontSize = 10.sp, color = TextTertiary, fontWeight = FontWeight.Bold)
+        }
     }
 }

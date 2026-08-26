@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="100%" height="100%">
+  <defs>
+    <linearGradient id="twhGold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#FDE047"/>
+      <stop offset="100%" stopColor="#EAB308"/>
+    </linearGradient>
+    <linearGradient id="twhBlue" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#0284C7"/>
+      <stop offset="100%" stopColor="#0369A1"/>
+    </linearGradient>
+  </defs>
+  <!-- Base Pentagon -->
+  <polygon points="250,20 480,185 395,465 105,465 20,185" fill="#0284C7" stroke="#FDE047" stroke-width="12" stroke-linejoin="round"/>
+  <polygon points="250,42 460,192 380,445 120,445 40,192" fill="#0369A1" stroke="#FFFFFF" stroke-width="4" stroke-linejoin="round"/>
+  <!-- Wings (Sayap) -->
+  <path d="M250,260 C210,210 130,200 85,270 C120,310 180,315 250,330 C320,315 380,310 415,270 C370,200 290,210 250,260 Z" fill="#FDE047" stroke="#CA8A04" stroke-width="3"/>
+  <path d="M250,280 C215,245 150,240 105,290 C135,325 185,330 250,345 C315,330 365,325 395,290 C350,240 285,245 250,280 Z" fill="#FEF08A" opacity="0.9"/>
+  <!-- Ekor (Tail) -->
+  <path d="M225,335 L200,420 L250,405 L300,420 L275,335 Z" fill="#FDE047" stroke="#CA8A04" stroke-width="3"/>
+  <!-- Belencong / Api (Flame of Knowledge) -->
+  <path d="M250,110 C230,150 215,180 225,220 C235,200 245,190 250,175 C255,190 265,200 275,220 C285,180 270,150 250,110 Z" fill="#EF4444" stroke="#DC2626" stroke-width="3"/>
+  <path d="M250,135 C240,165 235,185 240,210 C245,195 250,190 250,180 C250,190 255,195 260,210 C265,185 260,165 250,135 Z" fill="#FDE047"/>
+  <!-- Buku (Open Book of Wisdom) -->
+  <path d="M250,245 C220,230 170,235 140,255 L145,285 C175,265 220,260 250,275 C280,260 325,265 355,285 L360,255 C330,235 280,230 250,245 Z" fill="#FFFFFF" stroke="#0284C7" stroke-width="4"/>
+  <line x1="250" y1="245" x2="250" y2="275" stroke="#0284C7" stroke-width="4"/>
+  <!-- Garis Hiasan Buku -->
+  <path d="M160,262 C185,250 220,247 245,257" stroke="#94A3B8" stroke-width="2" fill="none"/>
+  <path d="M340,262 C315,250 280,247 255,257" stroke="#94A3B8" stroke-width="2" fill="none"/>
+</svg>

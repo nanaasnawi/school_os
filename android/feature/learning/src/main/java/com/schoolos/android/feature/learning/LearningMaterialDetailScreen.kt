@@ -61,11 +61,11 @@ fun LearningMaterialDetailScreen(
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
         ) {
-            // ── HERO MEDIA SECTION ──
+            // ── REFACTORED HERO MEDIA SECTION ──
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(260.dp)
+                    .height(280.dp)
                     .background(Color.Black)
             ) {
                 if (material.thumbnailUrl != null) {
@@ -83,14 +83,6 @@ fun LearningMaterialDetailScreen(
                     )
                 }
 
-                // Overlay Back Button
-                CustomBackButton(
-                    onClick = onBack,
-                    modifier = Modifier.statusBarsPadding().padding(16.dp),
-                    backgroundColor = Color.White.copy(alpha = 0.3f),
-                    contentColor = Color.White
-                )
-
                 // Video Play Icon Overlay
                 if (material.materialType == MaterialType.VIDEO) {
                     Icon(
@@ -98,6 +90,15 @@ fun LearningMaterialDetailScreen(
                         contentDescription = "Play",
                         tint = Color.White.copy(alpha = 0.8f),
                         modifier = Modifier.size(72.dp).align(Alignment.Center)
+                    )
+                }
+
+                // INTEGRATED TOP NAV
+                Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+                    CustomBackButton(
+                        onClick = onBack,
+                        backgroundColor = Color.Black.copy(alpha = 0.3f),
+                        contentColor = Color.White
                     )
                 }
             }
@@ -134,9 +135,10 @@ fun LearningMaterialDetailScreen(
                 Spacer(Modifier.height(24.dp))
 
                 // Content Body
-                if (material.contentBody != null) {
+                val body = material.contentBody
+                if (body != null) {
                     Text(
-                        text = material.contentBody,
+                        text = body,
                         fontSize = 15.sp,
                         color = TextSecondary,
                         lineHeight = 24.sp
@@ -161,24 +163,11 @@ private fun rememberMaterial(id: String): LearningMaterial {
     // In a real app, this would come from a ViewModel
     return LearningMaterial(
         id = id,
-        title = "Modul Operasi Pecahan - Bab 1",
-        description = "Materi ini membahas dasar-dari penjumlahan dan pengurangan pecahan dengan penyebut yang berbeda.",
+        title = "Belum ada data",
+        description = "Belum ada deskripsi tersedia.",
         materialType = MaterialType.ARTICLE,
-        subject = "Matematika",
-        contentBody = """
-            Pecahan adalah cara menyatakan bagian dari keseluruhan. Dalam bab ini, kita akan fokus pada dua operasi dasar: Penjumlahan dan Pengurangan.
-            
-            1. Menyamakan Penyebut
-            Sebelum menjumlahkan atau mengurangkan pecahan, pastikan penyebutnya sama. Jika berbeda, carilah KPK dari kedua penyebut tersebut.
-            
-            2. Melakukan Operasi
-            Setelah penyebut sama, jumlahkan atau kurangkan hanya bagian pembilangnya saja.
-            
-            Contoh:
-            1/2 + 1/4 = 2/4 + 1/4 = 3/4
-            
-            Tips: Selalu sederhanakan hasil akhir jika memungkinkan.
-        """.trimIndent(),
-        thumbnailUrl = "https://images.unsplash.com/photo-1518133910546-b6c2fb7d79e3?auto=format&fit=crop&q=80&w=800"
+        subject = "-",
+        contentBody = "",
+        thumbnailUrl = null
     )
 }

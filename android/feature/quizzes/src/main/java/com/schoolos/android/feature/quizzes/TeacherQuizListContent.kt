@@ -72,7 +72,7 @@ private fun TeacherQuizCard(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(Color.White)
+            .background(CosmicNavy)
             .border(1.dp, GlassBorder2, RoundedCornerShape(16.dp))
             .clickable(onClick = onClick)
             .padding(14.dp),

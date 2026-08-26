@@ -16,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -23,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.schoolos.android.core.designsystem.*
 import com.schoolos.android.domain.model.Assignment
+import androidx.compose.material.icons.filled.Schedule
 
 fun LazyListScope.studentAssignmentListContent(
     activeItems: List<Assignment>,
@@ -53,24 +55,41 @@ private fun LazyListScope.renderStudentSection(
     item {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+            modifier = Modifier.padding(start = 4.dp, top = 8.dp, bottom = 4.dp)
         ) {
-            Box(modifier = Modifier.size(5.dp).clip(CircleShape).background(color))
+            Text(
+                title.uppercase(),
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Black,
+                color = color,
+                letterSpacing = 1.sp
+            )
             Spacer(Modifier.width(8.dp))
-            Text(title, fontSize = 14.sp, fontWeight = FontWeight.Black, color = TextPrimary)
-            Spacer(Modifier.width(8.dp))
-            Text("${items.size}", color = color, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            Box(
+                modifier = Modifier
+                    .size(width = 24.dp, height = 18.dp)
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(color.copy(alpha = 0.1f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("${items.size}", color = color, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+            }
         }
     }
 
     items(items, key = { it.id }) { assignment ->
-        StudentAssignmentCard(assignment = assignment, onClick = { onAssignmentClick(assignment.id) })
+        StudentAssignmentCard(
+            assignment = assignment,
+            sectionColor = color,
+            onClick = { onAssignmentClick(assignment.id) }
+        )
     }
 }
 
 @Composable
 private fun StudentAssignmentCard(
     assignment: Assignment,
+    sectionColor: Color,
     onClick: () -> Unit,
 ) {
     val (emoji, accentColor) = when {
@@ -80,52 +99,92 @@ private fun StudentAssignmentCard(
         else -> Pair("📝", NeonWarning)
     }
 
+    val isUrgent = sectionColor == NeonError
+
     Box(
         modifier = Modifier
+            .shadow(
+                elevation = if (isUrgent) 6.dp else 4.dp,
+                shape = RoundedCornerShape(22.dp),
+                spotColor = if (isUrgent) NeonError.copy(alpha = 0.2f) else GlassOverlay
+            )
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(Color.White)
-            .border(1.dp, GlassBorder, RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(22.dp))
+            .background(CosmicNavy)
+            .border(
+                1.dp,
+                if (isUrgent) NeonError.copy(alpha = 0.4f) else GlassBorder,
+                RoundedCornerShape(22.dp)
+            )
             .clickable(onClick = onClick)
-            .padding(14.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                modifier = Modifier.size(40.dp).clip(RoundedCornerShape(10.dp))
-                    .background(accentColor.copy(alpha = 0.08f))
-                    .border(1.dp, accentColor.copy(alpha = 0.15f), RoundedCornerShape(10.dp)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(emoji, fontSize = 18.sp)
-            }
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                // PREMIUM ICON BLOCK
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(accentColor.copy(alpha = 0.1f))
+                        .border(1.dp, accentColor.copy(alpha = 0.2f), RoundedCornerShape(14.dp)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(emoji, fontSize = 22.sp)
+                }
 
-            Spacer(Modifier.width(14.dp))
+                Spacer(Modifier.width(16.dp))
 
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    assignment.title,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp,
-                    color = TextPrimary,
-                )
-                val dueAtStr = assignment.dueAt
-                if (dueAtStr != null) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        assignment.title,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        fontWeight = FontWeight.Black,
+                        fontSize = 15.sp,
+                        color = TextPrimary,
+                    )
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        "⏰ Batas: ${formatDateShort(dueAtStr)}",
+                        "Matematika • 7A",
                         fontSize = 11.sp,
                         color = TextTertiary,
-                        fontWeight = FontWeight.Medium
+                        fontWeight = FontWeight.Bold
                     )
                 }
+                
+                Icon(Icons.Default.ChevronRight, null, tint = TextTertiary, modifier = Modifier.size(20.dp))
             }
 
-            Spacer(Modifier.width(8.dp))
-            StatusChip(label = assignment.status)
-            Spacer(Modifier.width(4.dp))
-            Icon(Icons.Default.ChevronRight, null, tint = TextTertiary, modifier = Modifier.size(16.dp))
+            Spacer(Modifier.height(16.dp))
+            
+            // METADATA STRIP
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(if (isUrgent) NeonError.copy(alpha = 0.05f) else CosmicDark)
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Default.Schedule, 
+                        null, 
+                        tint = if (isUrgent) NeonError else TextTertiary, 
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        assignment.dueAt?.let { "Batas: ${formatDateShort(it)}" } ?: "Tanpa Batas",
+                        fontSize = 11.sp,
+                        color = if (isUrgent) NeonError else TextPrimary,
+                        fontWeight = FontWeight.Black
+                    )
+                }
+
+                StatusChip(label = assignment.status)
+            }
         }
     }
 }

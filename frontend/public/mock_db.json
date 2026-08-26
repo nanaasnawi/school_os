@@ -1,0 +1,30 @@
+{
+  "students": [
+    {
+      "id": "1",
+      "nisn": "0081234567",
+      "full_name": "Ahmad Fauzi",
+      "gender": "Laki-laki",
+      "assigned_class": "Kelas 4-A",
+      "status": "ACTIVE"
+    },
+    {
+      "id": "2",
+      "nisn": "0081234568",
+      "full_name": "Budi Santoso",
+      "gender": "Laki-laki",
+      "assigned_class": "Kelas 4-A",
+      "status": "ACTIVE"
+    },
+    {
+      "id": "3",
+      "nisn": "0081234569",
+      "full_name": "Citra Dewi",
+      "gender": "Perempuan",
+      "assigned_class": "Kelas 4-B",
+      "status": "ACTIVE"
+    }
+  ],
+  "teachers": [],
+  "classes": []
+}

@@ -1,0 +1,272 @@
+/* ── Parent Portal — Mobile-First Awareness v2 ── */
+.page {
+  min-height: 100vh;
+  background: var(--bg-base);
+  max-width: 640px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding-bottom: 5rem;
+  animation: fadeInUp 0.4s var(--ease-out) forwards;
+}
+
+/* Hero */
+.hero {
+  position: relative;
+  padding: 2rem 1.5rem 1.5rem;
+  overflow: hidden;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-dim);
+}
+.heroBg {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.14) 0%, rgba(139, 92, 246, 0.08) 100%);
+  pointer-events: none;
+}
+
+.heroContent {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 1.125rem;
+  margin-bottom: 1.5rem;
+}
+
+.childAvatar {
+  font-size: 2.75rem;
+  width: 68px;
+  height: 68px;
+  background: var(--accent-gradient);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+  flex-shrink: 0;
+}
+
+.childInfo { display: flex; flex-direction: column; gap: 0.25rem; }
+.badgeLine { margin-bottom: 2px; }
+.statusChip {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: var(--emerald);
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  padding: 0.15rem 0.55rem;
+  border-radius: var(--radius-full);
+}
+
+.childName { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.03em; color: var(--text-primary); }
+.childMeta { font-size: 0.85rem; color: var(--text-secondary); }
+.childNisn { font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono); }
+
+.heroStats {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+}
+
+.heroStat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.875rem 0.625rem;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  backdrop-filter: var(--glass-blur);
+  text-align: center;
+}
+.heroStatIcon { font-size: 1.125rem; }
+.heroStatValue { font-family: var(--font-display); font-size: 1.25rem; font-weight: 800; color: var(--text-primary); letter-spacing: -0.04em; line-height: 1; }
+.heroStatUnit { font-size: 0.68rem; font-weight: 500; color: var(--text-muted); }
+.heroStatLabel { font-size: 0.72rem; color: var(--text-muted); }
+
+/* Internal Nav */
+.navBar {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0 1.25rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.navBar::-webkit-scrollbar { display: none; }
+.navBtn {
+  padding: 0.55rem 1rem;
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-dim);
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--dur-fast) ease;
+}
+.navBtn:hover { color: var(--text-primary); background: var(--bg-elevated); }
+.navBtnActive {
+  background: var(--accent-gradient);
+  border-color: transparent;
+  color: white !important;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.35);
+}
+
+/* Section */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 0 1.25rem;
+}
+
+/* Card */
+.card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-dim);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.cardHeaderRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.cardTitle { font-size: 0.95rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.01em; }
+.viewMoreBtn {
+  background: none;
+  border: none;
+  color: var(--accent-hover);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.viewMoreBtn:hover { text-decoration: underline; }
+
+/* Attendance week */
+.weekRow { display: flex; gap: 0.75rem; }
+.daySlot { display: flex; flex-direction: column; align-items: center; gap: 0.375rem; flex: 1; text-align: center; }
+.dayDot {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+}
+.dot_present { background: rgba(16, 185, 129, 0.2); border: 2px solid var(--emerald); }
+.dot_late    { background: rgba(245, 158, 11, 0.2); border: 2px solid var(--amber); }
+.dot_absent  { background: rgba(244, 63, 94, 0.2);  border: 2px solid var(--rose); }
+.dayLabel { font-size: 0.75rem; color: var(--text-primary); font-weight: 700; }
+.dayDate { font-size: 0.65rem; color: var(--text-muted); }
+.dayStatus { font-size: 0.65rem; color: var(--text-muted); }
+
+.legendRow {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+.legendDot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 0.25rem;
+}
+
+/* Score list */
+.scoreList { display: flex; flex-direction: column; gap: 0.625rem; }
+.scoreRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 0.875rem;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-dim);
+  border-radius: var(--radius-md);
+}
+.scoreLeft { display: flex; flex-direction: column; gap: 2px; }
+.scoreSubject { font-size: 0.875rem; font-weight: 700; color: var(--text-primary); }
+.scoreType { font-size: 0.75rem; color: var(--text-muted); }
+
+.scoreRight { display: flex; align-items: center; gap: 0.75rem; }
+.scoreNum {
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.04em;
+}
+
+.gradeBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  font-weight: 800;
+  font-family: var(--font-display);
+}
+.gradeA { background: rgba(16, 185, 129, 0.15); color: var(--emerald); }
+.gradeB { background: rgba(99, 102, 241, 0.15); color: var(--accent-hover); }
+.gradeC { background: rgba(245, 158, 11, 0.15); color: var(--amber); }
+.gradeD { background: rgba(244, 63, 94, 0.15);  color: var(--rose); }
+
+/* Agenda */
+.agendaList { display: flex; flex-direction: column; gap: 0.625rem; }
+.agendaItem {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.875rem 1rem;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-dim);
+  border-radius: var(--radius-md);
+}
+.agendaUrgent { border-color: rgba(244, 63, 94, 0.3); background: rgba(244, 63, 94, 0.06); }
+.agendaIcon { font-size: 1.125rem; }
+.agendaInfo { flex: 1; display: flex; flex-direction: column; gap: 0.125rem; }
+.agendaLabel { font-size: 0.85rem; font-weight: 700; color: var(--text-primary); }
+.agendaDate { font-size: 0.75rem; color: var(--text-muted); }
+.urgentBadge {
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--radius-full);
+  background: rgba(244, 63, 94, 0.15);
+  color: var(--rose);
+  font-size: 0.7rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* Attendance summary grid */
+.attendanceSummaryGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+}
+.attendStatCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 1rem 0.5rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-dim);
+  border-radius: var(--radius-md);
+  text-align: center;
+}
+.attendNumGreen { font-family: var(--font-display); font-size: 1.25rem; font-weight: 800; color: var(--emerald); }
+.attendNumAmber { font-family: var(--font-display); font-size: 1.25rem; font-weight: 800; color: var(--amber); }
+.attendNumRose  { font-family: var(--font-display); font-size: 1.25rem; font-weight: 800; color: var(--rose); }
+.attendLabelText { font-size: 0.72rem; color: var(--text-muted); font-weight: 500; }

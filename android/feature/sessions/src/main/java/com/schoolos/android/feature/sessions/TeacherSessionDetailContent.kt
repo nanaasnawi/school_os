@@ -2,22 +2,19 @@ package com.schoolos.android.feature.sessions
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.filled.Book
-import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Quiz
-import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -44,13 +41,13 @@ fun TeacherSessionDetailContent(
             GlassCard(modifier = Modifier.weight(1f), cornerRadius = 14.dp) {
                 Column(modifier = Modifier.padding(14.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("HADIR", fontSize = 9.sp, fontWeight = FontWeight.Black, color = TextTertiary)
-                    Text("24 / 28", fontSize = 16.sp, fontWeight = FontWeight.Black, color = NeonSuccess)
+                    Text("- / -", fontSize = 16.sp, fontWeight = FontWeight.Black, color = NeonSuccess)
                 }
             }
             GlassCard(modifier = Modifier.weight(1f), cornerRadius = 14.dp) {
                 Column(modifier = Modifier.padding(14.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("DURASI", fontSize = 9.sp, fontWeight = FontWeight.Black, color = TextTertiary)
-                    Text("90 Menit", fontSize = 16.sp, fontWeight = FontWeight.Black, color = NeonBlue)
+                    Text("- Menit", fontSize = 16.sp, fontWeight = FontWeight.Black, color = NeonBlue)
                 }
             }
         }
@@ -76,12 +73,7 @@ fun TeacherSessionDetailContent(
                 }
                 Spacer(Modifier.height(14.dp))
                 
-                val students = listOf(
-                    Pair("Ahmad Fauzi", "present"),
-                    Pair("Budi Santoso", "absent"),
-                    Pair("Citra Lestari", "present"),
-                    Pair("Dodi Hermawan", "present")
-                )
+                val students = emptyList<Pair<String, String>>()
                 
                 students.forEach { (name, status) ->
                     Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {

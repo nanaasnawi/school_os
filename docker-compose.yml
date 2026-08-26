@@ -1,5 +1,20 @@
 version: '3.8'
 
+# ============================================================
+# School OS — Docker Compose
+#
+# PENTING - Isolasi Port dari Dapodik:
+#   Dapodik PostgreSQL  → port 5432 (default, TIDAK disentuh)
+#   School OS PostgreSQL → port 5433 (TERPISAH, aman)
+#
+# Mapping "5433:5432" artinya:
+#   - Di dalam container: PostgreSQL jalan di port 5432 (normal)
+#   - Di luar (host):     Diakses via port 5433 (tidak konflik)
+#
+# Untuk production/server: deploy ke server terpisah,
+#   tidak ada Dapodik di sana, jadi bisa pakai port 5432 normal.
+# ============================================================
+
 services:
   postgres:
     image: postgres:15-alpine
@@ -9,7 +24,7 @@ services:
       POSTGRES_PASSWORD: secretpassword
       POSTGRES_DB: school_os
     ports:
-      - "5432:5432"
+      - "5433:5432"  # Host 5433 → Container 5432 (hindari konflik Dapodik di port 5432)
     volumes:
       - pgdata:/var/lib/postgresql/data
     restart: unless-stopped

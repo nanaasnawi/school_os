@@ -15,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -53,43 +54,53 @@ private fun TeacherClassGradeCard(
 
     Box(
         modifier = Modifier
+            .shadow(4.dp, RoundedCornerShape(22.dp), spotColor = GlassOverlay)
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(Color.White)
-            .border(1.dp, GlassBorder2, RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(22.dp))
+            .background(CosmicNavy)
+            .border(1.dp, GlassBorder, RoundedCornerShape(22.dp))
             .clickable(onClick = onClick)
-            .padding(14.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Box(
-                modifier = Modifier.size(44.dp).clip(RoundedCornerShape(10.dp))
-                    .background(color.copy(alpha = 0.08f))
-                    .border(1.dp, color.copy(alpha = 0.15f), RoundedCornerShape(10.dp)),
+                modifier = Modifier
+                    .size(52.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(color.copy(alpha = 0.1f))
+                    .border(1.dp, color.copy(alpha = 0.2f), RoundedCornerShape(14.dp)),
                 contentAlignment = Alignment.Center,
             ) {
-                Text(kelas, fontWeight = FontWeight.Black, fontSize = 18.sp, color = color)
+                Text(kelas, fontWeight = FontWeight.Black, fontSize = 20.sp, color = color)
             }
 
-            Spacer(Modifier.width(14.dp))
+            Spacer(Modifier.width(16.dp))
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    "$mapel — $kelas",
-                    fontWeight = FontWeight.Bold,
+                    "$mapel — Kelas $kelas",
+                    fontWeight = FontWeight.Black,
                     fontSize = 15.sp,
                     color = TextPrimary
                 )
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(6.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("$studentCount Siswa", fontSize = 11.sp, color = TextTertiary, fontWeight = FontWeight.Medium)
-                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        "$studentCount Siswa", 
+                        fontSize = 11.sp, 
+                        color = TextTertiary, 
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(Modifier.width(10.dp))
                     Text("•", fontSize = 11.sp, color = TextTertiary)
-                    Spacer(Modifier.width(8.dp))
+                    Spacer(Modifier.width(10.dp))
                     Text("Rata-rata: 90.2", fontSize = 11.sp, color = NeonSuccess, fontWeight = FontWeight.Black)
                 }
             }
 
-            Icon(Icons.Default.ChevronRight, null, tint = TextTertiary, modifier = Modifier.size(16.dp))
+            Icon(Icons.Default.ChevronRight, null, tint = TextTertiary, modifier = Modifier.size(20.dp))
         }
     }
 }

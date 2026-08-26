@@ -30,7 +30,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.schoolos.android.core.designsystem.CosmicNavy
 import com.schoolos.android.core.designsystem.GlassBorder
+import com.schoolos.android.core.designsystem.GlassOverlay
 import com.schoolos.android.core.designsystem.StudentNeon
 import com.schoolos.android.core.designsystem.TextPrimary
 import com.schoolos.android.core.designsystem.TextSecondary
@@ -59,11 +61,11 @@ data class QuickAction(
 fun LightCard(content: @Composable () -> Unit) {
     Box(
         modifier = Modifier
+            .shadow(4.dp, RoundedCornerShape(22.dp), spotColor = GlassOverlay, ambientColor = GlassOverlay)
             .fillMaxWidth()
             .clip(RoundedCornerShape(22.dp))
-            .background(Color.White)
-            .border(1.dp, GlassBorder, RoundedCornerShape(22.dp))
-            .shadow(3.dp, RoundedCornerShape(22.dp), spotColor = Color(0x100F172A)),
+            .background(CosmicNavy)
+            .border(1.dp, GlassBorder, RoundedCornerShape(22.dp)),
     ) { content() }
 }
 
@@ -154,7 +156,7 @@ fun LightMiniStatCard(
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(22.dp))
-            .background(Color.White)
+            .background(CosmicNavy)
             .background(
                 Brush.verticalGradient(
                     listOf(accentColor.copy(alpha = 0.05f), Color.Transparent),
@@ -162,7 +164,7 @@ fun LightMiniStatCard(
                 )
             )
             .border(1.dp, GlassBorder, RoundedCornerShape(22.dp))
-            .shadow(4.dp, RoundedCornerShape(22.dp), spotColor = Color(0x150F172A))
+            .shadow(4.dp, RoundedCornerShape(22.dp), spotColor = GlassOverlay)
             .clickable(onClick = onClick)
             .padding(16.dp),
     ) {
@@ -256,13 +258,13 @@ fun LightProgressRow(subject: String, progress: Float, color: Color) {
             Text(subject, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
             Text("${(progress * 100).toInt()}%", fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = color)
         }
-        Spacer(Modifier.height(6.dp))
+        Spacer(Modifier.height(8.dp))
         Box(
-            modifier = Modifier.fillMaxWidth().height(7.dp).clip(CircleShape)
-                .background(color.copy(alpha = 0.12f))
+            modifier = Modifier.fillMaxWidth().height(8.dp).clip(CircleShape)
+                .background(color.copy(alpha = 0.15f))
         ) {
             Box(
-                modifier = Modifier.fillMaxWidth(progress).height(7.dp).clip(CircleShape)
+                modifier = Modifier.fillMaxWidth(progress).height(8.dp).clip(CircleShape)
                     .background(color)
             )
         }
@@ -276,14 +278,14 @@ fun LightQuickActionBtn(action: QuickAction) {
         modifier = Modifier.clickable(onClick = action.onClick),
     ) {
         Box(
-            modifier = Modifier.size(52.dp).clip(RoundedCornerShape(16.dp))
-                .background(action.accentColor.copy(alpha = 0.12f))
-                .border(1.dp, action.accentColor.copy(alpha = 0.25f), RoundedCornerShape(16.dp)),
+            modifier = Modifier.size(54.dp).clip(RoundedCornerShape(18.dp))
+                .background(action.accentColor.copy(alpha = 0.16f))
+                .border(1.dp, action.accentColor.copy(alpha = 0.3f), RoundedCornerShape(18.dp)),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(action.icon, action.label, tint = action.accentColor, modifier = Modifier.size(22.dp))
+            Icon(action.icon, action.label, tint = action.accentColor, modifier = Modifier.size(24.dp))
         }
-        Spacer(Modifier.height(5.dp))
-        Text(action.label, fontSize = 10.sp, color = TextSecondary, fontWeight = FontWeight.Medium, textAlign = TextAlign.Center)
+        Spacer(Modifier.height(6.dp))
+        Text(action.label, fontSize = 11.sp, color = TextSecondary, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
     }
 }

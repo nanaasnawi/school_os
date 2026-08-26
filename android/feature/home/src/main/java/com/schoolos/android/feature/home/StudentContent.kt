@@ -1,6 +1,8 @@
 package com.schoolos.android.feature.home
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,22 +14,31 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.filled.Book
-import androidx.compose.material.icons.filled.Campaign
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Grade
 import androidx.compose.material.icons.filled.Quiz
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Science
 import androidx.compose.material.icons.filled.SportsHandball
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.schoolos.android.core.designsystem.GlassBorder
@@ -40,160 +51,175 @@ import com.schoolos.android.core.designsystem.TextPrimary
 import com.schoolos.android.core.designsystem.TextSecondary
 import com.schoolos.android.core.designsystem.TextTertiary
 
-val studentSchedule = listOf(
-    ScheduleItem("07.30", "Matematika",       "Ruang 7A",    Icons.Default.School,        StudentNeon, Color(0xFFF3E8FF)),
-    ScheduleItem("09.30", "Bahasa Indonesia", "Ruang 7A",    Icons.Default.Book,          NeonSuccess, Color(0xFFD1FAE5)),
-    ScheduleItem("11.00", "IPA",              "Ruang Lab 2", Icons.Default.Science,       NeonBlue,    Color(0xFFDBEAFE)),
-    ScheduleItem("12.30", "Penjaskes",        "Lapangan",    Icons.Default.SportsHandball, NeonWarning, Color(0xFFFEF3C7)),
-)
-
 fun LazyListScope.studentContent(
     onNavigateToSessions: () -> Unit,
     onNavigateToAssignments: () -> Unit,
     onNavigateToQuizzes: () -> Unit,
     onNavigateToGrades: () -> Unit,
     onNavigateToProgress: () -> Unit,
+    onNavigateToAchievements: () -> Unit,
+    onNavigateToLearning: () -> Unit,
 ) {
-    // Today's Schedule Card (Seamless White Card with Soft Drop Shadow)
+    // ── 1. INTEGRATED LEARNING HUB (Next Class) ──
+    item {
+        StudentLearningHubGlass(
+            subject = "-",
+            room = "-",
+            timeLeft = "-",
+            isLive = false, // Upcoming
+            onClick = onNavigateToSessions
+        )
+    }
+
+    // ── 2. STUDENT TOOLBOX (Minimalist Circular) ──
+    item {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            val tools = listOf(
+                QuickAction("Tugas", Icons.AutoMirrored.Filled.Assignment, StudentNeon, onNavigateToAssignments),
+                QuickAction("Kuis", Icons.Default.Quiz, NeonWarning, onNavigateToQuizzes),
+                QuickAction("Materi", Icons.Default.Book, NeonBlue, onNavigateToLearning),
+                QuickAction("Nilai", Icons.Default.Grade, NeonSuccess, onNavigateToGrades),
+                QuickAction("Badge", Icons.Default.Star, StudentNeon, onNavigateToAchievements),
+            )
+            tools.forEach { tool -> StudentToolboxButton(tool) }
+        }
+    }
+
+    // ── 3. COMPACT DAILY AGENDA STRIP ──
     item {
         LightCard {
-            Column {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 18.dp, vertical = 14.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            modifier = Modifier
-                                .size(8.dp)
-                                .clip(CircleShape)
-                                .background(StudentNeon)
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text(
-                            "Jadwal Hari Ini",
-                            fontWeight = FontWeight.ExtraBold,
-                            color = TextPrimary,
-                            fontSize = 16.sp,
-                        )
-                    }
-                    Text(
-                        "Lihat Semua",
-                        color = StudentNeon,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.clickable { onNavigateToSessions() },
-                    )
-                }
-
-                HorizontalDivider(color = GlassBorder, thickness = 1.dp)
-
-                Column(modifier = Modifier.padding(vertical = 4.dp)) {
-                    studentSchedule.forEachIndexed { idx, item ->
-                        LightScheduleRow(item)
-                        if (idx < studentSchedule.size - 1) {
-                            HorizontalDivider(color = GlassBorder.copy(alpha = 0.5f), thickness = 0.5.dp, modifier = Modifier.padding(horizontal = 18.dp))
-                        }
+            Column(modifier = Modifier.padding(18.dp)) {
+                LightSectionHeader("Agenda Belajar Hari Ini", "", onSeeAll = onNavigateToSessions)
+                Spacer(Modifier.height(14.dp))
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    items(emptyList<Triple<String, String, Color>>()) { (time, code, color) ->
+                        CompactAgendaItem(time, code, color)
                     }
                 }
             }
         }
     }
 
-    // Stat mini cards
-    item {
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            LightMiniStatCard(
-                title = "Tugas & PR",
-                value = "2",
-                sub = "perlu dikerjakan",
-                icon = Icons.AutoMirrored.Filled.Assignment,
-                accentColor = StudentNeon,
-                badgeText = "Segera",
-                progress = 0.65f,
-                modifier = Modifier.weight(1f),
-                onClick = onNavigateToAssignments,
-            )
-            LightMiniStatCard(
-                title = "Kuis Aktif",
-                value = "1",
-                sub = "belum selesai",
-                icon = Icons.Default.Quiz,
-                accentColor = NeonWarning,
-                badgeText = "Hari Ini",
-                progress = 0.2f,
-                modifier = Modifier.weight(1f),
-                onClick = onNavigateToQuizzes,
-            )
-        }
-    }
-
-    // Grade Overview
+    // ── 4. REFINED GRADE OVERVIEW ──
     item {
         LightCard {
             Column(modifier = Modifier.padding(18.dp)) {
-                LightSectionHeader("Nilai Rata-rata", "Semester Genap 2024/2025", onSeeAll = onNavigateToGrades)
+                LightSectionHeader("Performa Akademik", "Semester Genap", onSeeAll = onNavigateToGrades)
                 Spacer(Modifier.height(16.dp))
                 Row(verticalAlignment = Alignment.Bottom) {
                     Column {
-                        Text(
-                            "88.6",
-                            fontWeight = FontWeight.Black,
-                            fontSize = 42.sp,
-                            color = StudentNeon,
-                            letterSpacing = (-1).sp,
-                        )
-                        Spacer(Modifier.height(4.dp))
+                        Text("-", fontWeight = FontWeight.Black, fontSize = 36.sp, color = StudentNeon, letterSpacing = (-1).sp)
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(StudentNeon.copy(alpha = 0.12f))
-                                    .border(1.dp, StudentNeon.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
-                                    .padding(horizontal = 8.dp, vertical = 3.dp),
-                            ) {
-                                Text("Predikat A", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = StudentNeon)
-                            }
-                            Spacer(Modifier.width(6.dp))
-                            Text("Sangat Baik", fontSize = 11.sp, color = TextSecondary, fontWeight = FontWeight.Medium)
+                            Text("Belum ada data nilai", fontSize = 11.sp, color = TextTertiary, fontWeight = FontWeight.Medium)
                         }
                     }
                     Spacer(Modifier.weight(1f))
                     LineTrendChart(
-                        dataPoints = listOf(72f, 78f, 85f, 86f, 88.6f),
+                        dataPoints = emptyList(),
                         lineColor = StudentNeon,
-                        fillColor = StudentNeon.copy(alpha = 0.12f),
-                        modifier = Modifier.size(width = 140.dp, height = 75.dp),
+                        fillColor = StudentNeon.copy(alpha = 0.08f),
+                        modifier = Modifier.size(width = 120.dp, height = 60.dp),
                     )
-                }
-                Spacer(Modifier.height(12.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    listOf("Jan", "Feb", "Mar", "Apr", "Mei").forEach { m ->
-                        Text(m, fontSize = 10.sp, color = TextTertiary, fontWeight = FontWeight.Bold)
-                    }
                 }
             }
         }
     }
 
-    // Subject Progress
+    // ── 5. REFINED SUBJECT PROGRESS ──
     item {
         LightCard {
             Column(modifier = Modifier.padding(18.dp)) {
                 LightSectionHeader("Progres Belajar", "", onSeeAll = onNavigateToProgress)
-                Spacer(Modifier.height(16.dp))
-                listOf(
-                    Triple("Matematika",       0.90f, StudentNeon),
-                    Triple("Bahasa Indonesia", 0.85f, NeonSuccess),
-                    Triple("IPA",              0.88f, NeonBlue),
-                ).forEach { (subj, pct, color) ->
+                Spacer(Modifier.height(14.dp))
+                emptyList<Triple<String, Float, Color>>().forEach { (subj, pct, color) ->
                     LightProgressRow(subj, pct, color)
-                    Spacer(Modifier.height(14.dp))
+                    Spacer(Modifier.height(12.dp))
                 }
             }
+        }
+    }
+    
+    item { Spacer(Modifier.height(20.dp)) }
+}
+
+@Composable
+private fun StudentLearningHubGlass(
+    subject: String,
+    room: String,
+    timeLeft: String,
+    isLive: Boolean,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(24.dp))
+            .background(Brush.horizontalGradient(listOf(StudentNeon, NeonBlue)))
+            .clickable(onClick = onClick)
+            .padding(20.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(modifier = Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.size(6.dp).clip(CircleShape).background(if (isLive) NeonSuccess else Color.White))
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        if (isLive) "SEDANG BERLANGSUNG" else "KELAS BERIKUTNYA",
+                        color = Color.White.copy(alpha = 0.9f), fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp
+                    )
+                }
+                Spacer(Modifier.height(8.dp))
+                Text(subject, color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Black)
+                Text("$room • $timeLeft", color = Color.White.copy(alpha = 0.8f), fontSize = 12.sp, fontWeight = FontWeight.Medium)
+            }
+            
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color.White.copy(alpha = 0.2f))
+                    .padding(horizontal = 14.dp, vertical = 10.dp)
+            ) {
+                Text(if (isLive) "Masuk" else "Jadwal", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            }
+        }
+    }
+}
+
+@Composable
+private fun StudentToolboxButton(action: QuickAction) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.clickable(onClick = action.onClick)) {
+        Box(
+            modifier = Modifier
+                .size(56.dp)
+                .clip(RoundedCornerShape(18.dp))
+                .background(action.accentColor.copy(alpha = 0.16f))
+                .border(1.dp, action.accentColor.copy(alpha = 0.3f), RoundedCornerShape(18.dp)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(action.icon, null, tint = action.accentColor, modifier = Modifier.size(24.dp))
+        }
+        Spacer(Modifier.height(8.dp))
+        Text(action.label, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = TextSecondary)
+    }
+}
+
+@Composable
+private fun CompactAgendaItem(time: String, code: String, color: Color) {
+    Box(
+        modifier = Modifier
+            .width(80.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(color.copy(alpha = 0.06f))
+            .border(1.dp, color.copy(alpha = 0.2f), RoundedCornerShape(16.dp))
+            .padding(12.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(code, fontWeight = FontWeight.Black, fontSize = 14.sp, color = color)
+            Text(time, fontSize = 10.sp, color = TextTertiary, fontWeight = FontWeight.Bold)
         }
     }
 }

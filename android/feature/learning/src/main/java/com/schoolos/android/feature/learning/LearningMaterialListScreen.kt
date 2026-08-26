@@ -39,6 +39,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.schoolos.android.core.designsystem.CosmicBlack
+import com.schoolos.android.core.designsystem.CosmicNavy
 import com.schoolos.android.core.designsystem.CustomBackButton
 import com.schoolos.android.core.designsystem.GlassBorder
 import com.schoolos.android.core.designsystem.NeonBlue
@@ -60,36 +61,27 @@ data class MaterialItem(
 
 @Composable
 fun LearningMaterialListScreen(
-    onBack: () -> Unit = {}
+    onBack: () -> Unit = {},
+    onMaterialClick: (String) -> Unit = {}
 ) {
-    val materials = listOf(
-        MaterialItem("1", "Modul Operasi Pecahan - Bab 1", "PDF", "2.4 MB", "Matematika", StudentNeon),
-        MaterialItem("2", "Video Pembelajaran: Ekosistem Laut", "VIDEO", "15:20", "IPA", NeonBlue),
-        MaterialItem("3", "Ringkasan Materi Tata Surya", "MODULE", "1.1 MB", "IPA", NeonBlue),
-        MaterialItem("4", "Kumpulan Soal Latihan UTS", "PDF", "3.8 MB", "Umum", NeonWarning),
-        MaterialItem("5", "Panduan Menulis Puisi Kreatif", "PDF", "0.9 MB", "B. Indonesia", NeonSuccess)
-    )
+    val materials = emptyList<MaterialItem>()
 
     Scaffold(containerColor = CosmicBlack) { padding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 100.dp),
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 0.dp, bottom = 100.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            // HEADER
+            // ── REFACTORED NON-OVERLAPPING LIST HEADER ─────────────
             item {
-                Row(
-                    modifier = Modifier.fillMaxWidth().statusBarsPadding(),
-                    verticalAlignment = Alignment.CenterVertically
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 0.dp)
                 ) {
-                    CustomBackButton(onClick = onBack)
-                    Spacer(Modifier.width(16.dp))
-                    Text(
-                        "Materi Belajar",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Black,
-                        color = TextPrimary
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        CustomBackButton(onClick = onBack)
+                    }
                 }
             }
 
@@ -99,7 +91,7 @@ fun LearningMaterialListScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(14.dp))
-                        .background(Color.White)
+                        .background(CosmicNavy)
                         .border(1.dp, GlassBorder, RoundedCornerShape(14.dp))
                         .padding(horizontal = 16.dp, vertical = 12.dp)
                 ) {
@@ -113,21 +105,21 @@ fun LearningMaterialListScreen(
 
             // MATERIAL LIST
             items(materials) { item ->
-                MaterialCard(item)
+                MaterialCard(item, onClick = { onMaterialClick(item.id) })
             }
         }
     }
 }
 
 @Composable
-private fun MaterialCard(item: MaterialItem) {
+private fun MaterialCard(item: MaterialItem, onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(18.dp))
-            .background(Color.White)
+            .background(CosmicNavy)
             .border(1.dp, GlassBorder, RoundedCornerShape(18.dp))
-            .clickable { /* Download/Open */ }
+            .clickable(onClick = onClick)
             .padding(14.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {

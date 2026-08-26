@@ -1,6 +1,7 @@
 package com.schoolos.android.feature.assignments
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -119,7 +120,7 @@ fun AssignmentCreatorScreen(
                         .weight(1.5f)
                         .height(56.dp)
                         .clip(RoundedCornerShape(12.dp))
-                        .background(Color.White)
+                        .background(CosmicNavy)
                         .border(1.dp, GlassBorder, RoundedCornerShape(12.dp))
                         .padding(horizontal = 12.dp),
                     contentAlignment = Alignment.CenterStart

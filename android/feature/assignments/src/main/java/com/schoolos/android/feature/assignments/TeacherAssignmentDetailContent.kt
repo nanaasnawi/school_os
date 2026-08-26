@@ -19,6 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -34,14 +35,28 @@ fun TeacherAssignmentDetailContent(
     allSubmissions: List<AssignmentSubmission>
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        // Metadata Card
-        GlassCard(cornerRadius = 16.dp) {
-            Column(modifier = Modifier.padding(16.dp)) {
+        // Metadata Card (Fixed Modifier Order)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .shadow(2.dp, RoundedCornerShape(20.dp), spotColor = Color(0x0E000000))
+                .clip(RoundedCornerShape(20.dp))
+                .background(Color.White)
+                .border(1.dp, GlassBorder, RoundedCornerShape(20.dp))
+                .padding(18.dp)
+        ) {
+            Column {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     assignment.dueAt?.let { dueIso ->
                         EducationalDateBadge(dateIso = dueIso, showTime = true, accentColor = NeonBlue)
                     }
-                    Box(modifier = Modifier.clip(RoundedCornerShape(10.dp)).background(NeonSuccess.copy(alpha = 0.08f)).border(1.dp, NeonSuccess.copy(alpha = 0.2f), RoundedCornerShape(10.dp)).padding(horizontal = 10.dp, vertical = 6.dp)) {
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(SuccessBg)
+                            .border(1.dp, NeonSuccess.copy(alpha = 0.3f), RoundedCornerShape(10.dp))
+                            .padding(horizontal = 10.dp, vertical = 6.dp)
+                    ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Default.Grade, null, tint = NeonSuccess, modifier = Modifier.size(13.dp))
                             Spacer(Modifier.width(6.dp))
@@ -52,12 +67,12 @@ fun TeacherAssignmentDetailContent(
 
                 if (assignment.description?.isNotBlank() == true) {
                     Spacer(Modifier.height(16.dp))
-                    HorizontalDivider(color = GlassBorder, thickness = 0.5.dp)
+                    HorizontalDivider(color = GlassBorder, thickness = 1.dp)
                     Spacer(Modifier.height(16.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.Description, null, tint = NeonBlue, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text("Deskripsi Tugas", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                        Text("Deskripsi Tugas PR", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
                     }
                     Spacer(Modifier.height(6.dp))
                     Text(assignment.description!!, fontSize = 12.sp, color = TextSecondary, lineHeight = 18.sp)
@@ -69,10 +84,17 @@ fun TeacherAssignmentDetailContent(
         Text("Rekap Pengumpulan Siswa", fontSize = 15.sp, fontWeight = FontWeight.Black, color = TextPrimary, modifier = Modifier.padding(start = 4.dp, top = 8.dp))
         
         if (allSubmissions.isEmpty()) {
-            GlassCard(cornerRadius = 16.dp) {
-                Box(modifier = Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
-                    Text("Belum ada siswa yang mengumpulkan.", fontSize = 13.sp, color = TextTertiary)
-                }
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .shadow(2.dp, RoundedCornerShape(20.dp), spotColor = Color(0x0E000000))
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(Color.White)
+                    .border(1.dp, GlassBorder, RoundedCornerShape(20.dp))
+                    .padding(24.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("Belum ada siswa yang mengumpulkan.", fontSize = 13.sp, color = TextTertiary)
             }
         } else {
             allSubmissions.forEach { submission ->
@@ -84,13 +106,24 @@ fun TeacherAssignmentDetailContent(
 
 @Composable
 private fun TeacherSubmissionRow(submission: AssignmentSubmission) {
-    GlassCard(cornerRadius = 14.dp) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(2.dp, RoundedCornerShape(16.dp), spotColor = Color(0x0E000000))
+            .clip(RoundedCornerShape(16.dp))
+            .background(Color.White)
+            .border(1.dp, GlassBorder, RoundedCornerShape(16.dp))
+            .padding(14.dp)
+    ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(14.dp),
+            modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
-                modifier = Modifier.size(40.dp).clip(CircleShape).background(NeonBlue.copy(alpha = 0.08f)),
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(NeonBlueBg),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(Icons.Default.Person, null, tint = NeonBlue, modifier = Modifier.size(20.dp))
@@ -102,11 +135,11 @@ private fun TeacherSubmissionRow(submission: AssignmentSubmission) {
             }
             Column(horizontalAlignment = Alignment.End) {
                 if (submission.status == "graded") {
-                    Box(modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(NeonSuccess.copy(alpha = 0.1f)).padding(horizontal = 8.dp, vertical = 3.dp)) {
+                    Box(modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(SuccessBg).padding(horizontal = 8.dp, vertical = 3.dp)) {
                         Text("${submission.score} Poin", color = NeonSuccess, fontSize = 10.sp, fontWeight = FontWeight.Black)
                     }
                 } else {
-                    Box(modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(NeonError.copy(alpha = 0.1f)).padding(horizontal = 8.dp, vertical = 3.dp)) {
+                    Box(modifier = Modifier.clip(RoundedCornerShape(8.dp)).background(ErrorBg).padding(horizontal = 8.dp, vertical = 3.dp)) {
                         Text("BELUM NILAI", color = NeonError, fontSize = 9.sp, fontWeight = FontWeight.Black)
                     }
                 }

@@ -1,0 +1,93 @@
+/* ── Edit Form — Dark Premium ── */
+.page {
+  padding: 2.25rem 2.5rem;
+  max-width: 1000px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  animation: fadeInUp 0.4s var(--ease-out) forwards;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+.headerLeft { display: flex; flex-direction: column; gap: 0.35rem; }
+
+.breadcrumb { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: var(--text-muted); }
+.breadLink { color: var(--text-muted); text-decoration: none; }
+.breadLink:hover { color: var(--accent-hover); }
+.breadSep { opacity: 0.4; }
+.breadCurrent { color: var(--text-secondary); font-weight: 600; }
+
+.title { font-size: 1.875rem; font-weight: 800; letter-spacing: -0.03em; color: var(--text-primary); }
+.subtitle { font-size: 0.85rem; color: var(--text-muted); }
+
+.successBanner {
+  padding: 0.875rem 1.125rem;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: var(--radius-md);
+  color: var(--emerald);
+  font-size: 0.875rem;
+  font-weight: 600;
+  animation: fadeInUp 0.3s ease forwards;
+}
+
+.formContainer {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-dim);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+}
+
+.form { display: flex; flex-direction: column; gap: 1.5rem; }
+
+.formSection {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.inputGridTwo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+@media (max-width: 768px) {
+  .inputGridTwo { grid-template-columns: 1fr; }
+}
+
+.formGroup { display: flex; flex-direction: column; gap: 0.45rem; }
+.label { font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); }
+
+.input, .select {
+  width: 100%;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-dim);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  padding: 0.65rem 0.9rem;
+  outline: none;
+  transition: border-color var(--dur-fast) ease, box-shadow var(--dur-fast) ease;
+}
+.input:focus, .select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+  background: var(--bg-overlay);
+}
+
+.formActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border-dim);
+}

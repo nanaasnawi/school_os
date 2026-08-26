@@ -1,6 +1,8 @@
 package com.schoolos.android.feature.sessions
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.filled.Book
@@ -15,10 +17,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.font.FontWeight
 import com.schoolos.android.core.designsystem.*
 import com.schoolos.android.domain.model.LearningSession
 import com.schoolos.android.domain.model.SessionAttendance
@@ -37,7 +39,7 @@ fun StudentSessionDetailContent(
             Column(modifier = Modifier.padding(16.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
-                        modifier = Modifier.size(36.dp).clip(androidx.compose.foundation.shape.CircleShape).background(NeonBlueBg),
+                        modifier = Modifier.size(36.dp).clip(CircleShape).background(NeonBlueBg),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(Icons.Default.Person, null, tint = NeonBlue, modifier = Modifier.size(18.dp))
