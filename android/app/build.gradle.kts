@@ -20,7 +20,8 @@ android {
 
     buildTypes {
         debug {
-            buildConfigField("String", "API_BASE_URL", "\"http://192.168.1.4:8000/api/v1/\"")
+            buildConfigField("String", "API_BASE_URL", "\"http://192.168.100.78:8000/api/v1/\"")
+
         }
         release {
             buildConfigField("String", "API_BASE_URL", "\"https://api.schoolos.app/api/v1/\"")

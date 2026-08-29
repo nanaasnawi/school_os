@@ -1,4 +1,7 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+
 package com.schoolos.android.feature.auth
+
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
@@ -46,7 +49,10 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.School
+
+
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Usb
@@ -259,7 +265,7 @@ fun LoginScreen(
             ) {
 
 
-            // ── 1. School Crest / App Logo ──────────────────────────────────
+            // ── 1. School Crest / App Logo ───
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier.scale(0.96f + auraAnim * 0.04f),
@@ -838,8 +844,81 @@ fun LoginScreen(
                             }
                         }
                     }
+
+                    Spacer(Modifier.height(16.dp))
+
+                    // ── Divider: "ATAU MASUK PRAKTIS" ────────────────────────
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(1.dp)
+                                .background(GlassBorder)
+                        )
+                        Text(
+                            text = "ATAU MASUK PRAKTIS",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TextTertiary,
+                            modifier = Modifier.padding(horizontal = 10.dp),
+                            letterSpacing = 1.sp
+                        )
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(1.dp)
+                                .background(GlassBorder)
+                        )
+                    }
+
+                    Spacer(Modifier.height(14.dp))
+
+                    // ── QR Code Option Action Button ─────────────────────────
+                    Surface(
+                        onClick = { viewModel.openQrScanner() },
+                        shape = RoundedCornerShape(18.dp),
+                        color = CosmicSurface,
+                        border = androidx.compose.foundation.BorderStroke(1.2.dp, animatedAccentColor.copy(alpha = 0.5f)),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(52.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(30.dp)
+                                    .clip(CircleShape)
+                                    .background(animatedAccentColor.copy(alpha = 0.16f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.QrCodeScanner,
+                                    contentDescription = null,
+                                    tint = animatedAccentColor,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                            Spacer(Modifier.width(10.dp))
+                            Text(
+                                text = "Pindai QR Code",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = TextPrimary
+                            )
+                        }
+                    }
                 }
             }
+
 
             Spacer(Modifier.height(24.dp))
 
@@ -1044,7 +1123,7 @@ fun LoginScreen(
                                         if (tempServerUrl.contains("192.168.")) NeonBlue else GlassBorder,
                                         RoundedCornerShape(10.dp)
                                     )
-                                    .clickable { tempServerUrl = "http://192.168.1.4:8000/api/v1/" }
+                                    .clickable { tempServerUrl = "http://192.168.100.78:8000/api/v1/" }
                                     .padding(horizontal = 12.dp, vertical = 8.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -1059,7 +1138,7 @@ fun LoginScreen(
                                             fontWeight = FontWeight.Bold,
                                             color = TextPrimary
                                         )
-                                        Text("http://192.168.1.4:8000/api/v1/", fontSize = 10.sp, color = TextTertiary)
+                                        Text("http://192.168.100.78:8000/api/v1/", fontSize = 10.sp, color = TextTertiary)
                                     }
                                 }
                                 if (tempServerUrl.contains("192.168.")) {
@@ -1106,7 +1185,7 @@ fun LoginScreen(
                             value = tempServerUrl,
                             onValueChange = { tempServerUrl = it },
                             label = { Text("URL Server API Aktif", fontSize = 12.sp) },
-                            placeholder = { Text("http://192.168.1.4:8000/api/v1/", fontSize = 12.sp) },
+                            placeholder = { Text("http://192.168.100.78:8000/api/v1/", fontSize = 12.sp) },
                             singleLine = true,
                             shape = RoundedCornerShape(12.dp),
                             modifier = Modifier.fillMaxWidth(),
@@ -1135,7 +1214,7 @@ fun LoginScreen(
                                     color = NeonBlue,
                                 )
                                 Text(
-                                    text = "1. Wi-Fi: Hubungkan HP & PC ke Wi-Fi / Hotspot yang sama (IP: 192.168.1.4:8000).\n2. USB Cable: Jalankan 'adb reverse tcp:8000 tcp:8000' di terminal PC.",
+                                    text = "1. Wi-Fi: Hubungkan HP & PC ke Wi-Fi / Hotspot yang sama (IP: 192.168.100.78:8000).\n2. USB Cable: Jalankan 'adb reverse tcp:8000 tcp:8000' di terminal PC.",
                                     fontSize = 11.sp,
                                     color = TextTertiary,
                                     lineHeight = 15.sp,
@@ -1159,7 +1238,7 @@ fun LoginScreen(
                 dismissButton = {
                     TextButton(
                         onClick = {
-                            tempServerUrl = "http://192.168.1.4:8000/api/v1/"
+                            tempServerUrl = "http://192.168.100.78:8000/api/v1/"
                             viewModel.onSaveServerUrl(tempServerUrl)
                             showServerConfigDialog = false
                         }
@@ -1168,9 +1247,19 @@ fun LoginScreen(
                     }
                 },
 
+
                 containerColor = CosmicNavy,
                 shape = RoundedCornerShape(22.dp),
             )
         }
+
+        // ── 9. QR Scanner Modal Bottom Sheet ─────────────────────────────────
+        if (state.showQrScanner) {
+            QrScannerModalBottomSheet(
+                onDismissRequest = viewModel::closeQrScanner,
+                onQrCodeDetected = viewModel::loginWithQr
+            )
+        }
     }
 }
+

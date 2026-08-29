@@ -9,8 +9,12 @@ interface SchoolOsApi {
     @POST("auth/login")
     suspend fun login(@Body request: LoginRequest): ApiResponse<LoginResponse>
 
+    @POST("auth/qr-login")
+    suspend fun loginWithQr(@Body request: QrLoginRequest): ApiResponse<LoginResponse>
+
     @POST("auth/refresh")
     suspend fun refreshToken(@Body request: RefreshTokenRequest): ApiResponse<RefreshTokenResponse>
+
 
     // Public school info — no token required, used on login screen
     @GET("schools/info")

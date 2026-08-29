@@ -1,5 +1,6 @@
 package com.schoolos.android.data.remote.dto
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -9,14 +10,21 @@ data class LoginRequest(
 )
 
 @Serializable
+data class QrLoginRequest(
+    val token: String,
+)
+
+@Serializable
 data class LoginResponse(
-    val accessToken: String,
-    val refreshToken: String,
-    val userId: String,
-    val tenantId: String,
-    val name: String,
-    val email: String,
-    val role: String,
+    @SerialName("access_token") val accessToken: String,
+    @SerialName("token_type") val tokenType: String = "Bearer",
+    @SerialName("expires_in") val expiresIn: Long = 86400,
+    @SerialName("refresh_token") val refreshToken: String = "",
+    @SerialName("user_id") val userId: String = "",
+    @SerialName("tenant_id") val tenantId: String = "",
+    val name: String = "",
+    val email: String = "",
+    val role: String = "",
 )
 
 @Serializable
@@ -34,12 +42,12 @@ data class RefreshTokenResponse(
 data class SchoolProfileResponse(
     val id: String,
     val name: String,
-    @kotlinx.serialization.SerialName("logo_url") val logoUrl: String? = null,
+    @SerialName("logo_url") val logoUrl: String? = null,
 )
 
 @Serializable
 data class SchoolPublicInfoResponse(
     val name: String,
-    @kotlinx.serialization.SerialName("logo_url") val logoUrl: String? = null,
+    @SerialName("logo_url") val logoUrl: String? = null,
     val npsn: String? = null,
 )

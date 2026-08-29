@@ -24,7 +24,9 @@ data class LoginUiState(
     val selectedRoleTab: Int = 0,
     val rememberMe: Boolean = true,
     val customServerUrl: String = BuildConfig.API_BASE_URL,
+    val showQrScanner: Boolean = false,
 )
+
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
@@ -178,5 +180,45 @@ class LoginViewModel @Inject constructor(
                 }
         }
     }
+
+    fun openQrScanner() {
+        _state.value = _state.value.copy(showQrScanner = true, error = null)
+    }
+
+    fun closeQrScanner() {
+        _state.value = _state.value.copy(showQrScanner = false)
+    }
+
+    fun loginWithQr(rawToken: String) {
+        val s = _state.value
+        val cleanToken = rawToken.trim()
+        if (cleanToken.isBlank()) {
+            _state.value = s.copy(error = "Token QR Code tidak valid.")
+            return
+        }
+
+        viewModelScope.launch {
+            _state.value = s.copy(isLoading = true, showQrScanner = false, error = null)
+            authRepository.loginWithQr(cleanToken)
+                .onSuccess {
+                    _state.value = _state.value.copy(isLoading = false, isLoggedIn = true)
+                }
+                .onFailure { e ->
+                    val errMsg = e.message ?: ""
+                    val formatted = when {
+                        errMsg.contains("Failed to connect", ignoreCase = true) || errMsg.contains("CLEARTEXT", ignoreCase = true) || errMsg.contains("Connection refused", ignoreCase = true) || errMsg.contains("timeout", ignoreCase = true) -> {
+                            "Gagal terhubung ke server (${s.customServerUrl.removePrefix("http://").removeSuffix("/api/v1/")}). Pastikan HP dan Komputer berada di jaringan Wi-Fi yang sama."
+                        }
+                        else -> errMsg.ifBlank { "QR Login gagal. Silakan gunakan QR Code aktif yang sah." }
+                    }
+                    _state.value = _state.value.copy(
+                        isLoading = false,
+                        error = formatted
+                    )
+                }
+        }
+    }
 }
+
+
 

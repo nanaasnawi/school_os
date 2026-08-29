@@ -42,7 +42,36 @@ class AuthRepositoryImpl @Inject constructor(
         User(id = data.userId, name = data.name, email = data.email, role = data.role)
     }
 
+    override suspend fun loginWithQr(token: String): Result<User> = runCatching {
+        val response = api.loginWithQr(com.schoolos.android.data.remote.dto.QrLoginRequest(token = token))
+        val data = response.data ?: throw Exception(
+            response.error?.message ?: "QR Login gagal. Pastikan QR Code valid dan masih aktif."
+        )
+
+        authManager.saveSession(
+            accessToken = data.accessToken,
+            refreshToken = data.refreshToken,
+            userId = data.userId,
+            tenantId = data.tenantId,
+            name = data.name,
+            email = data.email,
+            role = data.role,
+        )
+
+        try {
+            val profileResponse = api.getSchoolProfile()
+            profileResponse.data?.let { profile ->
+                authManager.saveSchoolProfile(name = profile.name, logoUrl = profile.logoUrl)
+            }
+        } catch (e: Exception) {
+            // Log or ignore profile fetch failure so it doesn't break login
+        }
+
+        User(id = data.userId, name = data.name, email = data.email, role = data.role)
+    }
+
     override suspend fun logout() {
+
         authManager.clearSession()
     }
 
