@@ -187,8 +187,9 @@ const NAV_SECTIONS = [
       { label: 'Tahun Ajaran', path: '/dashboard/academic-years', icon: 'years' },
       { label: 'Kelas', path: '/dashboard/classes', icon: 'classes' },
       { label: 'Siswa', path: '/dashboard/students', icon: 'students' },
-      { label: 'Scan QR', path: '/dashboard/students/qr-scan', icon: 'qr' },
+      { label: 'Kartu QR Login', path: '/dashboard/students/qr-scan', icon: 'qr' },
       { label: 'Guru', path: '/dashboard/teachers', icon: 'teachers' },
+
       { label: 'Tenaga Kependidikan', path: '/dashboard/staff', icon: 'staff' },
       { label: 'Mata Pelajaran', path: '/dashboard/learning', icon: 'learning' },
     ],
