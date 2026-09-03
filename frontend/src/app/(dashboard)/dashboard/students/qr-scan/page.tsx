@@ -3,7 +3,9 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import QRCode from 'qrcode';
 import JSZip from 'jszip';
+import { getTenantItem, setTenantItem } from '@/lib/tenant-storage';
 import styles from './qr-scan.module.css';
+
 
 interface UserAccount {
   id: string;
@@ -71,14 +73,27 @@ export default function QrScanPage() {
       setIsLoading(true);
       const token = getAuthToken();
 
+      if (typeof window !== 'undefined') {
+        const storedName = getTenantItem('dapodik_nama_sekolah') || getTenantItem('school_name');
+        if (storedName && !storedName.includes('School OS Education Center')) setSchoolName(storedName);
+        const storedLogo = getTenantItem('school_logo_url');
+        if (storedLogo) setSchoolLogo(storedLogo);
+      }
+
       // Fetch School Profile
       fetch('/api/v1/schools/profile', {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       })
         .then((r) => (r.ok ? r.json() : null))
         .then((json) => {
-          if (json?.data?.name) setSchoolName(json.data.name);
-          if (json?.data?.logo_url) setSchoolLogo(json.data.logo_url);
+          if (json?.data?.name) {
+            setSchoolName(json.data.name);
+            setTenantItem('school_name', json.data.name);
+          }
+          if (json?.data?.logo_url) {
+            setSchoolLogo(json.data.logo_url);
+            setTenantItem('school_logo_url', json.data.logo_url);
+          }
         })
         .catch(() => null);
 
@@ -86,6 +101,7 @@ export default function QrScanPage() {
       const res = await fetch('/api/v1/auth/qr-tokens/users', {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
+
 
       let loadedUsers: UserAccount[] = [];
 
@@ -306,137 +322,181 @@ export default function QrScanPage() {
 
   // Draw & Render ID Card to Canvas
   const drawIdCardCanvas = async (user: UserAccount, qrDataUrl: string): Promise<string> => {
-    return new Promise((resolve) => {
-      const canvas = document.createElement('canvas');
-      canvas.width = 1050;
-      canvas.height = 600;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return resolve('');
+    // Determine active logo source: state -> localStorage -> fallback tut_wuri_handayani.svg
+    const activeLogoUrl =
+      schoolLogo ||
+      (typeof window !== 'undefined' ? getTenantItem('school_logo_url') : null) ||
+      '/logos/tut_wuri_handayani.svg';
 
-      // Background Gradient: Premium Deep Blue / Cosmic Navy
-      const bgGrad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-      bgGrad.addColorStop(0, '#0f172a');
-      bgGrad.addColorStop(0.5, '#1e1b4b');
-      bgGrad.addColorStop(1, '#2e1065');
-      ctx.fillStyle = bgGrad;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      // Subtle Decorative Hologram Accent
-      const circleGrad = ctx.createRadialGradient(850, 120, 10, 850, 120, 240);
-      circleGrad.addColorStop(0, 'rgba(168, 85, 247, 0.25)');
-      circleGrad.addColorStop(1, 'transparent');
-      ctx.fillStyle = circleGrad;
-      ctx.beginPath();
-      ctx.arc(850, 120, 240, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Card Header Line
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(50, 110);
-      ctx.lineTo(1000, 110);
-      ctx.stroke();
-
-      // School Name & Tag
-      ctx.fillStyle = '#f8fafc';
-      ctx.font = 'bold 30px system-ui, -apple-system, sans-serif';
-      ctx.fillText(schoolName, 60, 65);
-
-      ctx.fillStyle = '#94a3b8';
-      ctx.font = '600 16px system-ui, -apple-system, sans-serif';
-      ctx.fillText('KARTU RESMI AKSES LOGIN ANDROID • SCHOOL OS', 60, 92);
-
-      // Right Pill Badge
-      ctx.fillStyle = 'rgba(99, 102, 241, 0.25)';
-      ctx.strokeStyle = '#818cf8';
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.roundRect(830, 42, 170, 42, [10]);
-      ctx.fill();
-      ctx.stroke();
-
-      ctx.fillStyle = '#c7d2fe';
-      ctx.font = 'bold 15px system-ui, -apple-system, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(user.role.toUpperCase(), 915, 68);
-      ctx.textAlign = 'left';
-
-      // Left Column: User Details
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 36px system-ui, -apple-system, sans-serif';
-
-      // Truncate name if too long
-      let displayName = user.full_name;
-      if (displayName.length > 28) displayName = displayName.substring(0, 25) + '...';
-      ctx.fillText(displayName, 60, 200);
-
-      // Role pill tag below name
-      ctx.fillStyle = '#38bdf8';
-      ctx.font = 'bold 18px system-ui, -apple-system, sans-serif';
-      ctx.fillText(`ID PENGGUNA: ${user.email}`, 60, 245);
-
-      if (user.identifier) {
-        ctx.fillStyle = '#cbd5e1';
-        ctx.font = '500 20px system-ui, -apple-system, sans-serif';
-        const label = user.role.toLowerCase().includes('guru') ? 'NIP' : 'NISN / NIK';
-        ctx.fillText(`${label}: ${user.identifier}`, 60, 285);
-      }
-
-      if (user.class_name) {
-        ctx.fillStyle = '#a78bfa';
-        ctx.font = '600 20px system-ui, -apple-system, sans-serif';
-        ctx.fillText(`Rombel: ${user.class_name}`, 60, 325);
-      }
-
-      // Instruction Box
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.07)';
-      ctx.beginPath();
-      ctx.roundRect(60, 390, 560, 110, [12]);
-      ctx.fill();
-
-      ctx.fillStyle = '#e2e8f0';
-      ctx.font = '500 16px system-ui, -apple-system, sans-serif';
-      ctx.fillText('💡 Petunjuk Login Mobile:', 80, 425);
-      ctx.fillStyle = '#94a3b8';
-      ctx.font = '14px system-ui, -apple-system, sans-serif';
-      ctx.fillText('1. Buka School OS di HP Android → Pilih "Pindai Kartu / QR Code".', 80, 455);
-      ctx.fillText('2. Arahkan kamera ke QR ini atau pilih dari galeri untuk login instan.', 80, 480);
-
-      // Card Footer Line
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.moveTo(50, 540);
-      ctx.lineTo(1000, 540);
-      ctx.stroke();
-
-      ctx.fillStyle = '#64748b';
-      ctx.font = '14px system-ui, -apple-system, sans-serif';
-      ctx.fillText('Keamanan Terenkripsi SHA-256 • Opaque Mobile Token Auth • School OS Invariant', 60, 568);
-
-      // Right Column: Render QR Code Box
-      const qrImg = new Image();
-      qrImg.onload = () => {
-        // White rounded card background for QR
-        ctx.fillStyle = '#ffffff';
-        ctx.beginPath();
-        ctx.roundRect(680, 160, 320, 320, [18]);
-        ctx.fill();
-
-        ctx.drawImage(qrImg, 700, 180, 280, 280);
-
-        ctx.fillStyle = '#0f172a';
-        ctx.font = 'bold 12px system-ui, -apple-system, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('SCAN ME FOR LOGIN', 840, 472);
-        ctx.textAlign = 'left';
-
-        resolve(canvas.toDataURL('image/png'));
+    // Load logo image safely
+    const logoImg = await new Promise<HTMLImageElement | null>((resolve) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => resolve(img);
+      img.onerror = () => {
+        // Fallback to local tut_wuri_handayani
+        const fallback = new Image();
+        fallback.onload = () => resolve(fallback);
+        fallback.onerror = () => resolve(null);
+        fallback.src = '/logos/tut_wuri_handayani.svg';
       };
-      qrImg.src = qrDataUrl;
+      img.src = activeLogoUrl;
     });
+
+    // Load QR image safely
+    const qrImg = await new Promise<HTMLImageElement | null>((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => resolve(null);
+      img.src = qrDataUrl;
+    });
+
+    const canvas = document.createElement('canvas');
+    canvas.width = 1050;
+    canvas.height = 600;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return '';
+
+    // Background Gradient: Premium Deep Blue / Cosmic Navy
+    const bgGrad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+    bgGrad.addColorStop(0, '#0f172a');
+    bgGrad.addColorStop(0.5, '#1e1b4b');
+    bgGrad.addColorStop(1, '#2e1065');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Subtle Decorative Hologram Accent
+    const circleGrad = ctx.createRadialGradient(850, 120, 10, 850, 120, 240);
+    circleGrad.addColorStop(0, 'rgba(168, 85, 247, 0.25)');
+    circleGrad.addColorStop(1, 'transparent');
+    ctx.fillStyle = circleGrad;
+    ctx.beginPath();
+    ctx.arc(850, 120, 240, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Card Header Line
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(50, 115);
+    ctx.lineTo(1000, 115);
+    ctx.stroke();
+
+    // --- LOGO EMBLEM ---
+    // White rounded card background for logo
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.roundRect(55, 28, 74, 74, [16]);
+    ctx.fill();
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+    ctx.stroke();
+
+    if (logoImg) {
+      // Draw logo inside with padding
+      ctx.drawImage(logoImg, 62, 35, 60, 60);
+    } else {
+      ctx.font = '36px system-ui';
+      ctx.fillText('🏫', 70, 77);
+    }
+
+    // --- SCHOOL NAME & SUBTITLE ---
+    ctx.fillStyle = '#f8fafc';
+    ctx.font = 'bold 30px system-ui, -apple-system, sans-serif';
+    ctx.fillText(schoolName, 145, 62);
+
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '600 15px system-ui, -apple-system, sans-serif';
+    ctx.fillText('KARTU RESMI AKSES LOGIN ANDROID • SCHOOL OS', 145, 90);
+
+    // Right Pill Badge
+    ctx.fillStyle = 'rgba(99, 102, 241, 0.25)';
+    ctx.strokeStyle = '#818cf8';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.roundRect(830, 42, 170, 42, [10]);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = '#c7d2fe';
+    ctx.font = 'bold 15px system-ui, -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(user.role.toUpperCase(), 915, 68);
+    ctx.textAlign = 'left';
+
+    // Left Column: User Details
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 36px system-ui, -apple-system, sans-serif';
+
+    // Truncate name if too long
+    let displayName = user.full_name;
+    if (displayName.length > 28) displayName = displayName.substring(0, 25) + '...';
+    ctx.fillText(displayName, 60, 205);
+
+    // Role pill tag below name
+    ctx.fillStyle = '#38bdf8';
+    ctx.font = 'bold 18px system-ui, -apple-system, sans-serif';
+    ctx.fillText(`ID PENGGUNA: ${user.email}`, 60, 248);
+
+    if (user.identifier) {
+      ctx.fillStyle = '#cbd5e1';
+      ctx.font = '500 20px system-ui, -apple-system, sans-serif';
+      const label = user.role.toLowerCase().includes('guru') ? 'NIP' : 'NISN / NIK';
+      ctx.fillText(`${label}: ${user.identifier}`, 60, 288);
+    }
+
+    if (user.class_name) {
+      ctx.fillStyle = '#a78bfa';
+      ctx.font = '600 20px system-ui, -apple-system, sans-serif';
+      ctx.fillText(`Rombel: ${user.class_name}`, 60, 328);
+    }
+
+    // Instruction Box
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.07)';
+    ctx.beginPath();
+    ctx.roundRect(60, 390, 560, 110, [12]);
+    ctx.fill();
+
+    ctx.fillStyle = '#e2e8f0';
+    ctx.font = '500 16px system-ui, -apple-system, sans-serif';
+    ctx.fillText('💡 Petunjuk Login Mobile:', 80, 425);
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '14px system-ui, -apple-system, sans-serif';
+    ctx.fillText('1. Buka School OS di HP Android → Pilih "Pindai Kartu / QR Code".', 80, 455);
+    ctx.fillText('2. Arahkan kamera ke QR ini atau pilih dari galeri untuk login instan.', 80, 480);
+
+    // Card Footer Line
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(50, 540);
+    ctx.lineTo(1000, 540);
+    ctx.stroke();
+
+    ctx.fillStyle = '#64748b';
+    ctx.font = '14px system-ui, -apple-system, sans-serif';
+    ctx.fillText('Keamanan Terenkripsi SHA-256 • Opaque Mobile Token Auth • School OS Invariant', 60, 568);
+
+    // Right Column: Render QR Code Box
+    if (qrImg) {
+      // White rounded card background for QR
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.roundRect(680, 160, 320, 320, [18]);
+      ctx.fill();
+
+      ctx.drawImage(qrImg, 700, 180, 280, 280);
+
+      ctx.fillStyle = '#0f172a';
+      ctx.font = 'bold 12px system-ui, -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('SCAN ME FOR LOGIN', 840, 472);
+      ctx.textAlign = 'left';
+    }
+
+    return canvas.toDataURL('image/png');
   };
+
 
   // Download Single Card PNG
   const handleDownloadCardPng = async (user: UserAccount) => {
