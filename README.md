@@ -143,18 +143,15 @@ School OS/
 | **Database & Infrastructure** | **PostgreSQL 15 Alpine** | Database Relasional Utama |
 | | **Docker & Docker Compose** | Containerization environment lokal & staging |
 | | **Isolated Port (5433)** | Mengisolasi DB School OS dari port default 5432 milik Dapodik |
-
 ---
 
 ## 4. Diagram Alur Kerja (Workflow Diagrams)
 
 ### A. High-Level System Architecture Diagram
-```
-```
+
 ```mermaid
 sequenceDiagram
     autonumber
-    
     actor Web as Web Client
     actor Mob as Mobile Client
     participant Next as Next.js App (3000)
@@ -190,7 +187,7 @@ sequenceDiagram
 ---
 
 ### B. Dapodik Sync Engine Workflow (Local Bridge)
-```
+
 ```mermaid
 sequenceDiagram
     autonumber
@@ -247,8 +244,6 @@ sequenceDiagram
 6. **Audit Trail & Idempotency:**
    - Setiap operasi sensitif dicatat ke dalam `audit_logs` untuk kebutuhan transparansi dan keamanan.
    - Penggunaan `idempotency_keys` untuk mencegah terjadinya duplikasi transaksi atau data saat terjadi gangguan jaringan.
-
----
 
 ## 6. Dokumentasi API, Autentikasi, & Observabilitas
 
