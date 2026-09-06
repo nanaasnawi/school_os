@@ -150,6 +150,7 @@ School OS/
 
 ### A. High-Level System Architecture Diagram
 
+```mermaid
 sequenceDiagram
     autonumber
     
