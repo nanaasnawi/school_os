@@ -184,7 +184,7 @@ sequenceDiagram
         Bridge->>DB: Push Sync ke DB Utama (Postgres)
         DB-->>Bridge: Sync Acknowledged
     end
----
+```
 
 ### B. Dapodik Sync Engine Workflow (Local Bridge)
 
