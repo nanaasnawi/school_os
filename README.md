@@ -149,6 +149,7 @@ School OS/
 ## 4. Diagram Alur Kerja (Workflow Diagrams)
 
 ### A. High-Level System Architecture Diagram
+```
 
 ```mermaid
 sequenceDiagram
@@ -186,6 +187,7 @@ sequenceDiagram
         Bridge->>DB: Push Sync ke DB Utama (Postgres)
         DB-->>Bridge: Sync Acknowledged
     end
+---
 
 ### B. Dapodik Sync Engine Workflow (Local Bridge)
 
@@ -214,8 +216,6 @@ sequenceDiagram
         Agent->>Server: Tandai Outbox Event Sebagai "Processed"
     end
 ```
-
----
 
 ## 5. Rincian Fungsionalitas Modul Utama
 
