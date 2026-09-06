@@ -9,7 +9,7 @@ import javax.inject.Singleton
 class RetryInterceptor : Interceptor {
 
     companion object {
-        private const val MAX_RETRIES = 3
+        private const val MAX_RETRIES = 1
     }
 
     override fun intercept(chain: Interceptor.Chain): Response {
@@ -20,7 +20,8 @@ class RetryInterceptor : Interceptor {
         while (attempt <= MAX_RETRIES) {
             try {
                 response = chain.proceed(request)
-                if (response.isSuccessful || attempt == MAX_RETRIES) {
+                // Never retry successful requests or client errors (4xx, e.g. 401 Unauthorized, 400, 403, 404)
+                if (response.isSuccessful || response.code in 400..499 || attempt == MAX_RETRIES) {
                     return response
                 }
                 response.close()
@@ -31,8 +32,7 @@ class RetryInterceptor : Interceptor {
             }
             attempt++
             if (attempt <= MAX_RETRIES) {
-                val delayMs = (1000L * Math.pow(2.0, (attempt - 1).toDouble())).toLong()
-                TimeUnit.MILLISECONDS.sleep(delayMs)
+                TimeUnit.MILLISECONDS.sleep(500L)
             }
         }
 

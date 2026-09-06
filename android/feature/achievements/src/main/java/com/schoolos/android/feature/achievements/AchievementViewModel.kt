@@ -15,6 +15,7 @@ data class AchievementUiState(
     val isRefreshing: Boolean = false,
     val error: String? = null,
     val userRole: String = "student",
+    val childName: String = "",
     val achievements: List<Achievement> = emptyList(),
 )
 
@@ -30,7 +31,10 @@ class AchievementViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             authManager.authState.collect { auth ->
-                _state.value = _state.value.copy(userRole = auth.role ?: "student")
+                _state.value = _state.value.copy(
+                    userRole = auth.role ?: "student",
+                    childName = auth.childName ?: ""
+                )
             }
         }
         load()

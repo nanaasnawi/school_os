@@ -100,16 +100,18 @@ private fun TeacherQuizCard(
                 )
                 Spacer(Modifier.height(6.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("24/28 Selesai", fontSize = 11.sp, color = TextTertiary, fontWeight = FontWeight.Bold)
+                    Text("${quiz.questionsCount} Soal", fontSize = 11.sp, color = TextTertiary, fontWeight = FontWeight.Bold)
                     Spacer(Modifier.width(10.dp))
                     Text("•", fontSize = 11.sp, color = TextTertiary)
                     Spacer(Modifier.width(10.dp))
-                    Text("Avg: 88.5", fontSize = 11.sp, color = NeonSuccess, fontWeight = FontWeight.Black)
-                }
-                Spacer(Modifier.height(10.dp))
-                // Visual Progress
-                Box(modifier = Modifier.fillMaxWidth().height(4.dp).clip(CircleShape).background(accentColor.copy(alpha = 0.1f))) {
-                    Box(modifier = Modifier.fillMaxWidth(0.85f).height(4.dp).clip(CircleShape).background(accentColor))
+                    Text("KKM: ${quiz.passingScore}", fontSize = 11.sp, color = NeonSuccess, fontWeight = FontWeight.Black)
+                    val timeLimit = quiz.timeLimitMinutes
+                    if (timeLimit != null && timeLimit > 0) {
+                        Spacer(Modifier.width(10.dp))
+                        Text("•", fontSize = 11.sp, color = TextTertiary)
+                        Spacer(Modifier.width(10.dp))
+                        Text("$timeLimit Menit", fontSize = 11.sp, color = TextSecondary, fontWeight = FontWeight.Medium)
+                    }
                 }
             }
 

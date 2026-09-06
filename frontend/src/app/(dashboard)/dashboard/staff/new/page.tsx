@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { getApiUrl } from '@/lib/api';
 import styles from '../staff.module.css';
 
 export default function NewStaffPage() {
@@ -26,7 +27,7 @@ export default function NewStaffPage() {
     setLoading(true);
     try {
       const token = localStorage.getItem('auth_token');
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/staff`, {
+      await fetch(getApiUrl('/api/v1/staff'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

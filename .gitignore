@@ -35,3 +35,11 @@ Thumbs.db
 # Docker
 .docker/
 docker-compose.override.yml
+
+# Scratch & Temporary
+/scratch/
+/scratch.js
+/phone_ui.xml
+/backend/scratch/
+/backend/target_temp/
+*.log

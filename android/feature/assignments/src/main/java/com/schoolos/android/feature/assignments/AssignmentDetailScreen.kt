@@ -49,9 +49,8 @@ fun AssignmentDetailScreen(
                     val subject = a.title
                     val gradient = subjectGradient(subject)
                     val icon = subjectIcon(subject)
-                    val role = state.userRole.lowercase()
-                    val isTeacher = role == "teacher" || role == "guru"
-                    val isParent  = role == "parent" || role == "ortu" || role == "wali"
+                    val isTeacher = com.schoolos.android.core.auth.isTeacherRole(state.userRole)
+                    val isParent  = com.schoolos.android.core.auth.isParentRole(state.userRole)
 
                     Column(
                         modifier = Modifier
@@ -129,7 +128,8 @@ fun AssignmentDetailScreen(
                                     content = content,
                                     onContentChange = { content = it },
                                     onOpenMaterial = onOpenMaterial,
-                                    onSubmitClick = { showConfirm = true }
+                                    onSubmitClick = { showConfirm = true },
+                                    childName = state.childName
                                 )
                             }
                             

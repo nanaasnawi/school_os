@@ -99,7 +99,7 @@ private fun LazyListScope.renderAgendaSection(
 
 @Composable
 private fun StudentSessionCard(session: LearningSession, accentColor: Color, onClick: () -> Unit) {
-    val title = session.notes ?: "Pelajaran"
+    val title = session.subjectName ?: session.notes ?: "Pelajaran"
     val isActive = session.status == "active"
     val isCompleted = session.status == "completed"
 
@@ -108,11 +108,13 @@ private fun StudentSessionCard(session: LearningSession, accentColor: Color, onC
         title.contains("IPA", ignoreCase = true) || title.contains("Sains", ignoreCase = true) -> Pair("🔬", NeonBlue)
         title.contains("Bahasa", ignoreCase = true) -> Pair("📚", NeonSuccess)
         title.contains("Penjaskes", ignoreCase = true) || title.contains("Olahraga", ignoreCase = true) -> Pair("⚽", Color(0xFFF97316))
+        title.contains("Agama", ignoreCase = true) -> Pair("🕌", NeonSuccess)
         else -> Pair("📖", TextTertiary)
     }
 
-    val room = "Ruang 7A"
-    val teacherName = "Bpk. Andi Pratama"
+    val room = session.room ?: "Ruang Kelas"
+    val teacherName = session.teacherName ?: "Guru Pengampu"
+    val timeText = formatSessionTime(session.scheduledAt, session.endedAt)
 
     Box(
         modifier = Modifier
@@ -145,7 +147,7 @@ private fun StudentSessionCard(session: LearningSession, accentColor: Color, onC
                 // CONTENT BLOCK
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        title.substringBefore(" (Ruang").trim(),
+                        title.substringBefore(" • ").substringBefore(" (Ruang").trim(),
                         fontWeight = FontWeight.Black,
                         fontSize = 15.sp,
                         color = if (isCompleted) TextSecondary else TextPrimary,
@@ -177,7 +179,7 @@ private fun StudentSessionCard(session: LearningSession, accentColor: Color, onC
                     Icon(Icons.Default.Schedule, null, tint = if (isActive) accentColor else TextTertiary, modifier = Modifier.size(14.dp))
                     Spacer(Modifier.width(6.dp))
                     Text(
-                        "07.30 — 09.00 WIB", 
+                        timeText, 
                         fontSize = 11.sp, 
                         color = if (isActive) TextPrimary else TextSecondary, 
                         fontWeight = FontWeight.Black
@@ -197,7 +199,7 @@ private fun StudentSessionCard(session: LearningSession, accentColor: Color, onC
                             .background(accentColor.copy(alpha = 0.1f))
                             .padding(horizontal = 8.dp, vertical = 4.dp)
                     ) {
-                        Text("BERJALAN 35'", fontSize = 9.sp, color = accentColor, fontWeight = FontWeight.Black)
+                        Text("BERJALAN", fontSize = 9.sp, color = accentColor, fontWeight = FontWeight.Black)
                     }
                 }
             }
@@ -209,5 +211,35 @@ private fun StudentSessionCard(session: LearningSession, accentColor: Color, onC
                 }
             }
         }
+    }
+}
+
+private fun formatSessionTime(scheduledAt: String?, endedAt: String?): String {
+    if (scheduledAt == null) return "07.30 — 09.00 WIB"
+    return try {
+        val parser = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", java.util.Locale.getDefault()).apply {
+            timeZone = java.util.TimeZone.getTimeZone("UTC")
+        }
+        val outFormatter = java.text.SimpleDateFormat("HH.mm", java.util.Locale.getDefault()).apply {
+            timeZone = java.util.TimeZone.getTimeZone("Asia/Jakarta")
+        }
+        val cleanStart = scheduledAt.substringBefore(".")
+        val startDate = parser.parse(cleanStart)
+        val startTime = startDate?.let { outFormatter.format(it) } ?: "07.30"
+        
+        val endTime = if (endedAt != null) {
+            val cleanEnd = endedAt.substringBefore(".")
+            val endDate = parser.parse(cleanEnd)
+            endDate?.let { outFormatter.format(it) } ?: "09.00"
+        } else {
+            val endCal = java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("Asia/Jakarta")).apply {
+                if (startDate != null) time = startDate
+                add(java.util.Calendar.MINUTE, 90)
+            }
+            outFormatter.format(endCal.time)
+        }
+        "$startTime — $endTime WIB"
+    } catch (e: Exception) {
+        "07.30 — 09.00 WIB"
     }
 }

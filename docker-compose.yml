@@ -1,7 +1,7 @@
 version: '3.8'
 
 # ============================================================
-# School OS — Docker Compose
+# School OS — Docker Compose with Observability Stack
 #
 # PENTING - Isolasi Port dari Dapodik:
 #   Dapodik PostgreSQL  → port 5432 (default, TIDAK disentuh)
@@ -10,9 +10,6 @@ version: '3.8'
 # Mapping "5433:5432" artinya:
 #   - Di dalam container: PostgreSQL jalan di port 5432 (normal)
 #   - Di luar (host):     Diakses via port 5433 (tidak konflik)
-#
-# Untuk production/server: deploy ke server terpisah,
-#   tidak ada Dapodik di sana, jadi bisa pakai port 5432 normal.
 # ============================================================
 
 services:
@@ -24,10 +21,66 @@ services:
       POSTGRES_PASSWORD: secretpassword
       POSTGRES_DB: school_os
     ports:
-      - "5433:5432"  # Host 5433 → Container 5432 (hindari konflik Dapodik di port 5432)
+      - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     restart: unless-stopped
 
+  # Prometheus: Time-series metrics scraper & alert evaluator
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    container_name: school_os_prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./observability/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - promdata:/prometheus
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # Grafana: Metrics visualization dashboards
+  grafana:
+    image: grafana/grafana:10.4.0
+    container_name: school_os_grafana
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafanadata:/var/lib/grafana
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+
+  # Jaeger: Distributed tracing collector & UI
+  jaeger:
+    image: jaegertracing/all-in-one:1.55
+    container_name: school_os_jaeger
+    ports:
+      - "16686:16686" # Web UI
+      - "4317:4317"   # OTLP gRPC receiver
+      - "4318:4318"   # OTLP HTTP receiver
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    restart: unless-stopped
+
+  # Alertmanager: Alert routing & notification (Telegram / Email)
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    container_name: school_os_alertmanager
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./observability/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    restart: unless-stopped
+
 volumes:
   pgdata:
+  promdata:
+  grafanadata:

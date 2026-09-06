@@ -37,24 +37,60 @@ import com.schoolos.android.feature.quizzes.QuizListScreen
 import com.schoolos.android.feature.quizzes.QuizResultScreen
 import com.schoolos.android.feature.sessions.SessionDetailScreen
 import com.schoolos.android.feature.sessions.TodayScreen
+import androidx.compose.runtime.collectAsState
+import com.schoolos.android.core.network.MaintenanceManager
 import com.schoolos.android.feature.assignments.AssignmentCreatorScreen
+import com.schoolos.android.feature.auth.MaintenanceScreen
+import com.schoolos.android.feature.learning.MaterialCreatorScreen
 import kotlinx.coroutines.launch
 
 @Composable
 fun NavGraph(
     authManager: AuthManager,
+    maintenanceManager: MaintenanceManager,
     navController: NavHostController = rememberNavController(),
 ) {
     var startCheck by remember { mutableStateOf(false) }
     var isLoggedIn by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    val isMaintenance by maintenanceManager.isMaintenance.collectAsState()
 
     LaunchedEffect(Unit) {
         isLoggedIn = authManager.isLoggedIn
         startCheck = true
     }
 
+    // Auto-redirect if maintenance activates while user is logged in / using app
+    LaunchedEffect(isMaintenance) {
+        if (isMaintenance) {
+            val currentRoute = navController.currentBackStackEntry?.destination?.route
+            if (currentRoute != Screen.Maintenance.route) {
+                navController.navigate(Screen.Maintenance.route) {
+                    launchSingleTop = true
+                }
+            }
+        }
+    }
+
+    val authState by authManager.authState.collectAsState(initial = null)
+    LaunchedEffect(authState?.isLoggedIn) {
+        if (startCheck && authState != null && !authState!!.isLoggedIn) {
+            val currentRoute = navController.currentBackStackEntry?.destination?.route
+            if (currentRoute != null && currentRoute != Screen.Auth.route && currentRoute != Screen.Maintenance.route) {
+                navController.navigate(Screen.Auth.route) {
+                    popUpTo(0) { inclusive = true }
+                }
+            }
+        }
+    }
+
     if (!startCheck) return
+
+    val startRoute = when {
+        isMaintenance -> Screen.Maintenance.route
+        isLoggedIn -> Screen.Home.route
+        else -> Screen.Auth.route
+    }
 
     MainContainerScreen(
         authManager = authManager,
@@ -62,9 +98,29 @@ fun NavGraph(
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = if (isLoggedIn) Screen.Home.route else Screen.Auth.route,
-            modifier = androidx.compose.ui.Modifier.padding(innerPadding),
+            startDestination = startRoute,
+            modifier = androidx.compose.ui.Modifier.padding(
+                bottom = innerPadding.calculateBottomPadding()
+            ),
         ) {
+            // Maintenance Gatekeeper Screen
+            composable(Screen.Maintenance.route) {
+                MaintenanceScreen(
+                    maintenanceManager = maintenanceManager,
+                    onMaintenanceResolved = {
+                        if (authManager.isLoggedIn) {
+                            navController.navigate(Screen.Home.route) {
+                                popUpTo(Screen.Maintenance.route) { inclusive = true }
+                            }
+                        } else {
+                            navController.navigate(Screen.Auth.route) {
+                                popUpTo(Screen.Maintenance.route) { inclusive = true }
+                            }
+                        }
+                    }
+                )
+            }
+
             // Auth
             composable(Screen.Auth.route) {
                 LoginScreen(onLoginSuccess = {
@@ -96,7 +152,8 @@ fun NavGraph(
             composable(Screen.Learning.route) {
                 LearningMaterialListScreen(
                     onBack = { navController.popBackStack() },
-                    onMaterialClick = { id -> navController.navigate(Screen.LearningDetail.createRoute(id)) }
+                    onMaterialClick = { id -> navController.navigate(Screen.LearningDetail.createRoute(id)) },
+                    onCreateMaterial = { navController.navigate(Screen.MaterialCreator.route) },
                 )
             }
             composable(
@@ -132,6 +189,8 @@ fun NavGraph(
             composable(Screen.Assignments.route) {
                 AssignmentListScreen(
                     onAssignmentClick = { id -> navController.navigate(Screen.AssignmentDetail.createRoute(id)) },
+                    onCreateAssignment = { navController.navigate(Screen.AssignmentCreator.route) },
+                    onCreateQuiz = { navController.navigate(Screen.QuizBuilder.route) },
                 )
             }
             composable(
@@ -211,6 +270,7 @@ fun NavGraph(
             // Notifications
             composable(Screen.Notifications.route) {
                 NotificationListScreen(
+                    onBack = { navController.popBackStack() },
                     onNotificationClick = { notification ->
                         NotificationDeepLink.navigate(notification.referenceType, notification.referenceId, navController)
                     },
@@ -219,7 +279,10 @@ fun NavGraph(
 
             // Progress
             composable(Screen.Progress.route) {
-                ProgressScreen()
+                ProgressScreen(
+                    onBack = { navController.popBackStack() },
+                    onNavigateToAssignments = { navController.navigate(Screen.Assignments.route) },
+                )
             }
 
             // Achievements
@@ -238,6 +301,9 @@ fun NavGraph(
                             }
                         }
                     },
+                    onNavigateToNotifications = {
+                        navController.navigate(Screen.Notifications.route)
+                    },
                 )
             }
 
@@ -252,6 +318,12 @@ fun NavGraph(
                 QuizBuilderScreen(
                     onBack = { navController.popBackStack() },
                     onFinish = { navController.popBackStack() }
+                )
+            }
+            composable(Screen.MaterialCreator.route) {
+                MaterialCreatorScreen(
+                    onBack = { navController.popBackStack() },
+                    onSuccess = { navController.popBackStack() }
                 )
             }
             composable(Screen.BroadcastCenter.route) {

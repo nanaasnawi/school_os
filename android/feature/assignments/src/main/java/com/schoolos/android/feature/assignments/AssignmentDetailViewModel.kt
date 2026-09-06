@@ -16,6 +16,7 @@ data class AssignmentDetailUiState(
     val isLoading: Boolean = true,
     val error: String? = null,
     val userRole: String = "student",
+    val childName: String = "",
     val assignment: Assignment? = null,
     val submission: AssignmentSubmission? = null, // Student specific
     val allSubmissions: List<AssignmentSubmission> = emptyList(), // Teacher specific
@@ -39,7 +40,10 @@ class AssignmentDetailViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             authManager.authState.collect { auth ->
-                _state.value = _state.value.copy(userRole = auth.role ?: "student")
+                _state.value = _state.value.copy(
+                    userRole = auth.role ?: "student",
+                    childName = auth.childName ?: ""
+                )
             }
         }
         load()
@@ -60,8 +64,7 @@ class AssignmentDetailViewModel @Inject constructor(
     }
 
     private suspend fun loadSubmissions() {
-        val role = _state.value.userRole.lowercase()
-        val isTeacher = role == "teacher" || role == "guru"
+        val isTeacher = com.schoolos.android.core.auth.isTeacherRole(_state.value.userRole)
         
         repository.getSubmissions(assignmentId)
             .onSuccess { submissions ->

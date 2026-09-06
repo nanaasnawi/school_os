@@ -72,4 +72,5 @@ dependencies {
     // Core
     implementation(libs.core.ktx)
     implementation(libs.timber)
+    api(libs.coil.compose)
 }

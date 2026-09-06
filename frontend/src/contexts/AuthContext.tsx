@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { apiClient } from '@/lib/api';
+import { apiClient, getApiUrl } from '@/lib/api';
 
 export interface User {
   id: string;
@@ -44,7 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(initialUser);
 
           // Fetch full profile from /api/v1/auth/me to get real name if token didn't contain it
-          fetch('http://localhost:8000/api/v1/auth/me', {
+          fetch(getApiUrl('/api/v1/auth/me'), {
             headers: { Authorization: `Bearer ${token}` }
           })
             .then(res => res.json())

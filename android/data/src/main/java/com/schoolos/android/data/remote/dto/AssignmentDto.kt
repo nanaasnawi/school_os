@@ -16,4 +16,8 @@ data class AssignmentDto(
     @SerialName("is_active") val isActive: Boolean = true,
     @SerialName("created_at") val createdAt: String,
     @SerialName("updated_at") val updatedAt: String,
+    @SerialName("class_id") val classId: String? = null,
+    @SerialName("class_name") val className: String? = null,
+    @SerialName("subject_name") val subjectName: String? = null,
+    @SerialName("teacher_name") val teacherName: String? = null,
 )

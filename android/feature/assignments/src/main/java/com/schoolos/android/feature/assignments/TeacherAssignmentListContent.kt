@@ -51,7 +51,7 @@ private fun LazyListScope.renderTeacherSection(
     item {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(start = 4.dp, top = 8.dp, bottom = 4.dp)
+            modifier = Modifier.padding(start = 4.dp, top = 14.dp, bottom = 4.dp)
         ) {
             Text(
                 title.uppercase(),
@@ -125,11 +125,19 @@ private fun TeacherAssignmentCard(
                         color = TextPrimary,
                     )
                     Spacer(Modifier.height(4.dp))
+                    val subtitle = listOfNotNull(
+                        assignment.subjectName,
+                        assignment.className?.let { "Kelas $it" }
+                    ).joinToString(" • ").ifBlank {
+                        assignment.assignmentType.replace('_', ' ').lowercase().replaceFirstChar { it.uppercase() }
+                    }
                     Text(
-                        "Matematika • Kelas 7A",
+                        subtitle,
                         fontSize = 11.sp,
                         color = TextTertiary,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
                 

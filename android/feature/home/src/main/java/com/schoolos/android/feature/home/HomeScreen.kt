@@ -30,6 +30,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -46,6 +47,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.schoolos.android.core.designsystem.CosmicBlack
 import com.schoolos.android.core.designsystem.NeonError
 import com.schoolos.android.core.designsystem.ParentNeon
+import com.schoolos.android.core.designsystem.PullRefreshContainer
 import com.schoolos.android.core.designsystem.StudentNeon
 import com.schoolos.android.core.designsystem.TeacherNeon
 
@@ -66,15 +68,14 @@ fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
-    val role = state.userRole.lowercase()
-    val isTeacher = role == "teacher" || role == "guru"
-    val isParent  = role == "parent"  || role == "guardian" || role == "ortu" || role == "wali"
+    val isParent  = com.schoolos.android.core.auth.isParentRole(state.userRole)
+    val isTeacher = com.schoolos.android.core.auth.isTeacherRole(state.userRole)
 
     val userName = if (state.userName.isNotBlank()) state.userName
                    else when {
-                       isTeacher -> "Bapak Andi Pratama"
-                       isParent  -> "Ibu Siti Nurhayati"
-                       else      -> "Ahmad"
+                       isTeacher -> "Bapak / Ibu Guru"
+                       isParent  -> "Orang Tua / Wali"
+                       else      -> "Siswa"
                    }
 
     val heroGradient = when {
@@ -89,14 +90,21 @@ fun HomeScreen(
         else      -> Pair(Icons.Default.School, StudentNeon)
     }
 
-    Scaffold(containerColor = CosmicBlack) { padding ->
-        Box(modifier = Modifier.fillMaxSize()) {
+    LaunchedEffect(Unit) {
+        viewModel.refresh()
+    }
 
+    Scaffold(containerColor = CosmicBlack) { padding ->
+        PullRefreshContainer(
+            isRefreshing = state.isRefreshing,
+            onRefresh = { viewModel.refresh(isPullRefresh = true) },
+            modifier = Modifier.fillMaxSize(),
+        ) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(
                     start = 16.dp, end = 16.dp,
-                    top = 0.dp,
+                    top = 46.dp,
                     bottom = padding.calculateBottomPadding() + 0.dp,
                 ),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
@@ -134,7 +142,7 @@ fun HomeScreen(
                                     Spacer(Modifier.width(12.dp))
                                     Column {
                                         Text(
-                                            text = "Halo, ${userName.split(" ").firstOrNull() ?: userName}! 👋",
+                                            text = "Halo, ${formatGreetingName(userName)}! 👋",
                                             fontWeight = FontWeight.ExtraBold,
                                             fontSize = 20.sp,
                                             color = Color.White,
@@ -143,14 +151,12 @@ fun HomeScreen(
                                         )
                                         Spacer(Modifier.height(2.dp))
                                         Text(
-                                            text = when {
-                                                isTeacher -> "Guru • Matematika 🎯"
-                                                isParent  -> "Orang Tua Siswa 👨‍👩‍👧"
-                                                else      -> "Siswa • Kelas 7A 🚀"
-                                            },
+                                            text = state.schoolName,
                                             fontSize = 12.sp,
-                                            color = Color.White.copy(alpha = 0.88f),
-                                            fontWeight = FontWeight.Medium,
+                                            color = Color.White.copy(alpha = 0.8f),
+                                            fontWeight = FontWeight.SemiBold,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
                                         )
                                     }
                                 }
@@ -167,10 +173,10 @@ fun HomeScreen(
                                 ) {
                                     BadgedBox(
                                         badge = {
-                                            val n = if (state.unreadCount > 0) state.unreadCount
-                                                    else if (isTeacher) 5 else if (isParent) 2 else 3
-                                            Badge(containerColor = NeonError) {
-                                                Text("$n", color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                                            if (state.unreadCount > 0) {
+                                                Badge(containerColor = NeonError) {
+                                                    Text("${state.unreadCount}", color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                                                }
                                             }
                                         },
                                     ) {
@@ -196,60 +202,70 @@ fun HomeScreen(
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         Icon(Icons.Default.CalendarMonth, null, tint = Color.White, modifier = Modifier.size(13.dp))
                                         Spacer(Modifier.width(6.dp))
-                                        Text("Rabu, 7 Agustus 2026", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                                        Text(formatRealTimeToday(), color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                                     }
                                 }
 
                                 Box(
                                     modifier = Modifier
                                         .clip(RoundedCornerShape(12.dp))
-                                        .background(Color.White)
-                                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                                        .background(Color.White.copy(alpha = 0.18f))
+                                        .padding(horizontal = 12.dp, vertical = 6.dp),
                                 ) {
-                                    Text("Semester Genap", color = heroGradient.first(), fontSize = 10.sp, fontWeight = FontWeight.ExtraBold)
+                                    Text(
+                                        text = state.userRole.replaceFirstChar { it.uppercase() },
+                                        color = Color.White,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                    )
                                 }
                             }
 
-                            if (isTeacher || isParent || (!isTeacher && !isParent)) {
-                                Spacer(Modifier.height(20.dp))
-                                // EXECUTIVE / ACHIEVEMENT SUMMARY STRIP (Integrated into Hero)
+                            Spacer(Modifier.height(16.dp))
+
+                            // Compact Highlights Row inside Hero Card
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .background(Color.Black.copy(alpha = 0.22f))
+                                    .padding(vertical = 12.dp, horizontal = 10.dp),
+                            ) {
                                 Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clip(RoundedCornerShape(16.dp))
-                                        .background(Color.White.copy(alpha = 0.15f))
-                                        .padding(vertical = 12.dp),
+                                    modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceEvenly,
-                                    verticalAlignment = Alignment.CenterVertically
+                                    verticalAlignment = Alignment.CenterVertically,
                                 ) {
                                     when {
                                         isTeacher -> {
-                                            SummaryMiniItem("JADWAL", "4", onNavigateToSessions)
+                                            // TEACHER Executive Highlights
+                                            SummaryMiniItem("JADWAL", state.teacherScheduleCount, onNavigateToSessions)
                                             SummaryDivider()
-                                            SummaryMiniItem("HADIR", "92%", onNavigateToSessions)
+                                            SummaryMiniItem("HADIR", state.teacherAttendanceRate, onNavigateToSessions)
                                             SummaryDivider()
-                                            SummaryMiniItem("PENDING", "12", onNavigateToAssignments)
+                                            SummaryMiniItem("PENDING", state.teacherPendingCount, onNavigateToAssignments)
                                             SummaryDivider()
-                                            SummaryMiniItem("MATERI", "5", onNavigateToLearning)
+                                            SummaryMiniItem("MATERI", state.teacherMaterialsCount, onNavigateToLearning)
                                         }
                                         isParent -> {
-                                            SummaryMiniItem("HADIR", "96%", onNavigateToProgress)
+                                            // PARENT Child Summary
+                                            SummaryMiniItem("HADIR", state.parentAttendanceRate, onNavigateToProgress)
                                             SummaryDivider()
-                                            SummaryMiniItem("RAPOR", "88.5", onNavigateToProgress)
+                                            SummaryMiniItem("NILAI", state.gradeAverage, onNavigateToGrades)
                                             SummaryDivider()
-                                            SummaryMiniItem("TUGAS", "2", onNavigateToAssignments)
+                                            SummaryMiniItem("TUGAS", state.parentAssignmentsCount, onNavigateToAssignments)
                                             SummaryDivider()
-                                            SummaryMiniItem("POIN", "120", onNavigateToAchievements)
+                                            SummaryMiniItem("STATUS", "Aktif", onNavigateToProgress)
                                         }
                                         else -> {
                                             // STUDENT Achievement Summary
-                                            SummaryMiniItem("IPK", "88.6", onNavigateToGrades)
+                                            SummaryMiniItem("RERATA", state.gradeAverage, onNavigateToGrades)
                                             SummaryDivider()
-                                            SummaryMiniItem("TUGAS", "2", onNavigateToAssignments)
+                                            SummaryMiniItem("TUGAS", state.assignmentsCount, onNavigateToAssignments)
                                             SummaryDivider()
-                                            SummaryMiniItem("XP", "450", onNavigateToAchievements)
+                                            SummaryMiniItem("XP", state.xpCount, onNavigateToAchievements)
                                             SummaryDivider()
-                                            SummaryMiniItem("BADGE", "12", onNavigateToAchievements)
+                                            SummaryMiniItem("BADGE", state.badgeCount, onNavigateToAchievements)
                                         }
                                     }
                                 }
@@ -261,7 +277,8 @@ fun HomeScreen(
                 // ── Role-Based Content ───────────────────────────────────────────
                 when {
                     isTeacher -> {
-                        val isHomeroom = state.userName.lowercase().contains("andi") // Simulate homeroom teacher check
+                        val isHomeroom = state.homeroomClass.isNotBlank()
+                        val teacherClass = if (isHomeroom) state.homeroomClass else state.activeSessionClass
                         teacherContent(
                             onNavigateToSessions     = onNavigateToSessions,
                             onNavigateToAssignments  = onNavigateToAssignments,
@@ -271,10 +288,20 @@ fun HomeScreen(
                             onNavigateToAssignmentCreator = onNavigateToAssignmentCreator,
                             onNavigateToQuizBuilder  = onNavigateToQuizBuilder,
                             onNavigateToBroadcastCenter = onNavigateToBroadcastCenter,
-                            isHomeroom = isHomeroom
+                            onNavigateToLearning     = onNavigateToLearning,
+                            activeSubject            = state.activeSessionSubject,
+                            activeClass              = teacherClass,
+                            isHomeroom               = isHomeroom
                         )
                     }
                     isParent -> parentContent(
+                        childName                = state.childName,
+                        childClass               = state.homeroomClass,
+                        attendanceRate           = state.parentAttendanceRate,
+                        presentDays              = state.parentPresentDays,
+                        permitDays               = state.parentPermitDays,
+                        absentDays               = state.parentAbsentDays,
+                        assignmentsCount         = state.parentAssignmentsCount,
                         onNavigateToProgress     = onNavigateToProgress,
                         onNavigateToNotifications= onNavigateToNotifications,
                         onNavigateToAssignments  = onNavigateToAssignments,
@@ -288,7 +315,18 @@ fun HomeScreen(
                         onNavigateToGrades       = onNavigateToGrades,
                         onNavigateToProgress     = onNavigateToProgress,
                         onNavigateToAchievements = onNavigateToAchievements,
-                        onNavigateToLearning     = onNavigateToLearning
+                        onNavigateToLearning     = onNavigateToLearning,
+                        nextSessionSubject       = state.nextSessionSubject,
+                        nextSessionRoom          = state.nextSessionRoom,
+                        nextSessionTime          = state.nextSessionTime,
+                        nextSessionIsLive        = state.nextSessionIsLive,
+                        todaySessions            = state.todaySessions,
+                        gradeAverage             = state.gradeAverage,
+                        gradeStatus              = state.gradeStatus,
+                        gradeTrendPoints         = state.gradeTrendPoints,
+                        topGradeSubjects         = state.topGradeSubjects,
+                        studentProgress          = state.studentProgress,
+                        progressPercentage       = state.progressPercentage,
                     )
                 }
             }
@@ -311,3 +349,27 @@ private fun SummaryMiniItem(label: String, value: String, onClick: () -> Unit = 
 private fun SummaryDivider() {
     Box(Modifier.width(1.dp).height(18.dp).background(Color.White.copy(alpha = 0.2f)))
 }
+
+private fun formatGreetingName(fullName: String): String {
+    val clean = fullName.trim()
+    if (clean.isEmpty()) return "Pengguna"
+    val parts = clean.split("\\s+".toRegex()).filter { it.isNotBlank() }
+    if (parts.isEmpty()) return clean
+    val first = parts.first()
+    // If the first token is an initial like "M.", "A.", or length <= 2, take the next token if available
+    if ((first.length <= 2 || first.endsWith(".")) && parts.size > 1) {
+        return parts[1].lowercase().replaceFirstChar { it.uppercase() }
+    }
+    return first.lowercase().replaceFirstChar { it.uppercase() }
+}
+
+private fun formatRealTimeToday(): String {
+    return try {
+        val locale = java.util.Locale("id", "ID")
+        val formatter = java.text.SimpleDateFormat("EEEE, d MMMM yyyy", locale)
+        formatter.format(java.util.Date())
+    } catch (e: Exception) {
+        java.time.LocalDate.now().toString()
+    }
+}
+

@@ -15,6 +15,10 @@ fun LearningSessionDto.toDomain() = LearningSession(
     endedAt = endedAt,
     status = status,
     notes = notes,
+    subjectName = subjectName,
+    teacherName = teacherName,
+    className = className,
+    room = room,
 )
 
 fun SessionAttendanceDto.toDomain() = SessionAttendance(

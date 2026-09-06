@@ -1,7 +1,21 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { getApiUrl } from '@/lib/api';
 import styles from './system.module.css';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
+} from 'recharts';
 
 type TenantItem = {
   tenant_id: string;
@@ -38,6 +52,79 @@ const AVATAR_GRADIENTS = [
   'linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)',
 ];
 
+const CHART_COLORS = ['#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
+
+// Animated Counter Hook
+function useAnimatedCounter(target: number, duration = 800) {
+  const [count, setCount] = useState(0);
+  const prevTarget = useRef(0);
+
+  useEffect(() => {
+    if (target === prevTarget.current) return;
+    const start = prevTarget.current;
+    const diff = target - start;
+    const startTime = performance.now();
+
+    const animate = (now: number) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+      setCount(Math.round(start + diff * eased));
+      if (progress < 1) requestAnimationFrame(animate);
+      else prevTarget.current = target;
+    };
+
+    requestAnimationFrame(animate);
+  }, [target, duration]);
+
+  return count;
+}
+
+// Individual animated KPI value component
+function AnimatedValue({ value }: { value: number | string }) {
+  const numVal = typeof value === 'number' ? value : parseInt(value as string) || 0;
+  const animated = useAnimatedCounter(numVal);
+  if (typeof value === 'string' && isNaN(parseInt(value))) return <>{value}</>;
+  return <>{animated}</>;
+}
+
+// Custom tooltip for bar chart
+const CustomBarTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className={styles.chartTooltip}>
+        <div className={styles.chartTooltipTitle}>{label}</div>
+        {payload.map((entry: any, i: number) => (
+          <div key={i} className={styles.chartTooltipRow}>
+            <span className={styles.chartTooltipDot} style={{ background: entry.fill || entry.color }} />
+            <span className={styles.chartTooltipLabel}>{entry.name}</span>
+            <span className={styles.chartTooltipValue}>{entry.value.toLocaleString('id-ID')}</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+  return null;
+};
+
+// Custom tooltip for pie chart
+const CustomPieTooltip = ({ active, payload }: any) => {
+  if (active && payload && payload.length) {
+    const item = payload[0];
+    return (
+      <div className={styles.chartTooltip}>
+        <div className={styles.chartTooltipTitle}>{item.name}</div>
+        <div className={styles.chartTooltipRow}>
+          <span className={styles.chartTooltipDot} style={{ background: item.payload.fill }} />
+          <span className={styles.chartTooltipLabel}>Siswa</span>
+          <span className={styles.chartTooltipValue}>{item.value.toLocaleString('id-ID')}</span>
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
+
 export default function SystemAdminPage() {
   const [tenants, setTenants] = useState<TenantItem[]>([]);
   const [overview, setOverview] = useState<SystemOverview | null>(null);
@@ -45,6 +132,8 @@ export default function SystemAdminPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'dapodik' | 'suspended'>('all');
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
+  const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Modals
   const [showMasterModal, setShowMasterModal] = useState(false);
@@ -107,14 +196,15 @@ export default function SystemAdminPage() {
   };
 
   const fetchDashboardData = async () => {
-    setIsLoading(true);
+    setIsRefreshing(true);
+    if (tenants.length === 0) setIsLoading(true);
     try {
       const token = localStorage.getItem('sysAdminToken');
       const [tenantsRes, overviewRes] = await Promise.all([
-        fetch('http://localhost:8000/api/v1/system/tenants', {
+        fetch(getApiUrl('/api/v1/system/tenants'), {
           headers: { 'Authorization': `Bearer ${token}` }
         }),
-        fetch('http://localhost:8000/api/v1/system/overview', {
+        fetch(getApiUrl('/api/v1/system/overview'), {
           headers: { 'Authorization': `Bearer ${token}` }
         }).catch(() => null)
       ]);
@@ -128,16 +218,22 @@ export default function SystemAdminPage() {
         const overviewData = await overviewRes.json();
         setOverview(overviewData.data || null);
       }
+
+      setLastRefreshed(new Date());
     } catch (e) {
       console.error(e);
       showToast('Koneksi server database terputus.', 'error');
     } finally {
       setIsLoading(false);
+      setIsRefreshing(false);
     }
   };
 
   useEffect(() => {
     fetchDashboardData();
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(fetchDashboardData, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const handleOpenMasterModal = (t: TenantItem) => {
@@ -169,7 +265,7 @@ export default function SystemAdminPage() {
   const handleToggleStatus = async (t: TenantItem) => {
     try {
       const token = localStorage.getItem('sysAdminToken');
-      const res = await fetch(`http://localhost:8000/api/v1/system/tenants/${t.tenant_id}/toggle-status`, {
+      const res = await fetch(getApiUrl(`/api/v1/system/tenants/${t.tenant_id}/toggle-status`), {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -187,7 +283,7 @@ export default function SystemAdminPage() {
   const handleImpersonateTenant = async (t: TenantItem) => {
     try {
       const token = localStorage.getItem('sysAdminToken');
-      const res = await fetch(`http://localhost:8000/api/v1/system/tenants/${t.tenant_id}/impersonate`, {
+      const res = await fetch(getApiUrl(`/api/v1/system/tenants/${t.tenant_id}/impersonate`), {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -219,7 +315,7 @@ export default function SystemAdminPage() {
     setIsSubmitting(true);
     try {
       const token = localStorage.getItem('sysAdminToken');
-      const res = await fetch(`http://localhost:8000/api/v1/system/tenants/${selectedTenant.tenant_id}/activate-master`, {
+      const res = await fetch(getApiUrl(`/api/v1/system/tenants/${selectedTenant.tenant_id}/activate-master`), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -254,7 +350,7 @@ export default function SystemAdminPage() {
       if (resetFormData.new_email) payload.new_email = resetFormData.new_email;
       if (resetFormData.new_password) payload.new_password = resetFormData.new_password;
 
-      const res = await fetch(`http://localhost:8000/api/v1/system/tenants/${selectedTenant.tenant_id}/reset-credentials`, {
+      const res = await fetch(getApiUrl(`/api/v1/system/tenants/${selectedTenant.tenant_id}/reset-credentials`), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -283,7 +379,7 @@ export default function SystemAdminPage() {
     setIsSubmitting(true);
     try {
       const token = localStorage.getItem('sysAdminToken');
-      const res = await fetch('http://localhost:8000/api/v1/system/tenants', {
+      const res = await fetch(getApiUrl('/api/v1/system/tenants'), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -316,7 +412,7 @@ export default function SystemAdminPage() {
   };
 
   const filteredTenants = tenants.filter(t => {
-    const matchesSearch = 
+    const matchesSearch =
       t.tenant_name.toLowerCase().includes(search.toLowerCase()) ||
       (t.school_name && t.school_name.toLowerCase().includes(search.toLowerCase())) ||
       (t.npsn && t.npsn.includes(search)) ||
@@ -329,6 +425,36 @@ export default function SystemAdminPage() {
     if (statusFilter === 'dapodik') return t.is_dapodik_connected;
     return true;
   });
+
+  // Chart data - derived from real API data
+  const barChartData = tenants.map(t => ({
+    name: t.school_name
+      ? t.school_name.length > 18
+        ? t.school_name.substring(0, 18) + '…'
+        : t.school_name
+      : t.tenant_name,
+    Siswa: t.student_count || 0,
+    GTK: t.teacher_count || 0,
+    Rombel: t.class_count || 0,
+  }));
+
+  const pieChartData = tenants
+    .filter(t => (t.student_count || 0) > 0)
+    .map((t, i) => ({
+      name: t.school_name
+        ? t.school_name.length > 22
+          ? t.school_name.substring(0, 22) + '…'
+          : t.school_name
+        : t.tenant_name,
+      value: t.student_count || 0,
+      fill: CHART_COLORS[i % CHART_COLORS.length],
+    }));
+
+  const totalStudents = overview ? overview.total_students : tenants.reduce((a, b) => a + (b.student_count || 0), 0);
+  const totalTeachers = overview ? overview.total_teachers : tenants.reduce((a, b) => a + (b.teacher_count || 0), 0);
+  const totalTenants = overview ? overview.total_tenants : tenants.length;
+  const activeTenants = overview ? overview.active_tenants : tenants.filter(t => t.is_active).length;
+  const outboxPending = overview ? overview.outbox_pending_events : 0;
 
   return (
     <div className={styles.container}>
@@ -350,14 +476,22 @@ export default function SystemAdminPage() {
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-          <button 
-            className="btn btn-secondary" 
+        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
+          <div className={styles.liveIndicator}>
+            <span className={styles.liveDot} />
+            <span className={styles.liveText}>
+              Auto-refresh • {lastRefreshed.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+            </span>
+          </div>
+          <button
+            className={`btn btn-secondary ${isRefreshing ? styles.refreshingBtn : ''}`}
             onClick={fetchDashboardData}
+            disabled={isRefreshing}
             title="Muat ulang data"
             style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 600 }}
           >
-            🔄 Refresh
+            <span className={isRefreshing ? styles.spinIcon : ''}>🔄</span>
+            {isRefreshing ? 'Memuat...' : 'Refresh'}
           </button>
           <button
             className="btn btn-primary"
@@ -386,34 +520,42 @@ export default function SystemAdminPage() {
 
       {/* KPI Metrics Dashboard Cards */}
       <div className={styles.kpiGrid}>
-        <div className={styles.kpiCard}>
+        <div className={`${styles.kpiCard} ${styles.kpiCardAnimated}`}>
           <div className={styles.kpiIcon} style={{ background: 'rgba(37, 99, 235, 0.12)', color: '#2563eb' }}>🏢</div>
           <div>
-            <div className={styles.kpiVal}>{overview ? overview.total_tenants : tenants.length}</div>
+            <div className={styles.kpiVal}>
+              <AnimatedValue value={totalTenants} />
+            </div>
             <div className={styles.kpiLabel}>Total Tenant Terdaftar</div>
-            <div className={styles.kpiSub}>🟢 {overview ? overview.active_tenants : tenants.filter(t => t.is_active).length} Aktif Normal</div>
+            <div className={styles.kpiSub}>
+              <span className={styles.kpiSubActive}>●</span> {activeTenants} Aktif Normal
+            </div>
           </div>
         </div>
 
-        <div className={styles.kpiCard}>
+        <div className={`${styles.kpiCard} ${styles.kpiCardAnimated}`}>
           <div className={styles.kpiIcon} style={{ background: 'rgba(16, 185, 129, 0.12)', color: '#10b981' }}>👥</div>
           <div>
-            <div className={styles.kpiVal}>{overview ? overview.total_students : tenants.reduce((a, b) => a + (b.student_count || 0), 0)}</div>
+            <div className={styles.kpiVal}>
+              <AnimatedValue value={totalStudents} />
+            </div>
             <div className={styles.kpiLabel}>Total Peserta Didik</div>
             <div className={styles.kpiSub}>Agregasi Seluruh Sekolah</div>
           </div>
         </div>
 
-        <div className={styles.kpiCard}>
+        <div className={`${styles.kpiCard} ${styles.kpiCardAnimated}`}>
           <div className={styles.kpiIcon} style={{ background: 'rgba(245, 158, 11, 0.12)', color: '#d97706' }}>👨‍🏫</div>
           <div>
-            <div className={styles.kpiVal}>{overview ? overview.total_teachers : tenants.reduce((a, b) => a + (b.teacher_count || 0), 0)}</div>
-            <div className={styles.kpiLabel}>Total Guru &amp; GTK</div>
+            <div className={styles.kpiVal}>
+              <AnimatedValue value={totalTeachers} />
+            </div>
+            <div className={styles.kpiLabel}>Total Guru & GTK</div>
             <div className={styles.kpiSub}>Tersinkron Master Data</div>
           </div>
         </div>
 
-        <div className={styles.kpiCard}>
+        <div className={`${styles.kpiCard} ${styles.kpiCardAnimated}`}>
           <div className={styles.kpiIcon} style={{ background: 'rgba(124, 58, 237, 0.12)', color: '#7c3aed' }}>⚡</div>
           <div>
             <div className={styles.kpiVal}>&lt; 5ms</div>
@@ -422,38 +564,221 @@ export default function SystemAdminPage() {
           </div>
         </div>
 
-        <div className={styles.kpiCard}>
-          <div className={styles.kpiIcon} style={{ background: 'rgba(8, 145, 178, 0.12)', color: '#0891b2' }}>🔄</div>
+        <div className={`${styles.kpiCard} ${styles.kpiCardAnimated}`}>
+          <div className={styles.kpiIcon} style={{ background: outboxPending > 0 ? 'rgba(245, 158, 11, 0.15)' : 'rgba(8, 145, 178, 0.12)', color: outboxPending > 0 ? '#d97706' : '#0891b2' }}>🔄</div>
           <div>
-            <div className={styles.kpiVal}>{overview ? overview.outbox_pending_events : 0}</div>
+            <div className={styles.kpiVal}>
+              <AnimatedValue value={outboxPending} />
+            </div>
             <div className={styles.kpiLabel}>Outbox Pending</div>
-            <div className={styles.kpiSub}>100% Event Dispatched</div>
+            <div className={styles.kpiSub}>{outboxPending === 0 ? '✅ 100% Event Dispatched' : `⚠️ ${outboxPending} menunggu proses`}</div>
           </div>
         </div>
       </div>
 
+      {/* ── ANALYTICS CHARTS SECTION ── */}
+      {!isLoading && tenants.length > 0 && (
+        <div className={styles.analyticsSection}>
+          <div className={styles.analyticsSectionHeader}>
+            <h2 className={styles.analyticsSectionTitle}>
+              <span className={styles.analyticsTitleIcon}>📊</span>
+              Analytics & Distribusi Data Real-Time
+            </h2>
+            <span className={styles.analyticsLiveBadge}>
+              <span className={styles.liveDot} />
+              Live Data
+            </span>
+          </div>
+
+          <div className={styles.chartsGrid}>
+            {/* Bar Chart: Distribusi Per Tenant */}
+            <div className={styles.chartCard}>
+              <div className={styles.chartCardHeader}>
+                <div>
+                  <div className={styles.chartCardTitle}>Distribusi Data per Sekolah</div>
+                  <div className={styles.chartCardSub}>Perbandingan Siswa, GTK, dan Rombel</div>
+                </div>
+              </div>
+              <div className={styles.chartContainer}>
+                <ResponsiveContainer width="100%" height={260}>
+                  <BarChart data={barChartData} margin={{ top: 8, right: 16, left: -20, bottom: 8 }} barSize={16} barGap={4}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" vertical={false} />
+                    <XAxis
+                      dataKey="name"
+                      tick={{ fill: 'var(--text-muted)', fontSize: 11, fontWeight: 600 }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <YAxis
+                      tick={{ fill: 'var(--text-muted)', fontSize: 11 }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <Tooltip content={<CustomBarTooltip />} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
+                    <Legend
+                      iconType="circle"
+                      iconSize={8}
+                      wrapperStyle={{ fontSize: '12px', color: 'var(--text-secondary)', paddingTop: '8px' }}
+                    />
+                    <Bar dataKey="Siswa" fill="#2563eb" radius={[6, 6, 0, 0]} />
+                    <Bar dataKey="GTK" fill="#10b981" radius={[6, 6, 0, 0]} />
+                    <Bar dataKey="Rombel" fill="#f59e0b" radius={[6, 6, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Pie Chart: Distribusi Siswa */}
+            <div className={styles.chartCard}>
+              <div className={styles.chartCardHeader}>
+                <div>
+                  <div className={styles.chartCardTitle}>Distribusi Siswa per Tenant</div>
+                  <div className={styles.chartCardSub}>Proporsi peserta didik masing-masing sekolah</div>
+                </div>
+              </div>
+
+              {pieChartData.length > 0 ? (
+                <div className={styles.chartContainer}>
+                  <ResponsiveContainer width="100%" height={260}>
+                    <PieChart>
+                      <Pie
+                        data={pieChartData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={65}
+                        outerRadius={105}
+                        paddingAngle={4}
+                        dataKey="value"
+                        animationBegin={0}
+                        animationDuration={900}
+                      >
+                        {pieChartData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.fill} stroke="transparent" />
+                        ))}
+                      </Pie>
+                      <Tooltip content={<CustomPieTooltip />} />
+                      <Legend
+                        iconType="circle"
+                        iconSize={8}
+                        wrapperStyle={{ fontSize: '12px', color: 'var(--text-secondary)', paddingTop: '8px' }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  {/* Center label */}
+                  <div className={styles.donutCenter}>
+                    <div className={styles.donutCenterVal}>{totalStudents.toLocaleString('id-ID')}</div>
+                    <div className={styles.donutCenterLabel}>Total Siswa</div>
+                  </div>
+                </div>
+              ) : (
+                <div className={styles.chartEmpty}>
+                  <div className={styles.chartEmptyIcon}>📊</div>
+                  <div>Belum ada data siswa tersedia</div>
+                </div>
+              )}
+            </div>
+
+            {/* System Health Summary */}
+            <div className={styles.chartCard}>
+              <div className={styles.chartCardHeader}>
+                <div>
+                  <div className={styles.chartCardTitle}>Ringkasan Platform</div>
+                  <div className={styles.chartCardSub}>Status agregat seluruh sistem</div>
+                </div>
+              </div>
+              <div className={styles.summaryGrid}>
+                <div className={styles.summaryItem} style={{ borderColor: 'rgba(37,99,235,0.25)', background: 'rgba(37,99,235,0.06)' }}>
+                  <div className={styles.summaryIcon} style={{ color: '#2563eb' }}>🏫</div>
+                  <div className={styles.summaryVal} style={{ color: '#2563eb' }}>
+                    <AnimatedValue value={totalTenants} />
+                  </div>
+                  <div className={styles.summaryLabel}>Tenant</div>
+                </div>
+                <div className={styles.summaryItem} style={{ borderColor: 'rgba(16,185,129,0.25)', background: 'rgba(16,185,129,0.06)' }}>
+                  <div className={styles.summaryIcon} style={{ color: '#10b981' }}>👥</div>
+                  <div className={styles.summaryVal} style={{ color: '#10b981' }}>
+                    <AnimatedValue value={totalStudents} />
+                  </div>
+                  <div className={styles.summaryLabel}>Siswa</div>
+                </div>
+                <div className={styles.summaryItem} style={{ borderColor: 'rgba(245,158,11,0.25)', background: 'rgba(245,158,11,0.06)' }}>
+                  <div className={styles.summaryIcon} style={{ color: '#d97706' }}>👨‍🏫</div>
+                  <div className={styles.summaryVal} style={{ color: '#d97706' }}>
+                    <AnimatedValue value={totalTeachers} />
+                  </div>
+                  <div className={styles.summaryLabel}>GTK</div>
+                </div>
+                <div className={styles.summaryItem} style={{ borderColor: 'rgba(124,58,237,0.25)', background: 'rgba(124,58,237,0.06)' }}>
+                  <div className={styles.summaryIcon} style={{ color: '#7c3aed' }}>📋</div>
+                  <div className={styles.summaryVal} style={{ color: '#7c3aed' }}>
+                    <AnimatedValue value={overview?.total_classes ?? tenants.reduce((a, b) => a + (b.class_count || 0), 0)} />
+                  </div>
+                  <div className={styles.summaryLabel}>Rombel</div>
+                </div>
+                <div className={styles.summaryItem} style={{ borderColor: 'rgba(6,182,212,0.25)', background: 'rgba(6,182,212,0.06)' }}>
+                  <div className={styles.summaryIcon} style={{ color: '#0891b2' }}>👨‍👩‍👦</div>
+                  <div className={styles.summaryVal} style={{ color: '#0891b2' }}>
+                    <AnimatedValue value={overview?.total_guardians ?? 0} />
+                  </div>
+                  <div className={styles.summaryLabel}>Wali</div>
+                </div>
+                <div className={styles.summaryItem} style={{ borderColor: outboxPending > 0 ? 'rgba(245,158,11,0.3)' : 'rgba(16,185,129,0.25)', background: outboxPending > 0 ? 'rgba(245,158,11,0.08)' : 'rgba(16,185,129,0.06)' }}>
+                  <div className={styles.summaryIcon} style={{ color: outboxPending > 0 ? '#d97706' : '#10b981' }}>
+                    {outboxPending > 0 ? '⚠️' : '✅'}
+                  </div>
+                  <div className={styles.summaryVal} style={{ color: outboxPending > 0 ? '#d97706' : '#10b981' }}>
+                    <AnimatedValue value={outboxPending} />
+                  </div>
+                  <div className={styles.summaryLabel}>Outbox</div>
+                </div>
+              </div>
+
+              {/* Tenant Status Bar */}
+              <div className={styles.tenantStatusBar}>
+                <div className={styles.tenantStatusLabel}>
+                  <span>Status Tenant</span>
+                  <span>{activeTenants}/{totalTenants} Online</span>
+                </div>
+                <div className={styles.tenantStatusTrack}>
+                  <div
+                    className={styles.tenantStatusFill}
+                    style={{
+                      width: totalTenants > 0 ? `${(activeTenants / totalTenants) * 100}%` : '0%',
+                    }}
+                  />
+                </div>
+                <div className={styles.tenantStatusLegend}>
+                  <span><span style={{ color: '#10b981' }}>●</span> Aktif: {activeTenants}</span>
+                  <span><span style={{ color: '#ef4444' }}>●</span> Suspend: {totalTenants - activeTenants}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Toolbar: Filter Pills, Search, and View Switcher */}
       <div className={styles.toolbar}>
         <div className={styles.filterPills}>
-          <button 
+          <button
             className={`${styles.filterPill} ${statusFilter === 'all' ? styles.filterPillActive : ''}`}
             onClick={() => setStatusFilter('all')}
           >
             Semua ({tenants.length})
           </button>
-          <button 
+          <button
             className={`${styles.filterPill} ${statusFilter === 'active' ? styles.filterPillActive : ''}`}
             onClick={() => setStatusFilter('active')}
           >
             🟢 Aktif ({tenants.filter(t => t.is_active).length})
           </button>
-          <button 
+          <button
             className={`${styles.filterPill} ${statusFilter === 'dapodik' ? styles.filterPillActive : ''}`}
             onClick={() => setStatusFilter('dapodik')}
           >
             🔄 Dapodik Live ({tenants.filter(t => t.is_dapodik_connected).length})
           </button>
-          <button 
+          <button
             className={`${styles.filterPill} ${statusFilter === 'suspended' ? styles.filterPillActive : ''}`}
             onClick={() => setStatusFilter('suspended')}
           >
@@ -486,8 +811,10 @@ export default function SystemAdminPage() {
       {/* Main Tenant Content */}
       {isLoading ? (
         <div className={styles.loadingContainer}>
-          <div className={styles.spinner} />
-          <p>Memuat direktori tenant dari database PostgreSQL...</p>
+          <div className={styles.loadingPulse}>
+            <div className={styles.spinner} />
+            <p>Memuat direktori tenant dari database PostgreSQL...</p>
+          </div>
         </div>
       ) : filteredTenants.length === 0 ? (
         <div className={styles.emptyContainer}>
@@ -507,11 +834,11 @@ export default function SystemAdminPage() {
             </thead>
             <tbody>
               {filteredTenants.map((t, idx) => (
-                <tr key={t.tenant_id}>
+                <tr key={t.tenant_id} className={styles.tableRow}>
                   {/* Column 1: School Identity */}
                   <td>
                     <div className={styles.tenantIdentity}>
-                      <div 
+                      <div
                         className={styles.schoolAvatar}
                         style={{ background: AVATAR_GRADIENTS[idx % AVATAR_GRADIENTS.length] }}
                       >
@@ -580,7 +907,7 @@ export default function SystemAdminPage() {
                   <td>
                     <div className={styles.serverStatusBox}>
                       <span className={t.is_active ? styles.statusPillActive : styles.statusPillSuspended}>
-                        <span>●</span>
+                        <span className={t.is_active ? styles.pulseDot : ''}>●</span>
                         <span>{t.is_active ? 'Online' : 'Suspend'}</span>
                       </span>
                       <button
@@ -644,7 +971,7 @@ export default function SystemAdminPage() {
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
                   <div className={styles.tenantIdentity}>
-                    <div 
+                    <div
                       className={styles.schoolAvatar}
                       style={{ background: AVATAR_GRADIENTS[idx % AVATAR_GRADIENTS.length] }}
                     >
@@ -669,7 +996,7 @@ export default function SystemAdminPage() {
                   </div>
 
                   <span className={t.is_active ? styles.statusPillActive : styles.statusPillSuspended}>
-                    <span>●</span>
+                    <span className={t.is_active ? styles.pulseDot : ''}>●</span>
                     <span>{t.is_active ? 'Online' : 'Suspend'}</span>
                   </span>
                 </div>

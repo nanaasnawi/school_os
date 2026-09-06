@@ -30,7 +30,8 @@ interface QuizRepository {
 
 data class ChoiceInput(
     val choiceText: String,
-    val orderIndex: Int
+    val orderIndex: Int = 1,
+    val isCorrect: Boolean = false,
 )
 
 data class AnswerInput(

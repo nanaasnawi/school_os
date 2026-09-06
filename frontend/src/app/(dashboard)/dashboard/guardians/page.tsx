@@ -6,6 +6,7 @@ import Link from 'next/link';
 import styles from './guardians.module.css';
 import { listStudents } from '@/lib/sdk/sdk.gen';
 import { exportToExcel } from '@/lib/exportExcel';
+import { getApiUrl } from '@/lib/api';
 
 type GuardianItem = {
   id: string;
@@ -29,7 +30,7 @@ export default function GuardiansPage() {
   const [editGuardian, setEditGuardian] = useState<GuardianItem | null>(null);
   const [formData, setFormData] = useState({
     full_name: '',
-    relationship: 'Ayah Kandung',
+    relationship: 'Ibu Kandung',
     student_name: '',
     phone: '',
   });
@@ -50,7 +51,7 @@ export default function GuardiansPage() {
     async function loadData() {
       try {
         const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
-        const res = await fetch('http://localhost:8000/api/v1/guardians/overview', {
+        const res = await fetch(getApiUrl('/api/v1/guardians/overview'), {
           headers: token ? { Authorization: `Bearer ${token}` } : {}
         });
 
@@ -109,7 +110,7 @@ export default function GuardiansPage() {
   const handleOpenAdd = () => {
     setFormData({
       full_name: '',
-      relationship: 'Ayah Kandung',
+      relationship: 'Ibu Kandung',
       student_name: '',
       phone: '',
     });
@@ -120,7 +121,7 @@ export default function GuardiansPage() {
     setEditGuardian(g);
     setFormData({
       full_name: g.isRealData ? g.full_name : '',
-      relationship: g.relationship === 'Belum Diisi' ? 'Ayah Kandung' : g.relationship,
+      relationship: g.relationship === 'Belum Diisi' ? 'Ibu Kandung' : g.relationship,
       student_name: g.student_name,
       phone: g.phone === '-' ? '' : g.phone,
     });
@@ -324,8 +325,12 @@ export default function GuardiansPage() {
                   </td>
                   <td>{g.phone}</td>
                   <td>
-                    {g.isRealData ? (
+                    {g.phone && g.phone !== '-' && g.phone.replace(/[^0-9]/g, '').length >= 6 ? (
                       <span className="badge badge-active">● Terdaftar (WA OK)</span>
+                    ) : g.isRealData ? (
+                      <span className="badge badge-warning" style={{ background: 'rgba(245, 158, 11, 0.12)', color: '#d97706', border: '1px solid rgba(245, 158, 11, 0.28)' }}>
+                        ⚠️ Belum Ada No. WA
+                      </span>
                     ) : (
                       <span className="badge badge-inactive">Belum Ada Data</span>
                     )}

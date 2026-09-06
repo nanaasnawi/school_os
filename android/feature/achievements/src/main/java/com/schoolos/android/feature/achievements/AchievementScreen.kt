@@ -61,8 +61,8 @@ fun AchievementScreen(
     viewModel: AchievementViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
-    val role = state.userRole.lowercase()
-    val isParent = role == "parent" || role == "guardian" || role == "ortu" || role == "wali"
+    val isParent = com.schoolos.android.core.auth.isParentRole(state.userRole)
+    val displayName = if (state.childName.isNotBlank()) state.childName else "Anak"
 
     Scaffold(containerColor = CosmicBlack) { padding ->
         PullRefreshContainer(
@@ -78,7 +78,7 @@ fun AchievementScreen(
                 state.achievements.isEmpty() -> EmptyState("Belum ada pencapaian.", Icons.Default.EmojiEvents)
                 else -> LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 0.dp, bottom = 100.dp),
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 46.dp, bottom = 100.dp),
                     verticalArrangement = Arrangement.spacedBy(14.dp),
                 ) {
                     // ── REFACTORED NON-OVERLAPPING LIST HEADER ─────────────
@@ -98,13 +98,14 @@ fun AchievementScreen(
                         CompactAchievementHero(
                             earned = state.achievements.count { it.earnedAt != null }, 
                             total = state.achievements.size,
-                            isParent = isParent
+                            isParent = isParent,
+                            childName = displayName
                         )
                     }
                     
                     item {
                         Text(
-                            if (isParent) "Koleksi Lencana Ahmad" else "Koleksi Lencana Saya", 
+                            if (isParent) "Koleksi Lencana $displayName" else "Koleksi Lencana Saya", 
                             fontSize = 15.sp, fontWeight = FontWeight.Black, color = TextPrimary, modifier = Modifier.padding(start = 4.dp)
                         )
                     }
@@ -119,7 +120,7 @@ fun AchievementScreen(
 }
 
 @Composable
-private fun CompactAchievementHero(earned: Int, total: Int, isParent: Boolean = false) {
+private fun CompactAchievementHero(earned: Int, total: Int, isParent: Boolean = false, childName: String = "") {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -130,7 +131,7 @@ private fun CompactAchievementHero(earned: Int, total: Int, isParent: Boolean = 
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    if (isParent) "PENCAPAIAN AHMAD" else "TOTAL LENCANA SAYA", 
+                    if (isParent) "PENCAPAIAN ${childName.uppercase()}" else "TOTAL LENCANA SAYA", 
                     color = Color.White.copy(alpha = 0.7f), fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.5.sp
                 )
                 Spacer(Modifier.height(4.dp))

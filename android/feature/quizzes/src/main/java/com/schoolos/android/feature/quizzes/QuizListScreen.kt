@@ -55,7 +55,7 @@ fun QuizListScreen(
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 0.dp, bottom = 100.dp),
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 40.dp, bottom = 100.dp),
                     verticalArrangement = Arrangement.spacedBy(14.dp),
                 ) {
                     // ── REFACTORED NON-OVERLAPPING LIST HEADER ─────────────

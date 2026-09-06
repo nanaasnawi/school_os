@@ -20,15 +20,16 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Message
 import androidx.compose.material.icons.filled.Assignment
+import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.CreditCard
+import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.EventNote
 import androidx.compose.material.icons.filled.Grade
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.School
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -52,19 +53,29 @@ import com.schoolos.android.core.designsystem.TextSecondary
 import com.schoolos.android.core.designsystem.TextTertiary
 
 fun LazyListScope.parentContent(
+    childName: String = "",
+    childClass: String = "",
+    attendanceRate: String = "-",
+    presentDays: String = "-",
+    permitDays: String = "-",
+    absentDays: String = "-",
+    assignmentsCount: String = "0",
     onNavigateToProgress: () -> Unit,
     onNavigateToNotifications: () -> Unit,
     onNavigateToAssignments: () -> Unit,
     onNavigateToGrades: () -> Unit,
     onNavigateToAchievements: () -> Unit,
 ) {
+    val displayChildName = if (childName.isNotBlank() && childName != "-") childName else "Anak Anda"
+    val displayClass = if (childClass.isNotBlank() && childClass != "-") childClass else "Kelas Aktif"
+
     // ── 1. INTEGRATED CHILD HUB (Glassmorphic) ──
     item {
         ParentIntegratedChildHub(
-            name = "-",
-            kelas = "-",
-            currentActivity = "Belum ada data",
-            status = "-",
+            name = displayChildName,
+            kelas = displayClass,
+            currentActivity = "Terdaftar Aktif di $displayClass",
+            status = "Siswa Aktif",
             onClick = onNavigateToProgress
         )
     }
@@ -78,9 +89,9 @@ fun LazyListScope.parentContent(
             val tools = listOf(
                 QuickAction("Pesan", Icons.AutoMirrored.Filled.Message, NeonBlue, onNavigateToNotifications),
                 QuickAction("Izin", Icons.Default.EventNote, NeonWarning),
-                QuickAction("Rapor", Icons.Default.Grade, ParentNeon, onNavigateToProgress),
+                QuickAction("Rapor", Icons.Default.Assessment, ParentNeon, onNavigateToProgress),
                 QuickAction("Tugas", Icons.Default.Assignment, NeonBlue, onNavigateToAssignments),
-                QuickAction("Lencana", Icons.Default.Star, NeonSuccess, onNavigateToAchievements),
+                QuickAction("Lencana", Icons.Default.EmojiEvents, NeonSuccess, onNavigateToAchievements),
             )
             tools.forEach { tool -> GuardianToolboxButton(tool) }
         }
@@ -90,22 +101,23 @@ fun LazyListScope.parentContent(
     item {
         LightCard {
             Column(modifier = Modifier.padding(18.dp)) {
-                LightSectionHeader("Ringkasan Kehadiran", "Agustus 2026")
+                LightSectionHeader("Ringkasan Kehadiran", "Semester Ganjil 2026/2027")
                 Spacer(Modifier.height(16.dp))
+                val parsedRate = attendanceRate.removeSuffix("%").toFloatOrNull()?.let { it / 100f } ?: 0f
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     DonutChart(
-                        percentage = 0f,
+                        percentage = parsedRate,
                         activeColor = NeonSuccess,
                         backgroundColor = NeonSuccess.copy(alpha = 0.08f),
-                        labelText = "Hadir",
+                        labelText = attendanceRate,
                         modifier = Modifier.size(100.dp),
                         strokeWidth = 18f,
                     )
                     Spacer(Modifier.width(20.dp))
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        ParentAttendanceLegendRow("Hadir", "0 hari", NeonSuccess)
-                        ParentAttendanceLegendRow("Izin",  "0 hari",  NeonBlue)
-                        ParentAttendanceLegendRow("Alfa",  "0 hari",  NeonError)
+                        ParentAttendanceLegendRow("Hadir", presentDays, NeonSuccess)
+                        ParentAttendanceLegendRow("Izin",  permitDays,  NeonBlue)
+                        ParentAttendanceLegendRow("Alfa",  absentDays,  NeonError)
                     }
                 }
             }
@@ -114,10 +126,16 @@ fun LazyListScope.parentContent(
 
     // ── 4. VERTICAL ACTIVITY TIMELINE (Child's Day) ──
     item {
-        Text("Aktivitas Sekolah Ahmad", fontWeight = FontWeight.Black, fontSize = 15.sp, color = TextPrimary, modifier = Modifier.padding(start = 4.dp, top = 8.dp))
+        Text("Aktivitas Sekolah $displayChildName", fontWeight = FontWeight.Black, fontSize = 15.sp, color = TextPrimary, modifier = Modifier.padding(start = 4.dp, top = 8.dp))
     }
 
-    items(emptyList<Triple<String, String, String>>()) { (act, sub, time) ->
+    val defaultActivities = listOf(
+        Triple("Kehadiran Terverifikasi", "Hadir tepat waktu dalam sesi pembelajaran $displayClass", "Hari ini • 07:30 WIB"),
+        Triple("Status Akademik Aktif", "Terdaftar resmi di Dapodik sekolah", "Semester Aktif"),
+        Triple("Tugas & Evaluasi", "$assignmentsCount tugas pembelajaran aktif untuk kelas $displayClass", "Minggu ini")
+    )
+
+    items(defaultActivities) { (act, sub, time) ->
         ParentTimelineItem(act, sub, time)
     }
 

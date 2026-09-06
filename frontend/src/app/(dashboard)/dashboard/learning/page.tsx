@@ -82,10 +82,13 @@ function LearningPageContent() {
     async function loadData() {
       try {
         const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
-        const [teacherRes, classRes, subjectRes] = await Promise.all([
+        const [teacherRes, classRes, subjectRes, materialsRes] = await Promise.all([
           listTeachers({ query: { page_size: 100 } as any }).catch(() => null),
           listClasses({ query: { page_size: 100 } as any }).catch(() => null),
           fetch('/api/v1/academic/subjects', {
+            headers: token ? { Authorization: `Bearer ${token}` } : {}
+          }).then(r => r.ok ? r.json() : null).catch(() => null),
+          fetch('/api/v1/learning/materials', {
             headers: token ? { Authorization: `Bearer ${token}` } : {}
           }).then(r => r.ok ? r.json() : null).catch(() => null)
         ]);
@@ -105,6 +108,28 @@ function LearningPageContent() {
 
         if (subjectRes?.data && Array.isArray(subjectRes.data)) {
           setSubjectsList(subjectRes.data);
+        }
+
+        if (materialsRes?.data && Array.isArray(materialsRes.data)) {
+          const mapped: MaterialItem[] = materialsRes.data.map((m: any) => {
+            const descParts = (m.description || '').split(' • ');
+            return {
+              id: m.id,
+              className: descParts[1] || 'Semua Rombel',
+              subjectName: descParts[0] || 'Pelajaran Umum',
+              teacherName: descParts[2] || 'Guru Pengampu',
+              chapterTitle: m.title,
+              contentType: (m.material_type?.toUpperCase() || 'PDF') as 'PDF' | 'VIDEO' | 'TEXT',
+              description: descParts.slice(3).join(' • ') || m.description || 'Modul pembelajaran digital',
+              topics: 'Pembelajaran Rombel',
+              youtubeUrl: m.external_url,
+              pdfFileName: m.storage_key,
+              imagePreviewUrl: '',
+              publishedAt: m.created_at ? new Date(m.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Hari ini',
+              androidSynced: true,
+            };
+          });
+          setMaterials(mapped);
         }
       } catch (err) {
         console.error('Error loading learning data:', err);
@@ -132,7 +157,7 @@ function LearningPageContent() {
     }
   };
 
-  const handlePublishMaterial = (e: React.FormEvent) => {
+  const handlePublishMaterial = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMaterial.chapterTitle) return;
 
@@ -145,25 +170,119 @@ function LearningPageContent() {
       return;
     }
 
-    const item: MaterialItem = {
-      id: `mat-${Date.now()}`,
-      className: newMaterial.className,
-      subjectName: newMaterial.subjectName,
-      teacherName: newMaterial.teacherName,
-      chapterTitle: newMaterial.chapterTitle,
-      contentType: newMaterial.contentType,
-      description: newMaterial.description || 'Modul & materi pembelajaran digital siswa.',
-      topics: newMaterial.topics || 'Pembelajaran Rombel',
-      youtubeUrl: newMaterial.youtubeUrl,
-      pdfFileName: newMaterial.pdfFileName,
-      imagePreviewUrl: newMaterial.imagePreviewUrl,
-      publishedAt: 'Hari ini',
-      androidSynced: true,
-    };
+    try {
+      const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
+      const payload = {
+        material_type: newMaterial.contentType.toLowerCase(),
+        title: newMaterial.chapterTitle,
+        description: `${newMaterial.subjectName} • ${newMaterial.className} • ${newMaterial.teacherName} • ${newMaterial.description || 'Modul Pelajaran'}`,
+        storage_key: newMaterial.contentType === 'PDF' ? newMaterial.pdfFileName : null,
+        external_url: newMaterial.contentType === 'VIDEO' ? newMaterial.youtubeUrl : null,
+        order_index: 0,
+        visibility: 'published',
+      };
 
-    setMaterials([item, ...materials]);
-    setShowAddModal(false);
-    showToast(`✓ Materi "${newMaterial.chapterTitle}" dipublish ke Android App Siswa Rombel ${newMaterial.className}!`);
+      const res = await fetch('/api/v1/learning/materials', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        const resJson = await res.json();
+        const created = resJson.data;
+        const item: MaterialItem = {
+          id: created?.id || `mat-${Date.now()}`,
+          className: newMaterial.className,
+          subjectName: newMaterial.subjectName,
+          teacherName: newMaterial.teacherName,
+          chapterTitle: newMaterial.chapterTitle,
+          contentType: newMaterial.contentType,
+          description: newMaterial.description || 'Modul & materi pembelajaran digital siswa.',
+          topics: newMaterial.topics || 'Pembelajaran Rombel',
+          youtubeUrl: newMaterial.youtubeUrl,
+          pdfFileName: newMaterial.pdfFileName,
+          imagePreviewUrl: newMaterial.imagePreviewUrl,
+          publishedAt: 'Hari ini',
+          androidSynced: true,
+        };
+
+        setMaterials(prev => [item, ...prev]);
+        setShowAddModal(false);
+        showToast(`✓ Materi "${newMaterial.chapterTitle}" dipublish ke Android App Siswa Rombel ${newMaterial.className}!`);
+      } else {
+        showToast('⚠️ Gagal mempublish materi');
+      }
+    } catch {
+      showToast('⚠️ Terjadi kendala koneksi');
+    }
+  };
+
+  const handleDownloadPdf = (fileName: string, title: string, subject: string, teacher: string, description: string) => {
+    const safeTitle = (title || 'Modul Pembelajaran').replace(/[()\\]/g, '');
+    const safeSubject = (subject || 'Umum').replace(/[()\\]/g, '');
+    const safeTeacher = (teacher || 'Guru').replace(/[()\\]/g, '');
+    const safeDesc = (description || 'Modul Ajar').replace(/[()\\]/g, '').slice(0, 150);
+
+    const pdfData = `%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 250 >>
+stream
+BT
+/F1 18 Tf
+50 720 Td
+(${safeTitle}) Tj
+/F1 12 Tf
+0 -32 Td
+(Mata Pelajaran: ${safeSubject}) Tj
+0 -22 Td
+(Guru Pengampu: ${safeTeacher}) Tj
+0 -30 Td
+(Ringkasan Modul:) Tj
+0 -22 Td
+(${safeDesc}) Tj
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000234 00000 n 
+0000000535 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+610
+%%EOF`;
+
+    const blob = new Blob([pdfData], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName.endsWith('.pdf') ? fileName : `${fileName}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    showToast('✓ Berkas PDF berhasil diunduh ke perangkat');
   };
 
   const filteredMaterials = materials.filter(m => {
@@ -611,7 +730,18 @@ function LearningPageContent() {
                       <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Dokumen Modul PDF Digital</div>
                     </div>
                   </div>
-                  <button className="btn btn-primary btn-sm" onClick={() => showToast('📥 File PDF simulasi berhasil diunduh!')}>Unduh PDF</button>
+                  <button
+                    className="btn btn-primary btn-sm"
+                    onClick={() => handleDownloadPdf(
+                      previewMaterial.pdfFileName || 'Modul.pdf',
+                      previewMaterial.chapterTitle,
+                      previewMaterial.subjectName,
+                      previewMaterial.teacherName,
+                      previewMaterial.description
+                    )}
+                  >
+                    Unduh PDF
+                  </button>
                 </div>
               )}
 

@@ -39,5 +39,15 @@ sealed class Screen(val route: String) {
     // Management Routes (Teacher)
     data object AssignmentCreator : Screen("management/assignments/new")
     data object QuizBuilder : Screen("management/quizzes/new")
+    data object MaterialCreator : Screen("management/materials/new")
     data object BroadcastCenter : Screen("management/broadcast")
+
+    // Profile sub-routes
+    data object ProfileSecurity : Screen("profile/security")
+    data object ProfileHelp : Screen("profile/help")
+    data object ProfileAbout : Screen("profile/about")
+
+    // System Maintenance Route
+    data object Maintenance : Screen("maintenance")
 }
+

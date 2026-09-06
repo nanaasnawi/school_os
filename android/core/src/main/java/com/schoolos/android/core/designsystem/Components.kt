@@ -310,7 +310,7 @@ fun MultiDonutChart(
 // ─── Line Trend Chart ─────────────────────────────────────────────────────────
 @Composable
 fun LineTrendChart(
-    dataPoints: List<Float> = listOf(72f, 78f, 85f, 86f, 88.6f),
+    dataPoints: List<Float> = emptyList(),
     lineColor: Color = NeonBlue,
     fillColor: Color = lineColor.copy(alpha = 0.12f),
     modifier: Modifier = Modifier,
@@ -784,12 +784,13 @@ fun ScoreBadge(score: Int?, maxScore: Int, modifier: Modifier = Modifier) {
 // ─── Role Badge ───────────────────────────────────────────────────────────────
 @Composable
 fun RoleBadge(role: String, modifier: Modifier = Modifier) {
-    val (bg, fg) = when (role.lowercase()) {
-        "student", "siswa"                          -> Pair(StudentContainer, StudentNeon)
-        "teacher", "guru"                           -> Pair(TeacherContainer, TeacherNeon)
-        "parent", "guardian", "ortu", "wali"       -> Pair(ParentContainer, ParentNeon)
-        "admin"                                     -> Pair(InfoBg, NeonBlue)
-        else                                        -> Pair(GlassBorder, TextTertiary)
+    val r = role.lowercase()
+    val (bg, fg) = when {
+        r.contains("parent") || r.contains("guardian") || r.contains("ortu") || r.contains("wali") -> Pair(ParentContainer, ParentNeon)
+        r.contains("teacher") || r.contains("guru") -> Pair(TeacherContainer, TeacherNeon)
+        r.contains("student") || r.contains("siswa") -> Pair(StudentContainer, StudentNeon)
+        r.contains("admin") -> Pair(InfoBg, NeonBlue)
+        else -> Pair(GlassBorder, TextTertiary)
     }
     Box(
         modifier = modifier

@@ -17,6 +17,7 @@ data class AssignmentListUiState(
     val isRefreshing: Boolean = false,
     val error: String? = null,
     val userRole: String = "student",
+    val childName: String = "",
     val active: List<Assignment> = emptyList(),
     val dueSoon: List<Assignment> = emptyList(),
     val completed: List<Assignment> = emptyList(),
@@ -31,12 +32,15 @@ class AssignmentListViewModel @Inject constructor(
     private val _state = MutableStateFlow(AssignmentListUiState())
     val state = _state.asStateFlow()
 
-    private val classId = "" // Sprint B+: resolve from auth/settings
+    private val classId = ""
 
     init {
         viewModelScope.launch {
             authManager.authState.collect { auth ->
-                _state.value = _state.value.copy(userRole = auth.role ?: "student")
+                _state.value = _state.value.copy(
+                    userRole = auth.role ?: "student",
+                    childName = auth.childName ?: ""
+                )
             }
         }
         load()

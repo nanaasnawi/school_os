@@ -21,6 +21,11 @@ import javax.inject.Inject
 
 data class ProfileUiState(
     val user: User? = null,
+    val schoolName: String = "",
+    val schoolLogoUrl: String? = null,
+    val className: String = "",
+    val identifier: String = "",
+    val childName: String = "",
     val isDarkMode: Boolean = false,
     val currentLanguage: String = "en",
     val appVersion: String = "",
@@ -57,7 +62,17 @@ class ProfileViewModel @Inject constructor(
                         email = authState.email ?: "",
                         role = authState.role ?: "",
                     ) else null,
+                    schoolName = authState.schoolName ?: "",
+                    schoolLogoUrl = authState.schoolLogoUrl,
+                    className = authState.className ?: "",
+                    identifier = authState.identifier ?: "",
+                    childName = authState.childName ?: "",
                 )
+            }
+        }
+        viewModelScope.launch {
+            if (authManager.isLoggedIn) {
+                authRepository.getCurrentUser()
             }
         }
     }

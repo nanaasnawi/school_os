@@ -30,9 +30,8 @@ class NotificationRepositoryImpl @Inject constructor(
         val isOnline = try { networkMonitor.isOnline.first() } catch (_: Exception) { true }
         if (isOnline) {
             val response = api.getNotifications(page)
-            val notifications = response.data?.map { it.dtoToDomain() }
-                ?: throw Exception(response.error?.message ?: "Gagal memuat notifikasi.")
-            if (userId.isNotEmpty()) {
+            val notifications = response.data?.items?.map { it.dtoToDomain() } ?: emptyList()
+            if (userId.isNotEmpty() && notifications.isNotEmpty()) {
                 notificationDao.insertAll(notifications.map { it.toEntity(userId) })
             }
             notifications

@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { getApiUrl } from '@/lib/api';
 import styles from '@/app/(auth)/login/login.module.css';
 
 export default function SystemAdminLogin() {
@@ -18,7 +19,7 @@ export default function SystemAdminLogin() {
     setLoading(true);
 
     try {
-      const res = await fetch('http://localhost:8000/api/v1/system/login', {
+      const res = await fetch(getApiUrl('/api/v1/system/login'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })

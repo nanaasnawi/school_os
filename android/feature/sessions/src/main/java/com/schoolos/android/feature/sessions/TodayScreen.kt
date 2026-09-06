@@ -91,7 +91,7 @@ fun TodayScreen(
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 0.dp, bottom = 100.dp),
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 46.dp, bottom = 50.dp),
                     verticalArrangement = Arrangement.spacedBy(14.dp),
                 ) {
                     val role = state.userRole.lowercase()
@@ -105,7 +105,8 @@ fun TodayScreen(
                             activeCount = state.active.size,
                             completedCount = state.completed.size,
                             onBack = onBack,
-                            isTeacher = isTeacher
+                            isTeacher = isTeacher,
+                            className = state.className,
                         )
                     }
 
@@ -198,10 +199,17 @@ private fun CompactScheduleHeader(
     activeCount: Int,
     completedCount: Int,
     onBack: (() -> Unit)?,
-    isTeacher: Boolean
+    isTeacher: Boolean,
+    className: String = "",
 ) {
     val accent = if (isTeacher) TeacherNeon else StudentNeon
-    val todayStr = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy"))
+    val todayStr = try {
+        java.time.LocalDate.now().format(
+            java.time.format.DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy", java.util.Locale("id", "ID"))
+        )
+    } catch (e: Exception) {
+        "Kamis, 3 September 2026"
+    }
 
     Column(
         modifier = Modifier
@@ -242,7 +250,12 @@ private fun CompactScheduleHeader(
             letterSpacing = (-0.5).sp
         )
         Text(
-            if (isTeacher) "Wali Kelas 7A • Semester Genap" else "Kelas 7A • Semester Genap",
+            text = when {
+                isTeacher && className.isNotBlank() -> "Wali Kelas $className • Semester Genap"
+                isTeacher -> "Guru Pengampu • Semester Genap"
+                className.isNotBlank() -> "Kelas $className • Semester Genap"
+                else -> "Kelas Reguler • Semester Genap"
+            },
             color = Color.White.copy(alpha = 0.8f),
             fontSize = 12.sp,
             fontWeight = FontWeight.Medium

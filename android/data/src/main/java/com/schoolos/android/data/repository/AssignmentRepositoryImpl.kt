@@ -5,6 +5,7 @@ import com.schoolos.android.core.database.dao.AssignmentDao
 import com.schoolos.android.core.database.mapper.toDomain as entityToDomain
 import com.schoolos.android.core.database.mapper.toEntity
 import com.schoolos.android.core.network.NetworkMonitor
+import com.schoolos.android.core.sync.OfflineSubmissionSyncManager
 import com.schoolos.android.data.mapper.toDomain as dtoToDomain
 import com.schoolos.android.data.remote.SchoolOsApi
 import com.schoolos.android.data.remote.dto.SubmitAssignmentRequest
@@ -23,21 +24,38 @@ class AssignmentRepositoryImpl @Inject constructor(
     private val authManager: AuthManager,
     private val assignmentDao: AssignmentDao,
     private val networkMonitor: NetworkMonitor,
+    private val syncManager: OfflineSubmissionSyncManager,
 ) : AssignmentRepository {
 
-    override suspend fun getAssignments(classId: String): Result<List<Assignment>> = runCatching {
-        val isOnline = try { networkMonitor.isOnline.first() } catch (_: Exception) { true }
-        if (isOnline) {
-            val response = api.getAssignments(classId)
-            val assignments = response.data?.map { it.dtoToDomain() }
-                ?: throw Exception(response.error?.message ?: "Gagal memuat daftar tugas dari server API.")
-            assignmentDao.clearAll()
-            assignmentDao.insertAll(assignments.map { it.toEntity() })
-            assignments
-        } else {
-            val cached = try { with(assignmentDao.getAssignments()) { first() } } catch (_: Exception) { emptyList() }
-            cached.map { it.entityToDomain() }
+    init {
+        syncManager.registerSubmitAction { aId, sId, cnt, fUrl ->
+            try {
+                val res = api.submitAssignment(
+                    aId,
+                    SubmitAssignmentRequest(studentId = sId, content = cnt, fileUrl = fUrl),
+                )
+                res.data != null
+            } catch (_: Exception) {
+                false
+            }
         }
+    }
+
+    override suspend fun getAssignments(classId: String): Result<List<Assignment>> = runCatching {
+        try {
+            val queryClassId = classId.ifBlank { null }
+            val response = api.getAssignments(queryClassId)
+            val assignments = response.data?.map { it.dtoToDomain() }
+            if (assignments != null) {
+                assignmentDao.clearAll()
+                assignmentDao.insertAll(assignments.map { it.toEntity() })
+                return@runCatching assignments
+            }
+        } catch (e: Exception) {
+            android.util.Log.w("AssignmentRepo", "Remote fetch failed, falling back to cache: ${e.message}")
+        }
+        val cached = try { assignmentDao.getAssignments().first() } catch (_: Exception) { emptyList() }
+        cached.map { it.entityToDomain() }
     }
 
     fun getCachedAssignments(): Flow<List<Assignment>> {
@@ -45,8 +63,18 @@ class AssignmentRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getAssignment(id: String): Result<Assignment> = runCatching {
-        val response = api.getAssignment(id)
-        response.data?.dtoToDomain() ?: throw Exception(response.error?.message ?: "Tugas tidak ditemukan.")
+        try {
+            val response = api.getAssignment(id)
+            val domain = response.data?.dtoToDomain()
+            if (domain != null) {
+                assignmentDao.insert(domain.toEntity())
+                return@runCatching domain
+            }
+        } catch (e: Exception) {
+            android.util.Log.w("AssignmentRepo", "Remote fetch assignment failed, checking cache: ${e.message}")
+        }
+        val cached = assignmentDao.getAssignmentById(id)
+        cached?.entityToDomain() ?: throw Exception("Tugas tidak ditemukan atau perangkat sedang offline.")
     }
 
     override suspend fun createAssignment(
@@ -58,7 +86,20 @@ class AssignmentRepositoryImpl @Inject constructor(
         classId: String,
         assignmentType: String
     ): Result<Assignment> = runCatching {
-        throw UnsupportedOperationException("Pembuatan tugas hanya dapat dilakukan melalui Konsol Web Administrator / Guru.")
+        val targetClassId = classId.ifBlank { null }
+        val lessonId = java.util.UUID.randomUUID().toString()
+        val request = com.schoolos.android.data.remote.CreateAssignmentRequestDto(
+            lessonId = lessonId,
+            title = title,
+            description = description,
+            instructions = instructions,
+            maxScore = maxScore,
+            dueAt = dueAt,
+            assignmentType = assignmentType,
+            classId = targetClassId
+        )
+        val response = api.createAssignment(request)
+        response.data?.dtoToDomain() ?: throw Exception(response.error?.message ?: "Gagal membuat tugas.")
     }
 
     override suspend fun submitAssignment(
@@ -67,11 +108,36 @@ class AssignmentRepositoryImpl @Inject constructor(
         fileUrl: String?,
     ): Result<AssignmentSubmission> = runCatching {
         val studentId = authManager.getStudentId() ?: throw Exception("Sesi pengguna tidak valid. Silakan login kembali.")
-        val response = api.submitAssignment(
-            assignmentId,
-            SubmitAssignmentRequest(studentId = studentId, content = content, fileUrl = fileUrl),
-        )
-        response.data?.dtoToDomain() ?: throw Exception(response.error?.message ?: "Gagal mengirimkan tugas ke server.")
+        try {
+            val response = api.submitAssignment(
+                assignmentId,
+                SubmitAssignmentRequest(studentId = studentId, content = content, fileUrl = fileUrl),
+            )
+            val domain = response.data?.dtoToDomain()
+            if (domain != null) return@runCatching domain
+        } catch (e: Exception) {
+            android.util.Log.w("AssignmentRepo", "Network submit failed, queueing offline: ${e.message}")
+            val queueId = syncManager.queueSubmission(
+                assignmentId = assignmentId,
+                studentId = studentId,
+                content = content,
+                fileUrl = fileUrl,
+            )
+            return@runCatching AssignmentSubmission(
+                id = queueId,
+                assignmentId = assignmentId,
+                studentId = studentId,
+                content = content,
+                fileUrl = fileUrl,
+                submittedAt = java.time.Instant.now().toString(),
+                status = "PENDING_OFFLINE",
+                score = null,
+                feedback = null,
+                gradedAt = null,
+                gradedBy = null,
+            )
+        }
+        throw Exception("Gagal mengirimkan tugas ke server.")
     }
 
     override suspend fun getSubmissions(assignmentId: String): Result<List<AssignmentSubmission>> = runCatching {

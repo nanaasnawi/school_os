@@ -15,8 +15,11 @@ type SubjectItem = {
 
 type ScheduleItem = {
   id: string;
+  classId?: string;
   className: string;
+  subjectId?: string;
   subjectName: string;
+  teacherId?: string;
   teacherName: string;
   day: 'Senin' | 'Selasa' | 'Rabu' | 'Kamis' | 'Jumat' | 'Sabtu';
   timeStart: string;
@@ -41,11 +44,14 @@ export default function SubjectsPage() {
   const [classesList, setClassesList] = useState<any[]>([]);
   const [schedules, setSchedules] = useState<ScheduleItem[]>([]);
   
-  // Active Filter
+  // View & Filter Mode: 'class' (Rombel) atau 'teacher' (Guru Pengampu)
+  const [viewMode, setViewMode] = useState<'class' | 'teacher'>('class');
   const [selectedClass, setSelectedClass] = useState<string>('PAKET A4');
+  const [selectedTeacher, setSelectedTeacher] = useState<string>('');
 
   // New Schedule Form State
   const [showAddForm, setShowAddForm] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formSchedule, setFormSchedule] = useState({
     className: 'PAKET A4',
     subjectName: 'Pendidikan Agama Islam dan Budi Pekerti',
@@ -67,18 +73,22 @@ export default function SubjectsPage() {
     async function loadData() {
       try {
         const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
-        const [teacherRes, classRes, subjectRes] = await Promise.all([
+        const [teacherRes, classRes, subjectRes, scheduleRes] = await Promise.all([
           listTeachers({ query: { page_size: 100 } as any }).catch(() => null),
           listClasses({ query: { page_size: 100 } as any }).catch(() => null),
           fetch('/api/v1/academic/subjects', {
             headers: token ? { Authorization: `Bearer ${token}` } : {}
-          }).then(r => r.ok ? r.json() : null).catch(() => null)
+          }).then(r => r.ok ? r.json() : null).catch(() => null),
+          fetch('/api/v1/academic/schedules', {
+            headers: token ? { Authorization: `Bearer ${token}` } : {}
+          }).then(r => r.ok ? r.json() : null).catch(() => null),
         ]);
 
         if (teacherRes?.data?.data) {
           const list = teacherRes.data.data;
           setTeachers(list);
           if (list.length > 0) {
+            setSelectedTeacher(list[0].full_name);
             setFormSchedule(prev => ({ ...prev, teacherName: list[0].full_name }));
           }
         }
@@ -106,7 +116,24 @@ export default function SubjectsPage() {
           }
         }
 
-        setSchedules([]);
+        if (scheduleRes?.data && Array.isArray(scheduleRes.data)) {
+          const dbSchedules: ScheduleItem[] = scheduleRes.data.map((item: any) => ({
+            id: item.id,
+            classId: item.class_id,
+            className: item.class_name,
+            subjectId: item.subject_id,
+            subjectName: item.subject_name,
+            teacherId: item.teacher_id,
+            teacherName: item.teacher_name,
+            day: item.day_of_week,
+            timeStart: item.start_time,
+            timeEnd: item.end_time,
+            room: item.room || 'Ruang Kelas',
+          }));
+          setSchedules(dbSchedules);
+        } else {
+          setSchedules([]);
+        }
 
       } catch (err) {
         console.error('Error loading subjects data:', err);
@@ -115,27 +142,98 @@ export default function SubjectsPage() {
     loadData();
   }, []);
 
-  const handleCreateSchedule = (e: React.FormEvent) => {
+  const handleCreateSchedule = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formSchedule.teacherName) return;
 
-    const newSch: ScheduleItem = {
-      id: String(Date.now()),
-      className: formSchedule.className,
-      subjectName: formSchedule.subjectName,
-      teacherName: formSchedule.teacherName,
-      day: formSchedule.day,
-      timeStart: formSchedule.timeStart,
-      timeEnd: formSchedule.timeEnd,
-      room: formSchedule.room,
-    };
+    const matchedClass = classesList.find(c => c.name === formSchedule.className);
+    const matchedSubject = subjects.find(s => s.name === formSchedule.subjectName);
+    const matchedTeacher = teachers.find(t => t.full_name === formSchedule.teacherName);
 
-    setSchedules([newSch, ...schedules]);
-    setShowAddForm(false);
-    showToast(`✓ Jadwal ${formSchedule.subjectName} untuk ${formSchedule.className} oleh ${formSchedule.teacherName} berhasil disimpan & terhubung!`);
+    if (!matchedClass || !matchedSubject || !matchedTeacher) {
+      showToast('⚠️ Data belum lengkap');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
+      const res = await fetch('/api/v1/academic/schedules', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          class_id: matchedClass.id,
+          subject_id: matchedSubject.id,
+          teacher_id: matchedTeacher.id,
+          day_of_week: formSchedule.day,
+          start_time: formSchedule.timeStart,
+          end_time: formSchedule.timeEnd,
+          room: formSchedule.room || 'Ruang Kelas',
+        })
+      });
+
+      const json = await res.json();
+      if (res.ok && json.data) {
+        const item = json.data;
+        const newSch: ScheduleItem = {
+          id: item.id,
+          classId: item.class_id,
+          className: item.class_name,
+          subjectId: item.subject_id,
+          subjectName: item.subject_name,
+          teacherId: item.teacher_id,
+          teacherName: item.teacher_name,
+          day: item.day_of_week,
+          timeStart: item.start_time,
+          timeEnd: item.end_time,
+          room: item.room,
+        };
+        setSchedules(prev => [newSch, ...prev]);
+        setShowAddForm(false);
+        showToast('✓ Jadwal berhasil disimpan');
+      } else {
+        showToast('⚠️ Gagal menyimpan jadwal');
+      }
+    } catch (err: any) {
+      console.error('Error creating schedule:', err);
+      showToast('⚠️ Gagal menghubungi server');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const filteredSchedules = schedules.filter(s => s.className === selectedClass);
+  const handleDeleteSchedule = async (id: string, name: string) => {
+    if (!confirm(`Hapus jadwal "${name}"?`)) return;
+
+    try {
+      const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
+      const res = await fetch(`/api/v1/academic/schedules/${id}`, {
+        method: 'DELETE',
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+
+      if (res.ok) {
+        setSchedules(prev => prev.filter(s => s.id !== id));
+        showToast('✓ Jadwal berhasil dihapus');
+      } else {
+        showToast('⚠️ Gagal menghapus jadwal');
+      }
+    } catch (err: any) {
+      console.error('Error deleting schedule:', err);
+      showToast('⚠️ Gagal menghapus jadwal');
+    }
+  };
+
+  const filteredSchedules = schedules.filter(s => {
+    if (viewMode === 'class') {
+      return s.className === selectedClass;
+    } else {
+      return s.teacherName === selectedTeacher;
+    }
+  });
 
   return (
     <div className={styles.page}>
@@ -236,28 +334,91 @@ export default function SubjectsPage() {
 
         {/* Right Column: Class Schedules Matrix */}
         <div className={styles.card}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
-            <h2 className={styles.cardTitle}>📅 Jadwal Pelajaran Rombel Aktif</h2>
-            
-            {/* Rombel Selector Dropdown */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Pilih Rombel:</span>
-              <select
-                value={selectedClass}
-                onChange={e => setSelectedClass(e.target.value)}
-                className="input"
-                style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem', width: '160px', fontWeight: 700 }}
-              >
-                {classesList.length > 0 ? (
-                  classesList.map(c => <option key={c.id} value={c.name}>{c.name}</option>)
-                ) : (
-                  <>
-                    <option value="PAKET B8">PAKET B8</option>
-                    <option value="PAKET C11a">PAKET C11a</option>
-                    <option value="PAKET C12a">PAKET C12a</option>
-                  </>
-                )}
-              </select>
+          {/* Header & Mode Switcher */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <h2 className={styles.cardTitle} style={{ margin: 0 }}>
+                📅 Jadwal Pelajaran &amp; Mengajar
+              </h2>
+
+              {/* Tab Filter Switcher */}
+              <div style={{ display: 'inline-flex', background: 'var(--bg-elevated)', padding: '3px', borderRadius: '8px', border: '1px solid var(--border-light)' }}>
+                <button
+                  type="button"
+                  onClick={() => setViewMode('class')}
+                  style={{
+                    padding: '0.3rem 0.75rem',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    borderRadius: '6px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    background: viewMode === 'class' ? 'var(--primary)' : 'transparent',
+                    color: viewMode === 'class' ? '#ffffff' : 'var(--text-secondary)',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  🏛️ Per Rombel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode('teacher')}
+                  style={{
+                    padding: '0.3rem 0.75rem',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    borderRadius: '6px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    background: viewMode === 'teacher' ? 'var(--primary)' : 'transparent',
+                    color: viewMode === 'teacher' ? '#ffffff' : 'var(--text-secondary)',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  👨‍🏫 Per Guru Pengampu
+                </button>
+              </div>
+            </div>
+
+            {/* Filter Dropdown */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem', background: 'var(--bg-elevated)', padding: '0.6rem 0.85rem', borderRadius: '10px', border: '1px solid var(--border-light)' }}>
+              {viewMode === 'class' ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%' }}>
+                  <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Pilih Rombel:</span>
+                  <select
+                    value={selectedClass}
+                    onChange={e => setSelectedClass(e.target.value)}
+                    className="input"
+                    style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem', flex: 1, fontWeight: 700 }}
+                  >
+                    {classesList.length > 0 ? (
+                      classesList.map(c => <option key={c.id} value={c.name}>{c.name}</option>)
+                    ) : (
+                      <>
+                        <option value="PAKET B8">PAKET B8</option>
+                        <option value="PAKET C11a">PAKET C11a</option>
+                        <option value="PAKET C12a">PAKET C12a</option>
+                      </>
+                    )}
+                  </select>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%' }}>
+                  <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Pilih Guru:</span>
+                  <select
+                    value={selectedTeacher}
+                    onChange={e => setSelectedTeacher(e.target.value)}
+                    className="input"
+                    style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem', flex: 1, fontWeight: 700 }}
+                  >
+                    {teachers.length > 0 ? (
+                      teachers.map(t => <option key={t.id} value={t.full_name}>{t.full_name} (NIP: {t.nip})</option>)
+                    ) : (
+                      <option value="">Belum ada data guru</option>
+                    )}
+                  </select>
+                </div>
+              )}
             </div>
           </div>
 
@@ -266,9 +427,36 @@ export default function SubjectsPage() {
             <div className={styles.scheduleGrid}>
               {filteredSchedules.map(sch => (
                 <div key={sch.id} className={styles.scheduleCard}>
-                  <div className={styles.scheduleDay}>🗓️ {sch.day} · {sch.timeStart} - {sch.timeEnd}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div className={styles.scheduleDay}>🗓️ {sch.day} · {sch.timeStart} - {sch.timeEnd}</div>
+                    <button
+                      type="button"
+                      title="Hapus Jadwal"
+                      onClick={() => handleDeleteSchedule(sch.id, sch.subjectName)}
+                      style={{
+                        background: 'rgba(239, 68, 68, 0.1)',
+                        border: '1px solid rgba(239, 68, 68, 0.2)',
+                        color: '#ef4444',
+                        cursor: 'pointer',
+                        padding: '0.15rem 0.4rem',
+                        borderRadius: '6px',
+                        fontSize: '0.7rem',
+                        fontWeight: 700,
+                      }}
+                    >
+                      🗑️ Hapus
+                    </button>
+                  </div>
+                  
                   <div className={styles.scheduleSubject}>{sch.subjectName}</div>
-                  <div className={styles.scheduleTeacher}>👨‍🏫 Guru: <strong>{sch.teacherName}</strong></div>
+                  <div className={styles.scheduleTeacher}>
+                    {viewMode === 'teacher' ? (
+                      <>🏛️ Rombel: <strong>{sch.className}</strong></>
+                    ) : (
+                      <>👨‍🏫 Guru: <strong>{sch.teacherName}</strong></>
+                    )}
+                  </div>
+                  
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.4rem', paddingTop: '0.4rem', borderTop: '1px solid var(--border-dim)' }}>
                     <span className={styles.scheduleTime}>📍 {sch.room}</span>
                     <Link href={`/dashboard/learning?class=${encodeURIComponent(sch.className)}&subject=${encodeURIComponent(sch.subjectName)}`} className="btn btn-ghost btn-sm" style={{ fontSize: '0.72rem', color: '#2563eb', padding: '0.2rem 0.4rem' }}>
@@ -281,17 +469,25 @@ export default function SubjectsPage() {
           ) : (
             <div style={{ padding: '2rem', textAlign: 'center', background: 'var(--bg-elevated)', borderRadius: '12px', border: '1px dashed #cbd5e1' }}>
               <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                Belum ada jadwal pelajaran untuk <strong>{selectedClass}</strong>.
+                {viewMode === 'class' ? (
+                  <>Belum ada jadwal pelajaran untuk <strong>{selectedClass}</strong>.</>
+                ) : (
+                  <>Belum ada jadwal mengajar untuk <strong>{selectedTeacher}</strong>.</>
+                )}
               </p>
               <button
                 className="btn btn-primary btn-sm"
                 style={{ marginTop: '0.75rem' }}
                 onClick={() => {
-                  setFormSchedule(prev => ({ ...prev, className: selectedClass }));
+                  if (viewMode === 'class') {
+                    setFormSchedule(prev => ({ ...prev, className: selectedClass }));
+                  } else if (selectedTeacher) {
+                    setFormSchedule(prev => ({ ...prev, teacherName: selectedTeacher }));
+                  }
                   setShowAddForm(true);
                 }}
               >
-                + Tambah Jadwal untuk {selectedClass}
+                + Tambah Jadwal Baru
               </button>
             </div>
           )}

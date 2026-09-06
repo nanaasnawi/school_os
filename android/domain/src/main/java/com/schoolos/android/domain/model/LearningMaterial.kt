@@ -9,7 +9,9 @@ data class LearningMaterial(
     val mediaUrl: String? = null,
     val thumbnailUrl: String? = null,
     val subject: String,
-    val size: String? = null
+    val size: String? = null,
+    val isCompleted: Boolean = false,
+    val completedCount: Long = 0L
 )
 
 enum class MaterialType {

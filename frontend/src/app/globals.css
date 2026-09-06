@@ -485,3 +485,111 @@ code, pre {
 }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-disabled); }
 * { scrollbar-width: thin; scrollbar-color: var(--border-medium) transparent; }
+
+/* ══════════════════════════════════════════════════════
+   GLOBAL MODAL SYSTEM (Fixed Overlay & Floating Glass Card)
+══════════════════════════════════════════════════════ */
+.globalModalOverlay {
+  position: fixed !important;
+  inset: 0 !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  background: rgba(15, 23, 42, 0.65) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  z-index: 999999 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 1.25rem !important;
+  animation: modalFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.globalModalCard {
+  background: var(--bg-surface, #ffffff) !important;
+  color: var(--text-primary, #111827) !important;
+  border: 1px solid var(--border-medium, #e5e7eb) !important;
+  border-radius: 20px !important;
+  width: 100% !important;
+  max-width: 620px !important;
+  max-height: 90vh !important;
+  display: flex !important;
+  flex-direction: column !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(0, 0, 0, 0.05) !important;
+  animation: modalScaleIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  overflow: hidden !important;
+  position: relative !important;
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes modalScaleIn {
+  from { opacity: 0; transform: scale(0.95) translateY(12px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.globalModalHeader {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 1.25rem 1.5rem !important;
+  border-bottom: 1px solid var(--border-light, #e5e7eb) !important;
+  background: var(--bg-elevated, #f8fafc) !important;
+}
+
+.globalModalTitle {
+  font-size: 1.15rem !important;
+  font-weight: 800 !important;
+  color: var(--text-primary, #111827) !important;
+  margin: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+}
+
+.globalModalClose {
+  background: transparent !important;
+  border: none !important;
+  font-size: 1.5rem !important;
+  line-height: 1 !important;
+  color: var(--text-muted, #64748b) !important;
+  cursor: pointer !important;
+  padding: 0.35rem 0.6rem !important;
+  border-radius: 8px !important;
+  transition: all 0.15s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.globalModalClose:hover {
+  background: var(--bg-overlay, #e2e8f0) !important;
+  color: var(--text-primary, #0f172a) !important;
+}
+
+.globalModalBody {
+  padding: 1.5rem !important;
+  overflow-y: auto !important;
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 1.1rem !important;
+}
+
+.globalModalFooter {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 0.75rem !important;
+  padding: 1rem 1.5rem !important;
+  border-top: 1px solid var(--border-light, #e5e7eb) !important;
+  background: var(--bg-elevated, #f8fafc) !important;
+}
+

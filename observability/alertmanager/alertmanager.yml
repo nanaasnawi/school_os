@@ -1,0 +1,35 @@
+global:
+  resolve_timeout: 5m
+  smtp_smarthost: "${SMTP_HOST:smtp.gmail.com:587}"
+  smtp_from: "${SMTP_FROM:alerts@schoolos.id}"
+  smtp_auth_username: "${SMTP_USER:alerts@schoolos.id}"
+  smtp_auth_password: "${SMTP_PASS:secretpassword}"
+  smtp_require_tls: true
+
+route:
+  group_by: ['alertname', 'severity']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  receiver: 'telegram-and-email-alerts'
+
+receivers:
+  - name: 'telegram-and-email-alerts'
+    email_configs:
+      - to: "${ALERT_EMAIL_TO:sysadmin@schoolos.id}"
+        send_resolved: true
+        headers:
+          subject: "[School OS Alert] {{ .CommonLabels.alertname }} ({{ .CommonLabels.severity | toUpper }})"
+
+    # Telegram Alerting
+    telegram_configs:
+      - bot_token: "${TELEGRAM_BOT_TOKEN:dummy_token}"
+        chat_id: ${TELEGRAM_CHAT_ID:0}
+        send_resolved: true
+        parse_mode: "HTML"
+        message: |
+          🔥 <b>School OS Alert: {{ .CommonLabels.alertname }}</b>
+          <b>Severity:</b> {{ .CommonLabels.severity }}
+          <b>Summary:</b> {{ .CommonAnnotations.summary }}
+          <b>Description:</b> {{ .CommonAnnotations.description }}
+          <b>Status:</b> {{ .Status | toUpper }}

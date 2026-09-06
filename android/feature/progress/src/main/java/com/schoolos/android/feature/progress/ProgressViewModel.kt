@@ -15,11 +15,14 @@ data class ProgressUiState(
     val isRefreshing: Boolean = false,
     val error: String? = null,
     val progress: Progress? = null,
+    val isParent: Boolean = false,
+    val childName: String = "",
 )
 
 @HiltViewModel
 class ProgressViewModel @Inject constructor(
     private val repository: ProgressRepository,
+    private val authManager: com.schoolos.android.core.auth.AuthManager,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(ProgressUiState())
@@ -28,6 +31,14 @@ class ProgressViewModel @Inject constructor(
     private val classId = ""
 
     init {
+        viewModelScope.launch {
+            authManager.authState.collect { auth ->
+                _state.value = _state.value.copy(
+                    isParent = auth.isParent,
+                    childName = auth.childName ?: ""
+                )
+            }
+        }
         load()
     }
 

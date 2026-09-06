@@ -12,9 +12,8 @@ class GradeRepositoryImpl @Inject constructor(
     private val api: SchoolOsApi,
 ) : GradeRepository {
 
-    override suspend fun getGradebook(classId: String, subjectId: String?): Result<List<GradeEntry>> = runCatching {
-        val response = api.getGradebook(classId, subjectId)
-        response.data?.map { it.toDomain() }
-            ?: throw Exception(response.error?.message ?: "Gagal memuat transkrip nilai dari server API.")
+    override suspend fun getGradebook(classId: String?, subjectId: String?): Result<List<GradeEntry>> = runCatching {
+        val response = api.getGradebook(classId?.ifBlank { null }, subjectId?.ifBlank { null })
+        response.data?.map { it.toDomain() } ?: emptyList()
     }
 }

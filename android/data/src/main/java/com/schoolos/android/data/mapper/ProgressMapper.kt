@@ -16,4 +16,8 @@ fun ProgressDto.toDomain() = Progress(
     sessionTotal = sessionTotal,
     subjectName = subjectName,
     calculatedAt = calculatedAt,
+    teacherNotes = teacherNotes,
+    teacherName = teacherName,
+    className = className,
+    academicStatus = academicStatus,
 )

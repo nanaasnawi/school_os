@@ -25,6 +25,12 @@ data class LoginResponse(
     val name: String = "",
     val email: String = "",
     val role: String = "",
+    @SerialName("school_name") val schoolName: String? = null,
+    @SerialName("school_logo_url") val schoolLogoUrl: String? = null,
+    val identifier: String? = null,
+    @SerialName("class_name") val className: String? = null,
+    @SerialName("child_name") val childName: String? = null,
+    @SerialName("child_id") val childId: String? = null,
 )
 
 @Serializable
@@ -50,4 +56,19 @@ data class SchoolPublicInfoResponse(
     val name: String,
     @SerialName("logo_url") val logoUrl: String? = null,
     val npsn: String? = null,
+)
+
+@Serializable
+data class UserDto(
+    val id: String = "",
+    val email: String = "",
+    @SerialName("full_name") val fullName: String = "",
+    val role: String = "",
+    @SerialName("is_active") val isActive: Boolean = true,
+    @SerialName("school_name") val schoolName: String? = null,
+    @SerialName("school_logo_url") val schoolLogoUrl: String? = null,
+    val identifier: String? = null,
+    @SerialName("class_name") val className: String? = null,
+    @SerialName("child_name") val childName: String? = null,
+    @SerialName("child_id") val childId: String? = null,
 )

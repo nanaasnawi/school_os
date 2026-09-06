@@ -28,6 +28,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.automirrored.filled.Message
+import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.ChildCare
 import androidx.compose.material.icons.filled.Grade
@@ -81,10 +82,8 @@ fun MainContainerScreen(
     content: @Composable (PaddingValues) -> Unit,
 ) {
     val authState by authManager.authState.collectAsState(initial = AuthState())
-    val role = (authState.role ?: "student").lowercase()
-
-    val isTeacher = role == "teacher" || role == "guru"
-    val isParent  = role == "parent" || role == "guardian" || role == "ortu" || role == "wali"
+    val isParent = authState.isParent
+    val isTeacher = authState.isTeacher
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
@@ -115,7 +114,7 @@ fun MainContainerScreen(
             BottomNavItem(Screen.Home.route,          "Beranda",  Icons.Default.Home),
             BottomNavItem(Screen.Sessions.route,      "Jadwal",   Icons.Default.CalendarMonth),
             BottomNavItem(Screen.Assignments.route,   "Tugas",    Icons.AutoMirrored.Filled.Assignment),
-            BottomNavItem(Screen.Grades.route,        "Nilai",    Icons.Default.Grade),
+            BottomNavItem(Screen.Grades.route,        "Nilai",    Icons.Default.Assessment),
             BottomNavItem(Screen.Profile.route,       "Akun",     Icons.Default.Person),
         )
     }
@@ -126,6 +125,7 @@ fun MainContainerScreen(
 
     Scaffold(
         containerColor = CosmicBlack,
+        contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0),
         bottomBar = {
             AnimatedVisibility(
                 visible = !hideBottomBar,

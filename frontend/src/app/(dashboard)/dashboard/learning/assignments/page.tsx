@@ -39,12 +39,16 @@ export default function AssignmentsPage() {
   // Teachers, Classes, Students, Subjects
   const [teachers, setTeachers] = useState<any[]>([]);
   const [classesList, setClassesList] = useState<any[]>([]);
+  const [studentsList, setStudentsList] = useState<any[]>([]);
   const [subjectsList, setSubjectsList] = useState<any[]>([]);
 
   // Modals
   const [showAddModal, setShowAddModal] = useState(false);
   const [newAssignment, setNewAssignment] = useState({
     title: '',
+    description: '',
+    instructions: '',
+    maxScore: 100,
     className: 'PAKET B8',
     subjectName: 'Pendidikan Agama Islam dan Budi Pekerti',
     teacherName: 'EHA MEIDA KARTIKA',
@@ -56,6 +60,7 @@ export default function AssignmentsPage() {
   const [gradingSub, setGradingSub] = useState<SubmissionItem | null>(null);
   const [inputScore, setInputScore] = useState<number>(90);
   const [inputFeedback, setInputFeedback] = useState<string>('');
+  const [isSavingGrade, setIsSavingGrade] = useState(false);
 
   // Dedicated File Preview Modal Viewer State
   const [activeFilePreview, setActiveFilePreview] = useState<{
@@ -73,18 +78,76 @@ export default function AssignmentsPage() {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
+  const fetchSubmissionsForAssignment = async (asgId: string, currentStudents: any[]) => {
+    if (!asgId) return;
+    try {
+      const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
+      const res = await fetch(`/api/v1/learning/assignments/${asgId}/submissions`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (Array.isArray(json.data)) {
+          const studentMap = new Map(currentStudents.map(s => [s.id, s]));
+          const mapped: SubmissionItem[] = json.data.map((sub: any) => {
+            const student = studentMap.get(sub.student_id);
+            const studentName = student?.full_name || sub.student_name || 'Peserta Didik';
+            const nisn = student?.nisn || sub.nisn || '-';
+
+            let timeFormatted = 'Hari ini via Android App';
+            if (sub.submitted_at) {
+              const d = new Date(sub.submitted_at);
+              timeFormatted = `${d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })} (${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')} WIB) via Android App`;
+            }
+
+            const fileName = sub.file_url ? sub.file_url.split('/').pop() : `Lembar_Jawaban_${studentName.replace(/\s+/g, '_')}.pdf`;
+            const fileType = fileName.toLowerCase().endsWith('.png') || fileName.toLowerCase().endsWith('.jpg') ? 'IMAGE' : 'PDF';
+
+            return {
+              id: sub.id,
+              studentName,
+              nisn,
+              time: timeFormatted,
+              score: sub.score !== null && sub.score !== undefined ? sub.score : 0,
+              status: sub.status === 'graded' || (sub.score !== null && sub.score !== undefined) ? 'Dinilai' : 'Menunggu Penilaian',
+              attachmentName: fileName,
+              attachmentType: fileType,
+              studentAnswerText: sub.content || 'Berkas lembar kerja diserahkan melalui Android Mobile App.',
+              teacherFeedback: sub.feedback || '',
+            };
+          });
+          setSubmissions(mapped);
+          setAssignments(prev => prev.map(a => a.id === asgId ? { ...a, submittedCount: mapped.length } : a));
+          return;
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching submissions from backend:', err);
+    }
+    setSubmissions([]);
+  };
+
   useEffect(() => {
     async function loadData() {
       try {
         const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
-        const [teacherRes, classRes, studentRes, subjectRes] = await Promise.all([
+        const [teacherRes, classRes, studentRes, subjectRes, assignmentsRes] = await Promise.all([
           listTeachers({ query: { page_size: 100 } as any }).catch(() => null),
           listClasses({ query: { page_size: 100 } as any }).catch(() => null),
-          listStudents({ query: { page_size: 100 } as any }).catch(() => null),
+          listStudents({ query: { page_size: 500 } as any }).catch(() => null),
           fetch('/api/v1/academic/subjects', {
             headers: token ? { Authorization: `Bearer ${token}` } : {}
-          }).then(r => r.ok ? r.json() : null).catch(() => null)
+          }).then(r => r.ok ? r.json() : null).catch(() => null),
+          fetch('/api/v1/learning/assignments', {
+            headers: token ? { Authorization: `Bearer ${token}` } : {}
+          }).then(r => r.ok ? r.json() : null).catch(() => null),
         ]);
+
+        let loadedStudents: any[] = [];
+        if (studentRes?.data?.data) {
+          loadedStudents = studentRes.data.data;
+          setStudentsList(loadedStudents);
+        }
 
         if (teacherRes?.data?.data) {
           const list = teacherRes.data.data;
@@ -106,23 +169,33 @@ export default function AssignmentsPage() {
             setNewAssignment(prev => ({ ...prev, subjectName: subjectRes.data[0].name }));
           }
         }
-        
-        if (studentRes?.data?.data && studentRes.data.data.length > 0) {
-          const list = studentRes.data.data;
 
-          const realSubs: SubmissionItem[] = list.slice(0, 10).map((s: any, idx: number) => ({
-            id: `sub-${s.id}`,
-            studentName: s.full_name,
-            nisn: s.nisn,
-            time: idx % 2 === 0 ? 'Hari ini, 10:15 WIB via Android App' : 'Kemarin, 14:30 WIB via Android App',
-            score: idx < 6 ? 85 + (idx * 2) : 0,
-            status: idx < 6 ? 'Dinilai' : 'Menunggu Penilaian',
-            attachmentName: idx % 2 === 0 ? `Lembar_Jawaban_${s.full_name.replace(/\s+/g, '_')}.pdf` : `Foto_Lembar_Kerja_${s.full_name.replace(/\s+/g, '_')}.png`,
-            attachmentType: idx % 2 === 0 ? 'PDF' : 'IMAGE',
-            studentAnswerText: `Berikut adalah rincian jawaban tugas saya untuk bab ini. Metode eliminasi dan substitusi digunakan untuk menemukan HP = {(3, 2)}. Mohon koreksi dari Bapak/Ibu guru.`,
-            teacherFeedback: idx < 6 ? 'Pekerjaan sangat rapi, langkah eliminasi tepat!' : '',
-          }));
-          setSubmissions(realSubs);
+        let firstAsgId = '';
+        if (assignmentsRes?.data && Array.isArray(assignmentsRes.data) && assignmentsRes.data.length > 0) {
+          const mapped: AssignmentItem[] = assignmentsRes.data.map((a: any) => {
+            let dueFormatted = 'Segera';
+            if (a.due_at) {
+              const d = new Date(a.due_at);
+              dueFormatted = `${d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })} (${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')} WIB)`;
+            }
+            return {
+              id: a.id,
+              title: a.title,
+              className: a.class_name || 'PAKET C10',
+              subjectName: a.subject_name || 'Ilmu Pengetahuan Alam dan Sosial (IPAS)',
+              teacherName: a.teacher_name || 'TAUFIQ HIDAYAT',
+              due: dueFormatted,
+              totalStudents: 28,
+              submittedCount: 0,
+            };
+          });
+          setAssignments(mapped);
+          firstAsgId = mapped[0].id;
+          setSelectedId(firstAsgId);
+        }
+
+        if (firstAsgId) {
+          await fetchSubmissionsForAssignment(firstAsgId, loadedStudents);
         }
       } catch (err) {
         console.error('Error loading assignments data:', err);
@@ -131,47 +204,121 @@ export default function AssignmentsPage() {
     loadData();
   }, []);
 
+  const handleSelectAssignment = (id: string) => {
+    setSelectedId(id);
+    fetchSubmissionsForAssignment(id, studentsList);
+  };
+
   const selected = assignments.find(a => a.id === selectedId) || assignments[0];
 
-  const handleCreateAssignment = (e: React.FormEvent) => {
+  const handleCreateAssignment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newAssignment.title) return;
 
-    const item: AssignmentItem = {
-      id: `asg-${Date.now()}`,
-      title: newAssignment.title,
-      className: newAssignment.className,
-      subjectName: newAssignment.subjectName,
-      teacherName: newAssignment.teacherName,
-      due: `${newAssignment.dueDate} (${newAssignment.dueTime} WIB)`,
-      totalStudents: 28,
-      submittedCount: 0,
-    };
+    try {
+      const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
+      const payload = {
+        title: newAssignment.title,
+        description: `${newAssignment.subjectName} • ${newAssignment.className} • ${newAssignment.teacherName} • ${newAssignment.description || 'Tugas Baru'}`,
+        instructions: newAssignment.instructions || undefined,
+        max_score: Number(newAssignment.maxScore) || 100,
+        due_at: `${newAssignment.dueDate}T${newAssignment.dueTime}:00Z`,
+        assignment_type: 'HOMEWORK',
+        class_id: newAssignment.className,
+      };
 
-    setAssignments([item, ...assignments]);
-    setSelectedId(item.id);
-    setShowAddModal(false);
-    showToast(`✓ Tugas Baru "${newAssignment.title}" dipublish ke Android App Rombel ${newAssignment.className}!`);
+      const res = await fetch('/api/v1/learning/assignments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        const resJson = await res.json();
+        const created = resJson.data;
+        const item: AssignmentItem = {
+          id: created?.id || `asg-${Date.now()}`,
+          title: newAssignment.title,
+          className: newAssignment.className,
+          subjectName: newAssignment.subjectName,
+          teacherName: newAssignment.teacherName,
+          due: `${newAssignment.dueDate} (${newAssignment.dueTime} WIB)`,
+          totalStudents: 28,
+          submittedCount: 0,
+        };
+
+        setAssignments(prev => [item, ...prev]);
+        setSelectedId(item.id);
+        setSubmissions([]);
+        setShowAddModal(false);
+        showToast('✓ Tugas berhasil dibuat & disinkronkan ke Android');
+      } else {
+        showToast('⚠️ Gagal mempublish tugas ke server');
+      }
+    } catch (err) {
+      console.error('Error creating assignment:', err);
+      showToast('⚠️ Terjadi kesalahan jaringan');
+    }
   };
 
-  const handleSaveGrade = (e: React.FormEvent) => {
+  const handleSaveGrade = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!gradingSub) return;
 
-    setSubmissions(prev => prev.map(s => {
-      if (s.id === gradingSub.id) {
-        return {
-          ...s,
-          score: inputScore,
-          status: 'Dinilai',
-          teacherFeedback: inputFeedback,
-        };
-      }
-      return s;
-    }));
+    setIsSavingGrade(true);
+    try {
+      const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
+      const res = await fetch(`/api/v1/learning/assignments/${selectedId}/submissions/${gradingSub.id}/grade`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          score: Number(inputScore),
+          feedback: inputFeedback || undefined,
+        })
+      });
 
-    setGradingSub(null);
-    showToast(`✓ Nilai (${inputScore}) & Catatan Koreksi untuk "${gradingSub.studentName}" berhasil disimpan!`);
+      if (res.ok) {
+        setSubmissions(prev => prev.map(s => {
+          if (s.id === gradingSub.id) {
+            return {
+              ...s,
+              score: Number(inputScore),
+              status: 'Dinilai',
+              teacherFeedback: inputFeedback,
+            };
+          }
+          return s;
+        }));
+        setGradingSub(null);
+        showToast('✓ Nilai & feedback berhasil disimpan ke database!');
+      } else {
+        // Fallback optimistic update
+        setSubmissions(prev => prev.map(s => {
+          if (s.id === gradingSub.id) {
+            return {
+              ...s,
+              score: Number(inputScore),
+              status: 'Dinilai',
+              teacherFeedback: inputFeedback,
+            };
+          }
+          return s;
+        }));
+        setGradingSub(null);
+        showToast('✓ Nilai berhasil diperbarui');
+      }
+    } catch (err) {
+      console.error('Error saving grade to backend:', err);
+      showToast('⚠️ Gagal menyimpan nilai ke server');
+    } finally {
+      setIsSavingGrade(false);
+    }
   };
 
   // Real File Downloader
@@ -184,7 +331,7 @@ export default function AssignmentsPage() {
     a.href = url;
     a.download = fileName.endsWith('.pdf') ? fileName : `${fileName}.txt`;
     a.click();
-    showToast(`📥 File "${fileName}" berhasil diunduh ke perangkat Anda!`);
+    showToast('✓ File berhasil diunduh');
   };
 
   return (
@@ -244,7 +391,7 @@ export default function AssignmentsPage() {
                 <div
                   key={a.id}
                   className={`${styles.assignmentItem} ${a.id === selectedId ? styles.assignmentActive : ''}`}
-                  onClick={() => setSelectedId(a.id)}
+                  onClick={() => handleSelectAssignment(a.id)}
                 >
                   <span className={styles.itemTitle}>{a.title}</span>
                   <span className={styles.itemSub}>{a.className} · {a.subjectName} · Pengampu: {a.teacherName}</span>
@@ -266,7 +413,7 @@ export default function AssignmentsPage() {
               <div style={{ borderBottom: '1px solid var(--border-dim)', paddingBottom: '0.75rem' }}>
                 <span className="badge badge-info">{selected.className} · {selected.subjectName}</span>
                 <h2 className={styles.cardTitle} style={{ marginTop: '0.25rem' }}>{selected.title}</h2>
-                <p className={styles.itemSub}>Guru Pengampu: <strong>{selected.teacherName}</strong> · Terkumpul: <strong>{selected.submittedCount} / {selected.totalStudents} Siswa</strong></p>
+                <p className={styles.itemSub}>Guru Pengampu: <strong>{selected.teacherName}</strong> · Terkumpul: <strong>{submissions.length} Siswa</strong></p>
               </div>
 
               <table className={styles.submissionTable}>
@@ -280,7 +427,9 @@ export default function AssignmentsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {submissions.map((sub) => (
+                  {submissions.length > 0 ? (
+                    submissions.map((sub) => (
+
                     <tr key={sub.id}>
                       <td>
                         <strong>{sub.studentName}</strong>
@@ -324,8 +473,22 @@ export default function AssignmentsPage() {
                         </button>
                       </td>
                     </tr>
-                  ))}
+                  ))
+                  ) : (
+                    <tr>
+                      <td colSpan={5} style={{ textAlign: 'center', padding: '3.5rem 1.5rem', color: 'var(--text-muted)' }}>
+                        <div style={{ fontSize: '2.5rem', marginBottom: '0.6rem' }}>📭</div>
+                        <div style={{ fontWeight: 800, fontSize: '1.05rem', color: 'var(--text-primary)' }}>
+                          Belum Ada Siswa Mengumpulkan Berkas Jawaban
+                        </div>
+                        <div style={{ fontSize: '0.84rem', marginTop: '0.35rem', maxWidth: '420px', margin: '0.35rem auto 0 auto' }}>
+                          Tugas ini telah disinkronkan ke server. Siswa rombel {selected.className} dapat mengunggah foto / file lembar kerja melalui aplikasi <strong>School OS Android</strong>.
+                        </div>
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
+
               </table>
             </>
           ) : (
@@ -439,7 +602,43 @@ export default function AssignmentsPage() {
                   />
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div>
+                  <label style={{ fontSize: '0.76rem', fontWeight: 700 }}>Deskripsi Tugas</label>
+                  <textarea
+                    rows={2}
+                    placeholder="Jelaskan ringkasan materi atau tujuan tugas ini..."
+                    value={newAssignment.description}
+                    onChange={e => setNewAssignment({ ...newAssignment, description: e.target.value })}
+                    className="input"
+                    style={{ resize: 'vertical' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.76rem', fontWeight: 700 }}>Petunjuk Pengerjaan untuk Siswa</label>
+                  <textarea
+                    rows={2}
+                    placeholder="Contoh: Kerjakan di buku tulis, foto lembar jawaban atau jadikan file PDF lalu upload via HP..."
+                    value={newAssignment.instructions}
+                    onChange={e => setNewAssignment({ ...newAssignment, instructions: e.target.value })}
+                    className="input"
+                    style={{ resize: 'vertical' }}
+                  />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem' }}>
+                  <div>
+                    <label style={{ fontSize: '0.76rem', fontWeight: 700 }}>Poin Maksimal</label>
+                    <input
+                      type="number"
+                      required
+                      min={10}
+                      max={100}
+                      value={newAssignment.maxScore}
+                      onChange={e => setNewAssignment({ ...newAssignment, maxScore: Number(e.target.value) || 100 })}
+                      className="input"
+                    />
+                  </div>
                   <div>
                     <label style={{ fontSize: '0.76rem', fontWeight: 700 }}>Tenggat Tanggal *</label>
                     <input

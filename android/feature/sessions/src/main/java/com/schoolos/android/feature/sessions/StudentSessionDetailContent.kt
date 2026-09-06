@@ -47,7 +47,8 @@ fun StudentSessionDetailContent(
                     Spacer(Modifier.width(10.dp))
                     Column {
                         Text("Guru Pengampu", fontSize = 10.sp, color = TextTertiary, fontWeight = FontWeight.Bold)
-                        Text("Bpk. Andi Pratama", fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = TextPrimary)
+                        val teacher = session.teacherName ?: "Guru Pengampu"
+                        Text(teacher, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = TextPrimary)
                     }
                 }
                 
@@ -55,10 +56,22 @@ fun StudentSessionDetailContent(
                 HorizontalDivider(color = GlassBorder, thickness = 0.5.dp)
                 Spacer(Modifier.height(16.dp))
 
+                val startTime = session.scheduledAt?.let {
+                    try {
+                        val parser = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", java.util.Locale.getDefault()).apply {
+                            timeZone = java.util.TimeZone.getTimeZone("UTC")
+                        }
+                        val outFormatter = java.text.SimpleDateFormat("HH.mm", java.util.Locale.getDefault()).apply {
+                            timeZone = java.util.TimeZone.getTimeZone("Asia/Jakarta")
+                        }
+                        parser.parse(it.substringBefore("."))?.let { d -> outFormatter.format(d) + " WIB" }
+                    } catch(e: Exception) { null }
+                } ?: "07.30 WIB"
+
                 Row(modifier = Modifier.fillMaxWidth()) {
                     DetailMetricItem(
                         label = "Mulai",
-                        value = "07:30",
+                        value = startTime,
                         icon = Icons.Default.Schedule,
                         modifier = Modifier.weight(1f)
                     )

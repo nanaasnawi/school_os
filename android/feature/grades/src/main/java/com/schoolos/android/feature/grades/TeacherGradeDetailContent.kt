@@ -26,41 +26,61 @@ import com.schoolos.android.domain.model.SubjectGradeDetail
 fun TeacherGradeDetailContent(
     detail: SubjectGradeDetail
 ) {
+    val components = detail.components
+    val graded = components.mapNotNull { it.rawScore ?: it.weightedScore }
+    val avg = if (graded.isNotEmpty()) graded.average() else 0.0
+    val passingCount = graded.count { it >= 75.0 }
+    val totalCount = components.size
+
     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        // TEACHER VIEW: STUDENT ROSTER
         Text(
-            "Daftar Nilai Siswa",
+            "Rincian Penilaian",
             fontSize = 15.sp,
             fontWeight = FontWeight.Black,
             color = TextPrimary,
             modifier = Modifier.padding(start = 4.dp, top = 4.dp)
         )
 
-        listOf(
-            Triple("Ahmad Fauzi", 92.5, "A"),
-            Triple("Budi Santoso", 88.0, "B"),
-            Triple("Citra Lestari", 95.0, "A"),
-            Triple("Dodi Hermawan", 84.5, "B"),
-            Triple("Eva Safitri", 78.0, "C"),
-        ).forEach { (name, score, grade) ->
-            TeacherStudentGradeRow(name, score, grade)
+        if (components.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 24.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("Belum ada data nilai tercatat untuk mata pelajaran ini.", fontSize = 12.sp, color = TextTertiary)
+            }
+        } else {
+            components.forEach { entry ->
+                val score = entry.rawScore ?: entry.weightedScore ?: 0.0
+                val grade = when {
+                    score >= 85.0 -> "A"
+                    score >= 75.0 -> "B"
+                    score >= 65.0 -> "C"
+                    score > 0.0 -> "D"
+                    else -> "-"
+                }
+                TeacherStudentGradeRow(entry.componentName, score, grade)
+            }
         }
 
         // ── Statistik Kelas Card ─────────────────────
-        GlassCard(cornerRadius = 16.dp) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Info, null, tint = NeonBlue, modifier = Modifier.size(16.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Text("Statistik Kelas", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+        if (components.isNotEmpty()) {
+            GlassCard(cornerRadius = 16.dp) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Info, null, tint = NeonBlue, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Statistik Penilaian", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                    }
+                    Spacer(Modifier.height(14.dp))
+                    
+                    SummaryRowCompact("Rata-rata Nilai", if (graded.isNotEmpty()) "%.1f".format(avg) else "-")
+                    HorizontalDivider(color = GlassBorder, thickness = 0.5.dp, modifier = Modifier.padding(vertical = 8.dp))
+                    SummaryRowCompact("Tuntas KKM", "$passingCount / $totalCount Selesai")
+                    HorizontalDivider(color = GlassBorder, thickness = 0.5.dp, modifier = Modifier.padding(vertical = 8.dp))
+                    SummaryRowCompact("Tingkat Kelulusan", if (totalCount > 0) "${((passingCount.toDouble() / totalCount) * 100).toInt()}%" else "-")
                 }
-                Spacer(Modifier.height(14.dp))
-                
-                SummaryRowCompact("Rata-rata Kelas", "90.2")
-                HorizontalDivider(color = GlassBorder, thickness = 0.5.dp, modifier = Modifier.padding(vertical = 8.dp))
-                SummaryRowCompact("Siswa Lulus KKM", "26 / 28")
-                HorizontalDivider(color = GlassBorder, thickness = 0.5.dp, modifier = Modifier.padding(vertical = 8.dp))
-                SummaryRowCompact("Tugas Terkumpul", "94%")
             }
         }
     }

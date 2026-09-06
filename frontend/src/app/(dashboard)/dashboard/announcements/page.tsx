@@ -34,7 +34,7 @@ export default function AnnouncementsPage() {
   const [newAnn, setNewAnn] = useState({
     title: '',
     category: 'AKADEMIK' as AnnouncementItem['category'],
-    target: 'Semua Siswa & Guru',
+    target: 'TARGET_ALL',
     author: '',
     content: '',
     isPinned: false,
@@ -61,9 +61,14 @@ export default function AnnouncementsPage() {
       }
     }
 
+    const getToken = () => {
+      if (typeof window === 'undefined') return null;
+      return localStorage.getItem('auth_token') || localStorage.getItem('token');
+    };
+
     async function loadData() {
       try {
-        const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
+        const token = getToken();
         fetch('/api/v1/schools/profile', {
           headers: token ? { Authorization: `Bearer ${token}` } : {}
         }).then(r => r.ok ? r.json() : null).then(json => {
@@ -77,26 +82,43 @@ export default function AnnouncementsPage() {
         if (teacherRes?.data?.data) {
           setTeachersList(teacherRes.data.data);
         }
-      } catch (e) {
-        console.error(e);
-      }
-    }
-    loadData();
 
-    // Load persisted announcements only created by user/teacher
-    if (typeof window !== 'undefined') {
-      try {
-        const storedAnn = localStorage.getItem('school_os_announcements');
-        if (storedAnn) {
-          const parsed = JSON.parse(storedAnn);
-          if (Array.isArray(parsed)) {
-            setAnnouncements(parsed);
+        // Fetch announcements from backend API
+        try {
+          const annRes = await fetch('/api/v1/announcements', {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+          });
+          if (annRes.ok) {
+            const json = await annRes.json();
+            if (Array.isArray(json?.data) && json.data.length > 0) {
+              setAnnouncements(json.data);
+              localStorage.setItem('school_os_announcements', JSON.stringify(json.data));
+              return;
+            }
           }
+        } catch (err) {
+          console.error('Failed to fetch announcements from API:', err);
         }
       } catch (e) {
         console.error(e);
       }
+
+      // Fallback to local storage if API returned empty or failed
+      if (typeof window !== 'undefined') {
+        try {
+          const storedAnn = localStorage.getItem('school_os_announcements');
+          if (storedAnn) {
+            const parsed = JSON.parse(storedAnn);
+            if (Array.isArray(parsed)) {
+              setAnnouncements(parsed);
+            }
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
     }
+    loadData();
   }, []);
 
   const saveAnnouncementsState = (updatedList: AnnouncementItem[]) => {
@@ -106,13 +128,14 @@ export default function AnnouncementsPage() {
     }
   };
 
-  const handleCreateAnnouncement = (e: React.FormEvent) => {
+  const handleCreateAnnouncement = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newAnn.title || !newAnn.content) return;
 
     const authorName = newAnn.author || `Kepala Sekolah ${schoolName}`;
+    const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
 
-    const item: AnnouncementItem = {
+    let createdItem: AnnouncementItem = {
       id: `ann-${Date.now()}`,
       title: newAnn.title,
       category: newAnn.category,
@@ -124,7 +147,38 @@ export default function AnnouncementsPage() {
       pushStatus: newAnn.sendPushAndroid,
     };
 
-    const nextList = [item, ...announcements];
+    let pushCount = 0;
+
+    try {
+      const res = await fetch('/api/v1/announcements', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          title: newAnn.title,
+          content: newAnn.content,
+          category: newAnn.category,
+          target: newAnn.target,
+          author: authorName,
+          is_pinned: newAnn.isPinned,
+          send_push: newAnn.sendPushAndroid,
+        }),
+      });
+
+      if (res.ok) {
+        const json = await res.json();
+        if (json?.data?.announcement) {
+          createdItem = json.data.announcement;
+          pushCount = json.data.notifications_sent || 0;
+        }
+      }
+    } catch (err) {
+      console.error('Failed to create announcement via API:', err);
+    }
+
+    const nextList = [createdItem, ...announcements.filter(a => a.id !== createdItem.id)];
     saveAnnouncementsState(nextList);
 
     // Push notification to Android Hub store
@@ -134,12 +188,12 @@ export default function AnnouncementsPage() {
         const notifList = storedNotifs ? JSON.parse(storedNotifs) : [];
         const newAndroidNotif = {
           id: `notif-${Date.now()}`,
-          title: item.title,
-          body: item.content,
-          target: item.target,
-          category: item.category,
+          title: createdItem.title,
+          body: createdItem.content,
+          target: createdItem.target,
+          category: createdItem.category,
           timestamp: 'Baru Saja',
-          sentBy: item.author,
+          sentBy: createdItem.author,
           status: 'DELIVERED',
         };
         localStorage.setItem('dapodik_android_notifications', JSON.stringify([newAndroidNotif, ...notifList]));
@@ -152,7 +206,7 @@ export default function AnnouncementsPage() {
     setNewAnn({
       title: '',
       category: 'AKADEMIK',
-      target: 'Semua Siswa & Guru',
+      target: 'TARGET_ALL',
       author: '',
       content: '',
       isPinned: false,
@@ -160,26 +214,48 @@ export default function AnnouncementsPage() {
     });
 
     if (newAnn.sendPushAndroid) {
-      showToast(`📱 Broadcast Push Notification "${item.title}" BERHASIL DIKIRIM ke Aplikasi Android Siswa & Orang Tua!`);
+      if (pushCount > 0) {
+        showToast(`✓ Pengumuman dipublikasikan & push dikirim ke ${pushCount} pengguna Android!`);
+      } else {
+        showToast('✓ Pengumuman dipublikasikan & notifikasi Android siap disinkronkan');
+      }
     } else {
-      showToast(`📢 Pengumuman "${item.title}" berhasil dipublikasikan!`);
+      showToast('✓ Pengumuman berhasil dipublikasikan');
     }
   };
 
-  const handleDeleteAnnouncement = (id: string, e: React.MouseEvent) => {
+  const handleDeleteAnnouncement = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (confirm('Apakah Anda yakin ingin menghapus pengumuman ini?')) {
+      const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
+      try {
+        await fetch(`/api/v1/announcements/${id}`, {
+          method: 'DELETE',
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+      } catch (err) {
+        console.error('Failed to delete announcement via API:', err);
+      }
       const filteredList = announcements.filter(a => a.id !== id);
       saveAnnouncementsState(filteredList);
-      showToast('🗑️ Pengumuman berhasil dihapus.');
+      showToast('✓ Pengumuman berhasil dihapus');
     }
   };
 
-  const handleTogglePin = (id: string, e: React.MouseEvent) => {
+  const handleTogglePin = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
+    try {
+      await fetch(`/api/v1/announcements/${id}/pin`, {
+        method: 'PATCH',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+    } catch (err) {
+      console.error('Failed to toggle pin via API:', err);
+    }
     const updated = announcements.map(a => a.id === id ? { ...a, isPinned: !a.isPinned } : a);
     saveAnnouncementsState(updated);
-    showToast('📌 Status disematkan pengumuman berhasil diperbarui.');
+    showToast('✓ Status pin diperbarui');
   };
 
   const filtered = announcements.filter((a) => {
@@ -393,10 +469,10 @@ export default function AnnouncementsPage() {
                       onChange={e => setNewAnn({ ...newAnn, target: e.target.value })}
                       className="input"
                     >
-                      <option value="Semua Siswa &amp; Guru">Semua Siswa &amp; Guru</option>
-                      <option value="Siswa Mobile Android">Siswa Mobile Android</option>
-                      <option value="Orang Tua / Wali Murid">Orang Tua / Wali Murid</option>
-                      <option value="Guru &amp; Tendik Sekolah">Guru &amp; Tendik Sekolah</option>
+                      <option value="TARGET_ALL">Semua Siswa &amp; Guru</option>
+                      <option value="TARGET_STUDENT">Siswa Mobile Android</option>
+                      <option value="TARGET_GUARDIAN">Orang Tua / Wali Murid</option>
+                      <option value="TARGET_TEACHER">Guru &amp; Tendik Sekolah</option>
                     </select>
                   </div>
                 </div>

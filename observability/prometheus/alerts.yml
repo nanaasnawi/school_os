@@ -1,0 +1,29 @@
+groups:
+  - name: school_os_alerts
+    rules:
+      - alert: SchoolOsServerDown
+        expr: up{job="school-os-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "School OS API Server is DOWN"
+          description: "Instance {{ $labels.instance }} of job {{ $labels.job }} has been unreachable for more than 1 minute."
+
+      - alert: HighHttp5xxErrorRate
+        expr: (sum(rate(http_requests_total{status=~"5.."}[5m])) / sum(rate(http_requests_total[5m]))) * 100 > 5
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High HTTP 5xx error rate detected (> 5%)"
+          description: "HTTP 5xx error rate is currently at {{ $value | printf \"%.2f\" }}% on {{ $labels.instance }}."
+
+      - alert: HighHttpLatency
+        expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le)) > 2.0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High HTTP latency detected (> 2s at p95)"
+          description: "95th percentile request latency is {{ $value | printf \"%.2f\" }}s for the past 5 minutes."

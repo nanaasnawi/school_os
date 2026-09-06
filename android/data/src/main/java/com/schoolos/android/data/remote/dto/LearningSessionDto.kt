@@ -14,6 +14,10 @@ data class LearningSessionDto(
     @SerialName("ended_at") val endedAt: String? = null,
     val status: String,
     val notes: String? = null,
+    @SerialName("subject_name") val subjectName: String? = null,
+    @SerialName("teacher_name") val teacherName: String? = null,
+    @SerialName("class_name") val className: String? = null,
+    @SerialName("room") val room: String? = null,
 )
 
 @Serializable

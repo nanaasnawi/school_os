@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.schoolos.android.core.designsystem.*
+import com.schoolos.android.domain.model.AcademicClass
 import com.schoolos.android.domain.model.SubjectGradeSummary
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -59,15 +60,15 @@ fun GradebookListScreen(
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 0.dp, bottom = 100.dp),
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 46.dp, bottom = 100.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
-                    val isTeacher = true // Simulated for redesign
+                    val isTeacher = com.schoolos.android.core.auth.isTeacherRole(state.userRole)
 
                     // ── PERFORMANCE HERO HEADER ─────────────────────────
                     item { 
                         if (isTeacher) {
-                            TeacherGradeHeroHeader()
+                            TeacherGradeHeroHeader(state.classes)
                         } else {
                             StudentGradeHeroHeader(state.subjects) 
                         }
@@ -75,7 +76,7 @@ fun GradebookListScreen(
 
                     // ── PREMIUM FILTER CHIPS ─────────────────────────────
                     item {
-                        val filters = if (isTeacher) listOf("Semua Kelas", "7A", "8B", "9C")
+                        val filters = if (isTeacher) listOf("Semua Kelas") + state.classes.map { it.name }
                                       else listOf("Semua Mapel", "Wajib", "Muatan Lokal")
                         
                         LazyRow(
@@ -109,7 +110,11 @@ fun GradebookListScreen(
 
                     // DELEGATE TO MODULAR CONTENT
                     if (isTeacher) {
-                        teacherGradebookContent(onSubjectClick = onSubjectClick)
+                        teacherGradebookContent(
+                            classes = state.classes,
+                            selectedFilter = selectedFilter,
+                            onSubjectClick = onSubjectClick
+                        )
                     } else {
                         studentGradebookContent(subjects = state.subjects, onSubjectClick = onSubjectClick)
                     }
@@ -121,9 +126,19 @@ fun GradebookListScreen(
 
 @Composable
 private fun StudentGradeHeroHeader(subjects: List<SubjectGradeSummary>) {
-    val avgScore = if (subjects.isEmpty()) 0.0 else subjects.map { it.finalScore }.average()
+    val gradedSubjects = subjects.filter { it.gradedComponentCount > 0 && it.finalScore > 0 }
+    val avgScore = if (gradedSubjects.isEmpty()) 0.0 else gradedSubjects.map { it.finalScore }.average()
     val totalGraded = subjects.sumOf { it.gradedComponentCount }
     val totalComponents = subjects.sumOf { it.componentCount }
+
+    val (predicate, predicateDesc) = when {
+        avgScore >= 85.0 -> Pair("Predikat A", "Sangat Baik")
+        avgScore >= 75.0 -> Pair("Predikat B", "Baik")
+        avgScore >= 65.0 -> Pair("Predikat C", "Cukup")
+        avgScore >= 55.0 -> Pair("Predikat D", "Kurang")
+        avgScore > 0.0 -> Pair("Predikat E", "Perlu Bimbingan")
+        else -> Pair("-", "Belum Ada Nilai")
+    }
 
     Column(
         modifier = Modifier
@@ -147,7 +162,7 @@ private fun StudentGradeHeroHeader(subjects: List<SubjectGradeSummary>) {
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    "Semester Genap",
+                    "Semester Aktif",
                     color = Color.White,
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Black,
@@ -160,7 +175,7 @@ private fun StudentGradeHeroHeader(subjects: List<SubjectGradeSummary>) {
         
         Row(verticalAlignment = Alignment.Bottom) {
             Text(
-                "%.1f".format(avgScore),
+                if (gradedSubjects.isNotEmpty()) "%.1f".format(avgScore) else "-",
                 color = Color.White,
                 fontSize = 48.sp,
                 fontWeight = FontWeight.Black,
@@ -174,10 +189,10 @@ private fun StudentGradeHeroHeader(subjects: List<SubjectGradeSummary>) {
                         .background(Color.White.copy(alpha = 0.2f))
                         .padding(horizontal = 8.dp, vertical = 4.dp),
                 ) {
-                    Text("Predikat A", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Black)
+                    Text(predicate, color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Black)
                 }
                 Spacer(Modifier.height(4.dp))
-                Text("Sangat Baik", color = Color.White.copy(alpha = 0.8f), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                Text(predicateDesc, color = Color.White.copy(alpha = 0.8f), fontSize = 11.sp, fontWeight = FontWeight.Bold)
             }
         }
 
@@ -195,7 +210,7 @@ private fun StudentGradeHeroHeader(subjects: List<SubjectGradeSummary>) {
 }
 
 @Composable
-private fun TeacherGradeHeroHeader() {
+private fun TeacherGradeHeroHeader(classes: List<AcademicClass>) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -218,7 +233,7 @@ private fun TeacherGradeHeroHeader() {
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    "Ringkasan Akademik",
+                    "Buku Nilai Guru",
                     color = Color.White,
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Black,
@@ -231,7 +246,7 @@ private fun TeacherGradeHeroHeader() {
         
         Row(verticalAlignment = Alignment.Bottom) {
             Text(
-                "88.5",
+                "${classes.size}",
                 color = Color.White,
                 fontSize = 48.sp,
                 fontWeight = FontWeight.Black,
@@ -239,8 +254,8 @@ private fun TeacherGradeHeroHeader() {
             )
             Spacer(Modifier.width(12.dp))
             Column(modifier = Modifier.padding(bottom = 6.dp)) {
-                Text("Rata-rata Gabungan", color = Color.White.copy(alpha = 0.8f), fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                Text("3 Kelas Managed", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Black)
+                Text("Total Kelas Terdaftar", color = Color.White.copy(alpha = 0.8f), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                Text("Buku Nilai Siap Kelola", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Black)
             }
         }
 
@@ -250,8 +265,8 @@ private fun TeacherGradeHeroHeader() {
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            GradeMetricPill("87 Siswa Total", Modifier.weight(1f))
-            GradeMetricPill("12 Mapel Aktif", Modifier.weight(1f))
+            GradeMetricPill("${classes.size} Rombel", Modifier.weight(1f))
+            GradeMetricPill("Sinkron Dapodik", Modifier.weight(1f))
         }
     }
 }

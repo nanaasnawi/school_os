@@ -28,15 +28,23 @@ class AuthRepositoryImpl @Inject constructor(
             name = data.name,
             email = data.email,
             role = data.role,
+            identifier = data.identifier,
+            className = data.className,
+            childName = data.childName,
+            childId = data.childId,
         )
 
-        try {
-            val profileResponse = api.getSchoolProfile()
-            profileResponse.data?.let { profile ->
-                authManager.saveSchoolProfile(name = profile.name, logoUrl = profile.logoUrl)
+        if (!data.schoolName.isNullOrBlank()) {
+            authManager.saveSchoolProfile(name = data.schoolName, logoUrl = data.schoolLogoUrl)
+        } else {
+            try {
+                val profileResponse = api.getSchoolProfile()
+                profileResponse.data?.let { profile ->
+                    authManager.saveSchoolProfile(name = profile.name, logoUrl = profile.logoUrl)
+                }
+            } catch (e: Exception) {
+                // Log or ignore profile fetch failure so it doesn't break login
             }
-        } catch (e: Exception) {
-            // Log or ignore profile fetch failure so it doesn't break login
         }
 
         User(id = data.userId, name = data.name, email = data.email, role = data.role)
@@ -56,15 +64,23 @@ class AuthRepositoryImpl @Inject constructor(
             name = data.name,
             email = data.email,
             role = data.role,
+            identifier = data.identifier,
+            className = data.className,
+            childName = data.childName,
+            childId = data.childId,
         )
 
-        try {
-            val profileResponse = api.getSchoolProfile()
-            profileResponse.data?.let { profile ->
-                authManager.saveSchoolProfile(name = profile.name, logoUrl = profile.logoUrl)
+        if (!data.schoolName.isNullOrBlank()) {
+            authManager.saveSchoolProfile(name = data.schoolName, logoUrl = data.schoolLogoUrl)
+        } else {
+            try {
+                val profileResponse = api.getSchoolProfile()
+                profileResponse.data?.let { profile ->
+                    authManager.saveSchoolProfile(name = profile.name, logoUrl = profile.logoUrl)
+                }
+            } catch (e: Exception) {
+                // Log or ignore profile fetch failure so it doesn't break login
             }
-        } catch (e: Exception) {
-            // Log or ignore profile fetch failure so it doesn't break login
         }
 
         User(id = data.userId, name = data.name, email = data.email, role = data.role)
@@ -91,4 +107,27 @@ class AuthRepositoryImpl @Inject constructor(
     }
 
     override suspend fun isLoggedIn(): Boolean = authManager.isLoggedIn
+
+    override suspend fun getCurrentUser(): Result<User> = runCatching {
+        val response = api.getCurrentUser()
+        val data = response.data ?: throw Exception(
+            response.error?.message ?: "Gagal memuat profil pengguna."
+        )
+
+        authManager.updateUserProfile(
+            name = data.fullName,
+            email = data.email,
+            role = data.role,
+            identifier = data.identifier,
+            className = data.className,
+            childName = data.childName,
+            childId = data.childId,
+        )
+
+        if (!data.schoolName.isNullOrBlank()) {
+            authManager.saveSchoolProfile(name = data.schoolName, logoUrl = data.schoolLogoUrl)
+        }
+
+        User(id = data.id, name = data.fullName, email = data.email, role = data.role)
+    }
 }

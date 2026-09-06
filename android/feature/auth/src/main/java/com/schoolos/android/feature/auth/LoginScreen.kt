@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -135,12 +136,18 @@ fun LoginScreen(
     val state by viewModel.state.collectAsState()
     var passwordVisible by remember { mutableStateOf(false) }
     var showHelpDialog by remember { mutableStateOf(false) }
-    var showServerConfigDialog by remember { mutableStateOf(false) }
-    var tempServerUrl by remember(state.customServerUrl) { mutableStateOf(state.customServerUrl) }
     val focusManager = LocalFocusManager.current
 
     LaunchedEffect(state.isLoggedIn) {
         if (state.isLoggedIn) onLoginSuccess()
+    }
+
+    // Auto-dismiss error toast after 3 seconds
+    LaunchedEffect(state.error) {
+        if (state.error != null) {
+            kotlinx.coroutines.delay(3000L)
+            viewModel.clearError()
+        }
     }
 
     val roleTabs = remember {
@@ -259,7 +266,8 @@ fun LoginScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 24.dp),
+                    .padding(horizontal = 20.dp)
+                    .padding(top = 48.dp, bottom = 32.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
             ) {
@@ -288,7 +296,7 @@ fun LoginScreen(
                 // Emblem Container with Metallic & Neon Border
                 Box(
                     modifier = Modifier
-                        .size(92.dp)
+                        .size(90.dp)
                         .shadow(20.dp, CircleShape, spotColor = animatedAccentColor.copy(alpha = 0.45f))
                         .clip(CircleShape)
                         .background(
@@ -313,34 +321,31 @@ fun LoginScreen(
                         ),
                     contentAlignment = Alignment.Center,
                 ) {
-                    if (!state.schoolLogoUrl.isNullOrEmpty()) {
-                        coil.compose.AsyncImage(
-                            model = state.schoolLogoUrl,
-                            contentDescription = "School Logo",
-                            modifier = Modifier
-                                .size(68.dp)
-                                .clip(CircleShape),
-                            contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-                        )
-                    } else {
-                        SchoolOsBrandLogo(size = 64)
-                    }
+                    com.schoolos.android.core.designsystem.DynamicSchoolLogo(
+                        logoUrl = state.schoolLogoUrl,
+                        modifier = Modifier
+                            .size(90.dp)
+                            .clip(CircleShape),
+                        fallback = {
+                            SchoolOsBrandLogo(size = 80)
+                        },
+                    )
                 }
             }
 
-            Spacer(Modifier.height(14.dp))
+            Spacer(Modifier.height(10.dp))
 
             // ── 2. Header Typography & Identity ──────────────────────────────
             Text(
-                text = "School OS",
+                text = state.schoolName ?: "School OS",
                 fontWeight = FontWeight.Black,
-                fontSize = 32.sp,
+                fontSize = 26.sp,
                 color = TextPrimary,
                 letterSpacing = (-0.8).sp,
             )
             Spacer(Modifier.height(3.dp))
             Text(
-                text = state.schoolName ?: "SISTEM INFORMASI AKADEMIK",
+                text = "SISTEM INFORMASI AKADEMIK",
                 fontSize = 13.sp,
                 color = animatedAccentColor,
                 fontWeight = FontWeight.ExtraBold,
@@ -467,7 +472,7 @@ fun LoginScreen(
                             }
                             Spacer(Modifier.width(8.dp))
                             Text(
-                                text = "AUTENTIKASI AKUN",
+                                text = "AUTENTIKASI",
                                 fontWeight = FontWeight.Black,
                                 fontSize = 12.sp,
                                 color = TextTertiary,
@@ -708,54 +713,7 @@ fun LoginScreen(
                         }
                     }
 
-                    // Error Message Banner
-                    AnimatedVisibility(
-                        visible = state.error != null,
-                        enter = fadeIn() + slideInVertically(),
-                        exit = fadeOut() + slideOutVertically(),
-                    ) {
-                        state.error?.let { errorMsg ->
-                            Spacer(Modifier.height(12.dp))
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(14.dp))
-                                    .background(NeonError.copy(alpha = 0.12f))
-                                    .border(1.dp, NeonError.copy(alpha = 0.35f), RoundedCornerShape(14.dp))
-                                    .padding(horizontal = 14.dp, vertical = 10.dp),
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Info,
-                                        contentDescription = null,
-                                        tint = NeonError,
-                                        modifier = Modifier.size(18.dp),
-                                    )
-                                    Text(
-                                        text = errorMsg,
-                                        color = NeonError,
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.SemiBold,
-                                        modifier = Modifier.weight(1f),
-                                    )
-                                    IconButton(
-                                        onClick = { viewModel.clearError() },
-                                        modifier = Modifier.size(20.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Clear,
-                                            contentDescription = "Tutup Error",
-                                            tint = NeonError,
-                                            modifier = Modifier.size(14.dp)
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    // Error is now shown as a floating toast overlay (see bottom of outer Box)
 
                     Spacer(Modifier.height(20.dp))
 
@@ -925,20 +883,8 @@ fun LoginScreen(
             // ── 6. Trust & Security Footer ───────────────────────────────────
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(6.dp)
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center,
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Lock,
-                        contentDescription = null,
-                        tint = TextTertiary,
-                        modifier = Modifier.size(12.dp)
-                    )
-                }
-
                 Text(
                     text = "© 2026 ${state.schoolName ?: "SCHOOL OS"} • v2.0",
                     color = TextTertiary,
@@ -951,7 +897,82 @@ fun LoginScreen(
         }
     }
 
-
+        // ── Floating Error Toast Overlay ─────────────────────────────────────
+        AnimatedVisibility(
+            visible = state.error != null,
+            enter = fadeIn(tween(300)) + slideInVertically(
+                animationSpec = tween(350, easing = FastOutSlowInEasing),
+                initialOffsetY = { it }
+            ),
+            exit = fadeOut(tween(250)) + slideOutVertically(
+                animationSpec = tween(300, easing = FastOutSlowInEasing),
+                targetOffsetY = { it }
+            ),
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 32.dp)
+                .fillMaxWidth()
+        ) {
+            state.error?.let { errorMsg ->
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .shadow(
+                            elevation = 24.dp,
+                            shape = RoundedCornerShape(18.dp),
+                            spotColor = NeonError.copy(alpha = 0.4f)
+                        )
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(
+                            Brush.horizontalGradient(
+                                listOf(CosmicNavy, CosmicSurface2)
+                            )
+                        )
+                        .border(1.dp, NeonError.copy(alpha = 0.50f), RoundedCornerShape(18.dp))
+                        .padding(horizontal = 16.dp, vertical = 13.dp),
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(34.dp)
+                                .clip(CircleShape)
+                                .background(NeonError.copy(alpha = 0.15f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Info,
+                                contentDescription = null,
+                                tint = NeonError,
+                                modifier = Modifier.size(18.dp),
+                            )
+                        }
+                        Text(
+                            text = errorMsg,
+                            color = TextPrimary,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.weight(1f),
+                            lineHeight = 18.sp,
+                        )
+                        IconButton(
+                            onClick = { viewModel.clearError() },
+                            modifier = Modifier.size(28.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Clear,
+                                contentDescription = "Tutup",
+                                tint = TextTertiary,
+                                modifier = Modifier.size(15.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        }
 
         // ── 7. Help & Support Dialog ─────────────────────────────────────────
         if (showHelpDialog) {
@@ -1073,187 +1094,8 @@ fun LoginScreen(
             )
         }
 
-        // ── 8. Server IP & Host Configuration Dialog (Optimized for Physical Devices) ────
-        if (showServerConfigDialog) {
-            AlertDialog(
-                onDismissRequest = { showServerConfigDialog = false },
-                icon = {
-                    Box(
-                        modifier = Modifier
-                            .size(52.dp)
-                            .clip(CircleShape)
-                            .background(NeonBlue.copy(alpha = 0.15f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Dns,
-                            contentDescription = null,
-                            tint = NeonBlue,
-                            modifier = Modifier.size(28.dp),
-                        )
-                    }
-                },
-                title = {
-                    Text(
-                        text = "Konfigurasi Server API",
-                        fontWeight = FontWeight.Black,
-                        fontSize = 18.sp,
-                        color = TextPrimary,
-                        textAlign = TextAlign.Center,
-                    )
-                },
-                text = {
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Text(
-                            text = "Pilih mode koneksi device fisik atau masukkan alamat IP komputer Anda:",
-                            fontSize = 13.sp,
-                            color = TextSecondary,
-                        )
 
-                        // Quick Presets
-                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            // Preset 1: Wi-Fi LAN
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .background(CosmicSurface)
-                                    .border(
-                                        1.dp,
-                                        if (tempServerUrl.contains("192.168.")) NeonBlue else GlassBorder,
-                                        RoundedCornerShape(10.dp)
-                                    )
-                                    .clickable { tempServerUrl = "http://192.168.100.78:8000/api/v1/" }
-                                    .padding(horizontal = 12.dp, vertical = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                            ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Default.Wifi, null, tint = NeonBlue, modifier = Modifier.size(16.dp))
-                                    Spacer(Modifier.width(8.dp))
-                                    Column {
-                                        Text(
-                                            "📱 Wi-Fi LAN (HP Fisik)",
-                                            fontSize = 12.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = TextPrimary
-                                        )
-                                        Text("http://192.168.100.78:8000/api/v1/", fontSize = 10.sp, color = TextTertiary)
-                                    }
-                                }
-                                if (tempServerUrl.contains("192.168.")) {
-                                    Text("Aktif", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = NeonBlue)
-                                }
-                            }
-
-                            // Preset 2: USB ADB Reverse
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .background(CosmicSurface)
-                                    .border(
-                                        1.dp,
-                                        if (tempServerUrl.contains("127.0.0.1") || tempServerUrl.contains("localhost")) NeonSuccess else GlassBorder,
-                                        RoundedCornerShape(10.dp)
-                                    )
-                                    .clickable { tempServerUrl = "http://127.0.0.1:8000/api/v1/" }
-                                    .padding(horizontal = 12.dp, vertical = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                            ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Default.Usb, null, tint = NeonSuccess, modifier = Modifier.size(16.dp))
-                                    Spacer(Modifier.width(8.dp))
-                                    Column {
-                                        Text(
-                                            "🔌 USB Kabel (ADB Reverse)",
-                                            fontSize = 12.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = TextPrimary
-                                        )
-                                        Text("http://127.0.0.1:8000/api/v1/", fontSize = 10.sp, color = TextTertiary)
-                                    }
-                                }
-                                if (tempServerUrl.contains("127.0.0.1") || tempServerUrl.contains("localhost")) {
-                                    Text("Aktif", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = NeonSuccess)
-                                }
-                            }
-                        }
-
-                        OutlinedTextField(
-                            value = tempServerUrl,
-                            onValueChange = { tempServerUrl = it },
-                            label = { Text("URL Server API Aktif", fontSize = 12.sp) },
-                            placeholder = { Text("http://192.168.100.78:8000/api/v1/", fontSize = 12.sp) },
-                            singleLine = true,
-                            shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedContainerColor = CosmicSurface,
-                                unfocusedContainerColor = CosmicSurface,
-                                focusedBorderColor = NeonBlue,
-                                unfocusedBorderColor = GlassBorder,
-                                focusedTextColor = TextPrimary,
-                                unfocusedTextColor = TextSecondary,
-                            ),
-                        )
-
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(CosmicSurface)
-                                .padding(10.dp),
-                        ) {
-                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Text(
-                                    text = "💡 Panduan Device Fisik:",
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = NeonBlue,
-                                )
-                                Text(
-                                    text = "1. Wi-Fi: Hubungkan HP & PC ke Wi-Fi / Hotspot yang sama (IP: 192.168.100.78:8000).\n2. USB Cable: Jalankan 'adb reverse tcp:8000 tcp:8000' di terminal PC.",
-                                    fontSize = 11.sp,
-                                    color = TextTertiary,
-                                    lineHeight = 15.sp,
-                                )
-                            }
-                        }
-                    }
-                },
-                confirmButton = {
-                    Button(
-                        onClick = {
-                            viewModel.onSaveServerUrl(tempServerUrl)
-                            showServerConfigDialog = false
-                        },
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = NeonBlue),
-                    ) {
-                        Text("Simpan & Hubungkan", fontWeight = FontWeight.Bold, color = Color.White)
-                    }
-                },
-                dismissButton = {
-                    TextButton(
-                        onClick = {
-                            tempServerUrl = "http://192.168.100.78:8000/api/v1/"
-                            viewModel.onSaveServerUrl(tempServerUrl)
-                            showServerConfigDialog = false
-                        }
-                    ) {
-                        Text("Reset Default", color = TextTertiary)
-                    }
-                },
-
-
-                containerColor = CosmicNavy,
-                shape = RoundedCornerShape(22.dp),
-            )
-        }
-
-        // ── 9. QR Scanner Modal Bottom Sheet ─────────────────────────────────
+        // ── 8. QR Scanner Modal Bottom Sheet ─────────────────────────────────
         if (state.showQrScanner) {
             QrScannerModalBottomSheet(
                 onDismissRequest = viewModel::closeQrScanner,
@@ -1262,4 +1104,3 @@ fun LoginScreen(
         }
     }
 }
-

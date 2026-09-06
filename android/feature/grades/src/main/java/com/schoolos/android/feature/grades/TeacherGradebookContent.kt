@@ -18,24 +18,47 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.schoolos.android.core.designsystem.*
+import com.schoolos.android.domain.model.AcademicClass
 
 fun LazyListScope.teacherGradebookContent(
+    classes: List<AcademicClass>,
+    selectedFilter: String = "Semua Kelas",
     onSubjectClick: (String, String) -> Unit
 ) {
-    items(listOf(
-        Triple("7A", "Matematika", 28),
-        Triple("8B", "Matematika", 30),
-        Triple("9C", "Matematika", 29)
-    )) { (kelas, mapel, siswa) ->
-        TeacherClassGradeCard(
-            kelas = kelas,
-            mapel = mapel,
-            studentCount = siswa,
-            onClick = { onSubjectClick(kelas, mapel) }
-        )
+    val filtered = if (selectedFilter == "Semua Kelas" || selectedFilter.isBlank()) {
+        classes
+    } else {
+        classes.filter { it.name.equals(selectedFilter, ignoreCase = true) }
+    }
+
+    if (filtered.isEmpty()) {
+        item {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 32.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = if (classes.isEmpty()) "Belum ada data kelas yang terdaftar." else "Tidak ada kelas yang cocok dengan filter.",
+                    color = TextTertiary,
+                    fontSize = 13.sp,
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+    } else {
+        items(filtered) { cls ->
+            TeacherClassGradeCard(
+                kelas = cls.name,
+                mapel = "Buku Nilai",
+                onClick = { onSubjectClick(cls.name, "Buku Nilai") }
+            )
+        }
     }
 }
 
@@ -43,12 +66,11 @@ fun LazyListScope.teacherGradebookContent(
 private fun TeacherClassGradeCard(
     kelas: String,
     mapel: String,
-    studentCount: Int,
     onClick: () -> Unit
 ) {
-    val color = when (kelas) {
-        "7A" -> StudentNeon
-        "8B" -> NeonBlue
+    val color = when (kelas.hashCode().mod(3)) {
+        0 -> StudentNeon
+        1 -> NeonBlue
         else -> TeacherNeon
     }
 
@@ -73,7 +95,7 @@ private fun TeacherClassGradeCard(
                     .border(1.dp, color.copy(alpha = 0.2f), RoundedCornerShape(14.dp)),
                 contentAlignment = Alignment.Center,
             ) {
-                Text(kelas, fontWeight = FontWeight.Black, fontSize = 20.sp, color = color)
+                Text(kelas.take(4), fontWeight = FontWeight.Black, fontSize = 16.sp, color = color)
             }
 
             Spacer(Modifier.width(16.dp))
@@ -88,15 +110,15 @@ private fun TeacherClassGradeCard(
                 Spacer(Modifier.height(6.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        "$studentCount Siswa", 
-                        fontSize = 11.sp, 
-                        color = TextTertiary, 
+                        "Kelas $kelas",
+                        fontSize = 11.sp,
+                        color = TextTertiary,
                         fontWeight = FontWeight.Bold
                     )
                     Spacer(Modifier.width(10.dp))
                     Text("•", fontSize = 11.sp, color = TextTertiary)
                     Spacer(Modifier.width(10.dp))
-                    Text("Rata-rata: 90.2", fontSize = 11.sp, color = NeonSuccess, fontWeight = FontWeight.Black)
+                    Text("Rekap Nilai Siswa", fontSize = 11.sp, color = NeonSuccess, fontWeight = FontWeight.Black)
                 }
             }
 

@@ -18,6 +18,7 @@ data class TodayUiState(
     val isRefreshing: Boolean = false,
     val error: String? = null,
     val userRole: String = "student",
+    val className: String = "",
     val active: List<LearningSession> = emptyList(),
     val upcoming: List<LearningSession> = emptyList(),
     val completed: List<LearningSession> = emptyList(),
@@ -37,7 +38,10 @@ class TodayViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             authManager.authState.collect { auth ->
-                _state.value = _state.value.copy(userRole = auth.role ?: "student")
+                _state.value = _state.value.copy(
+                    userRole = auth.role ?: "student",
+                    className = auth.className ?: "",
+                )
             }
         }
         load()

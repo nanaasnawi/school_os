@@ -17,3 +17,12 @@ data class NotificationDto(
     @SerialName("read_at") val readAt: String? = null,
     @SerialName("created_at") val createdAt: String,
 )
+
+@Serializable
+data class PaginatedNotificationResponse(
+    val items: List<NotificationDto> = emptyList(),
+    @SerialName("total_items") val totalItems: Long = 0,
+    val page: Int = 1,
+    @SerialName("page_size") val pageSize: Int = 20,
+    @SerialName("total_pages") val totalPages: Int = 0,
+)

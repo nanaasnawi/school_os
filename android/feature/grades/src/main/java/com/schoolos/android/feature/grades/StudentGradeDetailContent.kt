@@ -30,8 +30,8 @@ import com.schoolos.android.domain.model.WeightComponent
 fun StudentGradeDetailContent(
     detail: SubjectGradeDetail
 ) {
-    val score = detail.summary.finalScore.coerceAtLeast(88.6)
-    val letter = if (score >= 85) "A" else if (score >= 75) "B" else "C"
+    val score = detail.summary.finalScore
+    val letter = detail.summary.letterGrade
 
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         // ── 1. MAIN PERFORMANCE CARD (Solid White, High Contrast) ──
@@ -142,20 +142,24 @@ fun StudentGradeDetailContent(
             modifier = Modifier.padding(start = 4.dp, top = 4.dp)
         )
 
-        val breakdownList = if (detail.weightBreakdown.isNotEmpty()) detail.weightBreakdown else listOf(
-            WeightComponent("Tugas Harian Pecahan", 20.0, 88.0, 100.0),
-            WeightComponent("Kuis Operasi Matematika", 20.0, 90.0, 100.0),
-            WeightComponent("Ujian Tengah Semester", 30.0, 85.0, 100.0),
-            WeightComponent("Ujian Akhir Semester", 30.0, 90.0, 100.0),
-        )
-
-        breakdownList.forEach { component ->
-            GradeBreakdownCardItem(
-                componentName = component.name,
-                weight = component.weightPercentage,
-                rawScore = component.score ?: 88.0,
-                maxRawScore = component.maxScore ?: 100.0,
-            )
+        if (detail.weightBreakdown.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 20.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("Belum ada rincian komponen nilai yang dicatat.", fontSize = 12.sp, color = TextTertiary)
+            }
+        } else {
+            detail.weightBreakdown.forEach { component ->
+                GradeBreakdownCardItem(
+                    componentName = component.name,
+                    weight = component.weightPercentage,
+                    rawScore = component.score ?: 0.0,
+                    maxRawScore = component.maxScore ?: 100.0,
+                )
+            }
         }
 
         // ── 3. ANALYTICAL DASHBOARD CARD ──
@@ -184,11 +188,20 @@ fun StudentGradeDetailContent(
                 }
                 Spacer(Modifier.height(16.dp))
                 
-                SummaryRowItem("Komponen Dinilai", "4/4 Selesai")
+                val gradedCount = detail.summary.gradedComponentCount
+                val totalCount = detail.summary.componentCount
+                val compText = if (totalCount > 0) "$gradedCount/$totalCount Selesai" else "-"
+                val pctText = "${detail.summary.completionPercentage.toInt()}%"
+                val kkmText = when {
+                    detail.summary.finalScore >= 75.0 -> "Tuntas (Predikat ${detail.summary.letterGrade})"
+                    detail.summary.finalScore > 0.0 -> "Perlu Remedial (Predikat ${detail.summary.letterGrade})"
+                    else -> "Belum Ada Nilai"
+                }
+                SummaryRowItem("Komponen Dinilai", compText)
                 HorizontalDivider(color = GlassBorder, thickness = 0.5.dp, modifier = Modifier.padding(vertical = 10.dp))
-                SummaryRowItem("Persentase Selesai", "100%")
+                SummaryRowItem("Persentase Selesai", pctText)
                 HorizontalDivider(color = GlassBorder, thickness = 0.5.dp, modifier = Modifier.padding(vertical = 10.dp))
-                SummaryRowItem("Status Target KKM", "Tuntas (Predikat A)")
+                SummaryRowItem("Status Target KKM", kkmText)
             }
         }
     }

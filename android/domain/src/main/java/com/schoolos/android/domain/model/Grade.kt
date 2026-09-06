@@ -53,27 +53,26 @@ fun List<GradeEntry>.toSubjectSummary(subjectId: String, subjectName: String): S
     
     val finalScore = if (calculatedWeightedSum > 0) calculatedWeightedSum 
     else if (graded.isNotEmpty()) {
-        graded.mapNotNull { it.rawScore }.average().takeIf { !it.isNaN() } ?: 88.6
-    } else 88.6 // High quality fallback grade for demonstration
+        graded.mapNotNull { it.rawScore }.average().takeIf { !it.isNaN() } ?: 0.0
+    } else 0.0
 
     val letter = when {
         finalScore >= 85 -> "A"
         finalScore >= 75 -> "B"
         finalScore >= 65 -> "C"
         finalScore >= 55 -> "D"
-        else -> "F"
+        finalScore > 0 -> "E"
+        else -> "-"
     }
-    val completion = if (entries.isEmpty()) 100.0 else (graded.size.toDouble() / entries.size) * 100.0
+    val completion = if (entries.isEmpty()) 0.0 else (graded.size.toDouble() / entries.size) * 100.0
     return SubjectGradeSummary(
         subjectId = subjectId,
         subjectName = subjectName,
         finalScore = finalScore,
         letterGrade = letter,
         completionPercentage = completion,
-        lastCalculated = graded.maxOfOrNull { it.calculatedAt }.takeIf { !it.isNull_or_blank() } ?: "10 Aug 2026",
-        componentCount = if (entries.isEmpty()) 4 else entries.size,
-        gradedComponentCount = if (graded.isEmpty()) 4 else graded.size,
+        lastCalculated = graded.maxOfOrNull { it.calculatedAt }.orEmpty(),
+        componentCount = entries.size,
+        gradedComponentCount = graded.size,
     )
 }
-
-private fun String?.isNull_or_blank(): Boolean = this == null || this.isBlank()

@@ -4,6 +4,17 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { login as sdkLogin } from '@/lib/sdk';
+import { getApiUrl } from '@/lib/api';
+import { 
+  Server, 
+  ShieldAlert, 
+  RefreshCw, 
+  Activity, 
+  HardDrive, 
+  Lock, 
+  Radio, 
+  Clock 
+} from 'lucide-react';
 import styles from './login.module.css';
 
 export default function LoginPage() {
@@ -16,13 +27,21 @@ export default function LoginPage() {
   const [schoolName, setSchoolName] = useState('School OS');
   const [schoolLogoUrl, setSchoolLogoUrl] = useState('');
   const [maintenance, setMaintenance] = useState<{ is_active: boolean; message: string } | null>(null);
+  const [checkingMaintenance, setCheckingMaintenance] = useState(false);
+  const [countdown, setCountdown] = useState(15);
+  const [checkFeedback, setCheckFeedback] = useState<string | null>(null);
+  const [adminTriggerCount, setAdminTriggerCount] = useState(0);
 
   const router = useRouter();
   const { login, isAuthenticated, isLoading } = useAuth();
 
-  const checkMaintenanceStatus = async () => {
+  const checkMaintenanceStatus = async (isManual = false) => {
+    if (isManual) {
+      setCheckingMaintenance(true);
+      setCheckFeedback(null);
+    }
     try {
-      const res = await fetch('http://localhost:8000/api/v1/system/maintenance-status');
+      const res = await fetch(getApiUrl('/api/v1/system/maintenance-status'));
       if (res.ok) {
         const json = await res.json();
         if (json.data && json.data.maintenance_mode) {
@@ -30,18 +49,61 @@ export default function LoginPage() {
             is_active: true,
             message: json.data.maintenance_message || 'Sistem sedang dalam peningkatan performa server terjadwal. Silakan kembali dalam beberapa menit.'
           });
+          if (isManual) {
+            setCheckFeedback('Server masih dalam optimalisasi terjadwal.');
+          }
         } else {
           setMaintenance({ is_active: false, message: '' });
+          if (isManual) {
+            setCheckFeedback('Server telah aktif! Mengalihkan ke login...');
+          }
+        }
+      } else {
+        if (isManual) {
+          setCheckFeedback('Status: Server dalam mode pemeliharaan (HTTP 503).');
         }
       }
     } catch {
-      // Backend offline or unreachable
+      if (isManual) {
+        setCheckFeedback('Server belum siap merespons, mencoba kembali otomatis...');
+      }
+    } finally {
+      if (isManual) {
+        setTimeout(() => setCheckingMaintenance(false), 500);
+      }
     }
   };
 
   useEffect(() => {
     checkMaintenanceStatus();
   }, []);
+
+  // Auto-countdown timer for maintenance check
+  useEffect(() => {
+    if (!maintenance?.is_active) return;
+    const timer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          checkMaintenanceStatus(false);
+          return 15;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [maintenance?.is_active]);
+
+  // Hidden emergency shortcut for authorized administrators (Ctrl + Shift + S)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.shiftKey && (e.key === 'S' || e.key === 's')) {
+        e.preventDefault();
+        router.push('/system-admin/login');
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [router]);
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
@@ -83,7 +145,7 @@ export default function LoginPage() {
       } else if (response.status === 503 || response.status === 423 || (apiErr as any)?.message?.includes('Mode Pemeliharaan')) {
         setMaintenance({
           is_active: true,
-          message: (apiErr as any)?.message || 'Sistem sedang dalam mode pemeliharaan server oleh Super Admin.'
+          message: (apiErr as any)?.message || 'Sistem sedang dalam peningkatan performa server terjadwal.'
         });
       } else {
         setError('Terjadi kesalahan pada server (Status: ' + response.status + ').');
@@ -103,133 +165,163 @@ export default function LoginPage() {
   };
 
   const features = [
-    { icon: '\u2699\uFE0F', title: 'Manajemen Data Sekolah', desc: 'Kelola data siswa, guru, kelas, dan mata pelajaran secara terpusat' },
-    { icon: '\uD83D\uDCCA', title: 'Analitik & Laporan', desc: 'Pantau kinerja akademik real-time dan ekspor laporan otomatis' },
-    { icon: '\uD83D\uDCF1', title: 'Terhubung ke Aplikasi Mobile', desc: 'Sinkron langsung dengan app Android untuk siswa, guru, dan orang tua' },
-    { icon: '\uD83D\uDD10', title: 'Keamanan Data', desc: 'Proteksi data terenkripsi dengan log aktivitas lengkap' },
+    { icon: '⚙️', title: 'Manajemen Data Sekolah', desc: 'Kelola data siswa, guru, kelas, dan mata pelajaran secara terpusat' },
+    { icon: '📊', title: 'Analitik & Laporan', desc: 'Pantau kinerja akademik real-time dan ekspor laporan otomatis' },
+    { icon: '📱', title: 'Terhubung ke Aplikasi Mobile', desc: 'Sinkron langsung dengan app Android untuk siswa, guru, dan orang tua' },
+    { icon: '🔐', title: 'Keamanan Data', desc: 'Proteksi data terenkripsi dengan log aktivitas lengkap' },
   ];
 
   if (isLoading || isAuthenticated) {
     return null;
   }
 
-  /* ── FULLSCREEN MAINTENANCE SCREEN ── */
+  /* ── ENTERPRISE FULLSCREEN MAINTENANCE SCREEN ── */
   if (maintenance?.is_active) {
     return (
-      <div className={styles.root} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '1.5rem' }}>
+      <div className={styles.maintenanceRoot}>
         <div className={styles.bgBlob1} />
         <div className={styles.bgBlob2} />
+        <div className={styles.bgBlob3} />
         <div className={styles.gridOverlay} />
 
-        <div style={{
-          background: 'rgba(15, 23, 42, 0.85)',
-          border: '1px solid rgba(239, 68, 68, 0.3)',
-          borderRadius: '24px',
-          maxWidth: '620px',
-          width: '100%',
-          padding: '3rem 2.5rem',
-          textAlign: 'center',
-          backdropFilter: 'blur(16px)',
-          boxShadow: '0 25px 60px rgba(0,0,0,0.8), 0 0 40px rgba(239, 68, 68, 0.2)',
-          zIndex: 10,
-          animation: 'fadeIn 0.4s ease'
-        }}>
-          {/* Animated Icon */}
-          <div style={{
-            width: '80px',
-            height: '80px',
-            borderRadius: '20px',
-            background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(245, 158, 11, 0.2))',
-            border: '1px solid rgba(239, 68, 68, 0.4)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '2.5rem',
-            margin: '0 auto 1.5rem',
-            boxShadow: '0 0 30px rgba(239, 68, 68, 0.35)'
-          }}>
-            🛡️
+        <div className={styles.maintenanceCard}>
+          {/* Top Ambient Glow Line */}
+          <div className={styles.cardTopLight} />
+
+          {/* Futuristic Concentric Radar Rings & Core Icon */}
+          <div className={styles.iconAuraWrapper}>
+            <div className={styles.iconRingOuter} />
+            <div className={styles.iconRingPulse} />
+            <div className={styles.iconCore}>
+              <Server size={36} strokeWidth={1.8} />
+            </div>
           </div>
 
-          <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '0.4rem',
-            background: 'rgba(239, 68, 68, 0.15)',
-            border: '1px solid rgba(239, 68, 68, 0.4)',
-            color: '#f87171',
-            fontSize: '0.78rem',
-            fontWeight: 800,
-            padding: '0.3rem 0.85rem',
-            borderRadius: '9999px',
-            textTransform: 'uppercase',
-            letterSpacing: '0.08em',
-            marginBottom: '1rem'
-          }}>
-            <span>●</span>
-            <span>Mode Pemeliharaan Aktif</span>
+          {/* Operational Live Status Pill */}
+          <div>
+            <div className={styles.badgeLive}>
+              <span className={styles.beaconDot} />
+              <span>Status Operasional: Pemeliharaan Terjadwal</span>
+            </div>
           </div>
 
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 900, color: '#f8fafc', margin: '0 0 0.75rem', letterSpacing: '-0.02em' }}>
-            Server Sedang Dalam Pemeliharaan
+          {/* Headings */}
+          <h1 className={styles.maintenanceTitle}>
+            Sistem Sedang Dalam Pemeliharaan
           </h1>
-
-          <p style={{ color: '#94a3b8', fontSize: '0.92rem', lineHeight: 1.6, margin: '0 0 1.75rem' }}>
-            Akses masuk ke portal sekolah ditutup sementara untuk peningkatan performa, sinkronisasi data, dan pemeliharaan server oleh tim teknis.
+          <p className={styles.maintenanceSubtitle}>
+            Peningkatan performa infrastruktur dan sinkronisasi data sedang berlangsung untuk memastikan stabilitas, keamanan, dan keandalan operasional seluruh civitas sekolah.
           </p>
 
-          {/* Broadcast Message Box */}
-          <div style={{
-            background: 'rgba(0, 0, 0, 0.4)',
-            border: '1px dashed rgba(255, 255, 255, 0.15)',
-            borderRadius: '14px',
-            padding: '1.25rem',
-            marginBottom: '2rem',
-            textAlign: 'left'
-          }}>
-            <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#fbbf24', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.4rem' }}>
-              📢 Pesan dari Super Admin:
+          {/* Telemetry Grid (3 Cards) */}
+          <div className={styles.telemetryGrid}>
+            <div className={styles.telemetryCard}>
+              <div className={styles.telemetryHeader}>
+                <Activity size={12} />
+                <span>Status Server</span>
+              </div>
+              <div className={styles.telemetryValue} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#fbbf24', display: 'inline-block' }} />
+                Optimalisasi Berjalan
+              </div>
             </div>
-            <div style={{ fontSize: '0.9rem', color: '#e2e8f0', lineHeight: 1.5, fontStyle: 'italic' }}>
+
+            <div className={styles.telemetryCard}>
+              <div className={styles.telemetryHeader}>
+                <Lock size={12} />
+                <span>Keamanan Data</span>
+              </div>
+              <div className={styles.telemetryValue} style={{ color: '#4ade80' }}>
+                Terenkripsi & Terlindungi
+              </div>
+            </div>
+
+            <div className={styles.telemetryCard}>
+              <div className={styles.telemetryHeader}>
+                <HardDrive size={12} />
+                <span>Infrastruktur</span>
+              </div>
+              <div className={styles.telemetryValue}>
+                High-Availability Cloud
+              </div>
+            </div>
+          </div>
+
+          {/* Official Technical Operational Notice */}
+          <div className={styles.messageBox}>
+            <div className={styles.messageHeader}>
+              <Radio size={13} style={{ animation: 'pulse 1.5s infinite' }} />
+              <span>Catatan Teknis Operasional</span>
+            </div>
+            <div className={styles.messageText}>
               &ldquo;{maintenance.message}&rdquo;
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          {/* Actions & Auto-Check Bar */}
+          <div>
             <button
-              onClick={checkMaintenanceStatus}
-              style={{
-                width: '100%',
-                padding: '0.85rem 1.5rem',
-                borderRadius: '12px',
-                background: 'linear-gradient(135deg, #2563eb, #7c3aed)',
-                border: 'none',
-                color: '#ffffff',
-                fontWeight: 700,
-                fontSize: '0.95rem',
-                cursor: 'pointer',
-                boxShadow: '0 4px 15px rgba(37, 99, 235, 0.4)',
-                transition: 'all 0.2s ease'
-              }}
+              type="button"
+              onClick={() => checkMaintenanceStatus(true)}
+              disabled={checkingMaintenance}
+              className={styles.checkButton}
             >
-              🔄 Cek Status Server Sekarang
+              <RefreshCw 
+                size={16} 
+                style={{ 
+                  animation: checkingMaintenance ? 'spin 1s linear infinite' : 'none',
+                  transition: 'transform 0.2s ease'
+                }} 
+              />
+              <span>{checkingMaintenance ? 'Memeriksa Status Terkini...' : 'Periksa Status Server Sekarang'}</span>
             </button>
 
-            <a
-              href="/system-admin/login"
-              style={{
+            {checkFeedback && (
+              <div style={{
+                marginTop: '0.75rem',
+                fontSize: '0.8rem',
+                color: '#7dd3fc',
+                background: 'rgba(14, 165, 233, 0.1)',
+                border: '1px solid rgba(14, 165, 233, 0.25)',
+                borderRadius: '8px',
+                padding: '0.45rem 0.8rem',
                 display: 'inline-block',
-                padding: '0.65rem',
-                color: '#60a5fa',
-                fontSize: '0.84rem',
-                fontWeight: 600,
-                textDecoration: 'none',
-                transition: 'color 0.2s ease'
+                animation: 'fadeIn 0.2s ease'
+              }}>
+                ℹ️ {checkFeedback}
+              </div>
+            )}
+
+            <div className={styles.autoTickerRow}>
+              <Clock size={13} />
+              <span>Pemeriksaan otomatis dalam <strong>{countdown} detik</strong></span>
+            </div>
+            <div className={styles.autoProgressBar}>
+              <div
+                className={styles.autoProgressFill}
+                style={{ width: `${Math.max(5, ((15 - countdown) / 15) * 100)}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Footer Assistance & Zero-Leak Secret Admin Access */}
+          <div className={styles.footerHelpText}>
+            <span>Pertanyaan darurat terkait akses sekolah? Hubungi Administrator TI Sekolah.</span>
+            <span>•</span>
+            <span
+              className={styles.versionBadge}
+              title=""
+              onClick={() => {
+                const next = adminTriggerCount + 1;
+                if (next >= 5) {
+                  router.push('/system-admin/login');
+                } else {
+                  setAdminTriggerCount(next);
+                }
               }}
             >
-              🔑 Masuk sebagai Super Admin / Command Center &rarr;
-            </a>
+              v2.4.0
+            </span>
           </div>
         </div>
       </div>
@@ -339,7 +431,7 @@ export default function LoginPage() {
                     id="email"
                     type="email"
                     required
-                    placeholder="admin@sekolah.id"
+                    placeholder="nama@sekolah.id"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className={styles.formInput}
@@ -360,7 +452,7 @@ export default function LoginPage() {
                     id="password"
                     type={showPassword ? 'text' : 'password'}
                     required
-                    placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;"
+                    placeholder="Masukkan kata sandi"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className={styles.formInput}
@@ -446,7 +538,7 @@ export default function LoginPage() {
                 </div>
                 <div>
                   <h2 className={styles.modalTitle}>Aplikasi Mobile School OS</h2>
-                  <p style={{ fontSize: '0.72rem', color: 'rgba(165,180,252,0.45)', margin: 0 }}>Khusus Siswa, Guru, dan Orang Tua / Wali</p>
+                  <p style={{ fontSize: '0.72rem', color: 'rgba(165,180,252,0.45)', margin: 0 }}>Panduan Akses Siswa, Guru, dan Orang Tua</p>
                 </div>
               </div>
               <button id="btn-close-modal" className={styles.modalCloseBtn} onClick={() => setShowAndroidModal(false)}>
@@ -458,19 +550,19 @@ export default function LoginPage() {
 
             <div className={styles.modalBody}>
               <div className={styles.androidCard}>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.7rem', fontWeight: 700, color: '#818cf8', background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.2)', padding: '0.2rem 0.5rem', borderRadius: 100, width: 'fit-content' }}>
-                  Aplikasi Android Native
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.7rem', fontWeight: 700, color: '#38bdf8', background: 'rgba(14,165,233,0.12)', border: '1px solid rgba(14,165,233,0.2)', padding: '0.2rem 0.5rem', borderRadius: 100, width: 'fit-content' }}>
+                  Aplikasi Android
                 </span>
                 <p style={{ fontSize: '0.78rem', color: 'rgba(165,180,252,0.5)', marginTop: 6, marginBottom: 0, lineHeight: 1.55 }}>
-                  Portal web ini khusus untuk <strong style={{ color: '#c7d2fe' }}>Administrator &amp; Staf Tata Usaha</strong>. Pengguna lainnya:
+                  Portal web ini khusus untuk <strong style={{ color: '#c7d2fe' }}>Administrator &amp; Staf Tata Usaha</strong>. Untuk Siswa, Guru, dan Orang Tua, silakan gunakan aplikasi di ponsel:
                 </p>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 {[
-                  { label: 'Siswa', desc: 'Jadwal pelajaran, kumpul tugas digital, presensi, dan nilai rapor.' },
-                  { label: 'Guru', desc: 'Input nilai, absensi harian siswa, dan publikasi materi pembelajaran.' },
-                  { label: 'Orang Tua / Wali', desc: 'Pantau kehadiran real-time, tagihan sekolah, dan komunikasi wali kelas.' },
+                  { label: 'Siswa', desc: 'Jadwal pelajaran, tugas digital, absensi harian, dan nilai rapor.' },
+                  { label: 'Guru', desc: 'Presensi kelas, penilaian siswa, dan pembagian materi pembelajaran.' },
+                  { label: 'Orang Tua / Wali', desc: 'Pantau kehadiran anak dan perkembangan belajar secara langsung.' },
                 ].map((item, i) => (
                   <div key={i} className={styles.androidFeature}>
                     <strong>{item.label}</strong>
@@ -479,11 +571,11 @@ export default function LoginPage() {
                 ))}
               </div>
 
-              <div style={{ padding: '0.75rem', background: 'rgba(5,150,105,0.07)', borderRadius: 10, border: '1px solid rgba(5,150,105,0.18)', fontSize: '0.75rem', color: '#6ee7b7', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <div style={{ padding: '0.75rem', background: 'rgba(5,150,105,0.08)', borderRadius: 10, border: '1px solid rgba(5,150,105,0.2)', fontSize: '0.75rem', color: '#6ee7b7', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="20 6 9 17 4 12"/>
                 </svg>
-                Build Android (Kotlin + Jetpack Compose) tersedia di folder /android
+                Aplikasi Android resmi siap dipasang di ponsel. Hubungi pihak sekolah untuk panduan instalasi.
               </div>
             </div>
 

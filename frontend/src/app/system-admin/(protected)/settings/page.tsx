@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { getApiUrl } from '@/lib/api';
 import styles from './settings.module.css';
 
-type SettingsTab = 'auth' | 'dapodik' | 'database' | 'smtp' | 'maintenance';
+type SettingsTab = 'auth' | 'dapodik' | 'database' | 'smtp' | 'maintenance' | 'mobile';
 
 export default function SystemSettingsPage() {
   const [activeTab, setActiveTab] = useState<SettingsTab>('auth');
@@ -43,6 +44,12 @@ export default function SystemSettingsPage() {
     'Sistem sedang dalam peningkatan performa server terjadwal. Silakan kembali dalam beberapa menit.'
   );
 
+  // 6. Mobile & Android Gateway
+  const [mobileServerUrl, setMobileServerUrl] = useState('http://192.168.1.10:8000/api/v1/');
+  const [mobileFallbackUrl, setMobileFallbackUrl] = useState('http://127.0.0.1:8000/api/v1/');
+  const [mobileServerName, setMobileServerName] = useState('Server Utama Sekolah (Wi-Fi LAN)');
+  const [mobileAllowFallback, setMobileAllowFallback] = useState(true);
+
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3500);
@@ -53,7 +60,7 @@ export default function SystemSettingsPage() {
       setIsLoading(true);
       try {
         const token = localStorage.getItem('sysAdminToken');
-        const res = await fetch('http://localhost:8000/api/v1/system/settings', {
+        const res = await fetch(getApiUrl('/api/v1/system/settings'), {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (res.ok) {
@@ -90,6 +97,12 @@ export default function SystemSettingsPage() {
             if (data.smtp.port) setSmtpPort(String(data.smtp.port));
             if (data.smtp.sender) setSmtpSender(data.smtp.sender);
             if (data.smtp.encryption) setSmtpEncryption(data.smtp.encryption);
+          }
+          if (data.mobile) {
+            if (data.mobile.server_url) setMobileServerUrl(data.mobile.server_url);
+            if (data.mobile.fallback_url) setMobileFallbackUrl(data.mobile.fallback_url);
+            if (data.mobile.server_name) setMobileServerName(data.mobile.server_name);
+            if (data.mobile.allow_fallback !== undefined) setMobileAllowFallback(Boolean(data.mobile.allow_fallback));
           }
         }
       } catch (e) {
@@ -134,10 +147,16 @@ export default function SystemSettingsPage() {
           port: smtpPort,
           sender: smtpSender,
           encryption: smtpEncryption,
+        },
+        mobile: {
+          server_url: mobileServerUrl,
+          fallback_url: mobileFallbackUrl,
+          server_name: mobileServerName,
+          allow_fallback: mobileAllowFallback,
         }
       };
 
-      const res = await fetch('http://localhost:8000/api/v1/system/settings', {
+      const res = await fetch(getApiUrl('/api/v1/system/settings'), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -147,12 +166,12 @@ export default function SystemSettingsPage() {
       });
 
       if (res.ok) {
-        showToast('✓ Konfigurasi sistem global berhasil disimpan ke database!');
+        showToast('✓ Pengaturan berhasil disimpan');
       } else {
-        showToast('Gagal menyimpan konfigurasi.');
+        showToast('⚠️ Gagal menyimpan');
       }
     } catch (e) {
-      showToast('Koneksi ke backend server gagal.');
+      showToast('⚠️ Gagal terhubung ke server');
     }
   };
 
@@ -261,6 +280,14 @@ export default function SystemSettingsPage() {
           >
             <span className={styles.tabIcon}>🛡️</span>
             <span>Kebijakan &amp; Maintenance</span>
+          </button>
+
+          <button
+            className={`${styles.tabItem} ${activeTab === 'mobile' ? styles.tabItemActive : ''}`}
+            onClick={() => setActiveTab('mobile')}
+          >
+            <span className={styles.tabIcon}>📱</span>
+            <span>Gateway &amp; Mobile Android</span>
           </button>
         </aside>
 
@@ -697,22 +724,167 @@ export default function SystemSettingsPage() {
               </div>
             )}
 
-            {/* Bottom Save Bar */}
-            <div className={styles.saveBar}>
-              <button
-                type="submit"
-                className="btn btn-primary"
-                style={{
-                  background: 'linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)',
-                  color: '#ffffff',
-                  boxShadow: '0 4px 14px rgba(37, 99, 235, 0.4)',
-                  fontWeight: 700,
-                  padding: '0.65rem 1.5rem',
-                }}
-              >
-                Simpan Perubahan Konfigurasi
-              </button>
-            </div>
+            {/* ── TAB 6: Gateway & Mobile Android ── */}
+            {activeTab === 'mobile' && (
+              <div className={styles.card}>
+                <div className={styles.cardHeader}>
+                  <div>
+                    <h2 className={styles.cardTitle}>📱 Konfigurasi Gateway &amp; Server Android</h2>
+                    <p className={styles.cardSubtitle}>
+                      Kelola alamat IP dan URL server yang digunakan seluruh aplikasi Android siswa, guru, dan orang tua.
+                    </p>
+                  </div>
+                  <span className="badge badge-active" style={{ background: 'rgba(37, 99, 235, 0.15)', color: '#60a5fa', border: '1px solid rgba(37, 99, 235, 0.3)' }}>
+                    Mobile Discovery Active
+                  </span>
+                </div>
+
+                <div className={styles.formRow}>
+                  <div className={styles.formGroup}>
+                    <div className={styles.labelWrapper}>
+                      <label className={styles.label}>URL Server API Utama (Primary Endpoint)</label>
+                    </div>
+                    <input
+                      type="text"
+                      className={styles.input}
+                      value={mobileServerUrl}
+                      onChange={(e) => setMobileServerUrl(e.target.value)}
+                      placeholder="http://192.168.1.7:8000/api/v1/"
+                    />
+                    <div className={styles.inputHelper}>
+                      Alamat IP/Domain backend Axum yang akan diakses aplikasi Android siswa &amp; guru.
+                    </div>
+                  </div>
+
+                  <div className={styles.formGroup}>
+                    <div className={styles.labelWrapper}>
+                      <label className={styles.label}>Label Jaringan / Nama Server</label>
+                    </div>
+                    <input
+                      type="text"
+                      className={styles.input}
+                      value={mobileServerName}
+                      onChange={(e) => setMobileServerName(e.target.value)}
+                      placeholder="Server Utama Sekolah (Wi-Fi LAN)"
+                    />
+                    <div className={styles.inputHelper}>Deskripsi jaringan untuk dokumentasi IT.</div>
+                  </div>
+                </div>
+
+                {/* Quick Presets for System Admin */}
+                <div style={{ marginBottom: '1.25rem' }}>
+                  <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    ⚡ Preset Cepat URL Server:
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      style={{ fontSize: '0.78rem', padding: '0.35rem 0.75rem', borderColor: mobileServerUrl.includes('192.168.1.10') ? '#3b82f6' : undefined }}
+                      onClick={() => {
+                        setMobileServerUrl('http://192.168.1.10:8000/api/v1/');
+                        setMobileServerName('Wi-Fi LAN PC (192.168.1.10)');
+                      }}
+                    >
+                      📱 Wi-Fi LAN Aktif (192.168.1.10:8000)
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      style={{ fontSize: '0.78rem', padding: '0.35rem 0.75rem' }}
+                      onClick={() => {
+                        setMobileServerUrl('http://192.168.1.7:8000/api/v1/');
+                        setMobileServerName('Wi-Fi LAN Alternatif (192.168.1.7)');
+                      }}
+                    >
+                      📱 Wi-Fi Alt (192.168.1.7:8000)
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      style={{ fontSize: '0.78rem', padding: '0.35rem 0.75rem' }}
+                      onClick={() => {
+                        setMobileServerUrl('http://127.0.0.1:8000/api/v1/');
+                        setMobileServerName('USB Cable ADB Reverse');
+                      }}
+                    >
+                      🔌 USB ADB Reverse (127.0.0.1:8000)
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      style={{ fontSize: '0.78rem', padding: '0.35rem 0.75rem' }}
+                      onClick={() => {
+                        setMobileServerUrl('https://api.schoolos.id/api/v1/');
+                        setMobileServerName('Production Cloud Domain');
+                      }}
+                    >
+                      🌐 Cloud Production (api.schoolos.id)
+                    </button>
+                  </div>
+                </div>
+
+                <div className={styles.formRow}>
+                  <div className={styles.formGroup}>
+                    <div className={styles.labelWrapper}>
+                      <label className={styles.label}>URL Server Cadangan (Auto-Fallback)</label>
+                    </div>
+                    <input
+                      type="text"
+                      className={styles.input}
+                      value={mobileFallbackUrl}
+                      onChange={(e) => setMobileFallbackUrl(e.target.value)}
+                      placeholder="http://127.0.0.1:8000/api/v1/"
+                    />
+                    <div className={styles.inputHelper}>
+                      Otomatis dicoba jika koneksi Wi-Fi terputus atau device terhubung via USB ADB.
+                    </div>
+                  </div>
+                </div>
+
+                <div className={styles.toggleRow} style={{ marginTop: '0.75rem' }}>
+                  <div className={styles.toggleMeta}>
+                    <div className={styles.toggleTitle}>
+                      Izinkan Smart Auto-Fallback (Wi-Fi ⇄ USB)
+                    </div>
+                    <div className={styles.toggleDesc}>
+                      Jika aktif, aplikasi Android akan otomatis beralih antar alamat cadangan bila salah satu koneksi terputus.
+                    </div>
+                  </div>
+                  <label className={styles.switch}>
+                    <input
+                      type="checkbox"
+                      checked={mobileAllowFallback}
+                      onChange={(e) => setMobileAllowFallback(e.target.checked)}
+                    />
+                    <span className={styles.slider} />
+                  </label>
+                </div>
+
+                {/* Security Hardening Alert */}
+                <div style={{
+                  marginTop: '1.5rem',
+                  padding: '1rem 1.25rem',
+                  background: 'rgba(16, 185, 129, 0.08)',
+                  border: '1px solid rgba(16, 185, 129, 0.25)',
+                  borderRadius: '12px',
+                  display: 'flex',
+                  gap: '0.75rem',
+                  alignItems: 'flex-start'
+                }}>
+                  <span style={{ fontSize: '1.25rem', lineHeight: 1 }}>🛡️</span>
+                  <div>
+                    <div style={{ fontWeight: 800, fontSize: '0.85rem', color: '#34d399' }}>
+                      Proteksi Keamanan Mobile: Tombol Konfigurasi di Android Telah Dihapus
+                    </div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.2rem', lineHeight: 1.5 }}>
+                      Untuk mencegah kelalaian atau sabotase oleh siswa, tombol ganti IP di layar login Android telah dikunci dan dihapus total. Seluruh perangkat Android akan secara otomatis mengambil konfigurasi terpusat dari Super Admin Command Center ini.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
           </form>
         </main>
       </div>

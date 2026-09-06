@@ -29,6 +29,50 @@
   margin: 0;
 }
 
+/* ── Live Indicator ── */
+.liveIndicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  padding: 0.35rem 0.8rem;
+  border-radius: 9999px;
+}
+
+.liveDot {
+  width: 8px;
+  height: 8px;
+  background: #10b981;
+  border-radius: 50%;
+  display: inline-block;
+  animation: livePulse 2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+@keyframes livePulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+  50% { opacity: 0.8; box-shadow: 0 0 0 5px rgba(16, 185, 129, 0); }
+}
+
+.liveText {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #10b981;
+  white-space: nowrap;
+}
+
+/* ── Refresh Animation ── */
+.spinIcon {
+  display: inline-block;
+  animation: spin 0.8s linear infinite;
+}
+
+.refreshingBtn {
+  opacity: 0.75;
+  pointer-events: none;
+}
+
 /* ── KPI Grid ── */
 .kpiGrid {
   display: grid;
@@ -53,6 +97,21 @@
   transform: translateY(-3px);
   border-color: var(--accent);
   box-shadow: var(--shadow-md);
+}
+
+.kpiCardAnimated {
+  animation: fadeSlideUp 0.5s ease both;
+}
+
+.kpiCardAnimated:nth-child(1) { animation-delay: 0ms; }
+.kpiCardAnimated:nth-child(2) { animation-delay: 60ms; }
+.kpiCardAnimated:nth-child(3) { animation-delay: 120ms; }
+.kpiCardAnimated:nth-child(4) { animation-delay: 180ms; }
+.kpiCardAnimated:nth-child(5) { animation-delay: 240ms; }
+
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 .kpiIcon {
@@ -84,6 +143,285 @@
   font-size: 0.74rem;
   color: var(--text-secondary);
   margin-top: 0.15rem;
+}
+
+.kpiSubActive {
+  color: #10b981;
+  animation: livePulse 2s ease-in-out infinite;
+}
+
+/* ── Analytics Section ── */
+.analyticsSection {
+  margin-bottom: 2.5rem;
+  animation: fadeSlideUp 0.5s ease 0.2s both;
+}
+
+.analyticsSectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+
+.analyticsSectionTitle {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.analyticsTitleIcon {
+  font-size: 1.25rem;
+}
+
+.analyticsLiveBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  padding: 0.3rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #10b981;
+}
+
+.chartsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1.25rem;
+}
+
+@media (max-width: 1200px) {
+  .chartsGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 780px) {
+  .chartsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.chartCard {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: 18px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  transition: all 0.25s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.chartCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #2563eb, #7c3aed, #10b981);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.chartCard:hover::before {
+  opacity: 1;
+}
+
+.chartCard:hover {
+  border-color: rgba(37, 99, 235, 0.25);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+}
+
+.chartCardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+
+.chartCardTitle {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 0.2rem;
+}
+
+.chartCardSub {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.chartContainer {
+  position: relative;
+}
+
+.chartEmpty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 220px;
+  gap: 0.75rem;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+}
+
+.chartEmptyIcon {
+  font-size: 2.5rem;
+  opacity: 0.4;
+}
+
+/* Donut center label */
+.donutCenter {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -58%);
+  text-align: center;
+  pointer-events: none;
+}
+
+.donutCenterVal {
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.donutCenterLabel {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-top: 0.2rem;
+}
+
+/* Custom chart tooltip */
+.chartTooltip {
+  background: var(--bg-surface, #1e2235);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  min-width: 140px;
+}
+
+.chartTooltipTitle {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-primary, #f1f5f9);
+  margin-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  padding-bottom: 0.4rem;
+}
+
+.chartTooltipRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+  font-size: 0.8rem;
+}
+
+.chartTooltipDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.chartTooltipLabel {
+  color: var(--text-muted, #94a3b8);
+  flex: 1;
+}
+
+.chartTooltipValue {
+  font-weight: 700;
+  color: var(--text-primary, #f1f5f9);
+}
+
+/* Summary Grid in chart card */
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.6rem;
+  margin-bottom: 1.25rem;
+}
+
+.summaryItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.7rem 0.4rem;
+  border-radius: 10px;
+  border: 1px solid;
+  transition: all 0.2s ease;
+  gap: 0.15rem;
+}
+
+.summaryItem:hover {
+  transform: translateY(-2px);
+}
+
+.summaryIcon {
+  font-size: 1.1rem;
+}
+
+.summaryVal {
+  font-size: 1.25rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.summaryLabel {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+/* Tenant Status Progress Bar */
+.tenantStatusBar {
+  margin-top: auto;
+}
+
+.tenantStatusLabel {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+
+.tenantStatusTrack {
+  width: 100%;
+  height: 8px;
+  background: var(--bg-elevated, rgba(255,255,255,0.06));
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.tenantStatusFill {
+  height: 100%;
+  background: linear-gradient(90deg, #10b981, #34d399);
+  border-radius: 9999px;
+  transition: width 1s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.tenantStatusLegend {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-top: 0.5rem;
 }
 
 /* ── Toolbar & Filters ── */
@@ -190,6 +528,7 @@
   border-radius: 18px;
   overflow: hidden;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+  animation: fadeSlideUp 0.4s ease both;
 }
 
 .modernTable {
@@ -220,6 +559,10 @@
   transition: background-color 0.15s ease;
 }
 
+.tableRow {
+  animation: fadeSlideUp 0.3s ease both;
+}
+
 .modernTable tbody tr:hover {
   background: var(--bg-hover);
 }
@@ -246,7 +589,12 @@
   font-weight: 800;
   color: #ffffff;
   flex-shrink: 0;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: transform 0.2s ease;
+}
+
+.schoolAvatar:hover {
+  transform: scale(1.08);
 }
 
 .tenantInfo {
@@ -307,6 +655,11 @@
   font-weight: 700;
   padding: 0.35rem 0.75rem;
   border-radius: 8px;
+  transition: transform 0.15s ease;
+}
+
+.statPill:hover {
+  transform: translateY(-1px);
 }
 
 .statPillBlue {
@@ -360,6 +713,17 @@
   border-radius: 9999px;
 }
 
+/* Pulsing dot for online status */
+.pulseDot {
+  display: inline-block;
+  animation: textPulse 2s ease-in-out infinite;
+}
+
+@keyframes textPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
 .toggleBtn {
   background: var(--bg-elevated);
   border: 1px solid var(--border-light);
@@ -373,6 +737,7 @@
 .toggleBtn:hover {
   background: var(--bg-hover);
   border-color: var(--accent);
+  transform: scale(1.08);
 }
 
 /* ── Action Buttons ── */
@@ -401,8 +766,8 @@
 }
 
 .portalBtn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(124, 58, 237, 0.5);
 }
 
 .actionBtnSecondary {
@@ -423,6 +788,7 @@
 .actionBtnSecondary:hover {
   background: var(--bg-hover);
   border-color: var(--border-medium);
+  transform: translateY(-1px);
 }
 
 /* ── Grid Card View ── */
@@ -443,10 +809,11 @@
   justify-content: space-between;
   gap: 1.5rem;
   transition: all 0.25s ease;
+  animation: fadeSlideUp 0.35s ease both;
 }
 
 .tenantCard:hover {
-  transform: translateY(-3px);
+  transform: translateY(-4px);
   border-color: var(--accent);
   box-shadow: var(--shadow-lg);
 }
@@ -504,10 +871,12 @@
   font-size: 1.25rem;
   cursor: pointer;
   padding: 0.25rem 0.5rem;
+  transition: all 0.15s ease;
 }
 
 .closeBtn:hover {
   color: var(--text-primary);
+  transform: scale(1.2);
 }
 
 .modalSubtitle {
@@ -539,10 +908,12 @@
   font-size: 0.9rem;
   outline: none;
   box-sizing: border-box;
+  transition: all 0.2s ease;
 }
 
 .formInput:focus {
   border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-dim, rgba(37, 99, 235, 0.1));
 }
 
 .modalActions {
@@ -592,13 +963,20 @@
   color: var(--text-muted);
 }
 
+.loadingPulse {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
 .spinner {
   width: 36px;
   height: 36px;
   border: 3px solid var(--border-light);
   border-top-color: var(--accent);
   border-radius: 50%;
-  margin: 0 auto 1rem;
+  margin: 0 auto;
   animation: spin 0.8s linear infinite;
 }
 

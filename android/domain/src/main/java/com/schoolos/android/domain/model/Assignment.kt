@@ -13,4 +13,8 @@ data class Assignment(
     val createdAt: String,
     val updatedAt: String,
     val materials: List<LearningMaterial> = emptyList(),
+    val classId: String? = null,
+    val className: String? = null,
+    val subjectName: String? = null,
+    val teacherName: String? = null,
 )

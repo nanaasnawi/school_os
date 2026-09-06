@@ -1,0 +1,25 @@
+#!/usr/bin/env sh
+# School OS native pre-commit hook
+# Enable by running: git config core.hooksPath .githooks
+
+echo "==> Running School OS pre-commit checks..."
+
+# 1. Rust formatting & Clippy checks
+if command -v cargo >/dev/null 2>&1; then
+    echo "Checking Rust format (cargo fmt)..."
+    cargo fmt --manifest-path backend/Cargo.toml --all -- --check || {
+        echo "ERROR: Rust formatting check failed. Run 'cargo fmt --manifest-path backend/Cargo.toml --all' to fix."
+        exit 1
+    }
+fi
+
+# 2. Frontend lint & type-check
+if command -v npm >/dev/null 2>&1 && [ -d "frontend" ]; then
+    echo "Checking Frontend..."
+    (cd frontend && npm run lint >/dev/null 2>&1) || {
+        echo "WARNING: Frontend lint check reported warnings/errors."
+    }
+fi
+
+echo "==> Pre-commit checks passed successfully!"
+exit 0

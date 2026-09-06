@@ -172,7 +172,7 @@ export default function StudentsPage() {
     setStudents([newStudent, ...students]);
     setShowAddModal(false);
     setFormData({ nisn: '', full_name: '', gender: 'Laki-laki', assigned_class: '-', status: 'ACTIVE' });
-    showToast(`✓ Siswa "${newStudent.full_name}" berhasil ditambahkan!`);
+    showToast('✓ Siswa berhasil ditambahkan');
   };
 
   const handleSaveEdit = (e: React.FormEvent) => {
@@ -181,19 +181,19 @@ export default function StudentsPage() {
 
     setStudents(prev => prev.map(s => s.id === editStudent.id ? editStudent : s));
     setEditStudent(null);
-    showToast(`✓ Data siswa "${editStudent.full_name}" berhasil diperbarui!`);
+    showToast('✓ Data siswa berhasil diperbarui');
   };
 
   const handleDelete = (id: string, name: string) => {
     if (confirm(`Apakah Anda yakin ingin menghapus siswa "${name}"?`)) {
       setStudents(prev => prev.filter(s => s.id !== id));
-      showToast(`🗑️ Siswa "${name}" berhasil dihapus dari sistem.`);
+      showToast('✓ Siswa berhasil dihapus');
     }
   };
 
   const exportToExcelFile = () => {
     if (!filtered || filtered.length === 0) {
-      showToast('⚠️ Tidak ada data siswa untuk diekspor!');
+      showToast('⚠️ Data kosong');
       return;
     }
     const exportData = filtered.map(s => ({
@@ -213,7 +213,7 @@ export default function StudentsPage() {
       'Status DAPODIK': s.status === 'MUTASI_OUT' ? 'Mutasi Keluar' : s.status === 'ACTIVE' ? 'Aktif' : 'Non-Aktif',
     }));
     exportToExcel(exportData, `Master_Peserta_Didik_${schoolName.replace(/[^a-zA-Z0-9]/g, '_')}`, 'Data Siswa');
-    showToast('📊 Berkas Excel (.xlsx) Master Peserta Didik berhasil diunduh!');
+    showToast('✓ Berkas Excel berhasil diunduh');
   };
 
   const availableClasses = Array.from(

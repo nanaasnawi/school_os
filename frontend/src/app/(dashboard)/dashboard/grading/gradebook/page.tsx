@@ -6,6 +6,7 @@ import Link from 'next/link';
 import styles from './gradebook.module.css';
 import { listStudents, listClasses } from '@/lib/sdk/sdk.gen';
 import { exportToExcel } from '@/lib/exportExcel';
+import { getApiUrl } from '@/lib/api';
 
 type GradebookEntry = {
   studentId: string;
@@ -25,10 +26,12 @@ export default function GradebookPage() {
   const [selectedClass, setSelectedClass] = useState('ALL');
   const [selectedSubject, setSelectedSubject] = useState('Pendidikan Agama Islam dan Budi Pekerti');
   const [gradebook, setGradebook] = useState<GradebookEntry[]>([]);
+  const [studentsList, setStudentsList] = useState<any[]>([]);
   const [classesList, setClassesList] = useState<any[]>([]);
   const [subjectsList, setSubjectsList] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoadingGrades, setIsLoadingGrades] = useState(false);
   const [schoolName, setSchoolName] = useState('Sekolah');
 
   // Toast
@@ -36,6 +39,75 @@ export default function GradebookPage() {
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3500);
+  };
+
+  const fetchGradesForSubject = async (
+    subjectName: string,
+    students: any[],
+    subjects: any[]
+  ) => {
+    if (!students || students.length === 0) return;
+    setIsLoadingGrades(true);
+    const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
+    const matchedSubject = subjects.find((s: any) => s.name === subjectName);
+    const subjectId = matchedSubject?.id;
+
+    let savedScoresMap: Record<string, any> = {};
+
+    try {
+      const qParams = new URLSearchParams();
+      if (subjectId) qParams.append('subject_id', subjectId);
+      const url = getApiUrl(`/api/v1/learning/assessment/gradebook?${qParams.toString()}`);
+      
+      const gbRes = await fetch(url, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      }).then(r => r.ok ? r.json() : null);
+
+      if (gbRes?.data && Array.isArray(gbRes.data)) {
+        gbRes.data.forEach((e: any) => {
+          if (!savedScoresMap[e.student_id]) {
+            savedScoresMap[e.student_id] = {};
+          }
+          const raw = parseFloat(e.raw_score) || 0;
+          if (e.component_name === 'Formatif 1') savedScoresMap[e.student_id].formatif1 = raw;
+          else if (e.component_name === 'Formatif 2') savedScoresMap[e.student_id].formatif2 = raw;
+          else if (e.component_name.includes('PTS')) savedScoresMap[e.student_id].pts = raw;
+          else if (e.component_name.includes('PAS')) savedScoresMap[e.student_id].pas = raw;
+        });
+      }
+    } catch (e) {
+      console.warn('Backend gradebook fetch error:', e);
+    }
+
+    const mappedEntries: GradebookEntry[] = students.map((s: any) => {
+      const saved = savedScoresMap[s.id];
+      
+      let f1 = saved ? (saved.formatif1 ?? 0) : 0;
+      let f2 = saved ? (saved.formatif2 ?? 0) : 0;
+      let p = saved ? (saved.pts ?? 0) : 0;
+      let pasVal = saved ? (saved.pas ?? 0) : 0;
+
+      const total = Math.round((f1 * 0.2 + f2 * 0.2 + p * 0.3 + pasVal * 0.3) * 10) / 10;
+      const pred: 'A' | 'B' | 'C' = total >= 88 ? 'A' : total >= 75 ? 'B' : 'C';
+      const stat = total === 0 ? 'Belum Diinput' : total >= 75 ? 'Tuntas KKM' : 'Remedial';
+
+      return {
+        studentId: s.id,
+        nisn: s.nisn,
+        name: s.full_name,
+        className: s.class_name || 'Rombel General',
+        formatif1: f1,
+        formatif2: f2,
+        pts: p,
+        pas: pasVal,
+        totalScore: total,
+        grade: pred,
+        statusKkm: stat,
+      };
+    });
+
+    setGradebook(mappedEntries);
+    setIsLoadingGrades(false);
   };
 
   useEffect(() => {
@@ -50,65 +122,40 @@ export default function GradebookPage() {
         const [studentRes, classRes, subjectRes] = await Promise.all([
           listStudents({ query: { page_size: 500 } as any }).catch(() => null),
           listClasses({ query: { page_size: 100 } as any }).catch(() => null),
-          fetch('/api/v1/academic/subjects', {
+          fetch(getApiUrl('/api/v1/academic/subjects'), {
             headers: token ? { Authorization: `Bearer ${token}` } : {}
           }).then(r => r.ok ? r.json() : null).catch(() => null)
         ]);
 
+        let loadedClasses: any[] = [];
+        let loadedSubjects: any[] = [];
+        let loadedStudents: any[] = [];
+
         if (classRes?.data?.data) {
-          setClassesList(classRes.data.data);
+          loadedClasses = classRes.data.data;
+          setClassesList(loadedClasses);
         }
 
         if (subjectRes?.data && Array.isArray(subjectRes.data)) {
-          setSubjectsList(subjectRes.data);
-          if (subjectRes.data.length > 0) {
-            setSelectedSubject(subjectRes.data[0].name);
-          }
+          loadedSubjects = subjectRes.data;
+          setSubjectsList(loadedSubjects);
         }
 
         if (studentRes?.data?.data) {
-          const list = studentRes.data.data;
-          
-          let savedScoresMap: Record<string, any> = {};
-          if (typeof window !== 'undefined') {
-            try {
-              const raw = localStorage.getItem('saved_gradebook_scores');
-              if (raw) savedScoresMap = JSON.parse(raw);
-            } catch (e) {
-              console.error('Failed to parse saved grades:', e);
-            }
-          }
+          loadedStudents = studentRes.data.data;
+          setStudentsList(loadedStudents);
+        }
 
-          const mappedEntries: GradebookEntry[] = list.map((s: any) => {
-            const saved = savedScoresMap[s.id];
-            
-            let f1 = saved ? saved.formatif1 : 0;
-            let f2 = saved ? saved.formatif2 : 0;
-            let p = saved ? saved.pts : 0;
-            let pasVal = saved ? saved.pas : 0;
+        const initialSub = loadedSubjects.length > 0 ? loadedSubjects[0].name : selectedSubject;
+        if (loadedSubjects.length > 0) {
+          setSelectedSubject(initialSub);
+        }
 
-            const total = Math.round((f1 * 0.2 + f2 * 0.2 + p * 0.3 + pasVal * 0.3) * 10) / 10;
-            const pred: 'A' | 'B' | 'C' = total >= 88 ? 'A' : total >= 75 ? 'B' : 'C';
-            const stat = total === 0 ? 'Belum Diinput' : total >= 75 ? 'Tuntas KKM' : 'Remedial';
-
-            return {
-              studentId: s.id,
-              nisn: s.nisn,
-              name: s.full_name,
-              className: s.class_name || 'Rombel General',
-              formatif1: f1,
-              formatif2: f2,
-              pts: p,
-              pas: pasVal,
-              totalScore: total,
-              grade: pred,
-              statusKkm: stat,
-            };
-          });
-          setGradebook(mappedEntries);
+        if (loadedStudents.length > 0) {
+          await fetchGradesForSubject(initialSub, loadedStudents, loadedSubjects);
         }
       } catch (err) {
-        console.error('Error loading gradebook:', err);
+        console.error('Error loading gradebook data:', err);
       }
     }
     loadData();
@@ -133,29 +180,61 @@ export default function GradebookPage() {
     }));
   };
 
-  const handleSaveChanges = () => {
+  const handleSaveChanges = async () => {
     setIsSaving(true);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('has_saved_grades', 'true');
-      const scoresMap: Record<string, any> = {};
-      gradebook.forEach(g => {
-        scoresMap[g.studentId] = {
-          formatif1: g.formatif1,
-          formatif2: g.formatif2,
-          pts: g.pts,
-          pas: g.pas,
-        };
+    const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
+
+    const matchedSubject = subjectsList.find((s: any) => s.name === selectedSubject);
+    const subjectId = matchedSubject?.id;
+    const matchedClass = classesList.find((c: any) => c.name === selectedClass);
+    const classId = matchedClass?.id;
+
+    const payloadGrades = gradebook.map(g => ({
+      student_id: g.studentId,
+      formatif1: g.formatif1,
+      formatif2: g.formatif2,
+      pts: g.pts,
+      pas: g.pas,
+      final_score: g.totalScore,
+      letter_grade: g.grade,
+      passed: g.statusKkm === 'Tuntas KKM',
+      status: 'published',
+    }));
+
+    try {
+      const res = await fetch(getApiUrl('/api/v1/learning/assessment/gradebook/save'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          class_id: classId || undefined,
+          subject_id: subjectId || undefined,
+          subject_name: selectedSubject,
+          grades: payloadGrades,
+        }),
       });
-      try {
-        localStorage.setItem('saved_gradebook_scores', JSON.stringify(scoresMap));
-      } catch(err) {
-        console.warn(err);
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson?.error?.message || `Server error (HTTP ${res.status})`);
       }
-    }
-    setTimeout(() => {
+
+      showToast(`💾 Nilai [${selectedSubject}] berhasil disimpan & disinkronkan ke Database!`);
+      // Re-fetch to ensure complete sync
+      await fetchGradesForSubject(selectedSubject, studentsList, subjectsList);
+    } catch (err: any) {
+      console.error('Failed to sync grades to backend:', err);
+      showToast(`⚠️ ${err?.message || 'Gagal menyimpan nilai ke database'}`);
+    } finally {
       setIsSaving(false);
-      showToast('💾 Perubahan Buku Nilai berhasil disimpan & dipublikasikan!');
-    }, 600);
+    }
+  };
+
+  const handleSubjectChange = async (newSubject: string) => {
+    setSelectedSubject(newSubject);
+    await fetchGradesForSubject(newSubject, studentsList, subjectsList);
   };
 
   const exportToExcelFile = () => {
@@ -268,7 +347,7 @@ export default function GradebookPage() {
           {classesList.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
         </select>
 
-        <select value={selectedSubject} onChange={(e) => setSelectedSubject(e.target.value)} className="input" style={{ width: '220px' }}>
+        <select value={selectedSubject} onChange={(e) => handleSubjectChange(e.target.value)} className="input" style={{ width: '220px' }} disabled={isLoadingGrades || isSaving}>
           {subjectsList.map((s: any) => (
             <option key={s.id || s.code} value={s.name}>{s.name}</option>
           ))}

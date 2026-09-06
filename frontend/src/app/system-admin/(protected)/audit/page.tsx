@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { getApiUrl } from '@/lib/api';
 import styles from '../dashboard/system.module.css';
 
 type AuditLog = {
@@ -20,7 +21,7 @@ export default function SystemAuditPage() {
     setIsLoading(true);
     try {
       const token = localStorage.getItem('sysAdminToken');
-      const res = await fetch('http://localhost:8000/api/v1/system/audit-logs', {
+      const res = await fetch(getApiUrl('/api/v1/system/audit-logs'), {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {

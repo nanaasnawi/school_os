@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { listTeachers, listClasses } from '@/lib/sdk/sdk.gen';
+import { getApiUrl } from '@/lib/api';
 
 type MaterialItem = {
   id: string;
@@ -13,6 +14,7 @@ type MaterialItem = {
   format: 'PDF' | 'VIDEO' | 'TEXT';
   size: string;
   downloads: number;
+  completedCount: number;
   date: string;
   youtubeUrl?: string;
   pdfFileName?: string;
@@ -60,10 +62,13 @@ export default function MaterialsPage() {
     async function loadData() {
       try {
         const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
-        const [teacherRes, classRes, subjectRes] = await Promise.all([
+        const [teacherRes, classRes, subjectRes, materialsRes] = await Promise.all([
           listTeachers({ query: { page_size: 100 } as any }).catch(() => null),
           listClasses({ query: { page_size: 100 } as any }).catch(() => null),
-          fetch('/api/v1/academic/subjects', {
+          fetch(getApiUrl('/api/v1/academic/subjects'), {
+            headers: token ? { Authorization: `Bearer ${token}` } : {}
+          }).then(r => r.ok ? r.json() : null).catch(() => null),
+          fetch(getApiUrl('/api/v1/learning/materials'), {
             headers: token ? { Authorization: `Bearer ${token}` } : {}
           }).then(r => r.ok ? r.json() : null).catch(() => null)
         ]);
@@ -87,6 +92,28 @@ export default function MaterialsPage() {
             setNewMaterial(prev => ({ ...prev, subject: subjectRes.data[0].name }));
           }
         }
+
+        if (materialsRes?.data && Array.isArray(materialsRes.data)) {
+          const mapped: MaterialItem[] = materialsRes.data.map((m: any) => {
+            const descParts = (m.description || '').split(' • ');
+            return {
+              id: m.id,
+              title: m.title,
+              subject: descParts[0] || 'Umum',
+              grade: descParts[1] || 'Semua Rombel',
+              author: descParts[2] || 'Admin',
+              format: (m.material_type?.toUpperCase() || 'PDF') as 'PDF' | 'VIDEO' | 'TEXT',
+              size: m.storage_key || (m.material_type === 'video' ? 'Video Online' : '1.8 MB'),
+              downloads: 12,
+              completedCount: m.completed_count || 0,
+              date: m.created_at ? new Date(m.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Hari ini',
+              youtubeUrl: m.external_url,
+              pdfFileName: m.storage_key,
+              description: descParts.slice(3).join(' • ') || m.description,
+            };
+          });
+          setMaterials(mapped);
+        }
       } catch (err) {
         console.error('Error loading learning data:', err);
       }
@@ -98,7 +125,7 @@ export default function MaterialsPage() {
     const file = e.target.files?.[0];
     if (file) {
       setNewMaterial(prev => ({ ...prev, pdfFileName: file.name }));
-      showToast(`📄 File PDF "${file.name}" terpilih dari perangkat!`);
+      showToast('✓ File PDF dipilih');
     }
   };
 
@@ -107,42 +134,159 @@ export default function MaterialsPage() {
     if (file) {
       const imageUrl = URL.createObjectURL(file);
       setNewMaterial(prev => ({ ...prev, imagePreviewUrl: imageUrl }));
-      showToast(`🖼️ Gambar penjelas "${file.name}" terpilih dari perangkat!`);
+      showToast('✓ Gambar dipilih');
     }
   };
 
-  const handleCreateMaterial = (e: React.FormEvent) => {
+  const handleCreateMaterial = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMaterial.title) return;
 
     if (newMaterial.format === 'VIDEO' && !newMaterial.youtubeUrl) {
-      showToast('⚠️ Mohon masukkan link URL YouTube video pembelajaran!');
+      showToast('⚠️ Masukkan link YouTube');
       return;
     }
     if (newMaterial.format === 'PDF' && !newMaterial.pdfFileName) {
-      showToast('⚠️ Mohon pilih file PDF dari perangkat!');
+      showToast('⚠️ Pilih file PDF');
       return;
     }
 
-    const item: MaterialItem = {
-      id: `mat-${Date.now()}`,
-      title: newMaterial.title,
-      subject: newMaterial.subject,
-      grade: newMaterial.grade,
-      author: newMaterial.author,
-      format: newMaterial.format,
-      size: newMaterial.format === 'VIDEO' ? '32.0 MB' : '2.1 MB',
-      downloads: 0,
-      date: 'Hari ini',
-      youtubeUrl: newMaterial.youtubeUrl,
-      pdfFileName: newMaterial.pdfFileName,
-      imagePreviewUrl: newMaterial.imagePreviewUrl,
-      description: newMaterial.description,
-    };
+    try {
+      const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
+      const matchedClass = classesList.find((c: any) => c.name === newMaterial.grade);
+      const classId = matchedClass?.id || newMaterial.grade;
 
-    setMaterials([item, ...materials]);
-    setShowAddModal(false);
-    showToast(`✓ Modul "${newMaterial.title}" berhasil di-publish ke Android App Siswa!`);
+      const payload = {
+        material_type: newMaterial.format.toLowerCase(),
+        title: newMaterial.title,
+        description: `${newMaterial.subject} • ${newMaterial.grade} • ${newMaterial.author} • ${newMaterial.description || 'Modul Pelajaran'}`,
+        storage_key: newMaterial.format === 'PDF' ? newMaterial.pdfFileName : null,
+        external_url: newMaterial.format === 'VIDEO' ? newMaterial.youtubeUrl : null,
+        order_index: 0,
+        visibility: 'published',
+        class_id: classId,
+      };
+
+      const res = await fetch(getApiUrl('/api/v1/learning/materials'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        const resJson = await res.json();
+        const created = resJson.data;
+        const item: MaterialItem = {
+          id: created?.id || `mat-${Date.now()}`,
+          title: newMaterial.title,
+          subject: newMaterial.subject,
+          grade: newMaterial.grade,
+          author: newMaterial.author,
+          format: newMaterial.format,
+          size: newMaterial.format === 'VIDEO' ? '32.0 MB' : '2.1 MB',
+          downloads: 0,
+          completedCount: 0,
+          date: 'Hari ini',
+          youtubeUrl: newMaterial.youtubeUrl,
+          pdfFileName: newMaterial.pdfFileName,
+          imagePreviewUrl: newMaterial.imagePreviewUrl,
+          description: newMaterial.description,
+        };
+        setMaterials(prev => [item, ...prev]);
+        setShowAddModal(false);
+        showToast('✓ Materi berhasil dipublish');
+      } else {
+        showToast('⚠️ Gagal mempublish materi');
+      }
+    } catch {
+      showToast('⚠️ Terjadi kendala koneksi');
+    }
+  };
+
+  const handleDeleteMaterial = async (id: string, title: string) => {
+    if (!confirm(`Hapus modul "${title}"?`)) return;
+    try {
+      const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
+      const res = await fetch(getApiUrl(`/api/v1/learning/materials/${id}`), {
+        method: 'DELETE',
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+      if (res.ok) {
+        setMaterials(prev => prev.filter(m => m.id !== id));
+        showToast('✓ Materi berhasil dihapus');
+      } else {
+        showToast('⚠️ Gagal menghapus materi');
+      }
+    } catch {
+      showToast('⚠️ Gagal menghapus materi');
+    }
+  };
+
+  const handleDownloadPdf = (fileName: string, title: string, subject: string, teacher: string, description: string) => {
+    const safeTitle = (title || 'Modul Pembelajaran').replace(/[()\\]/g, '');
+    const safeSubject = (subject || 'Umum').replace(/[()\\]/g, '');
+    const safeTeacher = (teacher || 'Guru').replace(/[()\\]/g, '');
+    const safeDesc = (description || 'Modul Ajar').replace(/[()\\]/g, '').slice(0, 150);
+
+    const pdfData = `%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 250 >>
+stream
+BT
+/F1 18 Tf
+50 720 Td
+(${safeTitle}) Tj
+/F1 12 Tf
+0 -32 Td
+(Mata Pelajaran: ${safeSubject}) Tj
+0 -22 Td
+(Guru Pengampu: ${safeTeacher}) Tj
+0 -30 Td
+(Ringkasan Modul:) Tj
+0 -22 Td
+(${safeDesc}) Tj
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000234 00000 n 
+0000000535 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+610
+%%EOF`;
+
+    const blob = new Blob([pdfData], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName.endsWith('.pdf') ? fileName : `${fileName}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    showToast('✓ Berkas PDF berhasil diunduh ke perangkat');
   };
 
   const filtered = materials.filter(m => 
@@ -236,6 +380,7 @@ export default function MaterialsPage() {
                 <th style={{ padding: '0.75rem 1rem', fontWeight: 800, color: 'var(--text-muted)' }}>Mapel &amp; Rombel</th>
                 <th style={{ padding: '0.75rem 1rem', fontWeight: 800, color: 'var(--text-muted)' }}>Guru Pengampu</th>
                 <th style={{ padding: '0.75rem 1rem', fontWeight: 800, color: 'var(--text-muted)' }}>Format &amp; Media</th>
+                <th style={{ padding: '0.75rem 1rem', fontWeight: 800, color: 'var(--text-muted)' }}>Penyelesaian Siswa</th>
                 <th style={{ padding: '0.75rem 1rem', fontWeight: 800, color: 'var(--text-muted)' }}>Tanggal Tayang</th>
                 <th style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 800, color: 'var(--text-muted)' }}>Aksi</th>
               </tr>
@@ -257,11 +402,29 @@ export default function MaterialsPage() {
                       {m.pdfFileName && <div style={{ fontSize: '0.7rem', color: '#2563eb', fontWeight: 700 }}>{m.pdfFileName}</div>}
                       {m.youtubeUrl && <div style={{ fontSize: '0.7rem', color: '#dc2626', fontWeight: 700 }}>Link YouTube</div>}
                     </td>
+                    <td style={{ padding: '0.85rem 1rem' }}>
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', background: m.completedCount > 0 ? '#dcfce7' : 'var(--bg-elevated)', padding: '0.2rem 0.55rem', borderRadius: '8px', border: `1px solid ${m.completedCount > 0 ? '#86efac' : 'var(--border-light)'}` }}>
+                        <span style={{ fontSize: '0.8rem' }}>{m.completedCount > 0 ? '✅' : '⏳'}</span>
+                        <span style={{ fontWeight: 800, fontSize: '0.78rem', color: m.completedCount > 0 ? '#15803d' : 'var(--text-muted)' }}>
+                          {m.completedCount} Siswa
+                        </span>
+                      </div>
+                    </td>
                     <td style={{ padding: '0.85rem 1rem', fontSize: '0.76rem', color: 'var(--text-muted)' }}>{m.date}</td>
                     <td style={{ padding: '0.85rem 1rem', textAlign: 'right' }}>
-                      <button className="btn btn-secondary btn-sm" onClick={() => setPreviewMaterial(m)}>
-                        👁️ Pratinjau
-                      </button>
+                      <div style={{ display: 'inline-flex', gap: '0.4rem', alignItems: 'center' }}>
+                        <button className="btn btn-secondary btn-sm" onClick={() => setPreviewMaterial(m)}>
+                          👁️ Pratinjau
+                        </button>
+                        <button
+                          className="btn btn-sm"
+                          style={{ background: '#fee2e2', color: '#b91c1c', border: '1px solid #fca5a5', padding: '0.25rem 0.5rem' }}
+                          title="Hapus Modul"
+                          onClick={() => handleDeleteMaterial(m.id, m.title)}
+                        >
+                          🗑️
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -497,8 +660,22 @@ export default function MaterialsPage() {
               {previewMaterial.youtubeUrl && <div style={{ fontSize: '0.78rem', color: '#dc2626', fontWeight: 700 }}>▶️ YouTube: {previewMaterial.youtubeUrl}</div>}
               {previewMaterial.pdfFileName && <div style={{ fontSize: '0.78rem', color: '#2563eb', fontWeight: 700 }}>📄 PDF: {previewMaterial.pdfFileName}</div>}
             </div>
-            <div style={{ padding: '0.875rem 1.25rem', borderTop: '1px solid var(--border-light)', background: 'var(--bg-elevated)', display: 'flex', justifyContent: 'flex-end' }}>
-              <button className="btn btn-primary btn-sm" onClick={() => setPreviewMaterial(null)}>Tutup</button>
+            <div style={{ padding: '0.875rem 1.25rem', borderTop: '1px solid var(--border-light)', background: 'var(--bg-elevated)', display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+              {previewMaterial.pdfFileName && (
+                <button
+                  className="btn btn-primary btn-sm"
+                  onClick={() => handleDownloadPdf(
+                    previewMaterial.pdfFileName || 'Modul.pdf',
+                    previewMaterial.title,
+                    previewMaterial.subject,
+                    previewMaterial.author,
+                    previewMaterial.description || ''
+                  )}
+                >
+                  📥 Unduh PDF
+                </button>
+              )}
+              <button className="btn btn-secondary btn-sm" onClick={() => setPreviewMaterial(null)}>Tutup</button>
             </div>
           </div>
         </div>

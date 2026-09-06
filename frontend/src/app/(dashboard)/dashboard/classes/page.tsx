@@ -15,11 +15,12 @@ type ClassItem = {
   homeroom_teacher: string;
   student_count: number;
   room: string;
-  category: 'PAKET_A' | 'PAKET_B' | 'PAKET_C' | 'KKA' | 'REGULER';
+  category: 'PAKET_A' | 'PAKET_B' | 'PAKET_C' | 'REGULER';
 };
 
 export default function ClassesPage() {
   const [classesList, setClassesList] = useState<ClassItem[]>([]);
+  const [teachersList, setTeachersList] = useState<{ id: string; name: string }[]>([]);
   const [search, setSearch] = useState('');
   const [gradeFilter, setGradeFilter] = useState('ALL');
   const [isLoading, setIsLoading] = useState(true);
@@ -28,34 +29,41 @@ export default function ClassesPage() {
   useEffect(() => {
     async function loadData() {
       try {
+        const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
+        const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+
         const [classRes, teacherRes, studentRes] = await Promise.all([
-          listClasses({ query: { page_size: 200 } as any }).catch(() => null),
-          listTeachers({ query: { page_size: 200 } as any }).catch(() => null),
-          listStudents({ query: { page_size: 1000 } as any }).catch(() => null),
+          fetch('/api/v1/academic/classes?page_size=200', { headers }).then(r => r.json()).catch(() => null),
+          fetch('/api/v1/teachers?page_size=200', { headers }).then(r => r.json()).catch(() => null),
+          fetch('/api/v1/students?page_size=1000', { headers }).then(r => r.json()).catch(() => null),
         ]);
 
+        const teacherArray = Array.isArray(teacherRes?.data) ? teacherRes.data : Array.isArray(teacherRes?.data?.data) ? teacherRes.data.data : [];
+        const classArray = Array.isArray(classRes?.data) ? classRes.data : Array.isArray(classRes?.data?.data) ? classRes.data.data : [];
+        const studentArray = Array.isArray(studentRes?.data) ? studentRes.data : Array.isArray(studentRes?.data?.data) ? studentRes.data.data : [];
+
         const teacherMap = new Map<string, string>();
-        if (teacherRes?.data?.data) {
-          teacherRes.data.data.forEach((t: any) => {
-            if (t.id && t.full_name) {
-              teacherMap.set(t.id, t.full_name);
-            }
-          });
-        }
+        const dynamicTeachers: { id: string; name: string }[] = [];
+        teacherArray.forEach((t: any) => {
+          if (t.id && t.full_name) {
+            const nameUpper = t.full_name.toUpperCase();
+            teacherMap.set(t.id, nameUpper);
+            dynamicTeachers.push({ id: t.id, name: nameUpper });
+          }
+        });
+        setTeachersList(dynamicTeachers);
 
         const studentCountMap = new Map<string, number>();
-        if (studentRes?.data?.data) {
-          studentRes.data.data.forEach((s: any) => {
-            const className = s.class_name;
-            if (className) {
-              studentCountMap.set(className, (studentCountMap.get(className) || 0) + 1);
-            }
-          });
-        }
+        studentArray.forEach((s: any) => {
+          const className = s.class_name;
+          if (className) {
+            studentCountMap.set(className, (studentCountMap.get(className) || 0) + 1);
+          }
+        });
 
-        if (classRes?.data?.success && classRes.data.data && classRes.data.data.length > 0) {
-          const apiClasses = classRes.data.data || [];
-          const mapped: ClassItem[] = apiClasses.map((c: any) => {
+        if (classArray.length > 0) {
+          const actualClasses = classArray.filter((c: any) => !c.name?.toUpperCase().startsWith('KKA'));
+          const mapped: ClassItem[] = actualClasses.map((c: any) => {
             const teacherName = c.homeroom_teacher_id ? teacherMap.get(c.homeroom_teacher_id) : null;
             const count = studentCountMap.get(c.name) || 0;
             let category: ClassItem['category'] = 'REGULER';
@@ -70,9 +78,6 @@ export default function ClassesPage() {
             } else if (c.name.startsWith('PAKET C')) {
               category = 'PAKET_C';
               gradeLevel = 'Paket C (Setara SMA)';
-            } else if (c.name.startsWith('KKA')) {
-              category = 'KKA';
-              gradeLevel = 'Keterampilan / KKA';
             } else {
               gradeLevel = 'Kelas Reguler';
             }
@@ -83,7 +88,7 @@ export default function ClassesPage() {
               grade_level: gradeLevel,
               homeroom_teacher: teacherName || 'Belum ditentukan',
               student_count: count,
-              room: c.name.startsWith('PAKET') ? 'Gedung Utama' : c.name.startsWith('KKA') ? 'Lab Keterampilan' : 'R. Belajar',
+              room: c.name.startsWith('PAKET') ? 'Gedung Utama' : 'R. Belajar',
               category,
             };
           });
@@ -92,7 +97,6 @@ export default function ClassesPage() {
             if (name.startsWith('PAKET A')) return 10;
             if (name.startsWith('PAKET B')) return 20;
             if (name.startsWith('PAKET C')) return 30;
-            if (name.startsWith('KKA')) return 40;
             return 50;
           };
 
@@ -121,13 +125,13 @@ export default function ClassesPage() {
             classCounts.set(rombel, (classCounts.get(rombel) || 0) + 1);
           });
 
-          const fallbackClasses: ClassItem[] = Array.from(classCounts.entries()).map(([name, count], idx) => {
+          const validCounts = Array.from(classCounts.entries()).filter(([name]) => !name.toUpperCase().startsWith('KKA'));
+          const fallbackClasses: ClassItem[] = validCounts.map(([name, count], idx) => {
             let category: ClassItem['category'] = 'REGULER';
             let gradeLevel = 'Kelas Reguler';
             if (name.startsWith('PAKET A')) { category = 'PAKET_A'; gradeLevel = 'Paket A (Setara SD)'; }
             else if (name.startsWith('PAKET B')) { category = 'PAKET_B'; gradeLevel = 'Paket B (Setara SMP)'; }
             else if (name.startsWith('PAKET C')) { category = 'PAKET_C'; gradeLevel = 'Paket C (Setara SMA)'; }
-            else if (name.startsWith('KKA')) { category = 'KKA'; gradeLevel = 'Keterampilan / KKA'; }
 
             return {
               id: `cls-${idx}`,
@@ -144,7 +148,6 @@ export default function ClassesPage() {
             if (name.startsWith('PAKET A')) return 10;
             if (name.startsWith('PAKET B')) return 20;
             if (name.startsWith('PAKET C')) return 30;
-            if (name.startsWith('KKA')) return 40;
             return 50;
           };
 
@@ -171,9 +174,9 @@ export default function ClassesPage() {
   const [editClass, setEditClass] = useState<ClassItem | null>(null);
   const [formData, setFormData] = useState({
     name: '',
-    grade_level: 'PAKET B (Setara SMP)',
-    homeroom_teacher: 'Bpk. Hendra Wijaya, M.Pd',
-    room: 'Gedung Utama',
+    grade_level: '',
+    homeroom_teacher: '',
+    room: '',
   });
 
   // Toast
@@ -186,8 +189,8 @@ export default function ClassesPage() {
   const handleOpenAdd = () => {
     setFormData({
       name: '',
-      grade_level: 'PAKET B (Setara SMP)',
-      homeroom_teacher: 'Bpk. Hendra Wijaya, M.Pd',
+      grade_level: 'Paket B (Setara SMP)',
+      homeroom_teacher: teachersList[0]?.name || '',
       room: 'Gedung Utama',
     });
     setShowAddModal(true);
@@ -211,7 +214,6 @@ export default function ClassesPage() {
     if (formData.name.startsWith('PAKET A')) category = 'PAKET_A';
     else if (formData.name.startsWith('PAKET B')) category = 'PAKET_B';
     else if (formData.name.startsWith('PAKET C')) category = 'PAKET_C';
-    else if (formData.name.startsWith('KKA')) category = 'KKA';
 
     const newClass: ClassItem = {
       id: String(Date.now()),
@@ -225,12 +227,28 @@ export default function ClassesPage() {
 
     setClassesList([newClass, ...classesList]);
     setShowAddModal(false);
-    showToast(`✓ Ruang Kelas "${formData.name}" berhasil ditambahkan!`);
+    showToast('✓ Kelas berhasil ditambahkan');
   };
 
-  const handleSaveEdit = (e: React.FormEvent) => {
+  const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editClass || !formData.name) return;
+
+    try {
+      const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
+      if (editClass.id && token && !editClass.id.startsWith('cls-')) {
+        await fetch(`/api/v1/academic/classes/${editClass.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            name: formData.name,
+          }),
+        }).catch(() => null);
+      }
+    } catch (_) {}
 
     setClassesList(classesList.map(c => c.id === editClass.id ? {
       ...c,
@@ -241,12 +259,12 @@ export default function ClassesPage() {
     } : c));
 
     setEditClass(null);
-    showToast(`✓ Rekord Kelas "${formData.name}" berhasil diperbarui!`);
+    showToast('✓ Kelas berhasil diperbarui');
   };
 
   const exportToExcelFile = () => {
     if (!filtered || filtered.length === 0) {
-      showToast('⚠️ Tidak ada data kelas untuk diekspor!');
+      showToast('⚠️ Data kosong');
       return;
     }
     const exportData = filtered.map(c => ({
@@ -259,7 +277,7 @@ export default function ClassesPage() {
     }));
     const schoolName = typeof window !== 'undefined' ? (getTenantItem('dapodik_nama_sekolah') || 'Sekolah') : 'Sekolah';
     exportToExcel(exportData, `Data_Kelas_Rombel_${schoolName.replace(/[^a-zA-Z0-9]/g, '_')}`, 'Data Kelas');
-    showToast('📊 Berkas Excel (.xlsx) Data Kelas berhasil diunduh!');
+    showToast('✓ Berkas Excel berhasil diunduh');
   };
 
   const filtered = classesList.filter(c => {
@@ -268,7 +286,6 @@ export default function ClassesPage() {
     if (gradeFilter === 'PAKET_A') matchGrade = c.category === 'PAKET_A';
     else if (gradeFilter === 'PAKET_B') matchGrade = c.category === 'PAKET_B';
     else if (gradeFilter === 'PAKET_C') matchGrade = c.category === 'PAKET_C';
-    else if (gradeFilter === 'KKA') matchGrade = c.category === 'KKA';
     else if (gradeFilter === 'REGULER') matchGrade = c.category === 'REGULER';
     return matchSearch && matchGrade;
   });
@@ -288,7 +305,6 @@ export default function ClassesPage() {
     if (category === 'PAKET_B') return 'badge-info';
     if (category === 'PAKET_C') return 'badge-purple';
     if (category === 'PAKET_A') return 'badge-active';
-    if (category === 'KKA') return 'badge-warning';
     return 'badge-info';
   };
 
@@ -352,7 +368,6 @@ export default function ClassesPage() {
             <option value="PAKET_B">Paket B (SMP - B7, B8, B9)</option>
             <option value="PAKET_C">Paket C (SMA - C10, C11, C12)</option>
             <option value="PAKET_A">Paket A (Setara SD)</option>
-            <option value="KKA">Keterampilan (KKA C11 &amp; C12)</option>
             <option value="REGULER">Kelas Reguler SD</option>
           </select>
 
@@ -562,7 +577,6 @@ export default function ClassesPage() {
                       <option value="Paket A (Setara SD)">Paket A (Setara SD)</option>
                       <option value="Paket B (Setara SMP)">Paket B (Setara SMP)</option>
                       <option value="Paket C (Setara SMA)">Paket C (Setara SMA)</option>
-                      <option value="Keterampilan / KKA">Keterampilan / KKA</option>
                       <option value="Kelas Reguler">Kelas Reguler</option>
                     </select>
                   </div>
@@ -577,13 +591,17 @@ export default function ClassesPage() {
                   </div>
                 </div>
                 <div className={styles.formGroup}>
-                  <label className={styles.label}>Wali Kelas Pengampu</label>
-                  <input
-                    type="text"
+                  <label className={styles.label}>Wali Kelas (Guru Dapodik) *</label>
+                  <select
                     value={formData.homeroom_teacher}
                     onChange={e => setFormData({ ...formData, homeroom_teacher: e.target.value })}
                     className="input"
-                  />
+                    required
+                  >
+                    {teachersList.map((t) => (
+                      <option key={t.id} value={t.name}>{t.name}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
               <div className="globalModalFooter">
@@ -626,7 +644,6 @@ export default function ClassesPage() {
                       <option value="Paket A (Setara SD)">Paket A (Setara SD)</option>
                       <option value="Paket B (Setara SMP)">Paket B (Setara SMP)</option>
                       <option value="Paket C (Setara SMA)">Paket C (Setara SMA)</option>
-                      <option value="Keterampilan / KKA">Keterampilan / KKA</option>
                       <option value="Kelas Reguler">Kelas Reguler</option>
                     </select>
                   </div>
@@ -641,13 +658,20 @@ export default function ClassesPage() {
                   </div>
                 </div>
                 <div className={styles.formGroup}>
-                  <label className={styles.label}>Wali Kelas Pengampu</label>
-                  <input
-                    type="text"
+                  <label className={styles.label}>Wali Kelas (Guru Dapodik) *</label>
+                  <select
                     value={formData.homeroom_teacher}
                     onChange={e => setFormData({ ...formData, homeroom_teacher: e.target.value })}
                     className="input"
-                  />
+                    required
+                  >
+                    {teachersList.map((t) => (
+                      <option key={t.id} value={t.name}>{t.name}</option>
+                    ))}
+                  </select>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                    Terhubung langsung dengan pemetaan PTK pada WebService Dapodik sekolah.
+                  </span>
                 </div>
               </div>
               <div className="globalModalFooter">

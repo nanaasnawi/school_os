@@ -5,8 +5,10 @@ import androidx.room.Room
 import com.schoolos.android.core.common.SettingsManager
 import com.schoolos.android.core.database.AppDatabase
 import com.schoolos.android.core.database.dao.AssignmentDao
+import com.schoolos.android.core.database.dao.LearningMaterialDao
 import com.schoolos.android.core.database.dao.NotificationDao
 import com.schoolos.android.core.database.dao.QuizDao
+import com.schoolos.android.core.database.dao.SubmissionQueueDao
 import com.schoolos.android.core.network.NetworkMonitor
 import dagger.Module
 import dagger.Provides
@@ -15,7 +17,6 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
-// Test incremental build
 @Module
 @InstallIn(SingletonComponent::class)
 object CoreModule {
@@ -41,6 +42,14 @@ object CoreModule {
     @Provides
     @Singleton
     fun provideQuizDao(db: AppDatabase): QuizDao = db.quizDao()
+
+    @Provides
+    @Singleton
+    fun provideLearningMaterialDao(db: AppDatabase): LearningMaterialDao = db.learningMaterialDao()
+
+    @Provides
+    @Singleton
+    fun provideSubmissionQueueDao(db: AppDatabase): SubmissionQueueDao = db.submissionQueueDao()
 
     @Provides
     @Singleton

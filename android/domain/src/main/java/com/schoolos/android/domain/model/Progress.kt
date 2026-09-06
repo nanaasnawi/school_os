@@ -13,4 +13,8 @@ data class Progress(
     val sessionTotal: Int,
     val subjectName: String,
     val calculatedAt: String,
+    val teacherNotes: String? = null,
+    val teacherName: String? = null,
+    val className: String? = null,
+    val academicStatus: String? = null,
 )

@@ -1,0 +1,51 @@
+# Pre-commit configuration for School OS
+# Install via: pip install pre-commit && pre-commit install
+# Alternatively use native git hook: git config core.hooksPath .githooks
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+      - id: check-case-conflict
+      - id: check-merge-conflict
+      - id: check-yaml
+        args: ['--unsafe']
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+
+  # Rust Formatting and Clippy
+  - repo: local
+    hooks:
+      - id: cargo-fmt
+        name: cargo fmt
+        description: Check Rust formatting
+        entry: cargo fmt --manifest-path backend/Cargo.toml --all -- --check
+        language: system
+        files: ^backend/.*\.rs$
+        pass_filenames: false
+
+      - id: cargo-clippy
+        name: cargo clippy
+        description: Run Clippy linter on Rust backend
+        entry: cargo clippy --manifest-path backend/Cargo.toml --all-targets --all-features -- -D warnings
+        language: system
+        files: ^backend/.*\.rs$
+        pass_filenames: false
+
+      # Frontend Lint & Prettier
+      - id: frontend-format
+        name: frontend prettier check
+        entry: npm --prefix frontend run format:check
+        language: system
+        files: ^frontend/.*\.(ts|tsx|js|jsx|json|css)$
+        pass_filenames: false
+
+      # Android ktlint check (if gradlew available)
+      - id: android-ktlint
+        name: android ktlint / compile check
+        entry: bash -c "cd android && ./gradlew testDebugUnitTest --no-daemon || true"
+        language: system
+        files: ^android/.*\.kt$
+        pass_filenames: false

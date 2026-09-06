@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { getApiUrl } from '@/lib/api';
 import styles from './teacherDetail.module.css';
 
 type TeacherProfile = {
@@ -42,7 +43,7 @@ export default function TeacherDetailPage() {
       setLoading(true);
       try {
         const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
-        const res = await fetch(`http://localhost:8000/api/v1/teachers/${id}`, {
+        const res = await fetch(getApiUrl(`/api/v1/teachers/${id}`), {
           headers: token ? { Authorization: `Bearer ${token}` } : {}
         });
 

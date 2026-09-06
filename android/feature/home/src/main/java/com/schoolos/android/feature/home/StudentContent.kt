@@ -22,12 +22,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Assessment
+import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Grade
 import androidx.compose.material.icons.filled.Quiz
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Science
 import androidx.compose.material.icons.filled.SportsHandball
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -59,14 +60,25 @@ fun LazyListScope.studentContent(
     onNavigateToProgress: () -> Unit,
     onNavigateToAchievements: () -> Unit,
     onNavigateToLearning: () -> Unit,
+    nextSessionSubject: String = "-",
+    nextSessionRoom: String = "-",
+    nextSessionTime: String = "-",
+    nextSessionIsLive: Boolean = false,
+    todaySessions: List<com.schoolos.android.domain.model.LearningSession> = emptyList(),
+    gradeAverage: String = "-",
+    gradeStatus: String = "Belum ada data nilai",
+    gradeTrendPoints: List<Float> = emptyList(),
+    topGradeSubjects: List<com.schoolos.android.domain.model.SubjectGradeSummary> = emptyList(),
+    studentProgress: com.schoolos.android.domain.model.Progress? = null,
+    progressPercentage: Float = 0f,
 ) {
     // ── 1. INTEGRATED LEARNING HUB (Next Class) ──
     item {
         StudentLearningHubGlass(
-            subject = "-",
-            room = "-",
-            timeLeft = "-",
-            isLive = false, // Upcoming
+            subject = nextSessionSubject,
+            room = nextSessionRoom,
+            timeLeft = nextSessionTime,
+            isLive = nextSessionIsLive,
             onClick = onNavigateToSessions
         )
     }
@@ -81,8 +93,8 @@ fun LazyListScope.studentContent(
                 QuickAction("Tugas", Icons.AutoMirrored.Filled.Assignment, StudentNeon, onNavigateToAssignments),
                 QuickAction("Kuis", Icons.Default.Quiz, NeonWarning, onNavigateToQuizzes),
                 QuickAction("Materi", Icons.Default.Book, NeonBlue, onNavigateToLearning),
-                QuickAction("Nilai", Icons.Default.Grade, NeonSuccess, onNavigateToGrades),
-                QuickAction("Badge", Icons.Default.Star, StudentNeon, onNavigateToAchievements),
+                QuickAction("Nilai", Icons.Default.Assessment, NeonSuccess, onNavigateToGrades),
+                QuickAction("Badge", Icons.Default.EmojiEvents, StudentNeon, onNavigateToAchievements),
             )
             tools.forEach { tool -> StudentToolboxButton(tool) }
         }
@@ -90,51 +102,206 @@ fun LazyListScope.studentContent(
 
     // ── 3. COMPACT DAILY AGENDA STRIP ──
     item {
-        LightCard {
-            Column(modifier = Modifier.padding(18.dp)) {
-                LightSectionHeader("Agenda Belajar Hari Ini", "", onSeeAll = onNavigateToSessions)
-                Spacer(Modifier.height(14.dp))
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    items(emptyList<Triple<String, String, Color>>()) { (time, code, color) ->
-                        CompactAgendaItem(time, code, color)
+        val agendaItems = todaySessions.map { s ->
+            val title = s.subjectName ?: s.notes?.substringBefore(" • ") ?: "Mapel"
+            val code = when {
+                title.contains("Matematika", ignoreCase = true) -> "MTK"
+                title.contains("IPA", ignoreCase = true) || title.contains("Sains", ignoreCase = true) -> "IPA"
+                title.contains("IPS", ignoreCase = true) -> "IPS"
+                title.contains("Bahasa Indonesia", ignoreCase = true) -> "BIND"
+                title.contains("Bahasa Inggris", ignoreCase = true) -> "BING"
+                title.contains("Agama", ignoreCase = true) -> "PAI"
+                title.contains("Penjaskes", ignoreCase = true) || title.contains("Olahraga", ignoreCase = true) -> "PJOK"
+                else -> title.take(4).uppercase()
+            }
+            val color = when {
+                title.contains("Matematika", ignoreCase = true) -> StudentNeon
+                title.contains("IPA", ignoreCase = true) || title.contains("Sains", ignoreCase = true) -> NeonBlue
+                title.contains("Bahasa", ignoreCase = true) -> NeonSuccess
+                title.contains("Agama", ignoreCase = true) -> NeonSuccess
+                else -> NeonWarning
+            }
+            val rawTime = s.scheduledAt ?: s.startedAt
+            val time = rawTime?.let {
+                try {
+                    val parser = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", java.util.Locale.getDefault()).apply {
+                        timeZone = java.util.TimeZone.getTimeZone("UTC")
+                    }
+                    val out = java.text.SimpleDateFormat("HH.mm", java.util.Locale.getDefault()).apply {
+                        timeZone = java.util.TimeZone.getTimeZone("Asia/Jakarta")
+                    }
+                    out.format(parser.parse(it.substringBefore(".")) ?: java.util.Date())
+                } catch (e: Exception) {
+                    try {
+                        java.time.ZonedDateTime.parse(rawTime)
+                            .withZoneSameInstant(java.time.ZoneId.of("Asia/Jakarta"))
+                            .format(java.time.format.DateTimeFormatter.ofPattern("HH.mm"))
+                    } catch (_: Exception) {
+                        "-"
                     }
                 }
-            }
+            } ?: "-"
+            Triple(time, code, color)
         }
-    }
 
-    // ── 4. REFINED GRADE OVERVIEW ──
-    item {
         LightCard {
             Column(modifier = Modifier.padding(18.dp)) {
-                LightSectionHeader("Performa Akademik", "Semester Genap", onSeeAll = onNavigateToGrades)
-                Spacer(Modifier.height(16.dp))
-                Row(verticalAlignment = Alignment.Bottom) {
-                    Column {
-                        Text("-", fontWeight = FontWeight.Black, fontSize = 36.sp, color = StudentNeon, letterSpacing = (-1).sp)
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("Belum ada data nilai", fontSize = 11.sp, color = TextTertiary, fontWeight = FontWeight.Medium)
+                LightSectionHeader("Agenda Belajar Hari Ini", if (agendaItems.isNotEmpty()) "${agendaItems.size} Sesi" else "", onSeeAll = onNavigateToSessions)
+                Spacer(Modifier.height(14.dp))
+                if (agendaItems.isNotEmpty()) {
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        items(agendaItems) { (time, code, color) ->
+                            CompactAgendaItem(time, code, color)
                         }
                     }
-                    Spacer(Modifier.weight(1f))
-                    LineTrendChart(
-                        dataPoints = emptyList(),
-                        lineColor = StudentNeon,
-                        fillColor = StudentNeon.copy(alpha = 0.08f),
-                        modifier = Modifier.size(width = 120.dp, height = 60.dp),
-                    )
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color.White.copy(alpha = 0.04f))
+                            .border(1.dp, GlassBorder, RoundedCornerShape(12.dp))
+                            .clickable(onClick = onNavigateToSessions)
+                            .padding(14.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("Buka Jadwal Pelajaran Mingguan ➔", fontSize = 12.sp, color = TextTertiary, fontWeight = FontWeight.SemiBold)
+                    }
                 }
             }
         }
     }
 
-    // ── 5. REFINED SUBJECT PROGRESS ──
+    // ── 4. REFINED DYNAMIC GRADE OVERVIEW ──
     item {
         LightCard {
             Column(modifier = Modifier.padding(18.dp)) {
-                LightSectionHeader("Progres Belajar", "", onSeeAll = onNavigateToProgress)
+                LightSectionHeader("Performa Akademik", "Semester Aktif", onSeeAll = onNavigateToGrades)
+                Spacer(Modifier.height(16.dp))
+                Row(verticalAlignment = Alignment.Bottom) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = if (gradeAverage.isNotBlank()) gradeAverage else "-",
+                            fontWeight = FontWeight.Black,
+                            fontSize = 36.sp,
+                            color = StudentNeon,
+                            letterSpacing = (-1).sp
+                        )
+                        Spacer(Modifier.height(2.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(gradeStatus, fontSize = 11.sp, color = TextSecondary, fontWeight = FontWeight.SemiBold)
+                        }
+                    }
+                    if (gradeTrendPoints.isNotEmpty()) {
+                        LineTrendChart(
+                            dataPoints = gradeTrendPoints,
+                            lineColor = StudentNeon,
+                            fillColor = StudentNeon.copy(alpha = 0.08f),
+                            modifier = Modifier.size(width = 120.dp, height = 54.dp),
+                        )
+                    }
+                }
+
+                if (topGradeSubjects.isNotEmpty()) {
+                    Spacer(Modifier.height(14.dp))
+                    HorizontalDivider(color = GlassBorder.copy(alpha = 0.5f), thickness = 0.8.dp)
+                    Spacer(Modifier.height(12.dp))
+                    topGradeSubjects.take(3).forEach { subj ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp)
+                                .clickable(onClick = onNavigateToGrades),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                subj.subjectName,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = TextPrimary,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    "%.1f".format(subj.finalScore),
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = TextSecondary
+                                )
+                                Spacer(Modifier.width(6.dp))
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .background(
+                                            when (subj.letterGrade) {
+                                                "A" -> NeonSuccess.copy(alpha = 0.15f)
+                                                "B" -> NeonBlue.copy(alpha = 0.15f)
+                                                else -> NeonWarning.copy(alpha = 0.15f)
+                                            }
+                                        )
+                                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                                ) {
+                                    Text(
+                                        subj.letterGrade,
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Black,
+                                        color = when (subj.letterGrade) {
+                                            "A" -> NeonSuccess
+                                            "B" -> NeonBlue
+                                            else -> NeonWarning
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // ── 5. REFINED DYNAMIC SUBJECT PROGRESS ──
+    item {
+        val p = studentProgress
+        val progressItems = if (p != null) {
+            val list = mutableListOf<Triple<String, Float, Color>>()
+            val lessonPct = if (p.lessonTotal > 0) (p.lessonCompleted.toFloat() / p.lessonTotal.toFloat()).coerceIn(0f, 1f) else 0f
+            val lessonLabel = if (p.lessonTotal > 0) "Materi & Modul (${p.lessonCompleted}/${p.lessonTotal})" else "Materi & Modul"
+            list.add(Triple(lessonLabel, lessonPct, NeonBlue))
+
+            val assignPct = if (p.assignmentTotal > 0) (p.assignmentCompleted.toFloat() / p.assignmentTotal.toFloat()).coerceIn(0f, 1f) else 0f
+            val assignLabel = if (p.assignmentTotal > 0) "Tugas Mandiri (${p.assignmentCompleted}/${p.assignmentTotal})" else "Tugas Mandiri"
+            list.add(Triple(assignLabel, assignPct, NeonSuccess))
+
+            val quizPct = if (p.quizTotal > 0) (p.quizCompleted.toFloat() / p.quizTotal.toFloat()).coerceIn(0f, 1f) else 0f
+            val quizLabel = if (p.quizTotal > 0) "Kuis & Evaluasi (${p.quizCompleted}/${p.quizTotal})" else "Kuis & Evaluasi"
+            list.add(Triple(quizLabel, quizPct, NeonWarning))
+
+            val sessionPct = if (p.sessionTotal > 0) (p.sessionAttended.toFloat() / p.sessionTotal.toFloat()).coerceIn(0f, 1f) else 0f
+            val sessionLabel = if (p.sessionTotal > 0) "Kehadiran Sesi (${p.sessionAttended}/${p.sessionTotal})" else "Kehadiran Sesi"
+            list.add(Triple(sessionLabel, sessionPct, StudentNeon))
+
+            list
+        } else {
+            listOf(
+                Triple("Materi & Modul", 0f, NeonBlue),
+                Triple("Tugas Mandiri", 0f, NeonSuccess),
+                Triple("Kuis & Evaluasi", 0f, NeonWarning),
+                Triple("Kehadiran Sesi", 0f, StudentNeon),
+            )
+        }
+
+        val overallDisplayPct = p?.overallProgress?.toInt()?.coerceIn(0, 100) ?: 0
+
+        LightCard {
+            Column(modifier = Modifier.padding(18.dp)) {
+                LightSectionHeader("Progres Belajar", if (p != null) "$overallDisplayPct% Selesai" else "", onSeeAll = onNavigateToProgress)
                 Spacer(Modifier.height(14.dp))
-                emptyList<Triple<String, Float, Color>>().forEach { (subj, pct, color) ->
+                progressItems.forEach { (subj, pct, color) ->
                     LightProgressRow(subj, pct, color)
                     Spacer(Modifier.height(12.dp))
                 }

@@ -12,6 +12,12 @@ interface AssignmentDao {
     @Query("SELECT * FROM assignments ORDER BY createdAt DESC")
     fun getAssignments(): Flow<List<AssignmentEntity>>
 
+    @Query("SELECT * FROM assignments WHERE id = :id LIMIT 1")
+    suspend fun getAssignmentById(id: String): AssignmentEntity?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(assignment: AssignmentEntity)
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(assignments: List<AssignmentEntity>)
 

@@ -39,8 +39,16 @@ class TokenRefreshInterceptor @Inject constructor(
     override fun authenticate(route: Route?, response: Response): Request? {
         if (response.code != 401) return null
 
+        // Prevent infinite retry loops if the failing request is the refresh endpoint itself
+        if (response.request.url.encodedPath.contains("/auth/refresh")) {
+            return null
+        }
+
         return runBlocking {
-            val refreshToken = authManager.getRefreshToken() ?: return@runBlocking null
+            val refreshToken = authManager.getRefreshToken()
+            if (refreshToken.isNullOrBlank()) {
+                return@runBlocking null
+            }
 
             try {
                 val body = json.encodeToString(
@@ -58,25 +66,24 @@ class TokenRefreshInterceptor @Inject constructor(
                 ).execute()
 
                 if (!refreshResponse.isSuccessful) {
-                    authManager.clearSession()
+                    if (refreshResponse.code == 401) {
+                        authManager.clearSession()
+                    }
                     return@runBlocking null
                 }
 
                 val responseBody = refreshResponse.body?.string() ?: return@runBlocking null
                 val tokenResponse = json.decodeFromString<RefreshResult>(responseBody)
 
-                authManager.saveSession(
+                authManager.updateTokens(
                     accessToken = tokenResponse.accessToken,
                     refreshToken = tokenResponse.refreshToken,
-                    userId = "",
-                    tenantId = "",
                 )
 
                 response.request.newBuilder()
                     .header("Authorization", "Bearer ${tokenResponse.accessToken}")
                     .build()
             } catch (_: Exception) {
-                authManager.clearSession()
                 null
             }
         }

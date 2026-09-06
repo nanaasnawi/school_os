@@ -150,7 +150,7 @@ fun GradeDetailScreen(
                                         )
                                         Spacer(Modifier.width(6.dp))
                                         Text(
-                                            if (isTeacher) "Bpk. Andi Pratama • Semester Genap" else "Ahmad Fauzi • Semester Genap",
+                                            "Semester Genap • Tahun Ajaran 2026/2027",
                                             fontSize = 12.sp,
                                             color = Color.White.copy(alpha = 0.9f),
                                             fontWeight = FontWeight.Bold

@@ -188,7 +188,7 @@ export default function TeachersPage() {
 
     setTeachers([newTeacher, ...teachers]);
     setShowAddModal(false);
-    showToast(`✓ Data Guru "${formData.full_name}" berhasil ditambahkan!`);
+    showToast('✓ Data guru berhasil ditambahkan');
   };
 
   const handleSaveEdit = (e: React.FormEvent) => {
@@ -214,12 +214,12 @@ export default function TeachersPage() {
     } : t));
 
     setEditTeacher(null);
-    showToast(`✓ Data Guru "${formData.full_name}" berhasil diperbarui!`);
+    showToast('✓ Data guru berhasil diperbarui');
   };
 
   const exportToExcelFile = () => {
     if (!filtered || filtered.length === 0) {
-      showToast('⚠️ Tidak ada data guru untuk diekspor!');
+      showToast('⚠️ Data kosong');
       return;
     }
     const exportData = filtered.map(t => ({
@@ -239,7 +239,7 @@ export default function TeachersPage() {
       'Status Aktif': t.is_active ? 'Aktif' : 'Nonaktif',
     }));
     exportToExcel(exportData, `Data_Guru_GTK_${schoolName.replace(/\s+/g, '_')}`, 'Data Guru');
-    showToast(`📊 Berkas Excel (.xlsx) Data Guru ${schoolName} berhasil diunduh!`);
+    showToast('✓ Berkas Excel berhasil diunduh');
   };
 
   const filtered = teachers.filter(t => {

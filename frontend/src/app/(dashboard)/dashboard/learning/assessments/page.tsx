@@ -174,12 +174,12 @@ export default function AssessmentsPage() {
     }));
 
     setEditingGrade(null);
-    showToast(`✓ Nilai Rapor "${editingGrade.studentName}" berhasil diperbarui (Skor Akhir: ${newFinal})!`);
+    showToast('✓ Nilai berhasil diperbarui');
   };
 
   const exportGradebookExcel = () => {
     if (!filtered || filtered.length === 0) {
-      showToast('⚠️ Tidak ada data nilai rapor untuk diekspor!');
+      showToast('⚠️ Data kosong');
       return;
     }
     const exportData = filtered.map(g => ({
@@ -197,7 +197,7 @@ export default function AssessmentsPage() {
     }));
     const schoolName = typeof window !== 'undefined' ? (getTenantItem('dapodik_nama_sekolah') || 'Sekolah') : 'Sekolah';
     exportToExcel(exportData, `Buku_Nilai_Transkrip_Rapor_${schoolName.replace(/[^a-zA-Z0-9]/g, '_')}`, 'Transkrip Rapor');
-    showToast('📊 Berkas Excel (.xlsx) Rekapitulasi Buku Nilai Rapor berhasil diunduh!');
+    showToast('✓ Berkas Excel berhasil diunduh');
   };
 
   const filtered = studentsGradebook.filter(g => {

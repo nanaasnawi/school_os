@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -39,6 +40,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Assignment
+import androidx.compose.material.icons.filled.Add
 import com.schoolos.android.core.designsystem.*
 import com.schoolos.android.domain.model.Assignment
 
@@ -47,78 +49,152 @@ import com.schoolos.android.domain.model.Assignment
 fun AssignmentListScreen(
     onBack: (() -> Unit)? = null,
     onAssignmentClick: (String) -> Unit = {},
+    onCreateAssignment: () -> Unit = {},
+    onCreateQuiz: () -> Unit = {},
     viewModel: AssignmentListViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
     var selectedTab by remember { mutableStateOf("Semua") }
     
-    val role = state.userRole.lowercase()
-    val isTeacher = role == "teacher" || role == "guru"
-    val isParent  = role == "parent" || role == "ortu" || role == "wali"
+    val isParent  = com.schoolos.android.core.auth.isParentRole(state.userRole)
+    val isTeacher = com.schoolos.android.core.auth.isTeacherRole(state.userRole)
 
-    Scaffold(containerColor = CosmicBlack) { padding ->
+    Scaffold(
+        containerColor = CosmicBlack,
+        floatingActionButton = {
+            if (isTeacher) {
+                androidx.compose.material3.ExtendedFloatingActionButton(
+                    onClick = onCreateAssignment,
+                    containerColor = TeacherNeon,
+                    contentColor = CosmicBlack,
+                    shape = RoundedCornerShape(16.dp),
+                    icon = { androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Default.Add, null) },
+                    text = { androidx.compose.material3.Text("Buat Tugas", fontWeight = FontWeight.Black) }
+                )
+            }
+        }
+    ) { padding ->
         PullRefreshContainer(
             isRefreshing = state.isRefreshing,
             onRefresh = viewModel::refresh,
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().padding(padding),
         ) {
             if (state.isLoading) {
                 LoadingState()
             } else if (state.error != null) {
                 ErrorState(message = state.error!!, onRetry = viewModel::refresh)
-            } else if (state.active.isEmpty() && state.dueSoon.isEmpty() && state.completed.isEmpty()) {
+            } else if (state.active.isEmpty() && state.dueSoon.isEmpty() && state.completed.isEmpty() && !isTeacher) {
                 EmptyState("Belum ada tugas yang diberikan!", androidx.compose.material.icons.Icons.AutoMirrored.Filled.Assignment)
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 0.dp, bottom = 100.dp),
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 30.dp, bottom = 100.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
                     // ── IMMERSIVE HERO HEADER ────────────────────────────
                     item {
                         if (isTeacher) {
-                            TeacherAssignmentHeroHeader(state.active.size, state.dueSoon.size)
+                            TeacherAssignmentHeroHeader(
+                                activeCount = state.active.size,
+                                pendingGradeCount = state.dueSoon.size,
+                                onCreateAssignment = onCreateAssignment,
+                                onCreateQuiz = onCreateQuiz
+                            )
                         } else {
-                            StudentAssignmentHeroHeader(state.active.size, state.dueSoon.size, state.completed.size, isParent)
+                            StudentAssignmentHeroHeader(state.active.size, state.dueSoon.size, state.completed.size, isParent, state.childName)
+                        }
+                    }
+
+                    // Empty state for teachers
+                    if (isTeacher && state.active.isEmpty() && state.dueSoon.isEmpty() && state.completed.isEmpty()) {
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(20.dp))
+                                    .background(CosmicNavy)
+                                    .border(1.dp, GlassBorder, RoundedCornerShape(20.dp))
+                                    .padding(32.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    androidx.compose.material3.Icon(
+                                        imageVector = androidx.compose.material.icons.Icons.AutoMirrored.Filled.Assignment,
+                                        contentDescription = null,
+                                        tint = TeacherNeon,
+                                        modifier = Modifier.size(52.dp)
+                                    )
+                                    Spacer(Modifier.height(14.dp))
+                                    Text("Belum Ada Tugas Aktif", color = TextPrimary, fontSize = 17.sp, fontWeight = FontWeight.Black)
+                                    Spacer(Modifier.height(6.dp))
+                                    Text(
+                                        "Buat tugas baru atau kuis CBT untuk siswa rombel Anda",
+                                        color = TextSecondary,
+                                        fontSize = 13.sp,
+                                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                    )
+                                    Spacer(Modifier.height(20.dp))
+                                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                        androidx.compose.material3.Button(
+                                            onClick = onCreateAssignment,
+                                            colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = TeacherNeon),
+                                            shape = RoundedCornerShape(12.dp)
+                                        ) {
+                                            androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Default.Add, null, tint = CosmicBlack)
+                                            Spacer(Modifier.width(6.dp))
+                                            Text("Buat Tugas", color = CosmicBlack, fontWeight = FontWeight.Bold)
+                                        }
+                                        androidx.compose.material3.OutlinedButton(
+                                            onClick = onCreateQuiz,
+                                            border = androidx.compose.foundation.BorderStroke(1.dp, NeonBlue),
+                                            shape = RoundedCornerShape(12.dp)
+                                        ) {
+                                            Text("Buat Kuis", color = NeonBlue, fontWeight = FontWeight.Bold)
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
 
                     // ── PREMIUM TAB FILTER CHIPS ─────────────────────────
-                    item {
-                        val tabs = if (isTeacher) listOf("Semua", "Aktif", "Perlu Dinilai")
-                                   else listOf("Semua", "Segera", "Aktif", "Selesai")
-                        
-                        LazyRow(
-                            horizontalArrangement = Arrangement.spacedBy(10.dp),
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
-                        ) {
-                            items(tabs) { tab ->
-                                val isSelected = tab == selectedTab
-                                val accent = when (tab) {
-                                    "Segera", "Perlu Dinilai" -> NeonError
-                                    "Aktif"                  -> StudentNeon
-                                    "Selesai"                -> NeonSuccess
-                                    else                     -> NeonBlue
-                                }
-                                
-                                Box(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(14.dp))
-                                        .background(if (isSelected) accent.copy(alpha = 0.1f) else CosmicNavy)
-                                        .border(
-                                            1.dp,
-                                            if (isSelected) accent.copy(alpha = 0.4f) else GlassBorder,
-                                            RoundedCornerShape(14.dp),
+                    if (!isTeacher || (state.active.isNotEmpty() || state.dueSoon.isNotEmpty() || state.completed.isNotEmpty())) {
+                        item {
+                            val tabs = if (isTeacher) listOf("Semua", "Aktif", "Perlu Dinilai")
+                                       else listOf("Semua", "Segera", "Aktif", "Selesai")
+                            
+                            LazyRow(
+                                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+                            ) {
+                                items(tabs) { tab ->
+                                    val isSelected = tab == selectedTab
+                                    val accent = when (tab) {
+                                        "Segera", "Perlu Dinilai" -> NeonError
+                                        "Aktif"                  -> StudentNeon
+                                        "Selesai"                -> NeonSuccess
+                                        else                     -> NeonBlue
+                                    }
+                                    
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(14.dp))
+                                            .background(if (isSelected) accent.copy(alpha = 0.1f) else CosmicNavy)
+                                            .border(
+                                                1.dp,
+                                                if (isSelected) accent.copy(alpha = 0.4f) else GlassBorder,
+                                                RoundedCornerShape(14.dp),
+                                            )
+                                            .clickable { selectedTab = tab }
+                                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                                    ) {
+                                        Text(
+                                            tab,
+                                            fontSize = 12.sp,
+                                            fontWeight = if (isSelected) FontWeight.Black else FontWeight.Bold,
+                                            color = if (isSelected) accent else TextTertiary,
                                         )
-                                        .clickable { selectedTab = tab }
-                                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                                ) {
-                                    Text(
-                                        tab,
-                                        fontSize = 12.sp,
-                                        fontWeight = if (isSelected) FontWeight.Black else FontWeight.Bold,
-                                        color = if (isSelected) accent else TextTertiary,
-                                    )
+                                    }
                                 }
                             }
                         }
@@ -148,7 +224,7 @@ fun AssignmentListScreen(
 }
 
 @Composable
-private fun StudentAssignmentHeroHeader(activeCount: Int, dueSoonCount: Int, completedCount: Int, isParent: Boolean) {
+private fun StudentAssignmentHeroHeader(activeCount: Int, dueSoonCount: Int, completedCount: Int, isParent: Boolean, childName: String = "") {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -170,8 +246,9 @@ private fun StudentAssignmentHeroHeader(activeCount: Int, dueSoonCount: Int, com
                     letterSpacing = 1.sp
                 )
                 Spacer(Modifier.height(4.dp))
+                val child = if (childName.isNotBlank()) childName else "Anak"
                 Text(
-                    if (isParent) "Status Tugas Ahmad" else "Daftar Tugas Kamu",
+                    if (isParent) "Status Tugas $child" else "Daftar Tugas Kamu",
                     color = Color.White,
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Black,
@@ -194,7 +271,12 @@ private fun StudentAssignmentHeroHeader(activeCount: Int, dueSoonCount: Int, com
 }
 
 @Composable
-private fun TeacherAssignmentHeroHeader(activeCount: Int, pendingGradeCount: Int) {
+private fun TeacherAssignmentHeroHeader(
+    activeCount: Int,
+    pendingGradeCount: Int,
+    onCreateAssignment: () -> Unit = {},
+    onCreateQuiz: () -> Unit = {}
+) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -209,7 +291,7 @@ private fun TeacherAssignmentHeroHeader(activeCount: Int, pendingGradeCount: Int
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    "MANAJEMEN TUGAS",
+                    "PORTAL EVALUASI GURU",
                     color = Color.White.copy(alpha = 0.7f),
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Black,
@@ -217,17 +299,17 @@ private fun TeacherAssignmentHeroHeader(activeCount: Int, pendingGradeCount: Int
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    "Evaluasi Pembelajaran",
+                    "Tugas & Kuis Rombel",
                     color = Color.White,
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Black,
                     lineHeight = 28.sp
                 )
             }
-            Text("👨‍🏫", fontSize = 42.sp)
+            Text("👨‍🏫", fontSize = 40.sp)
         }
 
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(18.dp))
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -235,6 +317,51 @@ private fun TeacherAssignmentHeroHeader(activeCount: Int, pendingGradeCount: Int
         ) {
             HeroStatPill("AKTIF", "$activeCount", StudentNeon, Modifier.weight(1f))
             HeroStatPill("PERLU NILAI", "$pendingGradeCount", NeonError, Modifier.weight(1f))
+        }
+
+        Spacer(Modifier.height(14.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color.White)
+                    .clickable(onClick = onCreateAssignment)
+                    .padding(vertical = 10.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    androidx.compose.material3.Icon(
+                        androidx.compose.material.icons.Icons.Default.Add,
+                        null,
+                        tint = CosmicBlack,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text("Buat Tugas", color = CosmicBlack, fontWeight = FontWeight.Black, fontSize = 12.sp)
+                }
+            }
+
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color.White.copy(alpha = 0.22f))
+                    .border(1.dp, Color.White.copy(alpha = 0.45f), RoundedCornerShape(12.dp))
+                    .clickable(onClick = onCreateQuiz)
+                    .padding(vertical = 10.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("⚡", fontSize = 12.sp)
+                    Spacer(Modifier.width(4.dp))
+                    Text("Buat Kuis CBT", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                }
+            }
         }
     }
 }

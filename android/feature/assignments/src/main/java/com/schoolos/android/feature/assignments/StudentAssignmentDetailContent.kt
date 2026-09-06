@@ -33,9 +33,10 @@ fun StudentAssignmentDetailContent(
     content: String,
     onContentChange: (String) -> Unit,
     onOpenMaterial: (String) -> Unit,
-    onSubmitClick: () -> Unit
+    onSubmitClick: () -> Unit,
+    childName: String = "",
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
         // Metadata Card (Fixed Shadow Order)
         Box(
             modifier = Modifier
@@ -118,41 +119,45 @@ fun StudentAssignmentDetailContent(
             }
         }
 
-        // Related Materials Card (Fixed Shadow Order)
-        Text("Materi Terkait", fontSize = 15.sp, fontWeight = FontWeight.Black, color = TextPrimary, modifier = Modifier.padding(start = 4.dp, top = 2.dp))
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .shadow(2.dp, RoundedCornerShape(20.dp), spotColor = Color(0x0E000000))
-                .clip(RoundedCornerShape(20.dp))
-                .background(Color.White)
-                .border(1.dp, GlassBorder, RoundedCornerShape(20.dp))
-                .padding(14.dp)
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(NeonBlueBg)
-                    .clickable { onOpenMaterial("1") }
-                    .padding(12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+        // Related Materials Card
+        if (assignment.materials.isNotEmpty()) {
+            Text("Materi Terkait", fontSize = 15.sp, fontWeight = FontWeight.Black, color = TextPrimary, modifier = Modifier.padding(start = 4.dp, top = 2.dp))
+            assignment.materials.forEach { mat ->
                 Box(
                     modifier = Modifier
-                        .size(38.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(NeonBlue),
-                    contentAlignment = Alignment.Center
+                        .fillMaxWidth()
+                        .shadow(2.dp, RoundedCornerShape(20.dp), spotColor = Color(0x0E000000))
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(Color.White)
+                        .border(1.dp, GlassBorder, RoundedCornerShape(20.dp))
+                        .padding(14.dp)
                 ) {
-                    Icon(Icons.Default.Book, null, tint = Color.White, modifier = Modifier.size(20.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(NeonBlueBg)
+                            .clickable { onOpenMaterial(mat.id) }
+                            .padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(38.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(NeonBlue),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Default.Book, null, tint = Color.White, modifier = Modifier.size(20.dp))
+                        }
+                        Spacer(Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(mat.title, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                            Text(mat.subject, fontSize = 11.sp, color = TextTertiary)
+                        }
+                        Icon(Icons.Default.ChevronRight, null, tint = TextTertiary, modifier = Modifier.size(18.dp))
+                    }
                 }
-                Spacer(Modifier.width(12.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text("Modul Operasi Pecahan", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
-                    Text("PDF • 2.4 MB", fontSize = 11.sp, color = TextTertiary)
-                }
-                Icon(Icons.Default.ChevronRight, null, tint = TextTertiary, modifier = Modifier.size(18.dp))
             }
         }
 
@@ -167,17 +172,18 @@ fun StudentAssignmentDetailContent(
                 .padding(18.dp)
         ) {
             Column {
+                val displayName = if (childName.isNotBlank()) childName else "Anak"
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(if (isParent) Icons.Default.Grade else Icons.Default.Send, null, tint = StudentNeon, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text(if (isParent) "Status Pengumpulan Ahmad" else "Pengumpulan Tugas PR", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                    Text(if (isParent) "Status Pengumpulan $displayName" else "Pengumpulan Tugas PR", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
                 }
                 Spacer(Modifier.height(14.dp))
 
                 if (submission != null) {
                     SubmissionStatusCard(submission)
                 } else if (isParent) {
-                    Text("Ahmad belum mengumpulkan tugas ini.", fontSize = 12.sp, color = TextTertiary)
+                    Text("$displayName belum mengumpulkan tugas ini.", fontSize = 12.sp, color = TextTertiary)
                 } else {
                     OutlinedTextField(
                         value = content,

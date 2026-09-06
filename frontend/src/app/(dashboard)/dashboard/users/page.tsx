@@ -133,14 +133,14 @@ export default function UsersPage() {
     if (typeof navigator !== 'undefined' && navigator.clipboard) {
       navigator.clipboard.writeText(generatedPass).catch(() => {});
     }
-    showToast(`🔑 Password baru untuk "${u.username}" (${generatedPass}) berhasil diperbarui & dicopy!`);
+    showToast('✓ Password baru berhasil disalin');
   };
 
   const toggleUserLock = (id: string) => {
     setUsers(prev => prev.map(u => {
       if (u.id === id) {
         const nextStatus = u.status === 'ACTIVE' ? 'LOCKED' : 'ACTIVE';
-        showToast(nextStatus === 'LOCKED' ? `🔒 Akses akun "${u.username}" berhasil dikunci!` : `🔓 Akses akun "${u.username}" berhasil dibuka kembali!`);
+        showToast(nextStatus === 'LOCKED' ? '✓ Akun berhasil dikunci' : '✓ Akun berhasil dibuka');
         return { ...u, status: nextStatus };
       }
       return u;
@@ -178,38 +178,33 @@ export default function UsersPage() {
       });
 
       if (res.ok) {
-        showToast(`✓ Akun "${formData.username}" berhasil dibuat dengan password "${pass}"!`);
+        showToast('✓ Akun berhasil dibuat');
         setShowAddModal(false);
         // Refresh page to load new user
         setTimeout(() => window.location.reload(), 1000);
       } else {
-        const error = await res.json();
-        showToast(`⚠️ Gagal membuat akun: ${error.message || 'Terjadi kesalahan'}`);
+        showToast('⚠️ Gagal membuat akun');
       }
     } catch (err) {
-      showToast('⚠️ Gagal menghubungi server saat membuat akun.');
+      showToast('⚠️ Gagal menghubungi server');
     }
   };
 
   const exportToExcelFile = () => {
     if (!filtered || filtered.length === 0) {
-      showToast('⚠️ Tidak ada data akun pengguna untuk diekspor!');
+      showToast('⚠️ Data kosong');
       return;
     }
-    const exportData = filtered.map(u => {
-      const pass = userPasswords[u.id] || u.defaultPassword || '123456';
-      return {
-        'ID Akun': u.id,
-        'Username Login': u.username,
-        'Password Login': pass,
-        'Peran Sistem (Role)': u.roleLabel,
-        'Entitas Terhubung': u.connectedEntity,
-        'Terakhir Login': u.lastLogin,
-        'Status Akses': u.status === 'ACTIVE' ? 'Aktif' : 'Terkunci',
-      };
-    });
-    exportToExcel(exportData, `Kredensial_Akun_Pengguna_Android_${schoolName.replace(/[^a-zA-Z0-9]/g, '_')}`, 'Kredensial Login');
-    showToast('📊 Berkas Excel (.xlsx) Kredensial Username & Password berhasil diunduh!');
+    const exportData = filtered.map(u => ({
+      'ID User': u.id,
+      'Username': u.username,
+      'Role Portal': u.role,
+      'Entitas Terhubung': u.connectedEntity,
+      'Status Akses': u.status,
+      'Aktivitas Terakhir': u.lastLogin,
+    }));
+    exportToExcel(exportData, 'Data_Pengguna_Portal_SchoolOS', 'Pengguna');
+    showToast('✓ Berkas Excel berhasil diunduh');
   };
 
   const filtered = users.filter(u => {

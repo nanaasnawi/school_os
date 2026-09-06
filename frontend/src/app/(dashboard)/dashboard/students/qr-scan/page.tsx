@@ -149,7 +149,19 @@ export default function QrScanPage() {
         }
       }
 
-      setUsers(loadedUsers);
+      // Deduplicate loadedUsers by user ID to guarantee exactly 1 entry per user in UI state
+      const uniqueUsersMap = new Map<string, UserAccount>();
+      for (const u of loadedUsers) {
+        if (!uniqueUsersMap.has(u.id)) {
+          uniqueUsersMap.set(u.id, u);
+        } else {
+          const existing = uniqueUsersMap.get(u.id)!;
+          if (!existing.identifier && u.identifier) {
+            uniqueUsersMap.set(u.id, u);
+          }
+        }
+      }
+      setUsers(Array.from(uniqueUsersMap.values()));
     } catch (err) {
       console.error('Failed to load user QR status:', err);
       showToast('Gagal memuat daftar pengguna.');
@@ -172,7 +184,7 @@ export default function QrScanPage() {
     return users.filter((u) => {
       // Role Tab Filter
       if (activeTab === 'SISWA') {
-        if (!u.role.toLowerCase().includes('siswa')) return false;
+        if (!u.role.toLowerCase().includes('siswa') || u.role.toLowerCase().includes('wali')) return false;
       } else if (activeTab === 'GURU') {
         if (!u.role.toLowerCase().includes('guru') && !u.role.toLowerCase().includes('tendik')) return false;
       } else if (activeTab === 'WALI') {
@@ -717,7 +729,7 @@ export default function QrScanPage() {
             🎓
           </div>
           <div>
-            <div className={styles.statVal}>{users.filter((u) => u.role.toLowerCase().includes('siswa')).length}</div>
+            <div className={styles.statVal}>{users.filter((u) => u.role.toLowerCase().includes('siswa') && !u.role.toLowerCase().includes('wali')).length}</div>
             <div className={styles.statLabel}>Siswa</div>
           </div>
         </div>
@@ -759,7 +771,7 @@ export default function QrScanPage() {
               onClick={() => setActiveTab('SISWA')}
               className={`${styles.tabBtn} ${activeTab === 'SISWA' ? styles.tabBtnActive : ''}`}
             >
-              🎓 Siswa <span className={styles.tabCount}>{users.filter((u) => u.role.toLowerCase().includes('siswa')).length}</span>
+              🎓 Siswa <span className={styles.tabCount}>{users.filter((u) => u.role.toLowerCase().includes('siswa') && !u.role.toLowerCase().includes('wali')).length}</span>
             </button>
             <button
               onClick={() => setActiveTab('GURU')}
@@ -1141,7 +1153,7 @@ export default function QrScanPage() {
         <div style={{ textAlign: 'center', marginBottom: '8mm' }}>
           <h2 style={{ fontSize: '16pt', fontWeight: 'bold', margin: 0 }}>{schoolName}</h2>
           <p style={{ fontSize: '10pt', color: '#475569', margin: '2mm 0 0 0' }}>
-            Lembar Kartu Akses Login Mobile Siswa &amp; Guru • School OS
+            Lembar Kartu Akses Login Mobile Siswa, Guru &amp; Wali Murid • School OS
           </p>
         </div>
 

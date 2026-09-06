@@ -275,4 +275,110 @@ sequenceDiagram
    - Penggunaan `idempotency_keys` untuk mencegah terjadinya duplikasi transaksi atau data saat terjadi gangguan jaringan.
 
 ---
+
+## 6. Dokumentasi API, Autentikasi, & Observabilitas
+
+### 6.1. Postman Collection Siap Pakai
+Tersedia collection Postman v2.1 siap pakai dengan auto-capture JWT Bearer token:
+- **Collection**: [`docs/api-contract/School_OS_API.postman_collection.json`](docs/api-contract/School_OS_API.postman_collection.json)
+- **Environment**: [`docs/api-contract/School_OS.postman_environment.json`](docs/api-contract/School_OS.postman_environment.json)
+
+Impor kedua file tersebut ke Postman, pilih environment *School OS — Local Environment*, lalu jalankan request *Login*. Variabel `jwt_token` akan tersimpan secara otomatis untuk seluruh request berikutnya.
+
+### 6.2. Alur Autentikasi (Authentication Flow)
+Dokumentasi lengkap alur otentikasi JWT dan QR Login Siswa beserta diagram Mermaid dapat dibaca di:
+👉 [**Dokumentasi Lengkap Alur Autentikasi (AUTH_FLOW.md)**](docs/api-contract/AUTH_FLOW.md)
+
+### 6.3. Contoh Request & Response API
+
+#### A. Autentikasi (Login User)
+**Request:**
+```bash
+curl -X POST http://localhost:8080/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -H "x-tenant-id: 018e3a2b-1234-7a11-89bc-99a8b7c6d5e4" \
+  -d '{
+    "username": "admin@school.id",
+    "password": "Password123!"
+  }'
+```
+
+**Response (200 OK):**
+```json
+{
+  "status": "success",
+  "data": {
+    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "token_type": "Bearer",
+    "expires_at": 1772966400,
+    "user": {
+      "id": "018e3a2b-9281-7f61-b752-19e49c71a39f",
+      "username": "admin@school.id",
+      "name": "Budi Santoso, S.Pd",
+      "role": "school_admin",
+      "tenant_id": "018e3a2b-1234-7a11-89bc-99a8b7c6d5e4"
+    }
+  }
+}
+```
+
+#### B. Quick Login Siswa via QR Token
+**Request:**
+```bash
+curl -X POST http://localhost:8080/api/v1/auth/qr-login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "qr_token": "qr_sec_tok_example_student_01"
+  }'
+```
+
+#### C. Pengambilan Profil Sekolah
+**Request:**
+```bash
+curl -X GET http://localhost:8080/api/v1/schools/profile \
+  -H "Authorization: Bearer <TOKEN>" \
+  -H "x-tenant-id: 018e3a2b-1234-7a11-89bc-99a8b7c6d5e4"
+```
+
+**Response (200 OK):**
+```json
+{
+  "status": "success",
+  "data": {
+    "id": "018e3a2b-1234-7a11-89bc-99a8b7c6d5e4",
+    "npsn": "20104050",
+    "name": "SMK Bintang Bangsa",
+    "address": "Jl. Pendidikan Nasional No. 10",
+    "status": "active"
+  }
+}
+```
+
+#### D. Pengumpulan Tugas Siswa (Assignment Submission)
+**Request:**
+```bash
+curl -X POST http://localhost:8080/api/v1/learning/assignments/018e3a2b-asg1/submissions \
+  -H "Authorization: Bearer <TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "student_id": "018e3a2b-std1",
+    "content": "Pengumpulan tugas mandiri praktikum pemrograman.",
+    "file_url": "https://storage.schoolos.id/uploads/tugas_01.pdf"
+  }'
+```
+
+### 6.4. Monitoring & Observabilitas (Prometheus, Grafana, Jaeger, Alertmanager)
+School OS dilengkapi dengan monitoring performa tinggi:
+- **Metrics**: Endpoint `/metrics` (Prometheus format) diakses di port 8080.
+- **Grafana Dashboard**: Port `3001` ([http://localhost:3001](http://localhost:3001) user/pass: `admin`/`admin`).
+- **Distributed Tracing**: Port `16686` ([http://localhost:16686](http://localhost:16686) Jaeger UI).
+- **Alertmanager**: Port `9093` dengan integrasi notifikasi Telegram dan Email.
+
+Jalankan seluruh stack observabilitas:
+```bash
+docker compose up -d
+```
+Panduan lengkap alert konfigurasi: [`observability/README.md`](observability/README.md).
+
+---
 *Dokumen arsitektur ini diperbarui secara berkala dan merefleksikan kode program serta struktur direktori aktif di dalam repositori School OS.*

@@ -1,6 +1,35 @@
 import { client } from './sdk/client.gen';
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+export function getApiBaseUrl(): string {
+  if (typeof window !== 'undefined' && window.location?.hostname) {
+    const isClientLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const envUrl = process.env.NEXT_PUBLIC_API_URL;
+
+    // If env URL is explicitly set and points to an external domain or non-localhost, use it
+    if (envUrl && !envUrl.includes('localhost') && !envUrl.includes('127.0.0.1')) {
+      return envUrl;
+    }
+
+    // If browser is accessing via LAN IP or hostname (e.g. 192.168.1.11:3000),
+    // point API requests to the same host on port 8000 so mobile / LAN devices work seamlessly
+    if (!isClientLocalhost) {
+      return `${window.location.protocol}//${window.location.hostname}:8000`;
+    }
+
+    if (envUrl) {
+      return envUrl;
+    }
+    return `${window.location.protocol}//${window.location.hostname}:8000`;
+  }
+
+  return process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+}
+
+export function getApiUrl(path: string): string {
+  const base = getApiBaseUrl().replace(/\/+$/, '');
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  return `${base}${cleanPath}`;
+}
 
 export class ApiError extends Error {
   constructor(
@@ -18,7 +47,7 @@ export class ApiError extends Error {
 // The auth callback is called on EVERY request, always reading the latest
 // token from localStorage — this fixes the 401 issue after page refresh.
 client.setConfig({
-  baseUrl: BASE_URL,
+  baseUrl: getApiBaseUrl(),
   auth: () => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('auth_token') ?? undefined;

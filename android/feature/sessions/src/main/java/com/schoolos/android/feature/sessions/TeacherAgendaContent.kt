@@ -151,7 +151,7 @@ private fun TeacherSessionCard(session: LearningSession, accentColor: Color, onC
                         overflow = TextOverflow.Ellipsis
                     )
                     Spacer(Modifier.height(2.dp))
-                    Text("Wali Kelas 7A • Gedung B", fontSize = 11.sp, color = TextTertiary, fontWeight = FontWeight.Bold)
+                    Text(session.className ?: "Kelas Binaan", fontSize = 11.sp, color = TextTertiary, fontWeight = FontWeight.Bold)
                 }
 
                 StatusChip(label = session.status)
@@ -169,11 +169,11 @@ private fun TeacherSessionCard(session: LearningSession, accentColor: Color, onC
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.Schedule, null, tint = if (isActive) accentColor else TextTertiary, modifier = Modifier.size(14.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text("07.30 WIB", fontSize = 11.sp, color = if (isActive) TextPrimary else TextSecondary, fontWeight = FontWeight.Black)
+                    Text(formatTeacherTime(session.scheduledAt), fontSize = 11.sp, color = if (isActive) TextPrimary else TextSecondary, fontWeight = FontWeight.Black)
                     Spacer(Modifier.width(12.dp))
                     Icon(Icons.Default.LocationOn, null, tint = TextTertiary, modifier = Modifier.size(14.dp))
                     Spacer(Modifier.width(4.dp))
-                    Text("Ruang 7A", fontSize = 11.sp, color = TextSecondary, fontWeight = FontWeight.Bold)
+                    Text(session.room ?: "Ruang Kelas", fontSize = 11.sp, color = TextSecondary, fontWeight = FontWeight.Bold)
                 }
 
                 if (isActive) {
@@ -183,7 +183,7 @@ private fun TeacherSessionCard(session: LearningSession, accentColor: Color, onC
                             .background(accentColor.copy(alpha = 0.1f))
                             .padding(horizontal = 8.dp, vertical = 4.dp)
                     ) {
-                        Text("24/28 HADIR", fontSize = 9.sp, color = accentColor, fontWeight = FontWeight.Black)
+                        Text("SESI AKTIF", fontSize = 9.sp, color = accentColor, fontWeight = FontWeight.Black)
                     }
                 }
             }
@@ -195,5 +195,16 @@ private fun TeacherSessionCard(session: LearningSession, accentColor: Color, onC
                 }
             }
         }
+    }
+}
+
+private fun formatTeacherTime(dateStr: String?): String {
+    if (dateStr.isNullOrBlank()) return "08.00 WIB"
+    return try {
+        val instant = java.time.Instant.parse(dateStr)
+        val zdt = instant.atZone(java.time.ZoneId.of("Asia/Jakarta"))
+        String.format(java.util.Locale.US, "%02d.%02d WIB", zdt.hour, zdt.minute)
+    } catch (_: Exception) {
+        "08.00 WIB"
     }
 }

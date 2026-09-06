@@ -20,7 +20,7 @@ class DynamicHostInterceptor(
     private val authManager: AuthManager,
 ) : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
-        var request = chain.request()
+        val originalRequest = chain.request()
         val customUrl = runBlocking {
             try {
                 authManager.getCustomServerUrl()
@@ -29,25 +29,65 @@ class DynamicHostInterceptor(
             }
         }
 
+        var primaryRequest = originalRequest
         if (!customUrl.isNullOrBlank()) {
             val targetHttpUrl = customUrl.toHttpUrlOrNull()
             if (targetHttpUrl != null) {
-                val newUrl = request.url.newBuilder()
+                val newUrl = originalRequest.url.newBuilder()
                     .scheme(targetHttpUrl.scheme)
                     .host(targetHttpUrl.host)
                     .port(targetHttpUrl.port)
                     .build()
-                request = request.newBuilder().url(newUrl).build()
+                primaryRequest = originalRequest.newBuilder().url(newUrl).build()
             }
         }
 
-        return chain.proceed(request)
+        return try {
+            chain.proceed(primaryRequest)
+        } catch (e: Exception) {
+            // Smart auto-fallback for physical devices & network changes
+            val isEmulator = android.os.Build.FINGERPRINT.startsWith("generic")
+                || android.os.Build.MODEL.contains("google_sdk")
+                || android.os.Build.MODEL.contains("Emulator")
+
+            val currentHost = primaryRequest.url.host
+            val baseCandidates = if (isEmulator) {
+                listOf("10.0.2.2", "127.0.0.1")
+            } else {
+                listOf("127.0.0.1", "10.0.2.2")
+            }
+            val candidateHosts = baseCandidates.filter { it != currentHost }
+
+            var lastException: Exception = e
+            for (fallbackHost in candidateHosts) {
+                try {
+                    val fallbackUrl = primaryRequest.url.newBuilder()
+                        .host(fallbackHost)
+                        .port(8000)
+                        .build()
+                    val fallbackRequest = primaryRequest.newBuilder().url(fallbackUrl).build()
+                    val response = chain.proceed(fallbackRequest)
+
+                    // Fallback worked! Persist working URL so next calls are instant
+                    runBlocking {
+                        try {
+                            authManager.saveCustomServerUrl("http://$fallbackHost:8000/api/v1/")
+                        } catch (_: Exception) {}
+                    }
+                    return response
+                } catch (fallbackEx: Exception) {
+                    lastException = fallbackEx
+                }
+            }
+            throw lastException
+        }
     }
 }
 
 @Singleton
 class ApiClient @Inject constructor(
     private val authManager: AuthManager,
+    private val maintenanceManager: MaintenanceManager,
 ) {
     val json: Json = Json {
         ignoreUnknownKeys = true
@@ -58,6 +98,7 @@ class ApiClient @Inject constructor(
     val httpClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
             .addInterceptor(DynamicHostInterceptor(authManager))
+            .addInterceptor(MaintenanceInterceptor(maintenanceManager))
             .addInterceptor(AuthInterceptor(authManager))
             .addInterceptor(RetryInterceptor())
             .authenticator(TokenRefreshInterceptor(authManager))
@@ -70,9 +111,9 @@ class ApiClient @Inject constructor(
                     }
                 }
             )
-            .connectTimeout(30, TimeUnit.SECONDS)
-            .readTimeout(30, TimeUnit.SECONDS)
-            .writeTimeout(30, TimeUnit.SECONDS)
+            .connectTimeout(5, TimeUnit.SECONDS)
+            .readTimeout(15, TimeUnit.SECONDS)
+            .writeTimeout(15, TimeUnit.SECONDS)
             .certificatePinner(CertificatePinnerFactory.create())
             .build()
     }

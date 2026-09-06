@@ -93,9 +93,11 @@ fun SessionDetailScreen(
                                         Icon(icon, null, tint = Color.White, modifier = Modifier.size(28.dp))
                                     }
                                     Spacer(Modifier.width(16.dp))
+                                    val subjectTitle = s.subjectName ?: subject.substringBefore(" • ").substringBefore(" (Ruang").trim()
+                                    val roomText = listOfNotNull(s.room ?: "Ruang Kelas", s.className).joinToString(" • ")
                                     Column {
                                         Text(
-                                            subject.substringBefore(" (Ruang").trim(),
+                                            subjectTitle,
                                             fontSize = 22.sp,
                                             fontWeight = FontWeight.Black,
                                             color = Color.White,
@@ -103,7 +105,7 @@ fun SessionDetailScreen(
                                         )
                                         Spacer(Modifier.height(4.dp))
                                         Text(
-                                            "Ruang 7A • Gedung B",
+                                            roomText,
                                             fontSize = 12.sp,
                                             color = Color.White.copy(alpha = 0.8f),
                                             fontWeight = FontWeight.Medium

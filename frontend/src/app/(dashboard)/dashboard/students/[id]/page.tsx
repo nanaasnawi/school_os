@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import { getApiUrl } from '@/lib/api';
 import styles from './studentDetail.module.css';
 
 type StudentDetail = {
@@ -41,7 +42,7 @@ export default function StudentDetailPage() {
       setLoading(true);
       try {
         const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
-        const res = await fetch(`http://localhost:8000/api/v1/students/${id}`, {
+        const res = await fetch(getApiUrl(`/api/v1/students/${id}`), {
           headers: token ? { Authorization: `Bearer ${token}` } : {}
         });
 
@@ -66,8 +67,8 @@ export default function StudentDetailPage() {
               status: d.status || 'Active',
               gpa: '3.85',
               attendance: '96.5%',
-              guardian_name: 'Wali Terdaftar di Dapodik',
-              guardian_phone: d.no_hp || '0812-XXXX-XXXX',
+              guardian_name: d.guardian?.full_name || 'Belum Ada Data Ibu/Wali',
+              guardian_phone: d.guardian?.phone_number || '-',
             });
             setLoading(false);
             return;
@@ -96,8 +97,8 @@ export default function StudentDetailPage() {
           status: 'Active',
           gpa: '3.75',
           attendance: '95.0%',
-          guardian_name: 'Orang Tua / Wali Siswa',
-          guardian_phone: '0812-9988-7766',
+          guardian_name: 'Belum Ada Data Ibu/Wali',
+          guardian_phone: '-',
         });
         setLoading(false);
       }
@@ -222,10 +223,10 @@ export default function StudentDetailPage() {
           </div>
         </div>
         <div className={styles.statBox}>
-          <span className={styles.statBoxIcon}>👨‍👩‍👧</span>
+          <span className={styles.statBoxIcon}>👩‍👦</span>
           <div>
-            <div className={styles.statBoxVal}>{student.guardian_name || 'Orang Tua / Wali'}</div>
-            <div className={styles.statBoxLabel}>Wali Siswa Terdaftar</div>
+            <div className={styles.statBoxVal}>{student.guardian_name || 'Belum Ada Data'}</div>
+            <div className={styles.statBoxLabel}>Nama Ibu Kandung / Wali</div>
           </div>
         </div>
       </div>
@@ -338,10 +339,10 @@ export default function StudentDetailPage() {
           </div>
 
           <div className={styles.card}>
-            <h3 className={styles.cardTitle}>Domisili &amp; Kontak Orang Tua</h3>
+            <h3 className={styles.cardTitle}>Domisili &amp; Kontak Ibu Kandung / Wali</h3>
             <div className={styles.infoGrid}>
               <div className={styles.infoRow}>
-                <span className={styles.infoLabel}>No. Handphone / WhatsApp</span>
+                <span className={styles.infoLabel}>No. Handphone Siswa</span>
                 <span className={styles.infoVal}>{student.no_hp}</span>
               </div>
               <div className={styles.infoRow}>
@@ -349,11 +350,11 @@ export default function StudentDetailPage() {
                 <span className={styles.infoVal}>{student.alamat_jalan}</span>
               </div>
               <div className={styles.infoRow}>
-                <span className={styles.infoLabel}>Nama Orang Tua / Wali</span>
-                <span className={styles.infoVal}>{student.guardian_name}</span>
+                <span className={styles.infoLabel}>Nama Ibu Kandung / Wali</span>
+                <span className={styles.infoVal}><strong>{student.guardian_name}</strong></span>
               </div>
               <div className={styles.infoRow}>
-                <span className={styles.infoLabel}>No. Kontak Wali</span>
+                <span className={styles.infoLabel}>No. Kontak Ibu / Wali</span>
                 <span className={styles.infoVal}>{student.guardian_phone}</span>
               </div>
             </div>

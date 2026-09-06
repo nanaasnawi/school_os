@@ -4,7 +4,7 @@ import { getTenantItem, setTenantItem, removeTenantItem } from '@/lib/tenant-sto
  * Real Database & API Integration Layer (Connects directly to Backend API /api/v1/dapodik)
  */
 
-import { apiClient } from '@/lib/api';
+import { apiClient, getApiUrl } from '@/lib/api';
 
 export interface DapodikSyncRecord {
   id: string;
@@ -52,8 +52,6 @@ export interface PullDapodikConfig {
   bearerToken?: string;
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'; // Real Rust Backend API Port
-
 function getHeaders() {
   const token = apiClient.getToken();
   return {
@@ -64,10 +62,11 @@ function getHeaders() {
 
 async function fetchApi(endpoint: string, options: RequestInit = {}): Promise<Response> {
   try {
-    const res = await fetch(`${API_BASE_URL}${endpoint}`, options);
+    const fullUrl = getApiUrl(endpoint);
+    const res = await fetch(fullUrl, options);
     if (res.ok) return res;
   } catch (e) {
-    // Backend port 8000 unreachable, fall through to Next.js route
+    // Backend unreachable, fall through to Next.js route
   }
   return fetch(endpoint, options);
 }

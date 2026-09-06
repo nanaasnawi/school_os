@@ -10,6 +10,10 @@ data class LearningSession(
     val endedAt: String?,
     val status: String,
     val notes: String?,
+    val subjectName: String? = null,
+    val teacherName: String? = null,
+    val className: String? = null,
+    val room: String? = null,
 )
 
 data class SessionAttendance(

@@ -8,6 +8,8 @@ import com.schoolos.android.core.network.NetworkMonitor
 import com.schoolos.android.data.mapper.toDomain as dtoToDomain
 import com.schoolos.android.data.remote.SchoolOsApi
 import com.schoolos.android.data.remote.StartAttemptRequest
+import com.schoolos.android.data.remote.CreateQuizQuestionRequestDto
+import com.schoolos.android.data.remote.CreateQuizOptionRequestDto
 import com.schoolos.android.data.remote.dto.SubmitAnswerRequest
 import com.schoolos.android.data.remote.dto.SubmitAttemptRequest
 import com.schoolos.android.domain.model.Quiz
@@ -62,7 +64,19 @@ class QuizRepositoryImpl @Inject constructor(
         passingScore: Int,
         maxScore: Int
     ): Result<Quiz> = runCatching {
-        throw UnsupportedOperationException("Pembuatan kuis CBT hanya dapat dilakukan via Konsol Web Administrator / Guru.")
+        val targetClassId = classId.ifBlank { null }
+        val lessonId = java.util.UUID.randomUUID().toString()
+        val request = com.schoolos.android.data.remote.CreateQuizRequestDto(
+            lessonId = lessonId,
+            title = title,
+            description = description,
+            durationMinutes = timeLimitMinutes ?: 30,
+            passingScore = passingScore,
+            maxAttempts = 1,
+            classId = targetClassId
+        )
+        val response = api.createQuiz(request)
+        response.data?.dtoToDomain() ?: throw Exception(response.error?.message ?: "Gagal membuat kuis.")
     }
 
     override suspend fun getQuestions(quizId: String): Result<List<QuizQuestion>> = runCatching {
@@ -78,7 +92,22 @@ class QuizRepositoryImpl @Inject constructor(
         imageUrl: String?,
         choices: List<ChoiceInput>
     ): Result<QuizQuestion> = runCatching {
-        throw UnsupportedOperationException("Penambahan soal kuis hanya dapat dilakukan via Konsol Web Administrator.")
+        val request = CreateQuizQuestionRequestDto(
+            questionText = questionText,
+            questionType = questionType,
+            points = points,
+            orderIndex = 1,
+            imageUrl = imageUrl,
+            choices = choices.mapIndexed { index, c ->
+                CreateQuizOptionRequestDto(
+                    choiceText = c.choiceText,
+                    isCorrect = c.isCorrect,
+                    orderIndex = if (c.orderIndex > 0) c.orderIndex else index + 1
+                )
+            }
+        )
+        val response = api.addQuizQuestion(quizId, request)
+        response.data?.dtoToDomain() ?: throw Exception(response.error?.message ?: "Gagal menambahkan butir soal kuis.")
     }
 
     override suspend fun startAttempt(quizId: String): Result<QuizAttempt> = runCatching {
