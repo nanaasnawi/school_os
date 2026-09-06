@@ -15,7 +15,7 @@ Sistem School OS dibangun di atas prinsip-prinsip arsitektur modern untuk menjam
 
 ## 2. Struktur Folder & Modul Lengkap
 Sistem ini disusun dalam struktur **Monorepo** yang menampung *Backend (Rust)*, *Frontend (Next.js)*, *Mobile (Android/Kotlin)*, *Dokumentasi (ADR)*, dan *Infrastruktur (Docker)*.
----
+```
 ---
 School OS/
 ├── .github/                     # Workflow CI/CD GitHub Actions
@@ -116,7 +116,7 @@ School OS/
 ├── docker-compose.yml           # Mengisolasi PostgreSQL di Port 5433 (Mencegah Bentrok Dapodik)
 ├── start-schoolos.ps1           # Script Otomasi Running Environment (PowerShell)
 └── docs/                        # Dokumentasi Sistem (Arsitektur & Panduan)
----
+```
 ---
 ## 3. Tech Stack Lengkap
 
