@@ -150,7 +150,7 @@ School OS/
 
 ### A. High-Level System Architecture Diagram
 ```
-
+```
 ```mermaid
 sequenceDiagram
     autonumber
@@ -190,7 +190,7 @@ sequenceDiagram
 ---
 
 ### B. Dapodik Sync Engine Workflow (Local Bridge)
-
+```
 ```mermaid
 sequenceDiagram
     autonumber
