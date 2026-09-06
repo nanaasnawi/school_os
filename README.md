@@ -2,10 +2,7 @@
 
 Dokumen ini menyajikan arsitektur sistem secara menyeluruh, terperinci, dan komprehensif untuk **School OS**. Dokumen ini mencakup prinsip arsitektur (ADR), struktur folder mendalam, *tech stack*, diagram alur kerja (*sequence & dataflow*), serta rincian fungsionalitas di setiap modul.
 
----
-
 ## 1. Prinsip & Keputusan Arsitektur (Architectural Decision Records / ADR)
-
 Sistem School OS dibangun di atas prinsip-prinsip arsitektur modern untuk menjamin kemudahan pemeliharaan, keamanan, performa tinggi, serta isolasi data:
 
 1. **Clean Architecture (ADR-0001):** Pemisahan lapisan yang ketat antara *Presentation* (HTTP/Axum), *Domain/Business Logic* (`school-core`), dan *Infrastructure* (Database/SQLx & Observability).
@@ -16,13 +13,9 @@ Sistem School OS dibangun di atas prinsip-prinsip arsitektur modern untuk menjam
 6. **Frontend Feature-Sliced Design / FSD (ADR-0006):** Pengorganisasian kode *frontend* berdasarkan fitur (`features/`) dan lapisan teratur (`app`, `widgets`, `components`, `shared`, `lib`).
 7. **Assessment Domain Decoupling (ADR-0007):** Pemisahan mesin penilaian (*assessment & quiz*) dari logika akademik umum agar dapat dikembangkan dan diuji secara independen.
 
----
-
 ## 2. Struktur Folder & Modul Lengkap
-
 Sistem ini disusun dalam struktur **Monorepo** yang menampung *Backend (Rust)*, *Frontend (Next.js)*, *Mobile (Android/Kotlin)*, *Dokumentasi (ADR)*, dan *Infrastruktur (Docker)*.
 
-```
 School OS/
 ├── .github/                     # Workflow CI/CD GitHub Actions
 ├── ADR/                         # Architectural Decision Records (ADR 0001 - 0007)
@@ -122,9 +115,6 @@ School OS/
 ├── docker-compose.yml           # Mengisolasi PostgreSQL di Port 5433 (Mencegah Bentrok Dapodik)
 ├── start-schoolos.ps1           # Script Otomasi Running Environment (PowerShell)
 └── docs/                        # Dokumentasi Sistem (Arsitektur & Panduan)
-```
-
----
 
 ## 3. Tech Stack Lengkap
 
@@ -158,60 +148,41 @@ School OS/
 
 ### A. High-Level System Architecture Diagram
 
-```mermaid
-graph TD
-    subgraph Clients [Client Layer]
-        WebClient[Web Browser / Next.js SPA]
-        MobileClient[Android Native App]
+sequenceDiagram
+    autonumber
+    
+    actor Web as Web Client
+    actor Mob as Mobile Client
+    participant Next as Next.js App (3000)
+    participant API as Axum API (8080)
+    participant Core as Core Modules (Rust DDD)
+    participant DB as Postgres School DB
+    participant Bridge as Local Bridge Daemon
+    participant Cache as SQLite Cache
+    participant Dapodik as Dapodik DB
+
+    Note over Web, DB: Skenario 1: Client Request Flow
+    Web->>Next: HTTP/HTTPS Request (JSON)
+    Next->>API: REST API Call (OpenAPI)
+    Mob->>API: REST API Call (OpenAPI)
+    
+    API->>Core: Routing ke Domain (Identity/People/dll)
+    Core->>DB: Eksekusi Query (SQLx Async)
+    DB-->>Core: Return Data
+    Core-->>API: Format Response
+    
+    API-->>Next: JSON Response
+    API-->>Mob: JSON Response
+    Next-->>Web: Render UI / Data JSON
+
+    Note over DB, Dapodik: Skenario 2: Dapodik Background Sync
+    loop Background Sync Loop
+        Bridge->>Dapodik: Read Data (Ekstrak dari Dapodik)
+        Dapodik-->>Bridge: Dapodik Records
+        Bridge->>Cache: Simpan/Update Local Cache (SQLite)
+        Bridge->>DB: Push Sync ke DB Utama (Postgres)
+        DB-->>Bridge: Sync Acknowledged
     end
-
-    subgraph FrontendServer [Frontend Presentation Layer]
-        NextApp[Next.js App Router\n(Port 3000)]
-    end
-
-    subgraph BackendCluster [Backend Layer - Rust Workspace]
-        ApiServer[Axum REST API Server\n(Port 8080)]
-        
-        subgraph CoreModules [School Core DDD]
-            IdentityDomain[Identity & Auth Module]
-            PeopleDomain[People & Academic Module]
-            LearningDomain[Learning & Quiz Engine]
-            AuditDomain[Audit & Event Outbox]
-        end
-        
-        LocalBridgeDaemon[Local Bridge Agent Daemon\n(Background Sync Process)]
-    end
-
-    subgraph DatabaseLayer [Persistence Layer]
-        PostgresDB[(PostgreSQL School OS DB\nContainer Port: 5432 -> Host Port: 5433)]
-        LocalSQLite[(Local SQLite Cache DB)]
-    end
-
-    subgraph ExternalSystem [External Environment]
-        DapodikDB[(Dapodik Local PostgreSQL DB\nHost Port: 5432)]
-    end
-
-    %% Interactions
-    WebClient <-->|HTTPS / JSON| NextApp
-    NextApp <-->|REST API / OpenAPI| ApiServer
-    MobileClient <-->|REST API / OpenAPI| ApiServer
-
-    ApiServer --> IdentityDomain
-    ApiServer --> PeopleDomain
-    ApiServer --> LearningDomain
-    ApiServer --> AuditDomain
-
-    IdentityDomain <-->|SQLx Async| PostgresDB
-    PeopleDomain <-->|SQLx Async| PostgresDB
-    LearningDomain <-->|SQLx Async| PostgresDB
-    AuditDomain <-->|SQLx Async| PostgresDB
-
-    LocalBridgeDaemon <-->|PULL / PUSH Sync Loop| PostgresDB
-    LocalBridgeDaemon <-->|Local Cache| LocalSQLite
-    LocalBridgeDaemon <-->|Read / Write Sync| DapodikDB
-```
-
----
 
 ### B. Dapodik Sync Engine Workflow (Local Bridge)
 
