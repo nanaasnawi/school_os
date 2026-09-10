@@ -13,112 +13,9 @@ Sistem School OS dibangun di atas prinsip-prinsip arsitektur modern untuk menjam
 6. **Frontend Feature-Sliced Design / FSD (ADR-0006):** Pengorganisasian kode *frontend* berdasarkan fitur (`features/`) dan lapisan teratur (`app`, `widgets`, `components`, `shared`, `lib`).
 7. **Assessment Domain Decoupling (ADR-0007):** Pemisahan mesin penilaian (*assessment & quiz*) dari logika akademik umum agar dapat dikembangkan dan diuji secara independen.
 
-## 2. Struktur Folder & Modul Lengkap
-Sistem ini disusun dalam struktur **Monorepo** yang menampung *Backend (Rust)*, *Frontend (Next.js)*, *Mobile (Android/Kotlin)*, *Dokumentasi (ADR)*, dan *Infrastruktur (Docker)*.
 ```
 ---
-School OS/
-├── .github/                     # Workflow CI/CD GitHub Actions
-├── ADR/                         # Architectural Decision Records (ADR 0001 - 0007)
-├── android/                     # Aplikasi Mobile Android (Kotlin Clean Architecture)
-│   ├── app/                     # Modul utama aplikasi Android
-│   ├── core/                    # Library internal & utilitas umum Android
-│   ├── data/                    # Data sources, repository implementations, DTOs
-│   ├── domain/                  # Use cases, domain models, repository interfaces
-│   ├── feature/                 # Fitur-fitur UI (Jetpack Compose / Screens)
-│   └── build.gradle.kts         # Gradle configuration (Kotlin DSL)
-├── backend/                     # Rust Workspace utama
-│   ├── Cargo.toml               # Config Rust Workspace (members: api-server, school-core, local-bridge, hash-gen)
-│   ├── api-server/              # Entry point HTTP REST API (Axum Framework)
-│   │   ├── Cargo.toml
-│   │   └── src/
-│   │       ├── bootstrap/       # Inisialisasi State Aplikasi, DB Pools, & Context
-│   │       ├── infrastructure/  # Observability (Prometheus Metrics, Tracing, Logging)
-│   │       ├── presentation/    # Endpoints HTTP / Handlers per modul:
-│   │       │   ├── academic/    # API Akademik (Kelas, T.A., Mata Pelajaran)
-│   │       │   ├── analytics/   # API Laporan & Analitik
-│   │       │   ├── auth/        # API Autentikasi (Login, Register, Token Refresh)
-│   │       │   ├── dapodik/     # API Integrasi & Status Sinkronisasi Dapodik
-│   │       │   ├── health/      # Health Check & Readiness Probes
-│   │       │   ├── learning/    # API Modul Pembelajaran, Tugas, & Kuis
-│   │       │   ├── notifications/# API Notifikasi Pengguna
-│   │       │   ├── people/      # API Data Siswa, Guru, & Orang Tua
-│   │       │   ├── school/      # API Profil & Setting Sekolah
-│   │       │   └── tenant/      # API Manajemen Tenant/Sekolah
-│   │       ├── error.rs         # Penanganan error global & HTTP status mapping
-│   │       ├── extractors.rs    # Custom Axum Extractors (Auth User, Tenant Context)
-│   │       ├── idempotency.rs   # Middleware penanganan idempotency request
-│   │       ├── middleware.rs    # Middleware CORS, Rate Limit, Auth, & Tracing
-│   │       ├── response.rs      # Format standar JSON Response
-│   │       └── main.rs          # Entry point pengelasan server Axum
-│   ├── school-core/             # Crate Logika Domain Bisnis Utama (DDD)
-│   │   ├── Cargo.toml
-│   │   └── src/
-│   │       ├── academic/        # Domain Akademik (Kurikulum, Silabus, Tahun Ajaran)
-│   │       ├── audit/           # Log Audit Perubahan Data
-│   │       ├── authorization/   # Logika Otorisasi RBAC & ABAC
-│   │       ├── common/          # Types, Errors, & Value Objects umum
-│   │       ├── communication/   # Pengumuman & Feed Kelas (Classroom Feeds)
-│   │       ├── config/          # Konfigurasi Domain
-│   │       ├── identity/        # Domain Pengguna, Akun, & Kredensial
-│   │       ├── integration/     # Logika Integrasi Eksternal
-│   │       ├── learning/        # Mesin Pembelajaran (Materials, Lessons, Assignments, Quizzes, Submissions)
-│   │       ├── notification/    # Domain Notifikasi System & Push Notifications
-│   │       ├── people/          # Domain Siswa, Guru, Tenaga Pendidik, Orang Tua
-│   │       ├── permission/      # Definisi Permission System
-│   │       ├── policy/          # Kebijakan Akses & Aturan Bisnis Penilaian
-│   │       └── reporting/       # Domain Laporan Prestasi & Kemajuan Siswa
-│   ├── local-bridge/            # Agent Latar Belakang untuk Sinkronisasi Dapodik
-│   │   ├── Cargo.toml
-│   │   └── src/
-│   │       ├── auth/            # Otentikasi Agen ke Server Lokal & Dapodik
-│   │       ├── dapodik_acl/     # Access Control List & Parser DB Dapodik
-│   │       ├── domain/          # Model data transformasi Dapodik <-> School OS
-│   │       ├── store/           # Penyimpanan lokal (SQLite / Storage Kredensial OS)
-│   │       ├── sync/            # Engine Sinkronisasi (Looping PULL & PUSH Data)
-│   │       └── main.rs          # Runner daemon agen lokal
-│   ├── hash-gen/                # CLI Tool untuk Hashing Password (Argon2 / SHA256)
-│   └── migrations/              # 29 File Migrasi Database SQLx (PostgreSQL)
-│       ├── 0001_create_tenant_schema.sql
-│       ├── 0002_create_identity_schema.sql
-│       ├── 0003_create_people_schema.sql
-│       ├── 0004_create_academic_schema.sql
-│       ├── 0005_create_school_schema.sql
-│       ├── 0006_create_access_control_schema.sql
-│       ├── 20260708205700_create_idempotency_keys.sql
-│       ├── 20260708210000_create_outbox_events.sql
-│       ├── 20260708220000 - 228000 (Migrasi Materi, Kuis, Tugas, Progress)
-│       └── 20260811000000_create_dapodik_sync_tables.sql
-├── frontend/                    # Aplikasi Web Next.js (Feature-Sliced Design)
-│   ├── package.json
-│   ├── tsconfig.json
-│   ├── openapi-ts.config.ts     # Konfigurasi Auto-generate SDK Client dari Swagger API
-│   └── src/
-│       ├── app/                 # Next.js App Router (Pages & Layouts)
-│       │   ├── (auth)/          # Routing Autentikasi (Login, Forgot Password)
-│       │   ├── (dashboard)/     # Routing Dashboard Utama (Admin/Guru/Siswa)
-│       │   ├── parent/          # Routing Khusus Portal Orang Tua
-│       │   ├── api/             # Next.js API Routes Proxy (opsional)
-│       │   ├── layout.tsx       # Root Layout & Theme Provider
-│       │   └── globals.css      # Design System CSS Variables & Utility Classes
-│       ├── authorization/       # Logic Otentikasi & Guard Komponen Frontend
-│       ├── components/          # Reusable UI Components (DataTable, Modal, Form Controls)
-│       ├── contexts/            # React Contexts (User Session, UI Context)
-│       ├── features/            # Modul Fitur Berdasar Domain:
-│       │   ├── assessment/      # Komponen & Hook Penilaian / Evaluasi
-│       │   ├── assignment/      # Komponen Pengumpulan & Pemeriksaan Tugas
-│       │   ├── lesson/          # Komponen Sesi Pembelajaran / Jurnal Guru
-│       │   ├── material/        # Manajemen Modul / Bahan Ajar
-│       │   └── quiz/            # Interaktif Player Kuis Siswa
-│       ├── lib/                 # Utilitas SDK & Integrasi Klien API (`api.ts`, `dapodik-bridge.ts`)
-│       ├── providers/           # Providers Wrapper (React Query `QueryClientProvider`)
-│       └── shared/              # Utilitas & Tipe Data Terbagi (UI & Auth Shared Helpers)
-├── docker-compose.yml           # Mengisolasi PostgreSQL di Port 5433 (Mencegah Bentrok Dapodik)
-├── start-schoolos.ps1           # Script Otomasi Running Environment (PowerShell)
-└── docs/                        # Dokumentasi Sistem (Arsitektur & Panduan)
-```
----
-## 3. Tech Stack Lengkap
+## 2. Tech Stack Lengkap
 
 | Lapisan / Komponen | Teknologi | Keterangan & Penggunaan |
 | :--- | :--- | :--- |
@@ -145,7 +42,7 @@ School OS/
 | | **Isolated Port (5433)** | Mengisolasi DB School OS dari port default 5432 milik Dapodik |
 ---
 
-## 4. Diagram Alur Kerja (Workflow Diagrams)
+## 3. Diagram Alur Kerja (Workflow Diagrams)
 
 ### A. High-Level System Architecture Diagram
 
@@ -214,7 +111,7 @@ sequenceDiagram
     end
 ```
 
-## 5. Rincian Fungsionalitas Modul Utama
+## 4. Rincian Fungsionalitas Modul Utama
 
 1. **Identity & Access Management (IAM / Multi-Tenancy):**
    - Mendukung multi-sekolah dengan data *tenant* terisolasi.
@@ -245,20 +142,20 @@ sequenceDiagram
    - Setiap operasi sensitif dicatat ke dalam `audit_logs` untuk kebutuhan transparansi dan keamanan.
    - Penggunaan `idempotency_keys` untuk mencegah terjadinya duplikasi transaksi atau data saat terjadi gangguan jaringan.
 
-## 6. Dokumentasi API, Autentikasi, & Observabilitas
+## 5. Dokumentasi API, Autentikasi, & Observabilitas
 
-### 6.1. Postman Collection Siap Pakai
+### 5.1. Postman Collection Siap Pakai
 Tersedia collection Postman v2.1 siap pakai dengan auto-capture JWT Bearer token:
 - **Collection**: [`docs/api-contract/School_OS_API.postman_collection.json`](docs/api-contract/School_OS_API.postman_collection.json)
 - **Environment**: [`docs/api-contract/School_OS.postman_environment.json`](docs/api-contract/School_OS.postman_environment.json)
 
 Impor kedua file tersebut ke Postman, pilih environment *School OS — Local Environment*, lalu jalankan request *Login*. Variabel `jwt_token` akan tersimpan secara otomatis untuk seluruh request berikutnya.
 
-### 6.2. Alur Autentikasi (Authentication Flow)
+### 5.2. Alur Autentikasi (Authentication Flow)
 Dokumentasi lengkap alur otentikasi JWT dan QR Login Siswa beserta diagram Mermaid dapat dibaca di:
 👉 [**Dokumentasi Lengkap Alur Autentikasi (AUTH_FLOW.md)**](docs/api-contract/AUTH_FLOW.md)
 
-### 6.3. Contoh Request & Response API
+### 5.3. Contoh Request & Response API
 
 #### A. Autentikasi (Login User)
 **Request:**
@@ -336,7 +233,7 @@ curl -X POST http://localhost:8080/api/v1/learning/assignments/018e3a2b-asg1/sub
   }'
 ```
 
-### 6.4. Monitoring & Observabilitas (Prometheus, Grafana, Jaeger, Alertmanager)
+### 5.4. Monitoring & Observabilitas (Prometheus, Grafana, Jaeger, Alertmanager)
 School OS dilengkapi dengan monitoring performa tinggi:
 - **Metrics**: Endpoint `/metrics` (Prometheus format) diakses di port 8080.
 - **Grafana Dashboard**: Port `3001` ([http://localhost:3001](http://localhost:3001) user/pass: `admin`/`admin`).
