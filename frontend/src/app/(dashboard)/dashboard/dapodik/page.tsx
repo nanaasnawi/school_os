@@ -124,6 +124,29 @@ export default function DapodikHubPage() {
     setTimeout(() => setCopiedToken(false), 3000);
   };
 
+  const handleDownloadConfigFile = () => {
+    const token = apiClient.getToken() || '';
+    const configObj = {
+      cloud_url: "https://schoolosbackend-production.up.railway.app",
+      cloud_token: token,
+      dapodik_url: "http://127.0.0.1:5774",
+      npsn: agentInfo?.npsn || "P2962010",
+      dapodik_token: "AuOczk2Vrzi62S0",
+      sync_interval_mins: 60
+    };
+
+    const blob = new Blob([JSON.stringify(configObj, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'schoolos-agent.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    setToastMessage('✅ File konfigurasi schoolos-agent.json berhasil diunduh!');
+  };
+
   // Pull Data Handler (1-Click Pull from Dapodik Localhost)
   const handlePullData = async () => {
     setIsPulling(true);
@@ -310,12 +333,27 @@ export default function DapodikHubPage() {
           </div>
 
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <a
+              href="/downloads/schoolos-sync.exe"
+              download="schoolos-sync.exe"
+              className="btn btn-success btn-sm"
+              style={{ fontWeight: 800, fontSize: '0.78rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
+            >
+              📥 Unduh schoolos-sync.exe (3.6 MB)
+            </a>
             <button
-              onClick={handleCopyPairingToken}
+              onClick={handleDownloadConfigFile}
               className="btn btn-primary btn-sm"
               style={{ fontWeight: 800, fontSize: '0.78rem' }}
             >
-              {copiedToken ? '✅ Token Tersalin!' : '📋 Salin Token Pairing Operator'}
+              📄 Unduh Konfigurasi (schoolos-agent.json)
+            </button>
+            <button
+              onClick={handleCopyPairingToken}
+              className="btn btn-secondary btn-sm"
+              style={{ fontWeight: 800, fontSize: '0.78rem' }}
+            >
+              {copiedToken ? '✅ Tersalin!' : '📋 Salin Token'}
             </button>
             <button
               onClick={() => setShowAgentGuide(!showAgentGuide)}
@@ -370,25 +408,25 @@ export default function DapodikHubPage() {
             }}
           >
             <div style={{ fontWeight: 800, fontSize: '0.88rem', color: 'var(--text-primary)', marginBottom: '0.75rem' }}>
-              Cara Menggunakan School OS Bridge Agent di PC Dapodik:
+              Cara Setup Cepat di Laptop/PC Sekolah Lain (Tanpa Koding &amp; Tanpa Salin Folder):
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
               <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'flex-start' }}>
-                <span style={{ background: '#2563eb', color: '#fff', borderRadius: '50%', width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, flexShrink: 0, fontSize: '0.75rem' }}>1</span>
+                <span style={{ background: '#16a34a', color: '#fff', borderRadius: '50%', width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, flexShrink: 0, fontSize: '0.75rem' }}>1</span>
                 <div>
-                  <b>Salin File Portabel:</b> Salin file <code>schoolos-sync.exe</code> (tersedia di folder <code>backend/local-bridge/target/release/</code>) ke komputer/laptop tempat Dapodik terpasang.
+                  <b>Unduh File Aplikasi:</b> Klik tombol hijau <b>"Unduh schoolos-sync.exe"</b> di atas. Anda akan mendapatkan satu file portabel (~3.6 MB). Simpan di folder mana saja di PC sekolah (misal: <code>C:\SchoolOS\</code> atau Desktop).
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'flex-start' }}>
                 <span style={{ background: '#2563eb', color: '#fff', borderRadius: '50%', width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, flexShrink: 0, fontSize: '0.75rem' }}>2</span>
                 <div>
-                  <b>Setup Sekali Saja:</b> Jalankan <code>schoolos-sync.exe</code> melalui Command Prompt atau klik dua kali. Saat pertama kali dibuka, masukkan <b>Token Pairing</b> (klik tombol biru di atas) dan <b>Token WebService Dapodik</b> Anda. Konfigurasi langsung tersimpan otomatis di <code>schoolos-agent.json</code>.
+                  <b>Unduh Konfigurasi Otomatis:</b> Klik tombol biru <b>"Unduh Konfigurasi (schoolos-agent.json)"</b> di atas. Simpan file tersebut di folder yang sama dengan <code>schoolos-sync.exe</code>. NPSN, Token Cloud, dan alamat server sudah otomatis terisi di dalamnya!
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'flex-start' }}>
-                <span style={{ background: '#2563eb', color: '#fff', borderRadius: '50%', width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, flexShrink: 0, fontSize: '0.75rem' }}>3</span>
+                <span style={{ background: '#8b5cf6', color: '#fff', borderRadius: '50%', width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, flexShrink: 0, fontSize: '0.75rem' }}>3</span>
                 <div>
-                  <b>Otomatis &amp; Mandiri:</b> Agent akan membaca data dari <code>http://127.0.0.1:5774</code> dan langsung mengirimkannya ke Cloud School OS. Agent dapat dibiarkan berjalan di system tray/background untuk sinkronisasi otomatis tiap 60 menit atau dijalankan via Windows Task Scheduler.
+                  <b>Klik 2x &amp; Selesai:</b> Cukup klik dua kali <code>schoolos-sync.exe</code>. Aplikasi akan membaca Dapodik lokal (<code>http://127.0.0.1:5774</code>) dan langsung menyinkronkan data siswa, GTK, kelas, dan mapel ke Cloud School OS!
                 </div>
               </div>
             </div>

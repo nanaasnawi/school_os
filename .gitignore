@@ -44,5 +44,6 @@ docker-compose.override.yml
 /backend/target_temp/
 *.log
 *.exe
+!frontend/public/downloads/*.exe
 schoolos-agent.json
 !schoolos-agent.json.example
