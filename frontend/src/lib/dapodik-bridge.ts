@@ -402,6 +402,8 @@ export interface DapodikAgentInfo {
   tenantId: string;
   schoolName: string;
   npsn: string;
+  dapodikUrl?: string;
+  dapodikToken?: string;
   totalStudents: number;
   totalTeachers: number;
   totalClasses: number;
@@ -420,6 +422,8 @@ export async function getDapodikAgentInfo(): Promise<DapodikAgentInfo | null> {
       tenantId: data.tenant_id,
       schoolName: data.school_name,
       npsn: data.npsn,
+      dapodikUrl: data.dapodik_url,
+      dapodikToken: data.dapodik_token,
       totalStudents: Number(data.total_students) || 0,
       totalTeachers: Number(data.total_teachers) || 0,
       totalClasses: Number(data.total_classes) || 0,
