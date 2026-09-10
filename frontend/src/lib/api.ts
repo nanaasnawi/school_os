@@ -1,5 +1,7 @@
 import { client } from './sdk/client.gen';
 
+const DEFAULT_PRODUCTION_API_URL = 'https://schoolosbackend-production.up.railway.app';
+
 export function getApiBaseUrl(): string {
   let envUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
   if (envUrl) {
@@ -9,27 +11,31 @@ export function getApiBaseUrl(): string {
     envUrl = envUrl.replace(/\/api\/v1\/?$/, '').replace(/\/+$/, '');
   }
 
-  if (typeof window !== 'undefined' && window.location?.hostname) {
-    const isClientLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-
-    // If env URL is explicitly set and points to an external domain or non-localhost, use it
-    if (envUrl && !envUrl.includes('localhost') && !envUrl.includes('127.0.0.1')) {
-      return envUrl;
-    }
-
-    // If browser is accessing via LAN IP or hostname (e.g. 192.168.1.11:3000),
-    // point API requests to the same host on port 8000 so mobile / LAN devices work seamlessly
-    if (!isClientLocalhost) {
-      return `${window.location.protocol}//${window.location.hostname}:8000`;
-    }
-
-    if (envUrl) {
-      return envUrl;
-    }
-    return `${window.location.protocol}//${window.location.hostname}:8000`;
+  // If env URL is explicitly set and points to an external domain or non-localhost, use it
+  if (envUrl && !envUrl.includes('localhost') && !envUrl.includes('127.0.0.1')) {
+    return envUrl;
   }
 
-  return envUrl || 'http://127.0.0.1:8000';
+  if (typeof window !== 'undefined' && window.location?.hostname) {
+    const hostname = window.location.hostname;
+    const isClientLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
+    const isLanIp = hostname.startsWith('192.168.') || hostname.startsWith('10.') || hostname.startsWith('172.');
+
+    // If browser is accessing via a private LAN IP (e.g. 192.168.1.11:3000)
+    if (isLanIp) {
+      return `${window.location.protocol}//${hostname}:8000`;
+    }
+
+    // If on localhost
+    if (isClientLocalhost) {
+      return envUrl || 'http://127.0.0.1:8000';
+    }
+
+    // Cloud deployment (e.g. Vercel, Railway)
+    return envUrl || DEFAULT_PRODUCTION_API_URL;
+  }
+
+  return envUrl || DEFAULT_PRODUCTION_API_URL;
 }
 
 export function getApiUrl(path: string): string {

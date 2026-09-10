@@ -2,7 +2,8 @@ import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   async rewrites() {
-    let backendUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000').trim();
+    const DEFAULT_PRODUCTION_API_URL = 'https://schoolosbackend-production.up.railway.app';
+    let backendUrl = (process.env.NEXT_PUBLIC_API_URL || DEFAULT_PRODUCTION_API_URL).trim();
     if (!backendUrl.startsWith('http://') && !backendUrl.startsWith('https://')) {
       backendUrl = `https://${backendUrl}`;
     }
