@@ -218,16 +218,26 @@ class AuthManager @Inject constructor(
 
     val customServerUrlFlow: Flow<String> = context.dataStore.data.map { prefs ->
         val saved = prefs[KEY_CUSTOM_SERVER_URL]
+        val buildConfigUrl = com.schoolos.android.core.common.BuildConfig.API_BASE_URL
+        val isBuildConfigHttps = buildConfigUrl.startsWith("https://")
+
         val isEmulator = android.os.Build.FINGERPRINT.startsWith("generic")
             || android.os.Build.MODEL.contains("google_sdk")
             || android.os.Build.MODEL.contains("Emulator")
             || android.os.Build.HARDWARE.contains("goldfish")
             || android.os.Build.HARDWARE.contains("ranchu")
 
+        if (isBuildConfigHttps && saved != null) {
+            val isLocalIp = saved.contains("192.168.") || saved.contains("10.0.") || saved.contains("127.0.0.1") || saved.contains("10.0.2.2")
+            if (isLocalIp) {
+                return@map buildConfigUrl
+            }
+        }
+
         if (!saved.isNullOrBlank() && saved.startsWith("http") && (isEmulator || (!saved.contains("10.0.2.2") && !saved.contains("127.0.0.1")))) {
             saved
         } else {
-            com.schoolos.android.core.common.BuildConfig.API_BASE_URL
+            buildConfigUrl
         }
     }
 

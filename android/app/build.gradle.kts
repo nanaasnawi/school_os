@@ -12,7 +12,7 @@ val localProps = Properties().apply {
     val f = rootProject.file("local.properties")
     if (f.exists()) load(f.inputStream())
 }
-val rawDevUrl: String = localProps.getProperty("dev.serverUrl", "http://10.0.2.2:8000/api/v1/") ?: "http://10.0.2.2:8000/api/v1/"
+val rawDevUrl: String = localProps.getProperty("dev.serverUrl", "https://schoolosbackend-production.up.railway.app/api/v1/") ?: "https://schoolosbackend-production.up.railway.app/api/v1/"
 val devServerUrl: String = if (!rawDevUrl.trimEnd('/').endsWith("/api/v1")) "${rawDevUrl.trimEnd('/')}/api/v1/" else "${rawDevUrl.trimEnd('/')}/"
 
 android {

@@ -136,8 +136,6 @@ class LoginViewModel @Inject constructor(
             if (isEmulator) {
                 candidates.add("http://10.0.2.2:8000/api/v1/")
                 candidates.add("http://127.0.0.1:8000/api/v1/")
-            } else {
-                candidates.add("http://192.168.1.11:8000/api/v1/")
             }
 
             val distinctCandidates = candidates.filter { it.isNotBlank() && (isEmulator || (!it.contains("10.0.2.2") && !it.contains("127.0.0.1"))) }.distinct()

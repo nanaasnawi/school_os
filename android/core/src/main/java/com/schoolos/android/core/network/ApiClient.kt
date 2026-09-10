@@ -74,7 +74,6 @@ class DynamicHostInterceptor(
             } else {
                 listOfNotNull(
                     buildConfigUrl,
-                    "http://192.168.1.11:8000/api/v1/".toHttpUrlOrNull(),
                 ).filter { it.host != "10.0.2.2" && it.host != "127.0.0.1" }
             }
 
