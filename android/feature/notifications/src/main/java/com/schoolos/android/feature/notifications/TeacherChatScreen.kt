@@ -155,289 +155,293 @@ fun TeacherChatScreen(
             .background(CosmicBlack)
             .statusBarsPadding()
     ) {
-        // ── Top Modern Header Bar ───────────────────────────────
-        Column(
+        // ── Hero Header ──────────────────────────────────────────────────
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 10.dp)
+                .background(
+                    Brush.verticalGradient(
+                        listOf(TeacherNeon.copy(alpha = 0.09f), CosmicBlack)
+                    )
+                )
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
+                // Title row
                 Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(46.dp)
-                            .clip(RoundedCornerShape(14.dp))
-                            .background(
-                                Brush.linearGradient(
-                                    listOf(
-                                        TeacherNeon.copy(alpha = 0.25f),
-                                        NeonBlue.copy(alpha = 0.2f)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(50.dp)
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(
+                                    Brush.linearGradient(
+                                        listOf(
+                                            TeacherNeon.copy(alpha = 0.25f),
+                                            NeonBlue.copy(alpha = 0.2f)
+                                        )
                                     )
                                 )
-                            )
-                            .border(1.5.dp, TeacherNeon.copy(alpha = 0.4f), RoundedCornerShape(14.dp)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            Icons.Default.Forum,
-                            contentDescription = null,
-                            tint = TeacherNeon,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
-
-                    Spacer(Modifier.width(12.dp))
-
-                    Column {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = "Tanya Jawab Siswa",
-                                fontSize = 21.sp,
-                                fontWeight = FontWeight.Black,
-                                color = TextPrimary,
-                                letterSpacing = (-0.3).sp
+                                .border(1.5.dp, TeacherNeon.copy(alpha = 0.4f), RoundedCornerShape(16.dp)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                Icons.Default.Forum,
+                                contentDescription = null,
+                                tint = TeacherNeon,
+                                modifier = Modifier.size(26.dp)
                             )
                         }
-                        Text(
-                            text = "Bimbingan materi & tugas siswa",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = TextSecondary
-                        )
+
+                        Spacer(Modifier.width(14.dp))
+
+                        Column {
+                            Text(
+                                text = "TANYA JAWAB SISWA",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = TeacherNeon,
+                                letterSpacing = 1.5.sp
+                            )
+                            Text(
+                                text = "Bimbingan Materi & Tugas",
+                                fontSize = 22.sp,
+                                fontWeight = FontWeight.Black,
+                                color = TextPrimary,
+                                letterSpacing = (-0.4).sp
+                            )
+                        }
+                    }
+
+                    // Refresh + offline indicator
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        if (!isOnline) {
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(20.dp))
+                                    .background(Color(0xFFEF4444).copy(alpha = 0.15f))
+                                    .border(
+                                        1.dp,
+                                        Color(0xFFEF4444).copy(alpha = 0.4f),
+                                        RoundedCornerShape(20.dp)
+                                    )
+                                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(6.dp)
+                                            .clip(CircleShape)
+                                            .background(Color(0xFFEF4444))
+                                    )
+                                    Spacer(Modifier.width(5.dp))
+                                    Text(
+                                        text = "Offline",
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFFEF4444)
+                                    )
+                                }
+                            }
+                        }
+
+                        IconButton(
+                            onClick = { chatManager.refresh() },
+                            modifier = Modifier
+                                .size(38.dp)
+                                .clip(CircleShape)
+                                .background(CosmicNavy)
+                                .border(1.dp, GlassBorder, CircleShape)
+                        ) {
+                            Icon(
+                                Icons.Default.Refresh,
+                                contentDescription = "Muat Ulang",
+                                tint = TextSecondary,
+                                modifier = Modifier
+                                    .size(18.dp)
+                                    .rotate(if (isLoading) rotation else 0f)
+                            )
+                        }
                     }
                 }
 
-                // Top Controls: Offline indicator & refresh button
+                // Offline network banner
+                AnimatedVisibility(visible = !isOnline) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 10.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color(0xFFEF4444).copy(alpha = 0.1f))
+                            .border(1.dp, Color(0xFFEF4444).copy(alpha = 0.25f), RoundedCornerShape(12.dp))
+                            .padding(horizontal = 12.dp, vertical = 8.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Default.WarningAmber,
+                                contentDescription = null,
+                                tint = Color(0xFFEF4444),
+                                modifier = Modifier.size(15.dp)
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                text = "Tidak terhubung ke internet. Menampilkan data tersimpan.",
+                                fontSize = 11.sp,
+                                color = TextSecondary
+                            )
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(16.dp))
+
+                // ── KPI Cards ──────────────────────────────────────────
                 Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    // Only show status indicator if device is actually offline
-                    if (!isOnline) {
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(20.dp))
-                                .background(Color(0xFFEF4444).copy(alpha = 0.15f))
-                                .border(
-                                    1.dp,
-                                    Color(0xFFEF4444).copy(alpha = 0.4f),
-                                    RoundedCornerShape(20.dp)
-                                )
-                                .padding(horizontal = 8.dp, vertical = 4.dp)
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(6.dp)
-                                        .clip(CircleShape)
-                                        .background(Color(0xFFEF4444))
-                                )
-                                Spacer(Modifier.width(5.dp))
-                                Text(
-                                    text = "Offline",
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFFEF4444)
+                    ModernKpiCard(
+                        title = "Total Diskusi",
+                        value = threads.size.toString(),
+                        subtitle = "Semua topik",
+                        accentColor = NeonBlue,
+                        icon = Icons.Default.Forum,
+                        isSelected = selectedFilter == ChatFilter.ALL,
+                        onClick = { selectedFilter = ChatFilter.ALL },
+                        modifier = Modifier.weight(1f)
+                    )
+                    ModernKpiCard(
+                        title = "Perlu Dijawab",
+                        value = waitingCount.toString(),
+                        subtitle = if (waitingCount > 0) "Segera respon" else "Semua tuntas",
+                        accentColor = if (waitingCount > 0) Color(0xFFF59E0B) else NeonSuccess,
+                        icon = Icons.Default.WarningAmber,
+                        isAlert = waitingCount > 0,
+                        isSelected = selectedFilter == ChatFilter.WAITING,
+                        onClick = { selectedFilter = ChatFilter.WAITING },
+                        modifier = Modifier.weight(1f)
+                    )
+                    ModernKpiCard(
+                        title = "Siswa Aktif",
+                        value = uniqueStudents.toString(),
+                        subtitle = "Bertanya aktif",
+                        accentColor = StudentNeon,
+                        icon = Icons.Default.People,
+                        isSelected = false,
+                        onClick = { },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                Spacer(Modifier.height(16.dp))
+
+                // Search
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = {
+                        Text(
+                            "Cari nama siswa, atau topik...",
+                            fontSize = 12.sp,
+                            color = TextTertiary
+                        )
+                    },
+                    leadingIcon = {
+                        Icon(
+                            Icons.Default.Search,
+                            contentDescription = null,
+                            tint = TextTertiary,
+                            modifier = Modifier.size(19.dp)
+                        )
+                    },
+                    trailingIcon = {
+                        if (searchQuery.isNotBlank()) {
+                            IconButton(onClick = { searchQuery = "" }) {
+                                Icon(
+                                    Icons.Default.Clear,
+                                    contentDescription = "Hapus",
+                                    tint = TextSecondary,
+                                    modifier = Modifier.size(16.dp)
                                 )
                             }
                         }
-                    }
+                    },
+                    singleLine = true,
+                    shape = RoundedCornerShape(18.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = CosmicNavy,
+                        unfocusedContainerColor = CosmicNavy,
+                        focusedBorderColor = TeacherNeon.copy(alpha = 0.7f),
+                        unfocusedBorderColor = GlassBorder,
+                        focusedTextColor = TextPrimary,
+                        unfocusedTextColor = TextPrimary,
+                    ),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                    keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() })
+                )
 
-                    // Manual Refresh Button
-                    IconButton(
-                        onClick = { chatManager.refresh() },
-                        modifier = Modifier
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .background(CosmicNavy)
-                            .border(1.dp, GlassBorder, CircleShape)
-                    ) {
-                        Icon(
-                            Icons.Default.Refresh,
-                            contentDescription = "Muat Ulang",
-                            tint = TextSecondary,
-                            modifier = Modifier
-                                .size(18.dp)
-                                .rotate(if (isLoading) rotation else 0f)
-                        )
-                    }
-                }
-            }
+                Spacer(Modifier.height(12.dp))
 
-            // Realtime Network Banner when device connection is lost
-            AnimatedVisibility(visible = !isOnline) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 10.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(Color(0xFFEF4444).copy(alpha = 0.1f))
-                        .border(1.dp, Color(0xFFEF4444).copy(alpha = 0.25f), RoundedCornerShape(12.dp))
-                        .padding(horizontal = 12.dp, vertical = 8.dp)
+                // ── Filter Pills ───────────────────────────────────────────────
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    contentPadding = PaddingValues(end = 8.dp)
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            Icons.Default.WarningAmber,
-                            contentDescription = null,
-                            tint = Color(0xFFEF4444),
-                            modifier = Modifier.size(15.dp)
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text(
-                            text = "Tidak terhubung ke internet. Menampilkan data tersimpan.",
-                            fontSize = 11.sp,
-                            color = TextSecondary
+                    item {
+                        ModernFilterChip(
+                            label = "Semua",
+                            count = threads.size,
+                            isSelected = selectedFilter == ChatFilter.ALL,
+                            activeColor = TeacherNeon,
+                            onClick = { selectedFilter = ChatFilter.ALL }
                         )
                     }
-                }
-            }
-
-            Spacer(Modifier.height(14.dp))
-
-            // ── KPI Stats Banner ────────────────────────────────────
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                ModernKpiCard(
-                    title = "Total Diskusi",
-                    value = threads.size.toString(),
-                    subtitle = "Semua topik",
-                    accentColor = NeonBlue,
-                    icon = Icons.Default.Forum,
-                    isSelected = selectedFilter == ChatFilter.ALL,
-                    onClick = { selectedFilter = ChatFilter.ALL },
-                    modifier = Modifier.weight(1f)
-                )
-                ModernKpiCard(
-                    title = "Perlu Dijawab",
-                    value = waitingCount.toString(),
-                    subtitle = if (waitingCount > 0) "Urgent respon" else "Semua tuntas",
-                    accentColor = if (waitingCount > 0) Color(0xFFF59E0B) else NeonSuccess,
-                    icon = Icons.Default.WarningAmber,
-                    isAlert = waitingCount > 0,
-                    isSelected = selectedFilter == ChatFilter.WAITING,
-                    onClick = { selectedFilter = ChatFilter.WAITING },
-                    modifier = Modifier.weight(1f)
-                )
-                ModernKpiCard(
-                    title = "Siswa Aktif",
-                    value = uniqueStudents.toString(),
-                    subtitle = "Bertanya aktif",
-                    accentColor = StudentNeon,
-                    icon = Icons.Default.People,
-                    isSelected = false,
-                    onClick = { },
-                    modifier = Modifier.weight(1f)
-                )
-            }
-
-            Spacer(Modifier.height(14.dp))
-
-            // ── Search Input ────────────────────────────────────────
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
-                modifier = Modifier.fillMaxWidth(),
-                placeholder = {
-                    Text(
-                        "Cari nama siswa, atau topik...",
-                        fontSize = 12.sp,
-                        color = TextTertiary
-                    )
-                },
-                leadingIcon = {
-                    Icon(
-                        Icons.Default.Search,
-                        contentDescription = null,
-                        tint = TextTertiary,
-                        modifier = Modifier.size(19.dp)
-                    )
-                },
-                trailingIcon = {
-                    if (searchQuery.isNotBlank()) {
-                        IconButton(onClick = { searchQuery = "" }) {
-                            Icon(
-                                Icons.Default.Clear,
-                                contentDescription = "Hapus",
-                                tint = TextSecondary,
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
+                    item {
+                        ModernFilterChip(
+                            label = "⚠️ Perlu Dijawab",
+                            count = waitingCount,
+                            isSelected = selectedFilter == ChatFilter.WAITING,
+                            activeColor = Color(0xFFF59E0B),
+                            onClick = { selectedFilter = ChatFilter.WAITING }
+                        )
                     }
-                },
-                singleLine = true,
-                shape = RoundedCornerShape(16.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = CosmicNavy,
-                    unfocusedContainerColor = CosmicNavy,
-                    focusedBorderColor = TeacherNeon.copy(alpha = 0.7f),
-                    unfocusedBorderColor = GlassBorder,
-                    focusedTextColor = TextPrimary,
-                    unfocusedTextColor = TextPrimary,
-                ),
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() })
-            )
-
-            Spacer(Modifier.height(12.dp))
-
-            // ── Filter Pills Row ────────────────────────────────────
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(end = 8.dp)
-            ) {
-                item {
-                    ModernFilterChip(
-                        label = "Semua",
-                        count = threads.size,
-                        isSelected = selectedFilter == ChatFilter.ALL,
-                        activeColor = TeacherNeon,
-                        onClick = { selectedFilter = ChatFilter.ALL }
-                    )
-                }
-                item {
-                    ModernFilterChip(
-                        label = "⚠️ Perlu Dijawab",
-                        count = waitingCount,
-                        isSelected = selectedFilter == ChatFilter.WAITING,
-                        activeColor = Color(0xFFF59E0B),
-                        onClick = { selectedFilter = ChatFilter.WAITING }
-                    )
-                }
-                item {
-                    ModernFilterChip(
-                        label = "📚 Materi Ajar",
-                        count = materialCount,
-                        isSelected = selectedFilter == ChatFilter.MATERIAL,
-                        activeColor = NeonBlue,
-                        onClick = { selectedFilter = ChatFilter.MATERIAL }
-                    )
-                }
-                item {
-                    ModernFilterChip(
-                        label = "📝 Tugas",
-                        count = assignmentCount,
-                        isSelected = selectedFilter == ChatFilter.ASSIGNMENT,
-                        activeColor = StudentNeon,
-                        onClick = { selectedFilter = ChatFilter.ASSIGNMENT }
-                    )
-                }
-                item {
-                    ModernFilterChip(
-                        label = "✓ Selesai",
-                        count = answeredCount,
-                        isSelected = selectedFilter == ChatFilter.ANSWERED,
-                        activeColor = NeonSuccess,
-                        onClick = { selectedFilter = ChatFilter.ANSWERED }
-                    )
+                    item {
+                        ModernFilterChip(
+                            label = "📚 Materi Ajar",
+                            count = materialCount,
+                            isSelected = selectedFilter == ChatFilter.MATERIAL,
+                            activeColor = NeonBlue,
+                            onClick = { selectedFilter = ChatFilter.MATERIAL }
+                        )
+                    }
+                    item {
+                        ModernFilterChip(
+                            label = "📝 Tugas",
+                            count = assignmentCount,
+                            isSelected = selectedFilter == ChatFilter.ASSIGNMENT,
+                            activeColor = StudentNeon,
+                            onClick = { selectedFilter = ChatFilter.ASSIGNMENT }
+                        )
+                    }
+                    item {
+                        ModernFilterChip(
+                            label = "✓ Selesai",
+                            count = answeredCount,
+                            isSelected = selectedFilter == ChatFilter.ANSWERED,
+                            activeColor = NeonSuccess,
+                            onClick = { selectedFilter = ChatFilter.ANSWERED }
+                        )
+                    }
                 }
             }
         }
@@ -691,253 +695,272 @@ private fun ModernThreadCard(
     onClick: () -> Unit,
 ) {
     val isWaiting = thread.status == InquiryStatus.WAITING_REPLY
+    val isMat = thread.inquiryType == InquiryType.MATERIAL
+    val tagColor = if (isMat) NeonBlue else StudentNeon
+    val borderBrush = if (isWaiting)
+        Brush.linearGradient(listOf(Color(0xFFF59E0B).copy(alpha = 0.6f), CosmicNavy))
+    else
+        Brush.linearGradient(listOf(GlassBorder, GlassBorder))
 
-    Card(
-        onClick = onClick,
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = CosmicNavy),
-        border = CardDefaults.outlinedCardBorder().copy(
-            brush = Brush.linearGradient(
-                if (isWaiting) listOf(Color(0xFFF59E0B).copy(alpha = 0.55f), GlassBorder)
-                else listOf(GlassBorder, GlassBorder)
-            )
-        ),
-        modifier = Modifier.fillMaxWidth()
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .background(CosmicNavy)
+            .border(width = 1.dp, brush = borderBrush, shape = RoundedCornerShape(20.dp))
+            .clickable(onClick = onClick)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            // ── Top Row: Avatar, Student Name, Class, Status Pill ───
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Vibrant Gradient Avatar
+        Column {
+            // ─ Urgent Banner ───────────────────────────────────────────
+            if (isWaiting) {
                 Box(
                     modifier = Modifier
-                        .size(44.dp)
-                        .clip(CircleShape)
+                        .fillMaxWidth()
                         .background(
-                            Brush.linearGradient(
+                            Brush.horizontalGradient(
                                 listOf(
-                                    StudentNeon.copy(alpha = 0.8f),
-                                    NeonBlue.copy(alpha = 0.8f)
+                                    Color(0xFFF59E0B).copy(alpha = 0.18f),
+                                    Color(0xFFF59E0B).copy(alpha = 0.04f)
                                 )
                             )
                         )
-                        .border(1.5.dp, Color.White.copy(alpha = 0.3f), CircleShape),
-                    contentAlignment = Alignment.Center
+                        .padding(horizontal = 16.dp, vertical = 7.dp)
                 ) {
-                    Text(
-                        text = thread.studentName.take(1).uppercase(),
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Black,
-                        color = Color.White
-                    )
-                }
-
-                Spacer(Modifier.width(12.dp))
-
-                Column(modifier = Modifier.weight(1f)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = thread.studentName,
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = TextPrimary,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        Spacer(Modifier.width(6.dp))
                         Box(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(StudentNeon.copy(alpha = 0.12f))
-                                .border(1.dp, StudentNeon.copy(alpha = 0.25f), RoundedCornerShape(6.dp))
-                                .padding(horizontal = 6.dp, vertical = 2.dp)
-                        ) {
-                            Text(
-                                text = thread.studentClass,
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = StudentNeon
-                            )
-                        }
+                                .size(6.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFFF59E0B))
+                        )
+                        Spacer(Modifier.width(7.dp))
+                        Text(
+                            text = "Menunggu Jawaban Guru",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color(0xFFF59E0B),
+                            letterSpacing = 0.3.sp
+                        )
                     }
-
-                    Spacer(Modifier.height(2.dp))
-
-                    Text(
-                        text = thread.subjectName,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = TextTertiary
-                    )
                 }
+            }
 
-                // Status Badge Pill
-                if (isWaiting) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                // ─ Student Info Row ─────────────────────────────────────
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Avatar
                     Box(
                         modifier = Modifier
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(Color(0xFFF59E0B).copy(alpha = 0.14f))
-                            .border(1.dp, Color(0xFFF59E0B).copy(alpha = 0.5f), RoundedCornerShape(12.dp))
-                            .padding(horizontal = 10.dp, vertical = 5.dp)
+                            .size(46.dp)
+                            .clip(CircleShape)
+                            .background(
+                                Brush.linearGradient(
+                                    listOf(
+                                        StudentNeon.copy(alpha = 0.85f),
+                                        NeonBlue.copy(alpha = 0.85f)
+                                    )
+                                )
+                            )
+                            .border(1.5.dp, Color.White.copy(alpha = 0.25f), CircleShape),
+                        contentAlignment = Alignment.Center
                     ) {
+                        Text(
+                            text = thread.studentName.take(1).uppercase(),
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Black,
+                            color = Color.White
+                        )
+                    }
+
+                    Spacer(Modifier.width(12.dp))
+
+                    Column(modifier = Modifier.weight(1f)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = thread.studentName,
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = TextPrimary,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f, fill = false)
+                            )
+                            Spacer(Modifier.width(6.dp))
                             Box(
                                 modifier = Modifier
-                                    .size(6.dp)
-                                    .clip(CircleShape)
-                                    .background(Color(0xFFF59E0B))
-                            )
-                            Spacer(Modifier.width(5.dp))
-                            Text(
-                                text = "Butuh Jawaban",
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Black,
-                                color = Color(0xFFF59E0B)
-                            )
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(StudentNeon.copy(alpha = 0.12f))
+                                    .border(1.dp, StudentNeon.copy(alpha = 0.25f), RoundedCornerShape(6.dp))
+                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                            ) {
+                                Text(
+                                    text = thread.studentClass,
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = StudentNeon
+                                )
+                            }
                         }
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            text = thread.subjectName,
+                            fontSize = 11.sp,
+                            color = TextTertiary,
+                            fontWeight = FontWeight.Medium
+                        )
                     }
-                } else {
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(NeonSuccess.copy(alpha = 0.12f))
-                            .border(1.dp, NeonSuccess.copy(alpha = 0.35f), RoundedCornerShape(12.dp))
-                            .padding(horizontal = 10.dp, vertical = 5.dp)
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                Icons.Default.CheckCircle,
-                                contentDescription = null,
-                                tint = NeonSuccess,
-                                modifier = Modifier.size(11.dp)
-                            )
-                            Spacer(Modifier.width(4.dp))
-                            Text(
-                                text = "Terjawab",
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = NeonSuccess
-                            )
+
+                    // Status badge (right-aligned)
+                    if (!isWaiting) {
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(NeonSuccess.copy(alpha = 0.12f))
+                                .border(1.dp, NeonSuccess.copy(alpha = 0.35f), RoundedCornerShape(12.dp))
+                                .padding(horizontal = 9.dp, vertical = 5.dp)
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    Icons.Default.CheckCircle,
+                                    contentDescription = null,
+                                    tint = NeonSuccess,
+                                    modifier = Modifier.size(11.dp)
+                                )
+                                Spacer(Modifier.width(4.dp))
+                                Text(
+                                    text = "Terjawab",
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = NeonSuccess
+                                )
+                            }
                         }
                     }
                 }
-            }
 
-            Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(12.dp))
 
-            // ── Reference Tag (Materi vs Tugas) ─────────────────────
-            val isMat = thread.inquiryType == InquiryType.MATERIAL
-            val tagColor = if (isMat) NeonBlue else StudentNeon
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(tagColor.copy(alpha = 0.08f))
-                    .border(1.dp, tagColor.copy(alpha = 0.22f), RoundedCornerShape(10.dp))
-                    .padding(horizontal = 10.dp, vertical = 7.dp)
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        if (isMat) Icons.AutoMirrored.Filled.MenuBook else Icons.AutoMirrored.Filled.Assignment,
-                        contentDescription = null,
-                        tint = tagColor,
-                        modifier = Modifier.size(14.dp)
-                    )
-                    Spacer(Modifier.width(6.dp))
-                    Text(
-                        text = if (isMat) "Materi: " else "Tugas: ",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = tagColor
-                    )
-                    Text(
-                        text = thread.referenceTitle,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = TextPrimary,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-            }
-
-            Spacer(Modifier.height(10.dp))
-
-            // ── Message Excerpt Bubble ──────────────────────────────
-            val lastMsg = thread.lastMessage
-            if (lastMsg != null) {
+                // ─ Reference Tag ───────────────────────────────────────
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(10.dp))
-                        .background(CosmicSurface)
-                        .border(1.dp, GlassBorder.copy(alpha = 0.6f), RoundedCornerShape(10.dp))
-                        .padding(horizontal = 12.dp, vertical = 8.dp)
+                        .background(tagColor.copy(alpha = 0.08f))
+                        .border(1.dp, tagColor.copy(alpha = 0.22f), RoundedCornerShape(10.dp))
+                        .padding(horizontal = 10.dp, vertical = 7.dp)
                 ) {
-                    Text(
-                        text = "${if (lastMsg.isFromTeacher) "Anda (Guru): " else "${thread.studentName}: "}${lastMsg.content}",
-                        fontSize = 12.sp,
-                        color = if (isWaiting) TextPrimary else TextSecondary,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        lineHeight = 17.sp
-                    )
-                }
-            }
-
-            Spacer(Modifier.height(12.dp))
-
-            // ── Footer Row: Timestamp & CTA ─────────────────────────
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        Icons.Default.AccessTime,
-                        contentDescription = null,
-                        tint = TextTertiary,
-                        modifier = Modifier.size(12.dp)
-                    )
-                    Spacer(Modifier.width(4.dp))
-                    Text(
-                        text = formatTimeAgo(thread.lastUpdated),
-                        fontSize = 11.sp,
-                        color = TextTertiary
-                    )
-                    Spacer(Modifier.width(10.dp))
-                    Text(
-                        text = "• ${thread.messages.size} pesan",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = TextTertiary
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            if (isMat) Icons.AutoMirrored.Filled.MenuBook else Icons.AutoMirrored.Filled.Assignment,
+                            contentDescription = null,
+                            tint = tagColor,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text(
+                            text = if (isMat) "Materi: " else "Tugas: ",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = tagColor
+                        )
+                        Text(
+                            text = thread.referenceTitle,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = TextPrimary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
                 }
 
+                // ─ Last Message Preview ────────────────────────────────
+                val lastMsg = thread.lastMessage
+                if (lastMsg != null) {
+                    Spacer(Modifier.height(10.dp))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(CosmicSurface)
+                            .border(1.dp, GlassBorder.copy(alpha = 0.6f), RoundedCornerShape(10.dp))
+                            .padding(horizontal = 12.dp, vertical = 8.dp)
+                    ) {
+                        Text(
+                            text = "${if (lastMsg.isFromTeacher) "💬 Anda: " else "👤 ${thread.studentName}: "}${lastMsg.content}",
+                            fontSize = 12.sp,
+                            color = if (isWaiting) TextPrimary else TextSecondary,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            lineHeight = 17.sp
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(12.dp))
+
+                // ─ Footer Row ───────────────────────────────────────────
                 Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.clickable(onClick = onClick)
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = if (isWaiting) "Balas Sekarang" else "Buka Diskusi",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = if (isWaiting) Color(0xFFF59E0B) else TeacherNeon
-                    )
-                    Spacer(Modifier.width(4.dp))
-                    Icon(
-                        Icons.AutoMirrored.Filled.ArrowForward,
-                        contentDescription = null,
-                        tint = if (isWaiting) Color(0xFFF59E0B) else TeacherNeon,
-                        modifier = Modifier.size(12.dp)
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Default.AccessTime,
+                            contentDescription = null,
+                            tint = TextTertiary,
+                            modifier = Modifier.size(12.dp)
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            text = formatTimeAgo(thread.lastUpdated),
+                            fontSize = 11.sp,
+                            color = TextTertiary
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = "• ${thread.messages.size} pesan",
+                            fontSize = 11.sp,
+                            color = TextTertiary
+                        )
+                    }
+
+                    // CTA Pill Button
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(
+                                if (isWaiting) Color(0xFFF59E0B).copy(alpha = 0.15f)
+                                else TeacherNeon.copy(alpha = 0.12f)
+                            )
+                            .border(
+                                1.dp,
+                                if (isWaiting) Color(0xFFF59E0B).copy(alpha = 0.5f)
+                                else TeacherNeon.copy(alpha = 0.4f),
+                                RoundedCornerShape(20.dp)
+                            )
+                            .padding(horizontal = 12.dp, vertical = 6.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = if (isWaiting) "Balas Sekarang" else "Buka Diskusi",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (isWaiting) Color(0xFFF59E0B) else TeacherNeon
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowForward,
+                                contentDescription = null,
+                                tint = if (isWaiting) Color(0xFFF59E0B) else TeacherNeon,
+                                modifier = Modifier.size(12.dp)
+                            )
+                        }
+                    }
                 }
             }
         }
