@@ -241,28 +241,45 @@ export default function DapodikHubPage() {
         cloud_url: "https://schoolosbackend-production.up.railway.app",
         cloud_token: token,
         dapodik_url: activeUrl,
-        npsn: activeNpsn || "P2962010",
-        dapodik_token: activeDapodikToken || "AuOczk2Vrzi62S0",
+        npsn: activeNpsn,
+        dapodik_token: activeDapodikToken,
         sync_interval_mins: 60,
       };
 
       const batContent = `@echo off\r\nchcp 65001 >nul\r\ntitle School OS Bridge Agent - Sinkronisasi Dapodik\r\necho ========================================================\r\necho   🏫 SCHOOL OS BRIDGE AGENT - SINKRONISASI DAPODIK\r\necho ========================================================\r\necho.\r\necho Sedang membaca data Dapodik lokal dan mengirim ke Cloud...\r\necho Mohon jangan tutup jendela ini sampai selesai.\r\necho.\r\n"%~dp0schoolos-sync.exe" --sync-now\r\necho.\r\necho ========================================================\r\necho Selesai! Silakan periksa web dashboard School OS Anda.\r\necho Tekan tombol apa saja untuk menutup jendela ini.\r\npause >nul\r\n`;
 
-      const readmeContent = `=====================================================
-PANDUAN OPERATOR SEKOLAH (ZERO-CODE / TANPA KODING)
-=====================================================
+      const readmeContent = `======================================================================
+  🏫 SCHOOL OS BRIDGE AGENT - PANDUAN LENGKAP OPERATOR SEKOLAH
+======================================================================
 Sekolah : ${agentInfo?.schoolName || 'Sekolah Anda'}
 NPSN    : ${activeNpsn}
 
-LANGKAH PENGGUNAAN (CUKUP 2 LANGKAH):
-1. Pastikan aplikasi Dapodik di komputer/laptop ini SEDANG AKTIF.
-2. Klik 2x file: "🚀 KLIK-SINKRONISASI.bat"
-3. Tunggu hingga proses membaca data Dapodik dan mengirim ke Cloud selesai.
-4. Buka web dashboard School OS di browser untuk melihat data siswa & guru Anda!
+KAPAN ANDA PERLU MENJALANKAN SINKRONISASI?
+1. 🏁 SAAT SETUP AWAL:
+   Tarik seluruh profil sekolah, GTK (Guru & Tendik), Rombel, dan Siswa pertama kali ke Cloud School OS.
+2. 🔄 SETIAP ADA PERUBAHAN DATA DI DAPODIK (SINKRONISASI BERKALA):
+   - Ada siswa baru (PPDB, siswa susulan, mutasi masuk).
+   - Siswa naik kelas atau pindah rombongan belajar.
+   - Perubahan nomor HP orang tua/wali atau alamat rumah.
+   - Ada guru baru atau pergantian wali kelas.
+   - Siswa mutasi keluar, lulus, atau non-aktif.
 
-CATATAN:
-- File "schoolos-agent.json" sudah terisi token & konfigurasi otomatis sekolah Anda.
-- Jika ingin sinkronisasi rutin otomatis setiap 60 menit di latar belakang, cukup klik ganda "schoolos-sync.exe".
+KEAMANAN DATA (IDEMPOTEN & AMAN DIJALANKAN BERULANG KALI):
+✅ Sistem otomatis memperbarui data (differential update) tanpa menduplikasi siswa.
+✅ Password akun siswa/guru yang sudah dibuat TIDAK akan ter-reset atau terhapus.
+✅ Nilai, presensi, dan riwayat di School OS tetap utuh.
+
+CARA PENGGUNAAN (PILIH SALAH SATU):
+----------------------------------------------------------------------
+PILIHAN 1: SEKALI KLIK SETIAP SELESAI UBAH DAPODIK (Paling Praktis)
+1. Pastikan aplikasi Dapodik di komputer/laptop ini sedang aktif.
+2. Klik 2x file: "🚀 KLIK-SINKRONISASI.bat"
+3. Tunggu ~3 detik sampai konsol menampilkan "🎉 SINKRONISASI BERHASIL!".
+4. Selesai! Buka dashboard web School OS untuk melihat data termutakhir.
+
+PILIHAN 2: OTOMATIS PENUH TIAP 60 MENIT (Background Daemon)
+- Biarkan jendela "schoolos-sync.exe" tetap menyala di latar belakang, aplikasi akan otomatis memeriksa dan menyinkronkan data Dapodik ke Cloud setiap 60 menit.
+======================================================================
 `;
 
       const zip = new JSZip();
@@ -272,7 +289,8 @@ CATATAN:
       folder.file('schoolos-sync.exe', exeBlob);
       folder.file('schoolos-agent.json', JSON.stringify(configObj, null, 2));
       folder.file('🚀 KLIK-SINKRONISASI.bat', batContent);
-      folder.file('PETUNJUK-CEPAT.txt', readmeContent);
+      folder.file('PETUNJUK-LENGKAP.txt', readmeContent);
+      folder.file('README.txt', readmeContent);
 
       const zipBlob = await zip.generateAsync({ type: 'blob' });
       const downloadUrl = URL.createObjectURL(zipBlob);
@@ -506,8 +524,8 @@ CATATAN:
                 🛡️ Bebas Firewall &amp; Tanpa Prefill Ulang
               </span>
             </div>
-            <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: '0.4rem 0 0', maxWidth: '800px', lineHeight: 1.5 }}>
-              Aplikasi portabel ringan (<b>schoolos-sync.exe</b>) yang berjalan di laptop/PC Dapodik. Membaca data Dapodik via <code>127.0.0.1:5774</code> secara lokal dan langsung mengirimkan sinkronisasi siswa, guru, rombel, dan mapel ke Cloud School OS secara berkala.
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: '0.4rem 0 0', maxWidth: '850px', lineHeight: 1.5 }}>
+              Aplikasi portabel ringan (<b>schoolos-sync.exe</b>) yang berjalan di laptop/PC Dapodik. Dirancang khusus untuk <b>Setup Awal Sekolah Baru</b> sekaligus <b>Pembaruan Berkelanjutan Setiap Ada Perubahan di Dapodik</b> (siswa baru/PPDB, pindah rombel, perubahan nomor telepon/biodata, atau mutasi). Cukup klik 2x shortcut <code>🚀 KLIK-SINKRONISASI.bat</code> kapan saja data Dapodik Anda diperbarui.
             </p>
           </div>
 
