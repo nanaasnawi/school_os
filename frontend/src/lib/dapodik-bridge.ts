@@ -167,39 +167,37 @@ export async function uploadDapodikPrefillFile(fileName: string, contentText: st
 
 
 /**
- * Perform Real Health Check against Dapodik Localhost (http://localhost:5774)
+ * Perform Real Health Check against Local Bridge (Port 5775) & Dapodik (Port 5774)
  */
 export async function checkDapodikHealth(): Promise<DapodikHealthStatus> {
-  let backendResult: DapodikHealthStatus | null = null;
+  // 1. First probe the Local Silent Bridge on port 5775
   try {
-    const res = await fetchApi('/api/v1/dapodik/health-check', {
+    const bridgeRes = await fetch('http://127.0.0.1:5775/health', {
       method: 'GET',
-      headers: getHeaders(),
+      headers: { Accept: 'application/json' },
     });
-    if (res.ok) {
-      const json = await safeFetchJson(res);
-      if (json && json.data) {
-        backendResult = {
-          connected: json.data.connected,
-          status: json.data.status,
-          message: json.data.message,
-          dapodikUrl: json.data.dapodik_url,
-          lastCheckedAt: json.data.last_checked_at,
-        };
-        if (backendResult.connected) {
-          return backendResult;
-        }
-      }
+    if (bridgeRes.ok) {
+      const bridgeJson = await bridgeRes.json();
+      const dapodikOnline = bridgeJson.data?.dapodik_online ?? false;
+      return {
+        connected: dapodikOnline,
+        status: dapodikOnline ? 'ONLINE' : 'OFFLINE',
+        message: dapodikOnline
+          ? '🟢 TERHUBUNG: Bridge & Dapodik Lokal (127.0.0.1:5774) siap disinkronkan!'
+          : '⚡ Bridge aktif, namun aplikasi Dapodik (port 5774) belum dibuka di laptop ini.',
+        dapodikUrl: 'http://127.0.0.1:5774',
+        lastCheckedAt: new Date().toISOString(),
+      };
     }
-  } catch (err: any) {
-    // ignore
+  } catch {
+    // Local bridge not yet running
   }
 
-  // Direct Browser Ping to Dapodik Localhost Port 5774
+  // 2. Direct Browser Ping to Dapodik Localhost Port 5774
   try {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 2000);
-    await fetch('http://localhost:5774', {
+    const timer = setTimeout(() => controller.abort(), 1500);
+    await fetch('http://127.0.0.1:5774', {
       method: 'GET',
       mode: 'no-cors',
       signal: controller.signal,
@@ -208,19 +206,19 @@ export async function checkDapodikHealth(): Promise<DapodikHealthStatus> {
     return {
       connected: true,
       status: 'ONLINE',
-      message: '🟢 TERHUBUNG: Aplikasi Dapodik Lokal (http://localhost:5774) terdeteksi aktif di komputer ini!',
-      dapodikUrl: 'http://localhost:5774',
+      message: '🟢 Dapodik Localhost (Port 5774) aktif di komputer ini.',
+      dapodikUrl: 'http://127.0.0.1:5774',
       lastCheckedAt: new Date().toISOString(),
     };
-  } catch (directErr) {
+  } catch {
     // Port 5774 is unreachable
   }
 
-  return backendResult || {
+  return {
     connected: false,
     status: 'OFFLINE',
-    message: '🔴 OFFLINE: Aplikasi Dapodik Localhost (http://localhost:5774) atau Backend API Server tidak terjangkau.',
-    dapodikUrl: 'http://localhost:5774',
+    message: 'Aplikasi Dapodik lokal (port 5774) atau Bridge belum aktif di komputer ini.',
+    dapodikUrl: 'http://127.0.0.1:5774',
     lastCheckedAt: new Date().toISOString(),
   };
 }
@@ -294,61 +292,72 @@ export async function getDapodikOutboxJobs(): Promise<DapodikOutboxJob[]> {
 }
 
 /**
- * PULL Data (Executes Real WebService API & PostgreSQL Ingestion via Backend API)
+ * PULL Data (Executes Real WebService API & PostgreSQL Ingestion via Silent Bridge)
  */
 export async function pullDataFromDapodik(config?: PullDapodikConfig): Promise<{
   newRecordsCount: number;
   updatedRecords: DapodikSyncRecord[];
 }> {
+  const token = apiClient.getToken() || '';
+  const cloudUrl = getApiUrl('').replace(/\/api\/v1\/?$/, '');
+
+  // Step 1: Call Silent Local Bridge on 127.0.0.1:5775 (CORS-enabled, zero-console)
   try {
-    const res = await fetchApi('/api/v1/dapodik/pull', {
+    const bridgeRes = await fetch('http://127.0.0.1:5775/sync', {
       method: 'POST',
-      headers: getHeaders(),
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        dapodik_url: config?.dapodikUrl?.trim() || undefined,
+        cloud_url: cloudUrl || 'https://schoolosbackend-production.up.railway.app',
+        cloud_token: token,
         npsn: config?.npsn?.trim() || undefined,
-        bearer_token: config?.bearerToken?.trim() || undefined,
+        dapodik_token: config?.bearerToken?.trim() || undefined,
+        dapodik_url: config?.dapodikUrl?.trim() || 'http://127.0.0.1:5774',
       }),
     });
-    const json = await safeFetchJson(res);
-    if (!res.ok || !json.success) {
-      const errorMsg = json?.error?.message || json?.message || 'Gagal menarik data dari Dapodik WebService';
-      throw new Error(errorMsg);
-    }
-    if (res && json && json.success && json.data && Array.isArray(json.data)) {
-      const pulled = json.data.map((r: any) => ({
-        id: r.id,
-        nisn: r.nisn,
-        nik: r.nik,
-        namaSchoolOS: r.nama_school_os,
-        namaDapodik: r.nama_dapodik,
-        rombel: r.rombel,
-        identityState: r.identity_state,
-        mobilityCase: r.mobility_case,
-        classification: r.classification,
-        actionRecommended: r.action_recommended,
-        stage: r.stage,
-        lastSyncedAt: r.last_synced_at,
-      }));
 
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('dapodik_data_updated', { detail: { count: pulled.length } }));
+    if (bridgeRes.ok) {
+      const bridgeJson = await bridgeRes.json();
+      if (bridgeJson.success && bridgeJson.data) {
+        // Fetch fresh records from Cloud PostgreSQL now that sync has populated them
+        const freshRecords = await getDapodikSyncRecords();
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(
+            new CustomEvent('dapodik_data_updated', {
+              detail: { count: freshRecords.length },
+            })
+          );
+        }
+        return {
+          newRecordsCount: bridgeJson.data.total_students,
+          updatedRecords: freshRecords,
+        };
+      } else {
+        throw new Error(bridgeJson.error || 'Gagal menyinkronkan data Dapodik.');
       }
-
-      return {
-        newRecordsCount: pulled.length,
-        updatedRecords: pulled,
-      };
+    } else {
+      const errText = await bridgeRes.text();
+      let errObj;
+      try {
+        errObj = JSON.parse(errText);
+      } catch {}
+      throw new Error(
+        errObj?.error || 'Bridge lokal melaporkan kesalahan saat menarik data Dapodik.'
+      );
     }
   } catch (err: any) {
-    console.error('[DapodikBridge] Error pulling data:', err);
-    throw new Error(err.message || 'Gagal menghubungi Dapodik WebService Backend');
-  }
+    if (
+      err.message &&
+      !err.message.includes('Failed to fetch') &&
+      !err.message.includes('NetworkError')
+    ) {
+      throw err;
+    }
 
-  return {
-    newRecordsCount: 0,
-    updatedRecords: [],
-  };
+    // Bridge is not running on 127.0.0.1:5775
+    throw new Error(
+      'Aplikasi Pendukung School OS (Bridge) belum aktif di komputer ini. Silakan jalankan SchoolOS-Bridge sekali saja agar tombol tarik data dapat membaca Dapodik lokal.'
+    );
+  }
 }
 
 /**

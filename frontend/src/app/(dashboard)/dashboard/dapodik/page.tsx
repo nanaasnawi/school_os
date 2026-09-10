@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import styles from './dapodik.module.css';
-import JSZip from 'jszip';
 import {
   DapodikSyncRecord,
   DapodikHealthStatus,
@@ -31,7 +30,6 @@ export default function DapodikHubPage() {
   const [dapodikTokenInput, setDapodikTokenInput] = useState('');
   const [dapodikUrlInput, setDapodikUrlInput] = useState('http://127.0.0.1:5774');
   const [isSavingSettings, setIsSavingSettings] = useState(false);
-  const [isGeneratingZip, setIsGeneratingZip] = useState(false);
 
   // Pagination State
   const [currentPageMatrix, setCurrentPageMatrix] = useState(1);
@@ -199,163 +197,33 @@ export default function DapodikHubPage() {
     setTimeout(() => setCopiedToken(false), 3000);
   };
 
-  // 1-Click ZIP Package Generator: Bundles schoolos-sync.exe + schoolos-agent.json + KLIK-SINKRONISASI.bat
-  const handleDownloadZipPackage = async () => {
-    const token = apiClient.getToken() || '';
-    if (!token) {
-      setToastMessage('⚠️ Sesi login Anda berakhir. Silakan login kembali.');
-      return;
-    }
-
-    const activeNpsn = npsnInput.trim() || agentInfo?.npsn || '';
-    const activeDapodikToken = dapodikTokenInput.trim() || agentInfo?.dapodikToken || '';
-    const activeUrl = dapodikUrlInput.trim() || agentInfo?.dapodikUrl || 'http://127.0.0.1:5774';
-
-    if (!activeNpsn) {
-      setToastMessage('⚠️ Mohon isi NPSN Sekolah Anda terlebih dahulu pada formulir pengaturan.');
-      setShowDapodikSettings(true);
-      return;
-    }
-
-    setIsGeneratingZip(true);
-    setToastMessage('📦 Menyiapkan Paket Siap Pakai (ZIP)... Mohon tunggu beberapa detik.');
-
-    try {
-      let exeBlob: Blob;
-      try {
-        const exeRes = await fetch('/downloads/schoolos-sync.exe');
-        if (exeRes.ok && exeRes.status === 200) {
-          exeBlob = await exeRes.blob();
-        } else {
-          throw new Error('Fallback CDN');
-        }
-      } catch {
-        const ghRes = await fetch('https://raw.githubusercontent.com/nanaasnawi/school_os/main/frontend/public/downloads/schoolos-sync.exe');
-        if (!ghRes.ok) {
-          throw new Error('Gagal mengunduh biner aplikasi dari server maupun CDN.');
-        }
-        exeBlob = await ghRes.blob();
-      }
-
-      const configObj = {
-        cloud_url: "https://schoolosbackend-production.up.railway.app",
-        cloud_token: token,
-        dapodik_url: activeUrl,
-        npsn: activeNpsn,
-        dapodik_token: activeDapodikToken,
-        sync_interval_mins: 60,
-      };
-
-      const batContent = `@echo off\r\nchcp 65001 >nul\r\ntitle School OS Bridge Agent - Sinkronisasi Dapodik\r\necho ========================================================\r\necho   🏫 SCHOOL OS BRIDGE AGENT - SINKRONISASI DAPODIK\r\necho ========================================================\r\necho.\r\necho Sedang membaca data Dapodik lokal dan mengirim ke Cloud...\r\necho Mohon jangan tutup jendela ini sampai selesai.\r\necho.\r\n"%~dp0schoolos-sync.exe" --sync-now\r\necho.\r\necho ========================================================\r\necho Selesai! Silakan periksa web dashboard School OS Anda.\r\necho Tekan tombol apa saja untuk menutup jendela ini.\r\npause >nul\r\n`;
-
-      const readmeContent = `======================================================================
-  🏫 SCHOOL OS BRIDGE AGENT - PANDUAN LENGKAP OPERATOR SEKOLAH
-======================================================================
-Sekolah : ${agentInfo?.schoolName || 'Sekolah Anda'}
-NPSN    : ${activeNpsn}
-
-KAPAN ANDA PERLU MENJALANKAN SINKRONISASI?
-1. 🏁 SAAT SETUP AWAL:
-   Tarik seluruh profil sekolah, GTK (Guru & Tendik), Rombel, dan Siswa pertama kali ke Cloud School OS.
-2. 🔄 SETIAP ADA PERUBAHAN DATA DI DAPODIK (SINKRONISASI BERKALA):
-   - Ada siswa baru (PPDB, siswa susulan, mutasi masuk).
-   - Siswa naik kelas atau pindah rombongan belajar.
-   - Perubahan nomor HP orang tua/wali atau alamat rumah.
-   - Ada guru baru atau pergantian wali kelas.
-   - Siswa mutasi keluar, lulus, atau non-aktif.
-
-KEAMANAN DATA (IDEMPOTEN & AMAN DIJALANKAN BERULANG KALI):
-✅ Sistem otomatis memperbarui data (differential update) tanpa menduplikasi siswa.
-✅ Password akun siswa/guru yang sudah dibuat TIDAK akan ter-reset atau terhapus.
-✅ Nilai, presensi, dan riwayat di School OS tetap utuh.
-
-CARA PENGGUNAAN (PILIH SALAH SATU):
-----------------------------------------------------------------------
-PILIHAN 1: SEKALI KLIK SETIAP SELESAI UBAH DAPODIK (Paling Praktis)
-1. Pastikan aplikasi Dapodik di komputer/laptop ini sedang aktif.
-2. Klik 2x file: "🚀 KLIK-SINKRONISASI.bat"
-3. Tunggu ~3 detik sampai konsol menampilkan "🎉 SINKRONISASI BERHASIL!".
-4. Selesai! Buka dashboard web School OS untuk melihat data termutakhir.
-
-PILIHAN 2: OTOMATIS PENUH TIAP 60 MENIT (Background Daemon)
-- Biarkan jendela "schoolos-sync.exe" tetap menyala di latar belakang, aplikasi akan otomatis memeriksa dan menyinkronkan data Dapodik ke Cloud setiap 60 menit.
-======================================================================
-`;
-
-      const zip = new JSZip();
-      const folderName = `SchoolOS-Sync-${activeNpsn}`;
-      const folder = zip.folder(folderName) || zip;
-
-      folder.file('schoolos-sync.exe', exeBlob);
-      folder.file('schoolos-agent.json', JSON.stringify(configObj, null, 2));
-      folder.file('🚀 KLIK-SINKRONISASI.bat', batContent);
-      folder.file('PETUNJUK-LENGKAP.txt', readmeContent);
-      folder.file('README.txt', readmeContent);
-
-      const zipBlob = await zip.generateAsync({ type: 'blob' });
-      const downloadUrl = URL.createObjectURL(zipBlob);
-      const a = document.createElement('a');
-      a.href = downloadUrl;
-      a.download = `SchoolOS-Sync-${activeNpsn}.zip`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(downloadUrl);
-
-      setToastMessage(`✅ SUKSES! File SchoolOS-Sync-${activeNpsn}.zip berhasil diunduh. Tinggal ekstrak & klik 2x bat filenya.`);
-    } catch (err: any) {
-      console.error('Error packaging zip:', err);
-      setToastMessage(`❌ Gagal membuat paket ZIP: ${err.message}`);
-    } finally {
-      setIsGeneratingZip(false);
-    }
+  // Unduh biner aplikasi pendukung School OS Bridge (Sekali Saja)
+  const handleDownloadBridgeExe = () => {
+    const link = document.createElement('a');
+    link.href = 'https://raw.githubusercontent.com/nanaasnawi/school_os/main/frontend/public/downloads/schoolos-bridge.exe';
+    link.download = 'schoolos-bridge.exe';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setToastMessage('📥 Mengunduh SchoolOS-Bridge.exe... Cukup jalankan sekali di PC tempat Dapodik terpasang.');
   };
 
-  const handleDownloadConfigFile = () => {
-    const token = apiClient.getToken() || '';
-    const activeNpsn = npsnInput.trim() || agentInfo?.npsn || '';
-    const activeDapodikToken = dapodikTokenInput.trim() || agentInfo?.dapodikToken || '';
-    const activeUrl = dapodikUrlInput.trim() || agentInfo?.dapodikUrl || 'http://127.0.0.1:5774';
-
-    if (!activeNpsn) {
-      setToastMessage('⚠️ Mohon isi NPSN Sekolah Anda terlebih dahulu.');
-      setShowDapodikSettings(true);
-      return;
-    }
-
-    const configObj = {
-      cloud_url: "https://schoolosbackend-production.up.railway.app",
-      cloud_token: token,
-      dapodik_url: activeUrl,
-      npsn: activeNpsn,
-      dapodik_token: activeDapodikToken,
-      sync_interval_mins: 60,
-    };
-
-    const blob = new Blob([JSON.stringify(configObj, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'schoolos-agent.json';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    setToastMessage('✅ File konfigurasi schoolos-agent.json berhasil diunduh!');
-  };
-
-  // Pull Data Handler (1-Click Pull from Dapodik Localhost)
+  // Pull Data Handler (1-Klik Sinkronisasi Langsung dari Web Dashboard)
   const handlePullData = async () => {
     setIsPulling(true);
-    setToastMessage('🔍 Menghubungi Dapodik Localhost (http://localhost:5774)...');
+    setToastMessage('🔍 Menghubungi Bridge & Dapodik Lokal (127.0.0.1:5774)...');
 
     try {
-      const res = await pullDataFromDapodik();
+      const res = await pullDataFromDapodik({
+        npsn: npsnInput.trim() || agentInfo?.npsn || undefined,
+        bearerToken: dapodikTokenInput.trim() || agentInfo?.dapodikToken || undefined,
+        dapodikUrl: dapodikUrlInput.trim() || agentInfo?.dapodikUrl || 'http://127.0.0.1:5774',
+      });
       setSyncRecords(res.updatedRecords);
-      setToastMessage(`✅ PULL SUKSES! ${res.newRecordsCount} Data Siswa Berhasil Ditarik dari Dapodik!`);
+      setToastMessage(`🎉 PULL SUKSES! ${res.newRecordsCount} Data Siswa Berhasil Disinkronkan ke Cloud School OS!`);
     } catch (err: any) {
       setToastMessage(
-        `ℹ️ ${err.message || 'Dapodik Localhost belum di-start. Pastikan aplikasi Dapodik di komputer Anda aktif pada port 5774.'}`
+        `ℹ️ ${err.message || 'Gagal menarik data dari Dapodik lokal.'}`
       );
     } finally {
       setIsPulling(false);
@@ -515,24 +383,23 @@ PILIHAN 2: OTOMATIS PENUH TIAP 60 MENIT (Background Daemon)
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
               <span style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                ⭐️ Solusi Utama: School OS Bridge Agent (Windows Portable)
-              </span>
-              <span className="badge badge-info" style={{ fontWeight: 800, fontSize: '0.72rem' }}>
-                🚀 Sangat Direkomendasikan
+                ⭐️ School OS Silent Bridge (Portabel)
               </span>
               <span className="badge badge-success" style={{ fontWeight: 800, fontSize: '0.72rem' }}>
-                🛡️ Bebas Firewall &amp; Tanpa Prefill Ulang
+                🛡️ Tanpa Terminal / Jendela Hitam
+              </span>
+              <span className="badge badge-info" style={{ fontWeight: 800, fontSize: '0.72rem' }}>
+                🚀 1-Klik dari Web
               </span>
             </div>
             <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: '0.4rem 0 0', maxWidth: '850px', lineHeight: 1.5 }}>
-              Aplikasi portabel ringan (<b>schoolos-sync.exe</b>) yang berjalan di laptop/PC Dapodik. Dirancang khusus untuk <b>Setup Awal Sekolah Baru</b> sekaligus <b>Pembaruan Berkelanjutan Setiap Ada Perubahan di Dapodik</b> (siswa baru/PPDB, pindah rombel, perubahan nomor telepon/biodata, atau mutasi). Cukup klik 2x shortcut <code>🚀 KLIK-SINKRONISASI.bat</code> kapan saja data Dapodik Anda diperbarui.
+              Aplikasi pendukung portabel ringan (<b>schoolos-bridge.exe</b>) yang berjalan hening di latar belakang port <code>5775</code>. Menghubungkan tombol <b>"Tarik Data"</b> di web ini dengan database Dapodik lokal Anda (port <code>5774</code>) secara instan tanpa perlu membuka terminal CMD.
             </p>
           </div>
 
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
             <button
-              onClick={handleDownloadZipPackage}
-              disabled={isGeneratingZip}
+              onClick={handleDownloadBridgeExe}
               className="btn btn-success"
               style={{
                 fontWeight: 800,
@@ -544,21 +411,21 @@ PILIHAN 2: OTOMATIS PENUH TIAP 60 MENIT (Background Daemon)
                 gap: '0.4rem',
               }}
             >
-              {isGeneratingZip ? '⏳ Menyiapkan Paket ZIP...' : '📦 Unduh Paket Siap Pakai (ZIP)'}
+              📥 Unduh SchoolOS-Bridge.exe (3.8 MB)
             </button>
             <button
               onClick={() => setShowDapodikSettings(!showDapodikSettings)}
               className="btn btn-primary btn-sm"
               style={{ fontWeight: 800, fontSize: '0.78rem' }}
             >
-              {showDapodikSettings ? '▲ Tutup Pengaturan' : '⚙️ Pengaturan Dapodik Sekolah'}
+              {showDapodikSettings ? '▲ Tutup Pengaturan' : '⚙️ Pengaturan Dapodik'}
             </button>
             <button
               onClick={() => setShowAgentGuide(!showAgentGuide)}
               className="btn btn-secondary btn-sm"
               style={{ fontWeight: 700, fontSize: '0.78rem' }}
             >
-              {showAgentGuide ? '▲ Tutup Panduan' : '📖 Panduan Singkat'}
+              {showAgentGuide ? '▲ Tutup Panduan' : '📖 Cara Kerja'}
             </button>
           </div>
         </div>
@@ -632,22 +499,12 @@ PILIHAN 2: OTOMATIS PENUH TIAP 60 MENIT (Background Daemon)
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.25rem' }}>
               <div style={{ display: 'flex', gap: '0.5rem' }}>
                 <button
-                  onClick={handleDownloadConfigFile}
+                  onClick={handleDownloadBridgeExe}
                   className="btn btn-secondary btn-sm"
                   style={{ fontSize: '0.75rem', fontWeight: 700 }}
                 >
-                  📄 Unduh .json saja
+                  📥 Unduh SchoolOS-Bridge.exe
                 </button>
-                <a
-                  href="https://raw.githubusercontent.com/nanaasnawi/school_os/main/frontend/public/downloads/schoolos-sync.exe"
-                  download="schoolos-sync.exe"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn btn-secondary btn-sm"
-                  style={{ fontSize: '0.75rem', fontWeight: 700, textDecoration: 'none' }}
-                >
-                  📥 Unduh .exe saja (3.6 MB)
-                </a>
                 <button
                   onClick={handleCopyPairingToken}
                   className="btn btn-secondary btn-sm"
@@ -712,25 +569,25 @@ PILIHAN 2: OTOMATIS PENUH TIAP 60 MENIT (Background Daemon)
             }}
           >
             <div style={{ fontWeight: 800, fontSize: '0.88rem', color: 'var(--text-primary)', marginBottom: '0.75rem' }}>
-              🚀 Panduan Cepat untuk Operator Sekolah (Zero-Code / Tanpa Koding):
+              🚀 Panduan Singkat untuk Operator Sekolah (100% Lewat Tombol Web):
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
               <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'flex-start' }}>
                 <span style={{ background: '#16a34a', color: '#fff', borderRadius: '50%', width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, flexShrink: 0, fontSize: '0.75rem' }}>1</span>
                 <div>
-                  <b>Unduh Paket:</b> Klik tombol hijau <b>"📦 Unduh Paket Siap Pakai (ZIP)"</b> di atas. Anda akan mendapatkan 1 file zip yang sudah terisi otomatis file aplikasi, konfigurasi token, dan shortcut sinkronisasi sekolah Anda.
+                  <b>Jalankan Bridge:</b> Klik tombol hijau <b>"📥 Unduh SchoolOS-Bridge.exe"</b> dan jalankan sekali di PC tempat Dapodik terpasang. Aplikasi berjalan hening di latar belakang port 5775 tanpa jendela hitam.
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'flex-start' }}>
                 <span style={{ background: '#2563eb', color: '#fff', borderRadius: '50%', width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, flexShrink: 0, fontSize: '0.75rem' }}>2</span>
                 <div>
-                  <b>Ekstrak &amp; Dobel Klik:</b> Ekstrak file zip tersebut di PC sekolah. Buka foldernya dan klik 2x file <b>"🚀 KLIK-SINKRONISASI.bat"</b> (atau <code>schoolos-sync.exe</code>).
+                  <b>Buka Dapodik:</b> Pastikan aplikasi Dapodik di komputer Anda sedang aktif.
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'flex-start' }}>
                 <span style={{ background: '#8b5cf6', color: '#fff', borderRadius: '50%', width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, flexShrink: 0, fontSize: '0.75rem' }}>3</span>
                 <div>
-                  <b>Selesai:</b> Data siswa, guru, kelas, dan mapel langsung terkirim dan tersimpan aman di Database Cloud School OS!
+                  <b>Klik Tombol Tarik Data:</b> Cukup klik tombol biru <b>"📥 Tarik Data Siswa Baru"</b> di pojok kanan atas halaman ini kapan pun ada data baru di Dapodik. Data langsung tersinkronkan tanpa biaya server liar!
                 </div>
               </div>
             </div>
