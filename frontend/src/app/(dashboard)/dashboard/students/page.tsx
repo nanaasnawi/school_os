@@ -58,7 +58,7 @@ export default function StudentsPage() {
             const statusLower = (apiStudent.status || '').toLowerCase();
             const isMutated = statusLower === 'transferredout' || statusLower === 'transferred' || statusLower === 'mutasi_out';
             const isInactive = isMutated || statusLower === 'inactive' || statusLower === 'alumni';
-            
+
             const rawGender = (apiStudent.gender || '').toUpperCase();
             const genderStr = rawGender === 'L' ? 'Laki-laki' : rawGender === 'P' ? 'Perempuan' : 'Tidak Diketahui';
 
@@ -231,15 +231,55 @@ export default function StudentsPage() {
     return matchSearch && matchStatus && matchClass;
   });
 
+  type SortField = 'nisn' | 'full_name' | 'ttl' | 'gender' | 'assigned_class' | 'status';
+  type SortOrder = 'asc' | 'desc';
+
+  const [sortField, setSortField] = useState<SortField | null>('full_name');
+  const [sortOrder, setSortOrder] = useState<SortOrder | null>('asc');
+
+  const handleSetSort = (field: SortField, order: SortOrder) => {
+    if (sortField === field && sortOrder === order) {
+      // Toggle off / reset to neutral if clicked again
+      setSortField(null);
+      setSortOrder(null);
+    } else {
+      setSortField(field);
+      setSortOrder(order);
+    }
+  };
+
+  const sorted = React.useMemo(() => {
+    if (!sortField || !sortOrder) return filtered;
+    return [...filtered].sort((a, b) => {
+      let comparison = 0;
+      if (sortField === 'nisn') {
+        comparison = (a.nisn || '').localeCompare(b.nisn || '', undefined, { numeric: true });
+      } else if (sortField === 'full_name') {
+        comparison = (a.full_name || '').localeCompare(b.full_name || '', 'id', { sensitivity: 'base' });
+      } else if (sortField === 'ttl') {
+        const aVal = `${a.place_of_birth || ''} ${a.date_of_birth || ''} ${a.religion || ''}`;
+        const bVal = `${b.place_of_birth || ''} ${b.date_of_birth || ''} ${b.religion || ''}`;
+        comparison = aVal.localeCompare(bVal, 'id', { sensitivity: 'base' });
+      } else if (sortField === 'gender') {
+        comparison = (a.gender || '').localeCompare(b.gender || '', 'id');
+      } else if (sortField === 'assigned_class') {
+        comparison = (a.assigned_class || '').localeCompare(b.assigned_class || '', undefined, { numeric: true });
+      } else if (sortField === 'status') {
+        comparison = (a.status || '').localeCompare(b.status || '');
+      }
+      return sortOrder === 'desc' ? -comparison : comparison;
+    });
+  }, [filtered, sortField, sortOrder]);
+
   const [currentPage, setCurrentPage] = React.useState(1);
   const itemsPerPage = 10;
-  
-  React.useEffect(() => { 
-    setCurrentPage(1); 
-  }, [filtered.length]);
 
-  const totalPages = Math.ceil(filtered.length / itemsPerPage) || 1;
-  const paginated = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [filtered.length, sortField, sortOrder]);
+
+  const totalPages = Math.ceil(sorted.length / itemsPerPage) || 1;
+  const paginated = sorted.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   return (
     <div className={styles.page}>
@@ -312,13 +352,147 @@ export default function StudentsPage() {
         <table className={styles.table}>
           <thead>
             <tr>
-              <th>NISN & NIPD</th>
-              <th>Nama Lengkap Siswa</th>
-              <th>TTL & Agama</th>
-              <th>Jenis Kelamin</th>
-              <th>Rombel / Kelas</th>
-              <th>Status Dapodik</th>
-              <th style={{ textAlign: 'right' }}>Aksi Master Data</th>
+              {/* NISN & NIPD */}
+              <th className={styles.thCell}>
+                <div className={styles.thContent}>
+                  <span className={styles.thTitle}>NISN &amp; NIPD</span>
+                  <div className={styles.sortBtnGroup}>
+                    <button
+                      type="button"
+                      className={`${styles.sortBtn} ${sortField === 'nisn' && sortOrder === 'asc' ? styles.sortBtnActive : ''}`}
+                      onClick={() => handleSetSort('nisn', 'asc')}
+                      title="Urutkan NISN terkecil ke terbesar"
+                    >▲</button>
+                    <button
+                      type="button"
+                      className={`${styles.sortBtn} ${sortField === 'nisn' && sortOrder === 'desc' ? styles.sortBtnActive : ''}`}
+                      onClick={() => handleSetSort('nisn', 'desc')}
+                      title="Urutkan NISN terbesar ke terkecil"
+                    >▼</button>
+                  </div>
+                </div>
+              </th>
+
+              {/* Nama Lengkap */}
+              <th className={styles.thCell}>
+                <div className={styles.thContent}>
+                  <span className={styles.thTitle}>Nama Lengkap Siswa</span>
+                  <div className={styles.sortBtnGroup}>
+                    <button
+                      type="button"
+                      className={`${styles.sortBtn} ${sortField === 'full_name' && sortOrder === 'asc' ? styles.sortBtnActive : ''}`}
+                      onClick={() => handleSetSort('full_name', 'asc')}
+                      title="Urutkan nama A → Z"
+                    >▲</button>
+                    <button
+                      type="button"
+                      className={`${styles.sortBtn} ${sortField === 'full_name' && sortOrder === 'desc' ? styles.sortBtnActive : ''}`}
+                      onClick={() => handleSetSort('full_name', 'desc')}
+                      title="Urutkan nama Z → A"
+                    >▼</button>
+                  </div>
+                </div>
+              </th>
+
+              {/* TTL & Agama */}
+              <th className={styles.thCell}>
+                <div className={styles.thContent}>
+                  <span className={styles.thTitle}>TTL &amp; Agama</span>
+                  <div className={styles.sortBtnGroup}>
+                    <button
+                      type="button"
+                      className={`${styles.sortBtn} ${sortField === 'ttl' && sortOrder === 'asc' ? styles.sortBtnActive : ''}`}
+                      onClick={() => handleSetSort('ttl', 'asc')}
+                      title="Urutkan tanggal lahir A → Z"
+                    >▲</button>
+                    <button
+                      type="button"
+                      className={`${styles.sortBtn} ${sortField === 'ttl' && sortOrder === 'desc' ? styles.sortBtnActive : ''}`}
+                      onClick={() => handleSetSort('ttl', 'desc')}
+                      title="Urutkan tanggal lahir Z → A"
+                    >▼</button>
+                  </div>
+                </div>
+              </th>
+
+              {/* Jenis Kelamin */}
+              <th className={styles.thCell}>
+                <div className={styles.thContent}>
+                  <span className={styles.thTitle}>Jenis Kelamin</span>
+                  <div className={styles.sortBtnGroup}>
+                    <button
+                      type="button"
+                      className={`${styles.sortBtn} ${sortField === 'gender' && sortOrder === 'asc' ? styles.sortBtnActive : ''}`}
+                      onClick={() => handleSetSort('gender', 'asc')}
+                      title="Urutkan jenis kelamin A → Z"
+                    >▲</button>
+                    <button
+                      type="button"
+                      className={`${styles.sortBtn} ${sortField === 'gender' && sortOrder === 'desc' ? styles.sortBtnActive : ''}`}
+                      onClick={() => handleSetSort('gender', 'desc')}
+                      title="Urutkan jenis kelamin Z → A"
+                    >▼</button>
+                  </div>
+                </div>
+              </th>
+
+              {/* Rombel / Kelas */}
+              <th className={styles.thCell}>
+                <div className={styles.thContent}>
+                  <span className={styles.thTitle}>Rombel / Kelas</span>
+                  <div className={styles.sortBtnGroup}>
+                    <button
+                      type="button"
+                      className={`${styles.sortBtn} ${sortField === 'assigned_class' && sortOrder === 'asc' ? styles.sortBtnActive : ''}`}
+                      onClick={() => handleSetSort('assigned_class', 'asc')}
+                      title="Urutkan kelas A → Z"
+                    >▲</button>
+                    <button
+                      type="button"
+                      className={`${styles.sortBtn} ${sortField === 'assigned_class' && sortOrder === 'desc' ? styles.sortBtnActive : ''}`}
+                      onClick={() => handleSetSort('assigned_class', 'desc')}
+                      title="Urutkan kelas Z → A"
+                    >▼</button>
+                  </div>
+                </div>
+              </th>
+
+              {/* Status Dapodik */}
+              <th className={styles.thCell}>
+                <div className={styles.thContent}>
+                  <span className={styles.thTitle}>Status</span>
+                  <div className={styles.sortBtnGroup}>
+                    <button
+                      type="button"
+                      className={`${styles.sortBtn} ${sortField === 'status' && sortOrder === 'asc' ? styles.sortBtnActive : ''}`}
+                      onClick={() => handleSetSort('status', 'asc')}
+                      title="Urutkan status A → Z"
+                    >▲</button>
+                    <button
+                      type="button"
+                      className={`${styles.sortBtn} ${sortField === 'status' && sortOrder === 'desc' ? styles.sortBtnActive : ''}`}
+                      onClick={() => handleSetSort('status', 'desc')}
+                      title="Urutkan status Z → A"
+                    >▼</button>
+                  </div>
+                </div>
+              </th>
+
+              {/* Aksi */}
+              <th style={{ textAlign: 'right', verticalAlign: 'middle', paddingRight: '1.25rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                  <span className={styles.thTitle}>Aksi Master Data</span>
+                  {sortField && (
+                    <button
+                      type="button"
+                      className={styles.sortBtn}
+                      style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#dc2626', border: '1px solid rgba(239, 68, 68, 0.25)', fontSize: '0.62rem', padding: '0.2rem 0.4rem' }}
+                      onClick={() => { setSortField(null); setSortOrder(null); }}
+                      title="Reset pengurutan"
+                    >✕</button>
+                  )}
+                </div>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -367,10 +541,9 @@ export default function StudentsPage() {
                     )}
                   </td>
                   <td>
-                    <span className={`badge ${
-                      s.status === 'ACTIVE' ? 'badge-active' :
+                    <span className={`badge ${s.status === 'ACTIVE' ? 'badge-active' :
                       s.status === 'MUTASI_OUT' ? 'badge-warning' : 'badge-danger'
-                    }`}>
+                      }`}>
                       {s.status === 'ACTIVE' && '● Aktif'}
                       {s.status === 'MUTASI_OUT' && '📤 Mutasi Keluar'}
                       {s.status === 'INACTIVE' && 'Non-Aktif / Alumni'}
@@ -412,16 +585,16 @@ export default function StudentsPage() {
           <div className={styles.pagination} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem' }}>
             <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Menampilkan {paginated.length} dari total {filtered.length} hasil</span>
             <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-              <button 
-                disabled={currentPage === 1} 
+              <button
+                disabled={currentPage === 1}
                 onClick={() => setCurrentPage(prev => prev - 1)}
                 className="btn btn-secondary btn-sm"
               >
                 Prev
               </button>
               <span style={{ fontSize: '0.8rem', fontWeight: 700, margin: '0 0.5rem' }}>Halaman {currentPage} dari {totalPages}</span>
-              <button 
-                disabled={currentPage === totalPages} 
+              <button
+                disabled={currentPage === totalPages}
                 onClick={() => setCurrentPage(prev => prev + 1)}
                 className="btn btn-secondary btn-sm"
               >

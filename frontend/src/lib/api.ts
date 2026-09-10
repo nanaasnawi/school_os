@@ -1,9 +1,16 @@
 import { client } from './sdk/client.gen';
 
 export function getApiBaseUrl(): string {
+  let envUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
+  if (envUrl) {
+    if (!envUrl.startsWith('http://') && !envUrl.startsWith('https://')) {
+      envUrl = `https://${envUrl}`;
+    }
+    envUrl = envUrl.replace(/\/api\/v1\/?$/, '').replace(/\/+$/, '');
+  }
+
   if (typeof window !== 'undefined' && window.location?.hostname) {
     const isClientLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    const envUrl = process.env.NEXT_PUBLIC_API_URL;
 
     // If env URL is explicitly set and points to an external domain or non-localhost, use it
     if (envUrl && !envUrl.includes('localhost') && !envUrl.includes('127.0.0.1')) {
@@ -22,7 +29,7 @@ export function getApiBaseUrl(): string {
     return `${window.location.protocol}//${window.location.hostname}:8000`;
   }
 
-  return process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+  return envUrl || 'http://127.0.0.1:8000';
 }
 
 export function getApiUrl(path: string): string {

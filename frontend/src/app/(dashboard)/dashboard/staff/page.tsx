@@ -231,16 +231,36 @@ export default function StaffPage() {
     return matchSearch && matchDept;
   });
 
+  // --- Client-Side Sort ---
+  type StaffSortField = 'full_name' | 'nuptk' | 'jk' | 'tempat_lahir' | 'tanggal_lahir' | 'status_kepegawaian' | 'jenis_ptk';
+  const [sortField, setSortField] = React.useState<StaffSortField | null>('full_name');
+  const [sortOrder, setSortOrder] = React.useState<'asc' | 'desc'>('asc');
+
+  const handleSetSort = (field: StaffSortField, order: 'asc' | 'desc') => {
+    if (sortField === field && sortOrder === order) { setSortField(null); }
+    else { setSortField(field); setSortOrder(order); }
+  };
+
+  const sorted = React.useMemo(() => {
+    if (!sortField) return filtered;
+    return [...filtered].sort((a, b) => {
+      const av = String((a as any)[sortField] ?? '').toLowerCase();
+      const bv = String((b as any)[sortField] ?? '').toLowerCase();
+      const cmp = av.localeCompare(bv, 'id');
+      return sortOrder === 'asc' ? cmp : -cmp;
+    });
+  }, [filtered, sortField, sortOrder]);
+
   // --- Client-Side Pagination ---
   const [currentPage, setCurrentPage] = React.useState(1);
   const itemsPerPage = 10;
   
   React.useEffect(() => { 
     setCurrentPage(1); 
-  }, [filtered.length]);
+  }, [filtered.length, sortField, sortOrder]);
 
-  const totalPages = Math.ceil(filtered.length / itemsPerPage) || 1;
-  const paginated = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const totalPages = Math.ceil(sorted.length / itemsPerPage) || 1;
+  const paginated = sorted.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
   // ------------------------------
 
   return (
@@ -300,14 +320,70 @@ export default function StaffPage() {
         <table className={styles.table}>
           <thead>
             <tr>
-              <th>Nama Lengkap</th>
-              <th>NUPTK</th>
-              <th>L/P</th>
-              <th>Tempat Lahir</th>
-              <th>Tanggal Lahir</th>
-              <th>Status Kepegawaian</th>
-              <th>Jenis PTK</th>
-              <th style={{ textAlign: 'right' }}>Aksi</th>
+              <th className={styles.thCell}>
+                <div className={styles.thContent}>
+                  <span className={styles.thTitle}>Nama Lengkap</span>
+                  <div className={styles.sortBtnGroup}>
+                    <button type="button" className={`${styles.sortBtn} ${sortField === 'full_name' && sortOrder === 'asc' ? styles.sortBtnActive : ''}`} onClick={() => handleSetSort('full_name', 'asc')} title="Nama A → Z">▲</button>
+                    <button type="button" className={`${styles.sortBtn} ${sortField === 'full_name' && sortOrder === 'desc' ? styles.sortBtnActive : ''}`} onClick={() => handleSetSort('full_name', 'desc')} title="Nama Z → A">▼</button>
+                  </div>
+                </div>
+              </th>
+              <th className={styles.thCell}>
+                <div className={styles.thContent}>
+                  <span className={styles.thTitle}>NUPTK</span>
+                  <div className={styles.sortBtnGroup}>
+                    <button type="button" className={`${styles.sortBtn} ${sortField === 'nuptk' && sortOrder === 'asc' ? styles.sortBtnActive : ''}`} onClick={() => handleSetSort('nuptk', 'asc')} title="NUPTK A → Z">▲</button>
+                    <button type="button" className={`${styles.sortBtn} ${sortField === 'nuptk' && sortOrder === 'desc' ? styles.sortBtnActive : ''}`} onClick={() => handleSetSort('nuptk', 'desc')} title="NUPTK Z → A">▼</button>
+                  </div>
+                </div>
+              </th>
+              <th className={styles.thCell}>
+                <div className={styles.thContent}>
+                  <span className={styles.thTitle}>L/P</span>
+                  <div className={styles.sortBtnGroup}>
+                    <button type="button" className={`${styles.sortBtn} ${sortField === 'jk' && sortOrder === 'asc' ? styles.sortBtnActive : ''}`} onClick={() => handleSetSort('jk', 'asc')} title="L/P A → Z">▲</button>
+                    <button type="button" className={`${styles.sortBtn} ${sortField === 'jk' && sortOrder === 'desc' ? styles.sortBtnActive : ''}`} onClick={() => handleSetSort('jk', 'desc')} title="L/P Z → A">▼</button>
+                  </div>
+                </div>
+              </th>
+              <th className={styles.thCell}>
+                <div className={styles.thContent}>
+                  <span className={styles.thTitle}>Tempat Lahir</span>
+                  <div className={styles.sortBtnGroup}>
+                    <button type="button" className={`${styles.sortBtn} ${sortField === 'tempat_lahir' && sortOrder === 'asc' ? styles.sortBtnActive : ''}`} onClick={() => handleSetSort('tempat_lahir', 'asc')} title="Tempat lahir A → Z">▲</button>
+                    <button type="button" className={`${styles.sortBtn} ${sortField === 'tempat_lahir' && sortOrder === 'desc' ? styles.sortBtnActive : ''}`} onClick={() => handleSetSort('tempat_lahir', 'desc')} title="Tempat lahir Z → A">▼</button>
+                  </div>
+                </div>
+              </th>
+              <th className={styles.thCell}>
+                <div className={styles.thContent}>
+                  <span className={styles.thTitle}>Tanggal Lahir</span>
+                  <div className={styles.sortBtnGroup}>
+                    <button type="button" className={`${styles.sortBtn} ${sortField === 'tanggal_lahir' && sortOrder === 'asc' ? styles.sortBtnActive : ''}`} onClick={() => handleSetSort('tanggal_lahir', 'asc')} title="Tanggal lahir A → Z">▲</button>
+                    <button type="button" className={`${styles.sortBtn} ${sortField === 'tanggal_lahir' && sortOrder === 'desc' ? styles.sortBtnActive : ''}`} onClick={() => handleSetSort('tanggal_lahir', 'desc')} title="Tanggal lahir Z → A">▼</button>
+                  </div>
+                </div>
+              </th>
+              <th className={styles.thCell}>
+                <div className={styles.thContent}>
+                  <span className={styles.thTitle}>Status Kepegawaian</span>
+                  <div className={styles.sortBtnGroup}>
+                    <button type="button" className={`${styles.sortBtn} ${sortField === 'status_kepegawaian' && sortOrder === 'asc' ? styles.sortBtnActive : ''}`} onClick={() => handleSetSort('status_kepegawaian', 'asc')} title="Status A → Z">▲</button>
+                    <button type="button" className={`${styles.sortBtn} ${sortField === 'status_kepegawaian' && sortOrder === 'desc' ? styles.sortBtnActive : ''}`} onClick={() => handleSetSort('status_kepegawaian', 'desc')} title="Status Z → A">▼</button>
+                  </div>
+                </div>
+              </th>
+              <th className={styles.thCell}>
+                <div className={styles.thContent}>
+                  <span className={styles.thTitle}>Jenis PTK</span>
+                  <div className={styles.sortBtnGroup}>
+                    <button type="button" className={`${styles.sortBtn} ${sortField === 'jenis_ptk' && sortOrder === 'asc' ? styles.sortBtnActive : ''}`} onClick={() => handleSetSort('jenis_ptk', 'asc')} title="Jenis PTK A → Z">▲</button>
+                    <button type="button" className={`${styles.sortBtn} ${sortField === 'jenis_ptk' && sortOrder === 'desc' ? styles.sortBtnActive : ''}`} onClick={() => handleSetSort('jenis_ptk', 'desc')} title="Jenis PTK Z → A">▼</button>
+                  </div>
+                </div>
+              </th>
+              <th style={{ textAlign: 'right' }}><span className={styles.thTitle}>Aksi</span></th>
             </tr>
           </thead>
           <tbody>
