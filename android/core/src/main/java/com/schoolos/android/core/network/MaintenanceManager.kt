@@ -46,9 +46,9 @@ class MaintenanceManager @Inject constructor(
             || android.os.Build.HARDWARE.contains("ranchu")
 
         val candidateUrls = if (isEmulator) {
-            listOf(primaryUrl, BuildConfig.API_BASE_URL, "http://10.0.2.2:8000/api/v1/", "http://127.0.0.1:8000/api/v1/")
+            listOf(BuildConfig.API_BASE_URL, primaryUrl, "http://10.0.2.2:8000/api/v1/", "http://127.0.0.1:8000/api/v1/")
         } else {
-            listOf(primaryUrl, BuildConfig.API_BASE_URL, "http://192.168.1.11:8000/api/v1/")
+            listOf(BuildConfig.API_BASE_URL, primaryUrl, "http://192.168.1.11:8000/api/v1/")
         }.filter { isEmulator || (!it.contains("10.0.2.2") && !it.contains("127.0.0.1")) }.distinct()
 
         val client = OkHttpClient.Builder()

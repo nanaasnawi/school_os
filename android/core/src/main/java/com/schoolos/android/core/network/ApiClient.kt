@@ -33,12 +33,21 @@ class DynamicHostInterceptor(
         if (!customUrl.isNullOrBlank()) {
             val targetHttpUrl = customUrl.toHttpUrlOrNull()
             if (targetHttpUrl != null) {
-                val newUrl = originalRequest.url.newBuilder()
-                    .scheme(targetHttpUrl.scheme)
-                    .host(targetHttpUrl.host)
-                    .port(targetHttpUrl.port)
-                    .build()
-                primaryRequest = originalRequest.newBuilder().url(newUrl).build()
+                val isLocalIp = targetHttpUrl.host.startsWith("192.168.")
+                    || targetHttpUrl.host.startsWith("10.")
+                    || targetHttpUrl.host == "127.0.0.1"
+                    || targetHttpUrl.host == "10.0.2.2"
+                val originalIsHttps = originalRequest.url.isHttps
+
+                // Only apply customUrl if original is not HTTPS, or customUrl is also a remote host
+                if (!(originalIsHttps && isLocalIp)) {
+                    val newUrl = originalRequest.url.newBuilder()
+                        .scheme(targetHttpUrl.scheme)
+                        .host(targetHttpUrl.host)
+                        .port(targetHttpUrl.port)
+                        .build()
+                    primaryRequest = originalRequest.newBuilder().url(newUrl).build()
+                }
             }
         }
 
@@ -52,27 +61,36 @@ class DynamicHostInterceptor(
                 || android.os.Build.HARDWARE.contains("goldfish")
                 || android.os.Build.HARDWARE.contains("ranchu")
 
-            val buildConfigHost = try {
-                com.schoolos.android.core.common.BuildConfig.API_BASE_URL
-                    .removePrefix("http://")
-                    .removePrefix("https://")
-                    .split(":", "/")[0]
+            val buildConfigUrl = try {
+                com.schoolos.android.core.common.BuildConfig.API_BASE_URL.toHttpUrlOrNull()
             } catch (_: Exception) { null }
 
-            val baseCandidates = if (isEmulator) {
-                listOfNotNull(buildConfigHost, "10.0.2.2", "127.0.0.1")
+            val rawCandidates = if (isEmulator) {
+                listOfNotNull(
+                    buildConfigUrl,
+                    "http://10.0.2.2:8000/api/v1/".toHttpUrlOrNull(),
+                    "http://127.0.0.1:8000/api/v1/".toHttpUrlOrNull(),
+                )
             } else {
-                listOfNotNull(buildConfigHost, "192.168.1.11").filter { it != "10.0.2.2" && it != "127.0.0.1" }
+                listOfNotNull(
+                    buildConfigUrl,
+                    "http://192.168.1.11:8000/api/v1/".toHttpUrlOrNull(),
+                ).filter { it.host != "10.0.2.2" && it.host != "127.0.0.1" }
             }
+
             val currentHost = primaryRequest.url.host
-            val candidateHosts = baseCandidates.distinct().filter { it != currentHost }
+            val currentPort = primaryRequest.url.port
+            val candidateUrls = rawCandidates.distinct().filter { 
+                it.host != currentHost || it.port != currentPort 
+            }
 
             var lastException: Exception = e
-            for (fallbackHost in candidateHosts) {
+            for (targetUrl in candidateUrls) {
                 try {
                     val fallbackUrl = primaryRequest.url.newBuilder()
-                        .host(fallbackHost)
-                        .port(8000)
+                        .scheme(targetUrl.scheme)
+                        .host(targetUrl.host)
+                        .port(targetUrl.port)
                         .build()
                     val fallbackRequest = primaryRequest.newBuilder().url(fallbackUrl).build()
                     val response = chain.proceed(fallbackRequest)
@@ -80,7 +98,7 @@ class DynamicHostInterceptor(
                     // Fallback worked! Persist working URL so next calls are instant
                     runBlocking {
                         try {
-                            authManager.saveCustomServerUrl("http://$fallbackHost:8000/api/v1/")
+                            authManager.saveCustomServerUrl(targetUrl.toString())
                         } catch (_: Exception) {}
                     }
                     return response

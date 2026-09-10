@@ -233,6 +233,19 @@ class AuthManager @Inject constructor(
 
     suspend fun getCustomServerUrl(): String? {
         val saved = context.dataStore.data.first()[KEY_CUSTOM_SERVER_URL]
+        val buildConfigUrl = com.schoolos.android.core.common.BuildConfig.API_BASE_URL
+        val isBuildConfigHttps = buildConfigUrl.startsWith("https://")
+
+        // If BuildConfig is configured with public HTTPS (e.g. Railway),
+        // auto-clear and ignore stale private LAN IP addresses saved from local dev
+        if (isBuildConfigHttps && saved != null) {
+            val isLocalIp = saved.contains("192.168.") || saved.contains("10.0.") || saved.contains("127.0.0.1") || saved.contains("10.0.2.2")
+            if (isLocalIp) {
+                context.dataStore.edit { it.remove(KEY_CUSTOM_SERVER_URL) }
+                return buildConfigUrl
+            }
+        }
+
         val isEmulator = android.os.Build.FINGERPRINT.startsWith("generic")
             || android.os.Build.MODEL.contains("google_sdk")
             || android.os.Build.MODEL.contains("Emulator")
@@ -240,7 +253,7 @@ class AuthManager @Inject constructor(
             || android.os.Build.HARDWARE.contains("ranchu")
 
         if (saved.isNullOrBlank() || !saved.startsWith("http") || (!isEmulator && (saved.contains("10.0.2.2") || saved.contains("127.0.0.1")))) {
-            return com.schoolos.android.core.common.BuildConfig.API_BASE_URL
+            return buildConfigUrl
         }
         return saved
     }
@@ -252,7 +265,7 @@ class AuthManager @Inject constructor(
             } else {
                 var clean = url.trim().replace(" ", "")
                 if (!clean.startsWith("http://") && !clean.startsWith("https://")) {
-                    clean = "http://$clean"
+                    clean = "https://$clean"
                 }
                 clean = clean.trimEnd('/')
                 if (!clean.endsWith("/api/v1")) {

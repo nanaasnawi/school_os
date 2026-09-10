@@ -129,8 +129,10 @@ class LoginViewModel @Inject constructor(
                 || android.os.Build.HARDWARE.contains("goldfish")
                 || android.os.Build.HARDWARE.contains("ranchu")
 
-            candidates.add(_state.value.customServerUrl)
             candidates.add(BuildConfig.API_BASE_URL)
+            if (_state.value.customServerUrl.isNotBlank()) {
+                candidates.add(_state.value.customServerUrl)
+            }
             if (isEmulator) {
                 candidates.add("http://10.0.2.2:8000/api/v1/")
                 candidates.add("http://127.0.0.1:8000/api/v1/")
