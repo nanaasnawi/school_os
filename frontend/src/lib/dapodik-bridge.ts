@@ -397,3 +397,36 @@ export async function pushDataToDapodik(
 
   throw new Error('Gagal memproses Dapodik Push Job');
 }
+
+export interface DapodikAgentInfo {
+  tenantId: string;
+  schoolName: string;
+  npsn: string;
+  totalStudents: number;
+  totalTeachers: number;
+  totalClasses: number;
+}
+
+export async function getDapodikAgentInfo(): Promise<DapodikAgentInfo | null> {
+  try {
+    const res = await fetchApi('/api/v1/dapodik/agent/info', {
+      method: 'GET',
+      headers: getHeaders(),
+    });
+    if (!res.ok) return null;
+    const json = await safeFetchJson(res);
+    const data = json.data || json;
+    return {
+      tenantId: data.tenant_id,
+      schoolName: data.school_name,
+      npsn: data.npsn,
+      totalStudents: Number(data.total_students) || 0,
+      totalTeachers: Number(data.total_teachers) || 0,
+      totalClasses: Number(data.total_classes) || 0,
+    };
+  } catch (e) {
+    console.error('Failed to fetch agent info:', e);
+    return null;
+  }
+}
+

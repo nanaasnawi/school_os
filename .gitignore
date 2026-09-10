@@ -43,3 +43,6 @@ docker-compose.override.yml
 /backend/scratch/
 /backend/target_temp/
 *.log
+*.exe
+schoolos-agent.json
+!schoolos-agent.json.example

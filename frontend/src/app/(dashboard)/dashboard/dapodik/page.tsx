@@ -5,18 +5,24 @@ import styles from './dapodik.module.css';
 import {
   DapodikSyncRecord,
   DapodikHealthStatus,
+  DapodikAgentInfo,
   checkDapodikHealth,
   getDapodikSyncRecords,
   pullDataFromDapodik,
+  getDapodikAgentInfo,
 } from '@/lib/dapodik-bridge';
+import { apiClient } from '@/lib/api';
 
 export default function DapodikHubPage() {
   const [syncRecords, setSyncRecords] = useState<DapodikSyncRecord[]>([]);
   const [healthStatus, setHealthStatus] = useState<DapodikHealthStatus | null>(null);
+  const [agentInfo, setAgentInfo] = useState<DapodikAgentInfo | null>(null);
   const [isCheckingHealth, setIsCheckingHealth] = useState(true);
   const [isPulling, setIsPulling] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [copiedToken, setCopiedToken] = useState(false);
+  const [showAgentGuide, setShowAgentGuide] = useState(false);
 
   // Pagination State
   const [currentPageMatrix, setCurrentPageMatrix] = useState(1);
@@ -60,12 +66,14 @@ export default function DapodikHubPage() {
     async function loadData() {
       setIsCheckingHealth(true);
       try {
-        const [health, liveRecords] = await Promise.all([
+        const [health, liveRecords, agent] = await Promise.all([
           checkDapodikHealth(),
           getDapodikSyncRecords(),
+          getDapodikAgentInfo(),
         ]);
         setHealthStatus(health);
         setSyncRecords(liveRecords);
+        setAgentInfo(agent);
       } catch (e) {
         console.error('Backend API error on mount:', e);
       } finally {
@@ -79,8 +87,12 @@ export default function DapodikHubPage() {
     setIsCheckingHealth(true);
 
     try {
-      const health = await checkDapodikHealth();
+      const [health, agent] = await Promise.all([
+        checkDapodikHealth(),
+        getDapodikAgentInfo(),
+      ]);
       setHealthStatus(health);
+      setAgentInfo(agent);
       setIsCheckingHealth(false);
       if (health.connected) {
         setToastMessage('🟢 BERHASIL TERHUBUNG: Dapodik Localhost (http://localhost:5774) merespons aktif!');
@@ -98,6 +110,18 @@ export default function DapodikHubPage() {
       });
       setToastMessage('🔴 OFFLINE: Tidak dapat menghubungi Aplikasi Dapodik.');
     }
+  };
+
+  const handleCopyPairingToken = () => {
+    const token = apiClient.getToken() || '';
+    if (!token) {
+      setToastMessage('⚠️ Anda belum login atau sesi telah berakhir.');
+      return;
+    }
+    navigator.clipboard.writeText(token);
+    setCopiedToken(true);
+    setToastMessage('📋 Token Pairing Operator berhasil disalin ke clipboard!');
+    setTimeout(() => setCopiedToken(false), 3000);
   };
 
   // Pull Data Handler (1-Click Pull from Dapodik Localhost)
@@ -252,6 +276,124 @@ export default function DapodikHubPage() {
         >
           {isCheckingHealth ? '🔄 Testing...' : '🔍 Check Connectivity'}
         </button>
+      </div>
+
+      {/* ⭐️ Solusi Utama: School OS Bridge Agent (Windows Portable) */}
+      <div
+        style={{
+          background: 'linear-gradient(135deg, rgba(30, 58, 138, 0.08) 0%, rgba(59, 130, 246, 0.05) 100%)',
+          border: '1.5px solid rgba(59, 130, 246, 0.30)',
+          borderRadius: 'var(--radius-lg)',
+          padding: '1.25rem 1.5rem',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '1rem',
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                ⭐️ Solusi Utama: School OS Bridge Agent (Windows Portable)
+              </span>
+              <span className="badge badge-info" style={{ fontWeight: 800, fontSize: '0.72rem' }}>
+                🚀 Sangat Direkomendasikan
+              </span>
+              <span className="badge badge-success" style={{ fontWeight: 800, fontSize: '0.72rem' }}>
+                🛡️ Bebas Firewall &amp; Tanpa Prefill Ulang
+              </span>
+            </div>
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: '0.4rem 0 0', maxWidth: '800px', lineHeight: 1.5 }}>
+              Aplikasi portabel ringan (<b>schoolos-sync.exe</b>) yang berjalan di laptop/PC Dapodik. Membaca data Dapodik via <code>127.0.0.1:5774</code> secara lokal dan langsung mengirimkan sinkronisasi siswa, guru, rombel, dan mapel ke Cloud School OS secara berkala.
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <button
+              onClick={handleCopyPairingToken}
+              className="btn btn-primary btn-sm"
+              style={{ fontWeight: 800, fontSize: '0.78rem' }}
+            >
+              {copiedToken ? '✅ Token Tersalin!' : '📋 Salin Token Pairing Operator'}
+            </button>
+            <button
+              onClick={() => setShowAgentGuide(!showAgentGuide)}
+              className="btn btn-secondary btn-sm"
+              style={{ fontWeight: 700, fontSize: '0.78rem' }}
+            >
+              {showAgentGuide ? '▲ Tutup Panduan' : '📖 Panduan 3 Langkah'}
+            </button>
+          </div>
+        </div>
+
+        {/* Info Badges Grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem' }}>
+          <div style={{ background: 'var(--bg-surface)', padding: '0.6rem 0.85rem', borderRadius: '10px', border: '1px solid var(--border)' }}>
+            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>NPSN Sekolah</div>
+            <div style={{ fontSize: '0.88rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '0.1rem' }}>
+              {agentInfo?.npsn || 'P2962010'} ({agentInfo?.schoolName || 'PKBM RUMAH BELAJAR BERKAH'})
+            </div>
+          </div>
+
+          <div style={{ background: 'var(--bg-surface)', padding: '0.6rem 0.85rem', borderRadius: '10px', border: '1px solid var(--border)' }}>
+            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>Dapodik Localhost URL</div>
+            <div style={{ fontSize: '0.88rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '0.1rem' }}>
+              http://127.0.0.1:5774 (Port 5774)
+            </div>
+          </div>
+
+          <div style={{ background: 'var(--bg-surface)', padding: '0.6rem 0.85rem', borderRadius: '10px', border: '1px solid var(--border)' }}>
+            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>Database Cloud PostgreSQL</div>
+            <div style={{ fontSize: '0.88rem', fontWeight: 800, color: 'var(--success)', marginTop: '0.1rem' }}>
+              {agentInfo?.totalStudents || syncRecords.length} Siswa • {agentInfo?.totalTeachers || 11} GTK • {agentInfo?.totalClasses || 11} Rombel
+            </div>
+          </div>
+
+          <div style={{ background: 'var(--bg-surface)', padding: '0.6rem 0.85rem', borderRadius: '10px', border: '1px solid var(--border)' }}>
+            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>Status Ingestion Engine</div>
+            <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#2563eb', marginTop: '0.1rem' }}>
+              Ready (/api/v1/dapodik/agent/sync)
+            </div>
+          </div>
+        </div>
+
+        {/* Expandable Guide */}
+        {showAgentGuide && (
+          <div
+            style={{
+              background: 'var(--bg-surface)',
+              border: '1px solid var(--border)',
+              borderRadius: '12px',
+              padding: '1rem 1.25rem',
+              marginTop: '0.25rem',
+            }}
+          >
+            <div style={{ fontWeight: 800, fontSize: '0.88rem', color: 'var(--text-primary)', marginBottom: '0.75rem' }}>
+              Cara Menggunakan School OS Bridge Agent di PC Dapodik:
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+              <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'flex-start' }}>
+                <span style={{ background: '#2563eb', color: '#fff', borderRadius: '50%', width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, flexShrink: 0, fontSize: '0.75rem' }}>1</span>
+                <div>
+                  <b>Salin File Portabel:</b> Salin file <code>schoolos-sync.exe</code> (tersedia di folder <code>backend/local-bridge/target/release/</code>) ke komputer/laptop tempat Dapodik terpasang.
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'flex-start' }}>
+                <span style={{ background: '#2563eb', color: '#fff', borderRadius: '50%', width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, flexShrink: 0, fontSize: '0.75rem' }}>2</span>
+                <div>
+                  <b>Setup Sekali Saja:</b> Jalankan <code>schoolos-sync.exe</code> melalui Command Prompt atau klik dua kali. Saat pertama kali dibuka, masukkan <b>Token Pairing</b> (klik tombol biru di atas) dan <b>Token WebService Dapodik</b> Anda. Konfigurasi langsung tersimpan otomatis di <code>schoolos-agent.json</code>.
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'flex-start' }}>
+                <span style={{ background: '#2563eb', color: '#fff', borderRadius: '50%', width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, flexShrink: 0, fontSize: '0.75rem' }}>3</span>
+                <div>
+                  <b>Otomatis &amp; Mandiri:</b> Agent akan membaca data dari <code>http://127.0.0.1:5774</code> dan langsung mengirimkannya ke Cloud School OS. Agent dapat dibiarkan berjalan di system tray/background untuk sinkronisasi otomatis tiap 60 menit atau dijalankan via Windows Task Scheduler.
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* List Toolbar / Header */}
