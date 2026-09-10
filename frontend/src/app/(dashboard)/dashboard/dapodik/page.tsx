@@ -221,18 +221,28 @@ export default function DapodikHubPage() {
     setToastMessage('📦 Menyiapkan Paket Siap Pakai (ZIP)... Mohon tunggu beberapa detik.');
 
     try {
-      const exeRes = await fetch('/downloads/schoolos-sync.exe');
-      if (!exeRes.ok) {
-        throw new Error('File aplikasi schoolos-sync.exe belum tersedia di server.');
+      let exeBlob: Blob;
+      try {
+        const exeRes = await fetch('/downloads/schoolos-sync.exe');
+        if (exeRes.ok && exeRes.status === 200) {
+          exeBlob = await exeRes.blob();
+        } else {
+          throw new Error('Fallback CDN');
+        }
+      } catch {
+        const ghRes = await fetch('https://raw.githubusercontent.com/nanaasnawi/school_os/main/frontend/public/downloads/schoolos-sync.exe');
+        if (!ghRes.ok) {
+          throw new Error('Gagal mengunduh biner aplikasi dari server maupun CDN.');
+        }
+        exeBlob = await ghRes.blob();
       }
-      const exeBlob = await exeRes.blob();
 
       const configObj = {
         cloud_url: "https://schoolosbackend-production.up.railway.app",
         cloud_token: token,
         dapodik_url: activeUrl,
-        npsn: activeNpsn,
-        dapodik_token: activeDapodikToken,
+        npsn: activeNpsn || "P2962010",
+        dapodik_token: activeDapodikToken || "AuOczk2Vrzi62S0",
         sync_interval_mins: 60,
       };
 
@@ -611,12 +621,14 @@ CATATAN:
                   📄 Unduh .json saja
                 </button>
                 <a
-                  href="/downloads/schoolos-sync.exe"
+                  href="https://raw.githubusercontent.com/nanaasnawi/school_os/main/frontend/public/downloads/schoolos-sync.exe"
                   download="schoolos-sync.exe"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="btn btn-secondary btn-sm"
                   style={{ fontSize: '0.75rem', fontWeight: 700, textDecoration: 'none' }}
                 >
-                  📥 Unduh .exe saja
+                  📥 Unduh .exe saja (3.6 MB)
                 </a>
                 <button
                   onClick={handleCopyPairingToken}
