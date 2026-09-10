@@ -39,12 +39,17 @@ class MaintenanceManager @Inject constructor(
 
     suspend fun checkServerStatus(): Boolean = withContext(Dispatchers.IO) {
         val primaryUrl = authManager.getCustomServerUrl() ?: BuildConfig.API_BASE_URL
-        val candidateUrls = listOf(
-            primaryUrl,
-            BuildConfig.API_BASE_URL,
-            "http://10.0.2.2:8000/api/v1/",
-            "http://127.0.0.1:8000/api/v1/",
-        ).distinct()
+        val isEmulator = android.os.Build.FINGERPRINT.startsWith("generic")
+            || android.os.Build.MODEL.contains("google_sdk")
+            || android.os.Build.MODEL.contains("Emulator")
+            || android.os.Build.HARDWARE.contains("goldfish")
+            || android.os.Build.HARDWARE.contains("ranchu")
+
+        val candidateUrls = if (isEmulator) {
+            listOf(primaryUrl, BuildConfig.API_BASE_URL, "http://10.0.2.2:8000/api/v1/", "http://127.0.0.1:8000/api/v1/")
+        } else {
+            listOf(primaryUrl, BuildConfig.API_BASE_URL, "http://192.168.1.11:8000/api/v1/")
+        }.filter { isEmulator || (!it.contains("10.0.2.2") && !it.contains("127.0.0.1")) }.distinct()
 
         val client = OkHttpClient.Builder()
             .connectTimeout(3, TimeUnit.SECONDS)

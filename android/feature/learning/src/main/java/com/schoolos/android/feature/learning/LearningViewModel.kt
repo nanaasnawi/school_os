@@ -1,6 +1,7 @@
 package com.schoolos.android.feature.learning
 
 import androidx.compose.ui.graphics.Color
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.schoolos.android.core.designsystem.NeonBlue
@@ -37,10 +38,12 @@ data class LearningUiState(
     val totalCompleted: Int = 0,
     val totalMaterials: Int = 0,
     val userRole: String = "student",
+    val subjectFilter: String? = null,
 )
 
 @HiltViewModel
 class LearningViewModel @Inject constructor(
+    savedStateHandle: SavedStateHandle,
     private val repository: LearningMaterialRepository,
     private val authManager: com.schoolos.android.core.auth.AuthManager,
 ) : ViewModel() {
@@ -49,6 +52,9 @@ class LearningViewModel @Inject constructor(
     val state = _state.asStateFlow()
 
     private var allMaterials: List<MaterialItem> = emptyList()
+
+    /** Optional subject filter passed via navigation (e.g. from a session detail). */
+    private var subjectFilter: String? = savedStateHandle.get<String>("subjectId")?.takeIf { it.isNotBlank() }
 
     val selectedMaterial = MutableStateFlow<com.schoolos.android.domain.model.LearningMaterial?>(null)
 
@@ -161,8 +167,26 @@ class LearningViewModel @Inject constructor(
         }
     }
 
+    fun clearSubjectFilter() {
+        subjectFilter = null
+        _state.value = _state.value.copy(subjectFilter = null)
+        filterMaterials(_state.value.searchQuery, _state.value.selectedCategory)
+    }
+
+    /** Tolerant subject matching: exact, or bidirectional contains (case-insensitive). */
+    private fun matchesSubject(itemSubject: String?, filter: String): Boolean {
+        if (itemSubject.isNullOrBlank()) return false
+        val a = itemSubject.trim()
+        val b = filter.trim()
+        return a.equals(b, ignoreCase = true) || a.contains(b, ignoreCase = true) || b.contains(a, ignoreCase = true)
+    }
+
     private fun filterMaterials(query: String, category: String) {
         var filtered = allMaterials
+
+        subjectFilter?.let { filter ->
+            filtered = filtered.filter { matchesSubject(it.subject, filter) }
+        }
 
         if (query.isNotBlank()) {
             filtered = filtered.filter {
@@ -187,7 +211,8 @@ class LearningViewModel @Inject constructor(
             isLoading = false,
             materials = filtered,
             totalCompleted = completedCount,
-            totalMaterials = allMaterials.size
+            totalMaterials = allMaterials.size,
+            subjectFilter = subjectFilter,
         )
     }
 }

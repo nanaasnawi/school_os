@@ -18,3 +18,16 @@ data class SubjectDto(
     val name: String,
     val code: String? = null,
 )
+
+@Serializable
+data class ClassStudentDto(
+    val id: String,
+    @SerialName("full_name") val fullName: String,
+    val nisn: String,
+    val gender: String? = null,
+    val status: String = "active",
+    @SerialName("no_hp") val noHp: String? = null,
+    val email: String? = null,
+    @SerialName("class_id") val classId: String,
+    @SerialName("class_name") val className: String,
+)

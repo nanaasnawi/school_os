@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -21,8 +22,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.schoolos.android.core.designsystem.*
+import com.schoolos.android.domain.model.LearningSession
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,107 +47,159 @@ fun SessionDetailScreen(
                 }
                 state.session != null -> {
                     val s = state.session!!
-                    val subject = s.notes ?: "Pelajaran"
+                    val rawSubject = s.subjectName ?: s.notes ?: "Pelajaran"
+                    val subject = rawSubject.substringBefore(" • ").substringBefore(" (Ruang").trim()
                     val gradient = subjectGradient(subject)
                     val icon = subjectIcon(subject)
                     val role = state.userRole.lowercase()
                     val isTeacher = role == "teacher" || role == "guru"
+                    val accentColor = if (isTeacher) TeacherNeon else StudentNeon
+
+                    // Wrap callbacks to pass the subject name for filtering
+                    val openAssignments: (String) -> Unit = { onOpenAssignments(subject) }
+                    val openQuizzes: (String) -> Unit = { onOpenQuizzes(subject) }
+                    val openMaterials: (String) -> Unit = { onOpenMaterials(subject) }
 
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
                             .verticalScroll(rememberScrollState()),
                     ) {
-                        // ── REFACTORED NON-OVERLAPPING HERO HEADER ─────────────
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(220.dp)
-                                .background(Brush.linearGradient(gradient))
-                                .padding(horizontal = 20.dp, vertical = 16.dp),
-                        ) {
-                            Column(modifier = Modifier.fillMaxSize()) {
-                                // TOP NAVIGATION ROW
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    CustomBackButton(
-                                        onClick = onBack,
-                                        backgroundColor = Color.White.copy(alpha = 0.2f),
-                                        contentColor = Color.White
-                                    )
-                                    StatusChip(label = s.status)
-                                }
+                        // ── HERO HEADER ──────────────────────────────────────
+                        DetailHeroHeader(
+                            session = s,
+                            gradient = gradient,
+                            icon = icon,
+                            accentColor = accentColor,
+                            isTeacher = isTeacher,
+                            onBack = onBack,
+                        )
 
-                                Spacer(Modifier.weight(1f))
-
-                                // CONTENT ROW
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(52.dp)
-                                            .clip(RoundedCornerShape(14.dp))
-                                            .background(Color.White.copy(alpha = 0.2f))
-                                            .border(1.dp, Color.White.copy(alpha = 0.3f), RoundedCornerShape(14.dp)),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Icon(icon, null, tint = Color.White, modifier = Modifier.size(28.dp))
-                                    }
-                                    Spacer(Modifier.width(16.dp))
-                                    val subjectTitle = s.subjectName ?: subject.substringBefore(" • ").substringBefore(" (Ruang").trim()
-                                    val roomText = listOfNotNull(s.room ?: "Ruang Kelas", s.className).joinToString(" • ")
-                                    Column {
-                                        Text(
-                                            subjectTitle,
-                                            fontSize = 22.sp,
-                                            fontWeight = FontWeight.Black,
-                                            color = Color.White,
-                                            lineHeight = 28.sp
-                                        )
-                                        Spacer(Modifier.height(4.dp))
-                                        Text(
-                                            roomText,
-                                            fontSize = 12.sp,
-                                            color = Color.White.copy(alpha = 0.8f),
-                                            fontWeight = FontWeight.Medium
-                                        )
-                                    }
-                                }
-                                Spacer(Modifier.height(12.dp))
-                            }
-                        }
-
-                        // ── DELEGATE TO MODULAR CONTENT ────────────────────────
+                        // ── CONTENT ──────────────────────────────────────────
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 16.dp)
-                                .offset(y = (-16).dp),
+                                .padding(start = 16.dp, end = 16.dp, top = 8.dp),
                         ) {
                             if (isTeacher) {
                                 TeacherSessionDetailContent(
                                     session = s,
-                                    onOpenAssignments = onOpenAssignments,
-                                    onOpenQuizzes = onOpenQuizzes,
-                                    onOpenMaterials = onOpenMaterials
+                                    attendance = state.attendance,
+                                    onOpenAssignments = openAssignments,
+                                    onOpenQuizzes = openQuizzes,
+                                    onOpenMaterials = openMaterials,
+                                    accentColor = accentColor,
                                 )
                             } else {
                                 StudentSessionDetailContent(
                                     session = s,
                                     attendance = state.attendance,
-                                    onOpenAssignments = onOpenAssignments,
-                                    onOpenQuizzes = onOpenQuizzes,
-                                    onOpenMaterials = onOpenMaterials
+                                    onOpenAssignments = openAssignments,
+                                    onOpenQuizzes = openQuizzes,
+                                    onOpenMaterials = openMaterials,
+                                    accentColor = accentColor,
                                 )
                             }
-                            
+
                             Spacer(Modifier.height(60.dp))
                         }
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun DetailHeroHeader(
+    session: LearningSession,
+    gradient: List<Color>,
+    icon: ImageVector,
+    accentColor: Color,
+    isTeacher: Boolean,
+    onBack: () -> Unit,
+) {
+    val subjectTitle = session.subjectName ?: session.notes ?: "Pelajaran"
+    val roomText = listOfNotNull(session.room ?: "Ruang Kelas", session.className).joinToString(" • ")
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(250.dp)
+            .background(Brush.linearGradient(gradient)),
+    ) {
+        // Decorative translucent circles
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(top = 34.dp, end = 4.dp)
+                .size(140.dp)
+                .clip(CircleShape)
+                .background(Color.White.copy(alpha = 0.10f))
+        )
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .padding(start = 24.dp)
+                .size(72.dp)
+                .clip(CircleShape)
+                .background(Color.White.copy(alpha = 0.08f))
+        )
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                // Immersive hero: content stays clear of the status bar
+                .statusBarsPadding()
+                .padding(horizontal = 20.dp, vertical = 16.dp),
+        ) {
+            // Top Navigation Row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                CustomBackButton(
+                    onClick = onBack,
+                    backgroundColor = Color.White.copy(alpha = 0.2f),
+                    contentColor = Color.White,
+                )
+                StatusChip(label = session.status)
+            }
+
+            Spacer(Modifier.weight(1f))
+
+            // Main Content
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(64.dp)
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(Color.White.copy(alpha = 0.18f))
+                        .border(1.dp, Color.White.copy(alpha = 0.3f), RoundedCornerShape(18.dp)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(icon, null, tint = Color.White, modifier = Modifier.size(34.dp))
+                }
+                Spacer(Modifier.width(16.dp))
+                Column {
+                    Text(
+                        subjectTitle.substringBefore(" • ").substringBefore(" (Ruang").trim(),
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Black,
+                        color = Color.White,
+                        lineHeight = 32.sp,
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        roomText,
+                        fontSize = 13.sp,
+                        color = Color.White.copy(alpha = 0.85f),
+                        fontWeight = FontWeight.Medium,
+                    )
+                }
+            }
+            Spacer(Modifier.height(16.dp))
         }
     }
 }

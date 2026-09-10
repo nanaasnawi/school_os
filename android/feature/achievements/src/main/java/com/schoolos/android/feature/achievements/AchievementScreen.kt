@@ -39,6 +39,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.schoolos.android.core.designsystem.CosmicBlack
+import com.schoolos.android.core.designsystem.CosmicDark
+import com.schoolos.android.core.designsystem.CosmicNavy
+import com.schoolos.android.core.designsystem.CosmicSurface2
 import com.schoolos.android.core.designsystem.CustomBackButton
 import com.schoolos.android.core.designsystem.EmptyState
 import com.schoolos.android.core.designsystem.GlassBorder
@@ -77,8 +80,11 @@ fun AchievementScreen(
                 }
                 state.achievements.isEmpty() -> EmptyState("Belum ada pencapaian.", Icons.Default.EmojiEvents)
                 else -> LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 46.dp, bottom = 100.dp),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        // Edge-to-edge safe: never draw under the status bar
+                        .statusBarsPadding(),
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 100.dp),
                     verticalArrangement = Arrangement.spacedBy(14.dp),
                 ) {
                     // ── REFACTORED NON-OVERLAPPING LIST HEADER ─────────────
@@ -121,6 +127,8 @@ fun AchievementScreen(
 
 @Composable
 private fun CompactAchievementHero(earned: Int, total: Int, isParent: Boolean = false, childName: String = "") {
+    val progress = if (total > 0) earned.toFloat() / total.toFloat() else 0f
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -128,16 +136,44 @@ private fun CompactAchievementHero(earned: Int, total: Int, isParent: Boolean = 
             .background(Brush.linearGradient(listOf(NeonWarning, StudentNeon)))
             .padding(20.dp)
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    if (isParent) "PENCAPAIAN ${childName.uppercase()}" else "TOTAL LENCANA SAYA", 
-                    color = Color.White.copy(alpha = 0.7f), fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.5.sp
-                )
-                Spacer(Modifier.height(4.dp))
-                Text("$earned / $total Diraih", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Black)
+        Column {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        if (isParent) "PENCAPAIAN ${childName.uppercase()}" else "TOTAL LENCANA SAYA",
+                        color = Color.White.copy(alpha = 0.7f), fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 0.5.sp
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text("$earned / $total Diraih", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Black)
+                }
+                Text("🏆", fontSize = 42.sp)
             }
-            Text("🏆", fontSize = 42.sp)
+
+            Spacer(Modifier.height(14.dp))
+
+            // Progress bar
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(6.dp)
+                    .clip(RoundedCornerShape(3.dp))
+                    .background(Color.White.copy(alpha = 0.25f))
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(progress)
+                        .height(6.dp)
+                        .clip(RoundedCornerShape(3.dp))
+                        .background(Color.White)
+                )
+            }
+            Spacer(Modifier.height(6.dp))
+            Text(
+                "${(progress * 100).toInt()}% koleksi lengkap",
+                color = Color.White.copy(alpha = 0.85f),
+                fontSize = 11.sp,
+                fontWeight = FontWeight.SemiBold
+            )
         }
     }
 }
@@ -150,8 +186,12 @@ private fun CompactAchievementCard(achievement: Achievement) {
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(if (isEarned) Color.White else Color.White.copy(alpha = 0.6f))
-            .border(1.dp, GlassBorder, RoundedCornerShape(16.dp))
+            .background(if (isEarned) CosmicNavy else CosmicSurface2)
+            .border(
+                1.dp,
+                if (isEarned) NeonWarning.copy(alpha = 0.35f) else GlassBorder,
+                RoundedCornerShape(16.dp)
+            )
             .padding(14.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -159,8 +199,8 @@ private fun CompactAchievementCard(achievement: Achievement) {
                 modifier = Modifier
                     .size(52.dp)
                     .clip(CircleShape)
-                    .background(if (isEarned) NeonWarning.copy(alpha = 0.08f) else CosmicBlack)
-                    .border(1.dp, if (isEarned) NeonWarning.copy(alpha = 0.2f) else GlassBorder, CircleShape),
+                    .background(if (isEarned) NeonWarning.copy(alpha = 0.10f) else CosmicDark)
+                    .border(1.dp, if (isEarned) NeonWarning.copy(alpha = 0.3f) else GlassBorder, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 Text(

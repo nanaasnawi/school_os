@@ -15,6 +15,9 @@ import javax.inject.Inject
 
 data class MaterialCreatorUiState(
     val isLoading: Boolean = false,
+    val isUploadingFile: Boolean = false,
+    val uploadedFileName: String? = null,
+    val uploadedFileUrl: String? = null,
     val success: Boolean = false,
     val error: String? = null,
     val availableClasses: List<AcademicClass> = emptyList(),
@@ -47,6 +50,33 @@ class MaterialCreatorViewModel @Inject constructor(
                 availableSubjects = subjectsResult.getOrDefault(emptyList()),
             )
         }
+    }
+
+    fun uploadFile(bytes: ByteArray, fileName: String, mimeType: String) {
+        viewModelScope.launch {
+            _state.value = _state.value.copy(isUploadingFile = true, error = null)
+            repository.uploadMaterialFile(bytes, fileName, mimeType)
+                .onSuccess { url ->
+                    _state.value = _state.value.copy(
+                        isUploadingFile = false,
+                        uploadedFileName = fileName,
+                        uploadedFileUrl = url,
+                    )
+                }
+                .onFailure { err ->
+                    _state.value = _state.value.copy(
+                        isUploadingFile = false,
+                        error = err.message ?: "Gagal mengunggah file materi: ${err.localizedMessage}"
+                    )
+                }
+        }
+    }
+
+    fun clearUploadedFile() {
+        _state.value = _state.value.copy(
+            uploadedFileName = null,
+            uploadedFileUrl = null,
+        )
     }
 
     fun createMaterial(
@@ -82,6 +112,9 @@ class MaterialCreatorViewModel @Inject constructor(
     fun resetState() {
         _state.value = _state.value.copy(
             isLoading = false,
+            isUploadingFile = false,
+            uploadedFileName = null,
+            uploadedFileUrl = null,
             success = false,
             error = null,
         )

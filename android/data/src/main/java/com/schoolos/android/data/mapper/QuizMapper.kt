@@ -21,6 +21,7 @@ fun QuizDto.toDomain() = Quiz(
     isActive = isActive,
     createdAt = createdAt,
     updatedAt = updatedAt,
+    subjectName = subjectName,
 )
 
 fun QuizAttemptDto.toDomain() = QuizAttempt(

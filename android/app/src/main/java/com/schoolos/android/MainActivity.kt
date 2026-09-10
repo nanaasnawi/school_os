@@ -35,6 +35,7 @@ class MainActivity : ComponentActivity() {
     @Inject lateinit var authManager: AuthManager
     @Inject lateinit var notificationSyncManager: NotificationSyncManager
     @Inject lateinit var maintenanceManager: MaintenanceManager
+    @Inject lateinit var chatManager: com.schoolos.android.core.chat.ChatManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -79,7 +80,8 @@ class MainActivity : ComponentActivity() {
                     Surface(modifier = Modifier.fillMaxSize()) {
                         NavGraph(
                             authManager = authManager,
-                            maintenanceManager = maintenanceManager
+                            maintenanceManager = maintenanceManager,
+                            chatManager = chatManager,
                         )
                     }
                 }

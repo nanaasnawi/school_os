@@ -58,6 +58,7 @@ fun LazyListScope.teacherContent(
     onNavigateToQuizBuilder: () -> Unit,
     onNavigateToBroadcastCenter: () -> Unit,
     onNavigateToLearning: () -> Unit = {},
+    onNavigateToRombelStudents: (String) -> Unit = {},
     activeSubject: String = "-",
     activeClass: String = "-",
     isHomeroom: Boolean = false,
@@ -77,7 +78,13 @@ fun LazyListScope.teacherContent(
                         else listOf(Color(0xFF0284C7), Color(0xFF0D9488))
                     )
                 )
-                .clickable(onClick = onNavigateToSessions)
+                .clickable {
+                    if (displayClass.isNotBlank() && displayClass != "Kelas Mengajar") {
+                        onNavigateToRombelStudents(displayClass)
+                    } else {
+                        onNavigateToSessions()
+                    }
+                }
                 .padding(18.dp)
         ) {
             Row(
@@ -122,7 +129,7 @@ fun LazyListScope.teacherContent(
                     Spacer(Modifier.height(2.dp))
 
                     Text(
-                        text = if (isHomeroom) "Buka Absensi & Agenda Rombel" else "Sesi aktif hari ini • Ketuk untuk kelola kelas",
+                        text = if (isHomeroom) "Lihat Daftar Murid Rombel" else "Daftar Siswa & Profil Kelas",
                         color = Color.White.copy(alpha = 0.88f),
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Medium

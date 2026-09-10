@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
@@ -39,6 +40,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.schoolos.android.core.designsystem.DonutChart
@@ -52,6 +54,17 @@ import com.schoolos.android.core.designsystem.TextPrimary
 import com.schoolos.android.core.designsystem.TextSecondary
 import com.schoolos.android.core.designsystem.TextTertiary
 
+data class ActivityItem(
+    val title: String,
+    val description: String,
+    val timestamp: String,
+    val type: ActivityType = ActivityType.INFO
+)
+
+enum class ActivityType {
+    ATTENDANCE, ASSIGNMENT, GRADE, ACHIEVEMENT, INFO
+}
+
 fun LazyListScope.parentContent(
     childName: String = "",
     childClass: String = "",
@@ -60,6 +73,9 @@ fun LazyListScope.parentContent(
     permitDays: String = "-",
     absentDays: String = "-",
     assignmentsCount: String = "0",
+    activities: List<ActivityItem> = emptyList(),
+    currentActivity: String = "",
+    studentStatus: String = "Siswa Aktif",
     onNavigateToProgress: () -> Unit,
     onNavigateToNotifications: () -> Unit,
     onNavigateToAssignments: () -> Unit,
@@ -68,14 +84,15 @@ fun LazyListScope.parentContent(
 ) {
     val displayChildName = if (childName.isNotBlank() && childName != "-") childName else "Anak Anda"
     val displayClass = if (childClass.isNotBlank() && childClass != "-") childClass else "Kelas Aktif"
+    val displayActivity = if (currentActivity.isNotBlank()) currentActivity else "Terdaftar Aktif di $displayClass"
 
     // ── 1. INTEGRATED CHILD HUB (Glassmorphic) ──
     item {
         ParentIntegratedChildHub(
             name = displayChildName,
             kelas = displayClass,
-            currentActivity = "Terdaftar Aktif di $displayClass",
-            status = "Siswa Aktif",
+            currentActivity = displayActivity,
+            status = studentStatus,
             onClick = onNavigateToProgress
         )
     }
@@ -126,17 +143,41 @@ fun LazyListScope.parentContent(
 
     // ── 4. VERTICAL ACTIVITY TIMELINE (Child's Day) ──
     item {
-        Text("Aktivitas Sekolah $displayChildName", fontWeight = FontWeight.Black, fontSize = 15.sp, color = TextPrimary, modifier = Modifier.padding(start = 4.dp, top = 8.dp))
+        Text(
+            "Aktivitas Sekolah $displayChildName",
+            fontWeight = FontWeight.Black,
+            fontSize = 15.sp,
+            color = TextPrimary,
+            modifier = Modifier.padding(start = 4.dp, top = 8.dp)
+        )
     }
 
-    val defaultActivities = listOf(
-        Triple("Kehadiran Terverifikasi", "Hadir tepat waktu dalam sesi pembelajaran $displayClass", "Hari ini • 07:30 WIB"),
-        Triple("Status Akademik Aktif", "Terdaftar resmi di Dapodik sekolah", "Semester Aktif"),
-        Triple("Tugas & Evaluasi", "$assignmentsCount tugas pembelajaran aktif untuk kelas $displayClass", "Minggu ini")
-    )
-
-    items(defaultActivities) { (act, sub, time) ->
-        ParentTimelineItem(act, sub, time)
+    // Use dynamic activities if provided, otherwise show empty state
+    if (activities.isEmpty()) {
+        item {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 16.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    "Belum ada aktivitas terbaru",
+                    fontSize = 13.sp,
+                    color = TextTertiary,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+        }
+    } else {
+        items(activities) { activity ->
+            ParentTimelineItem(
+                title = activity.title,
+                desc = activity.description,
+                time = activity.timestamp,
+                type = activity.type
+            )
+        }
     }
 
     item { Spacer(Modifier.height(20.dp)) }
@@ -153,6 +194,7 @@ private fun ParentIntegratedChildHub(
     Box(
         modifier = Modifier
             .fillMaxWidth()
+            .statusBarsPadding()
             .clip(RoundedCornerShape(24.dp))
             .background(Brush.horizontalGradient(listOf(ParentNeon, Color(0xFFBE185D))))
             .clickable(onClick = onClick)
@@ -223,13 +265,26 @@ private fun ParentAttendanceLegendRow(label: String, value: String, color: Color
 }
 
 @Composable
-private fun ParentTimelineItem(title: String, desc: String, time: String) {
+private fun ParentTimelineItem(
+    title: String,
+    desc: String,
+    time: String,
+    type: ActivityType = ActivityType.INFO
+) {
+    val indicatorColor = when (type) {
+        ActivityType.ATTENDANCE -> NeonSuccess
+        ActivityType.ASSIGNMENT -> NeonBlue
+        ActivityType.GRADE -> ParentNeon
+        ActivityType.ACHIEVEMENT -> NeonWarning
+        ActivityType.INFO -> ParentNeon
+    }
+
     Row(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
         verticalAlignment = Alignment.Top
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Box(Modifier.size(10.dp).clip(CircleShape).background(ParentNeon))
+            Box(Modifier.size(10.dp).clip(CircleShape).background(indicatorColor))
             Box(Modifier.width(2.dp).height(40.dp).background(GlassBorder))
         }
         Spacer(Modifier.width(14.dp))

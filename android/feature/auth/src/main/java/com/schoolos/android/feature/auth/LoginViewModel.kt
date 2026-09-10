@@ -123,12 +123,22 @@ class LoginViewModel @Inject constructor(
                 if (!clean.endsWith("/api/v1")) clean = "$clean/api/v1"
                 candidates.add("$clean/")
             }
+            val isEmulator = android.os.Build.FINGERPRINT.startsWith("generic")
+                || android.os.Build.MODEL.contains("google_sdk")
+                || android.os.Build.MODEL.contains("Emulator")
+                || android.os.Build.HARDWARE.contains("goldfish")
+                || android.os.Build.HARDWARE.contains("ranchu")
+
             candidates.add(_state.value.customServerUrl)
             candidates.add(BuildConfig.API_BASE_URL)
-            candidates.add("http://10.0.2.2:8000/api/v1/")
-            candidates.add("http://127.0.0.1:8000/api/v1/")
+            if (isEmulator) {
+                candidates.add("http://10.0.2.2:8000/api/v1/")
+                candidates.add("http://127.0.0.1:8000/api/v1/")
+            } else {
+                candidates.add("http://192.168.1.11:8000/api/v1/")
+            }
 
-            val distinctCandidates = candidates.filter { it.isNotBlank() }.distinct()
+            val distinctCandidates = candidates.filter { it.isNotBlank() && (isEmulator || (!it.contains("10.0.2.2") && !it.contains("127.0.0.1"))) }.distinct()
             val client = OkHttpClient.Builder()
                 .connectTimeout(3, TimeUnit.SECONDS)
                 .readTimeout(4, TimeUnit.SECONDS)

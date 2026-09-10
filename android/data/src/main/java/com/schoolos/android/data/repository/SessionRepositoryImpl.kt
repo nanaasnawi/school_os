@@ -13,9 +13,8 @@ class SessionRepositoryImpl @Inject constructor(
     private val api: SchoolOsApi,
 ) : SessionRepository {
 
-    override suspend fun getSessions(classId: String): Result<List<LearningSession>> = runCatching {
-        val queryClassId = classId.ifBlank { null }
-        val response = api.getSessions(queryClassId)
+    override suspend fun getSessions(classId: String?): Result<List<LearningSession>> = runCatching {
+        val response = api.getSessions(classId)
         response.data?.map { it.toDomain() }
             ?: throw Exception(response.error?.message ?: "Gagal memuat sesi pembelajaran dari server API.")
     }

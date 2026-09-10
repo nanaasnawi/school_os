@@ -227,7 +227,7 @@ class HomeViewModel @Inject constructor(
                 val summaries = subjectIds.mapNotNull { id ->
                     val realName = subjectMap[id] ?: return@mapNotNull null
                     entries.toSubjectSummary(id, realName)
-                }.sortedByDescending { it.finalScore }
+                }.sortedByDescending { summary -> summary.finalScore }
 
                 _state.update { current ->
                     current.copy(

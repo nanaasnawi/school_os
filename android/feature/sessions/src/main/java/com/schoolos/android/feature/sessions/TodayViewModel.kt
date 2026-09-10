@@ -2,8 +2,8 @@ package com.schoolos.android.feature.sessions
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.schoolos.android.core.auth.AuthManager
 import com.schoolos.android.domain.model.LearningSession
-import com.schoolos.android.domain.model.SessionAttendance
 import com.schoolos.android.domain.repository.SessionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,6 +19,7 @@ data class TodayUiState(
     val error: String? = null,
     val userRole: String = "student",
     val className: String = "",
+    val classId: String? = null,
     val active: List<LearningSession> = emptyList(),
     val upcoming: List<LearningSession> = emptyList(),
     val completed: List<LearningSession> = emptyList(),
@@ -27,13 +28,11 @@ data class TodayUiState(
 @HiltViewModel
 class TodayViewModel @Inject constructor(
     private val repository: SessionRepository,
-    private val authManager: com.schoolos.android.core.auth.AuthManager,
+    private val authManager: AuthManager,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(TodayUiState())
     val state = _state.asStateFlow()
-
-    private val classId = "" // Sprint B+: resolve from auth
 
     init {
         viewModelScope.launch {
@@ -41,6 +40,7 @@ class TodayViewModel @Inject constructor(
                 _state.value = _state.value.copy(
                     userRole = auth.role ?: "student",
                     className = auth.className ?: "",
+                    classId = auth.classId,
                 )
             }
         }
@@ -62,7 +62,7 @@ class TodayViewModel @Inject constructor(
     private fun load(targetDate: LocalDate = LocalDate.now()) {
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true, error = null)
-            repository.getSessions(classId)
+            repository.getSessions(_state.value.classId)
                 .onSuccess { sessions ->
                     val targetSessions = sessions.filter { s ->
                         val scheduled = s.scheduledAt?.let { parseDate(it) }

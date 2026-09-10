@@ -31,6 +31,7 @@ import com.schoolos.android.core.designsystem.*
 fun QuizListScreen(
     onBack: () -> Unit = {},
     onQuizClick: (String) -> Unit = {},
+    subjectId: String = "",
     viewModel: QuizListViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -54,8 +55,11 @@ fun QuizListScreen(
                 EmptyState("Belum ada kuis tersedia.", androidx.compose.material.icons.Icons.Default.List)
             } else {
                 LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 40.dp, bottom = 100.dp),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        // Edge-to-edge safe: never draw under the status bar
+                        .statusBarsPadding(),
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 100.dp),
                     verticalArrangement = Arrangement.spacedBy(14.dp),
                 ) {
                     // ── REFACTORED NON-OVERLAPPING LIST HEADER ─────────────
@@ -77,6 +81,16 @@ fun QuizListScreen(
                             CompactTeacherQuizBanner(activeCount = activeQuizzes.size)
                         } else {
                             CompactQuizBannerCard(pendingCount = activeQuizzes.size)
+                        }
+                    }
+
+                    // ── ACTIVE SUBJECT FILTER (from session detail) ──────
+                    if (state.subjectFilter != null) {
+                        item {
+                            SubjectFilterChip(
+                                subject = state.subjectFilter!!,
+                                onClear = viewModel::clearSubjectFilter,
+                            )
                         }
                     }
 

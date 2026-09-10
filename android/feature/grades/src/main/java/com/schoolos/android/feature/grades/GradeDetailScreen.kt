@@ -2,29 +2,14 @@ package com.schoolos.android.feature.grades
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -34,22 +19,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.schoolos.android.core.designsystem.CosmicBlack
-import com.schoolos.android.core.designsystem.CustomBackButton
-import com.schoolos.android.core.designsystem.ErrorState
-import com.schoolos.android.core.designsystem.LoadingState
-import com.schoolos.android.core.designsystem.StatusChip
-import com.schoolos.android.core.designsystem.TextPrimary
-import com.schoolos.android.core.designsystem.TextSecondary
-import com.schoolos.android.core.designsystem.TextTertiary
-import com.schoolos.android.core.designsystem.subjectGradient
-import com.schoolos.android.core.designsystem.subjectIcon
+import com.schoolos.android.core.designsystem.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -80,19 +57,36 @@ fun GradeDetailScreen(
                             .fillMaxSize()
                             .verticalScroll(rememberScrollState()),
                     ) {
-                        // ── SOLID HERO BANNER ─────────────────────────────────
+// ── PREMIUM HERO BANNER (status-bar safe) ─────────────
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .background(
-                                    Brush.linearGradient(gradient),
-                                    RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp)
-                                )
+                                .background(Brush.linearGradient(gradient))
                         ) {
+                            // Decorative translucent circles
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .padding(top = 52.dp, end = 8.dp)
+                                    .size(116.dp)
+                                    .clip(CircleShape)
+                                    .background(Color.White.copy(alpha = 0.08f))
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.BottomStart)
+                                    .padding(start = 20.dp)
+                                    .size(64.dp)
+                                    .clip(CircleShape)
+                                    .background(Color.White.copy(alpha = 0.06f))
+                            )
+
                             Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = 20.dp, vertical = 18.dp),
+                                    // Edge-to-edge safe: keep controls clear of the device status bar
+                                    .statusBarsPadding()
+                                    .padding(horizontal = 20.dp, vertical = 16.dp),
                             ) {
                                 // TOP NAVIGATION ROW
                                 Row(
@@ -102,15 +96,16 @@ fun GradeDetailScreen(
                                 ) {
                                     CustomBackButton(
                                         onClick = onBack,
-                                        backgroundColor = Color.White,
-                                        contentColor = TextPrimary
+                                        backgroundColor = Color.White.copy(alpha = 0.15f),
+                                        contentColor = Color.White,
                                     )
-                                    
+
                                     if (isTeacher) {
                                         Box(
                                             modifier = Modifier
-                                                .clip(CircleShape)
-                                                .background(Color.White.copy(alpha = 0.2f))
+                                                .clip(RoundedCornerShape(20.dp))
+                                                .background(Color.White.copy(alpha = 0.18f))
+                                                .border(1.dp, Color.White.copy(alpha = 0.3f), RoundedCornerShape(20.dp))
                                                 .padding(horizontal = 12.dp, vertical = 6.dp)
                                         ) {
                                             Text("28 SISWA", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Black)
@@ -120,41 +115,57 @@ fun GradeDetailScreen(
                                     }
                                 }
 
-                                Spacer(Modifier.height(20.dp))
+                                Spacer(Modifier.height(22.dp))
 
-                                // HEADER TITLES
-                                Column {
-                                    Text(
-                                        if (isTeacher) "LAPORAN NILAI KELAS" else "DETAIL AKADEMIK",
-                                        color = Color.White.copy(alpha = 0.75f),
-                                        fontSize = 10.sp,
-                                        fontWeight = FontWeight.Black,
-                                        letterSpacing = 1.2.sp
-                                    )
-                                    Spacer(Modifier.height(4.dp))
-                                    Text(
-                                        if (isTeacher) d.summary.subjectName else subject,
-                                        fontSize = 28.sp,
-                                        fontWeight = FontWeight.Black,
-                                        color = Color.White,
-                                        lineHeight = 34.sp,
-                                        letterSpacing = (-0.5).sp
-                                    )
-                                    Spacer(Modifier.height(6.dp))
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(
-                                            Icons.Default.Person, 
-                                            null, 
-                                            tint = Color.White.copy(alpha = 0.85f), 
-                                            modifier = Modifier.size(14.dp)
-                                        )
-                                        Spacer(Modifier.width(6.dp))
+// TITLE ROW: icon badge + identity
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(64.dp)
+                                            .clip(RoundedCornerShape(20.dp))
+                                            .background(Color.White.copy(alpha = 0.18f))
+                                            .border(1.dp, Color.White.copy(alpha = 0.3f), RoundedCornerShape(20.dp))
+                                            .shadow(3.dp, RoundedCornerShape(20.dp), spotColor = Color.White.copy(alpha = 0.25f)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(icon, null, tint = Color.White, modifier = Modifier.size(32.dp))
+                                    }
+                                    Spacer(Modifier.width(16.dp))
+                                    Column(modifier = Modifier.weight(1f)) {
                                         Text(
-                                            "Semester Genap • Tahun Ajaran 2026/2027",
-                                            fontSize = 12.sp,
-                                            color = Color.White.copy(alpha = 0.9f),
-                                            fontWeight = FontWeight.Bold
+                                            if (isTeacher) "LAPORAN NILAI KELAS" else "DETAIL AKADEMIK",
+                                            color = Color.White.copy(alpha = 0.8f),
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Black,
+                                            letterSpacing = 1.2.sp
                                         )
+                                        Spacer(Modifier.height(4.dp))
+                                        Text(
+                                            if (isTeacher) d.summary.subjectName else subject,
+                                            fontSize = 24.sp,
+                                            fontWeight = FontWeight.Black,
+                                            color = Color.White,
+                                            lineHeight = 30.sp,
+                                            letterSpacing = (-0.5).sp,
+                                            maxLines = 1,
+                                        )
+                                        Spacer(Modifier.height(2.dp))
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(
+                                                Icons.Default.Person,
+                                                null,
+                                                tint = Color.White.copy(alpha = 0.85f),
+                                                modifier = Modifier.size(14.dp)
+                                            )
+                                            Spacer(Modifier.width(6.dp))
+                                            Text(
+                                                "Semester Genap • Tahun Ajaran 2026/2027",
+                                                fontSize = 12.sp,
+                                                color = Color.White.copy(alpha = 0.85f),
+                                                fontWeight = FontWeight.Medium,
+                                                maxLines = 1,
+                                            )
+                                        }
                                     }
                                 }
                             }

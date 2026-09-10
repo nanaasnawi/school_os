@@ -9,7 +9,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,7 +24,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.schoolos.android.core.designsystem.*
 import com.schoolos.android.domain.model.Assignment
-import androidx.compose.material.icons.filled.Analytics
 
 fun LazyListScope.teacherAssignmentListContent(
     activeItems: List<Assignment>,
@@ -146,7 +145,7 @@ private fun TeacherAssignmentCard(
 
             Spacer(Modifier.height(16.dp))
             
-            // ANALYTICAL METADATA STRIP
+            // REAL METADATA STRIP
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -157,38 +156,35 @@ private fun TeacherAssignmentCard(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Analytics, null, tint = NeonBlue, modifier = Modifier.size(14.dp))
+                    Icon(Icons.Default.DateRange, null, tint = NeonBlue, modifier = Modifier.size(14.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text("12/28 Dinilai", fontSize = 11.sp, color = TextPrimary, fontWeight = FontWeight.Black)
+                    val dueIso = assignment.dueAt
+                    val dueLabel = if (!dueIso.isNullOrBlank()) {
+                        dueIso.take(16).replace('T', ' ')
+                    } else {
+                        "Tanpa Batas Waktu"
+                    }
+                    Text(
+                        dueLabel,
+                        fontSize = 11.sp,
+                        color = TextPrimary,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
 
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
-                        .background(accentColor.copy(alpha = 0.1f))
+                        .background(if (assignment.isActive) NeonSuccess.copy(alpha = 0.15f) else TextTertiary.copy(alpha = 0.15f))
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
-                    Text("42%", fontSize = 9.sp, color = accentColor, fontWeight = FontWeight.Black)
+                    Text(
+                        "Maks. ${assignment.maxScore} Poin",
+                        fontSize = 10.sp,
+                        color = if (assignment.isActive) NeonSuccess else TextTertiary,
+                        fontWeight = FontWeight.Black
+                    )
                 }
-            }
-            
-            Spacer(Modifier.height(10.dp))
-            
-            // INTEGRATED PROGRESS BAR
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(6.dp)
-                    .clip(CircleShape)
-                    .background(accentColor.copy(alpha = 0.1f))
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth(0.42f)
-                        .height(6.dp)
-                        .clip(CircleShape)
-                        .background(accentColor)
-                )
             }
         }
     }

@@ -12,4 +12,5 @@ data class Quiz(
     val isActive: Boolean,
     val createdAt: String,
     val updatedAt: String,
+    val subjectName: String? = null,
 )

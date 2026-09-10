@@ -42,6 +42,7 @@ data class AuthState(
     val schoolLogoUrl: String? = null,
     val identifier: String? = null,
     val className: String? = null,
+    val classId: String? = null,
     val childName: String? = null,
     val childId: String? = null,
 ) {
@@ -64,6 +65,7 @@ class AuthManager @Inject constructor(
         private val KEY_ROLE = stringPreferencesKey("user_role")
         private val KEY_IDENTIFIER = stringPreferencesKey("user_identifier")
         private val KEY_CLASS_NAME = stringPreferencesKey("user_class_name")
+        private val KEY_CLASS_ID = stringPreferencesKey("user_class_id")
         private val KEY_CHILD_NAME = stringPreferencesKey("user_child_name")
         private val KEY_CHILD_ID = stringPreferencesKey("user_child_id")
         private val KEY_IS_LOGGED_IN = booleanPreferencesKey("is_logged_in")
@@ -83,6 +85,7 @@ class AuthManager @Inject constructor(
             role = prefs[KEY_ROLE],
             identifier = prefs[KEY_IDENTIFIER],
             className = prefs[KEY_CLASS_NAME],
+            classId = prefs[KEY_CLASS_ID],
             childName = prefs[KEY_CHILD_NAME],
             childId = prefs[KEY_CHILD_ID],
             isLoggedIn = prefs[KEY_IS_LOGGED_IN] ?: false,
@@ -106,6 +109,7 @@ class AuthManager @Inject constructor(
         role: String = "",
         identifier: String? = null,
         className: String? = null,
+        classId: String? = null,
         childName: String? = null,
         childId: String? = null,
     ) {
@@ -119,6 +123,7 @@ class AuthManager @Inject constructor(
             prefs[KEY_ROLE] = role
             if (!identifier.isNullOrBlank()) prefs[KEY_IDENTIFIER] = identifier
             if (!className.isNullOrBlank()) prefs[KEY_CLASS_NAME] = className
+            if (!classId.isNullOrBlank()) prefs[KEY_CLASS_ID] = classId
             if (!childName.isNullOrBlank()) prefs[KEY_CHILD_NAME] = childName
             if (!childId.isNullOrBlank()) prefs[KEY_CHILD_ID] = childId
             prefs[KEY_IS_LOGGED_IN] = true
@@ -131,6 +136,7 @@ class AuthManager @Inject constructor(
         role: String,
         identifier: String? = null,
         className: String? = null,
+        classId: String? = null,
         childName: String? = null,
         childId: String? = null,
     ) {
@@ -140,6 +146,7 @@ class AuthManager @Inject constructor(
             if (role.isNotBlank()) prefs[KEY_ROLE] = role
             if (!identifier.isNullOrBlank()) prefs[KEY_IDENTIFIER] = identifier
             if (!className.isNullOrBlank()) prefs[KEY_CLASS_NAME] = className
+            if (!classId.isNullOrBlank()) prefs[KEY_CLASS_ID] = classId
             if (!childName.isNullOrBlank()) prefs[KEY_CHILD_NAME] = childName
             if (!childId.isNullOrBlank()) prefs[KEY_CHILD_ID] = childId
         }
@@ -177,6 +184,7 @@ class AuthManager @Inject constructor(
             it.remove(KEY_ROLE)
             it.remove(KEY_IDENTIFIER)
             it.remove(KEY_CLASS_NAME)
+            it.remove(KEY_CLASS_ID)
             it.remove(KEY_CHILD_NAME)
             it.remove(KEY_CHILD_ID)
             it.remove(KEY_IS_LOGGED_IN)
@@ -204,9 +212,19 @@ class AuthManager @Inject constructor(
         return context.dataStore.data.first()[KEY_USER_ID]
     }
 
+    suspend fun getClassId(): String? {
+        return context.dataStore.data.first()[KEY_CLASS_ID]
+    }
+
     val customServerUrlFlow: Flow<String> = context.dataStore.data.map { prefs ->
         val saved = prefs[KEY_CUSTOM_SERVER_URL]
-        if (!saved.isNullOrBlank() && saved.startsWith("http")) {
+        val isEmulator = android.os.Build.FINGERPRINT.startsWith("generic")
+            || android.os.Build.MODEL.contains("google_sdk")
+            || android.os.Build.MODEL.contains("Emulator")
+            || android.os.Build.HARDWARE.contains("goldfish")
+            || android.os.Build.HARDWARE.contains("ranchu")
+
+        if (!saved.isNullOrBlank() && saved.startsWith("http") && (isEmulator || (!saved.contains("10.0.2.2") && !saved.contains("127.0.0.1")))) {
             saved
         } else {
             com.schoolos.android.core.common.BuildConfig.API_BASE_URL
@@ -215,7 +233,13 @@ class AuthManager @Inject constructor(
 
     suspend fun getCustomServerUrl(): String? {
         val saved = context.dataStore.data.first()[KEY_CUSTOM_SERVER_URL]
-        if (saved.isNullOrBlank() || !saved.startsWith("http")) {
+        val isEmulator = android.os.Build.FINGERPRINT.startsWith("generic")
+            || android.os.Build.MODEL.contains("google_sdk")
+            || android.os.Build.MODEL.contains("Emulator")
+            || android.os.Build.HARDWARE.contains("goldfish")
+            || android.os.Build.HARDWARE.contains("ranchu")
+
+        if (saved.isNullOrBlank() || !saved.startsWith("http") || (!isEmulator && (saved.contains("10.0.2.2") || saved.contains("127.0.0.1")))) {
             return com.schoolos.android.core.common.BuildConfig.API_BASE_URL
         }
         return saved

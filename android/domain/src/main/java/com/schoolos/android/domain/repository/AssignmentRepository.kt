@@ -17,4 +17,5 @@ interface AssignmentRepository {
     ): Result<Assignment>
     suspend fun submitAssignment(assignmentId: String, content: String?, fileUrl: String?): Result<AssignmentSubmission>
     suspend fun getSubmissions(assignmentId: String): Result<List<AssignmentSubmission>>
+    suspend fun gradeSubmission(assignmentId: String, submissionId: String, score: Int, feedback: String?): Result<AssignmentSubmission>
 }

@@ -23,6 +23,10 @@ data class AssignmentDetailUiState(
     val isSubmitting: Boolean = false,
     val submitSuccess: Boolean = false,
     val submitError: String? = null,
+    // Grading state
+    val isGrading: Boolean = false,
+    val gradeSuccess: Boolean = false,
+    val gradeError: String? = null,
 )
 
 @HiltViewModel
@@ -65,13 +69,18 @@ class AssignmentDetailViewModel @Inject constructor(
 
     private suspend fun loadSubmissions() {
         val isTeacher = com.schoolos.android.core.auth.isTeacherRole(_state.value.userRole)
-        
+        val studentId = authManager.getStudentId()
+
         repository.getSubmissions(assignmentId)
             .onSuccess { submissions ->
                 if (isTeacher) {
+                    // Teachers see all submissions for grading
                     _state.value = _state.value.copy(allSubmissions = submissions)
                 } else {
-                    _state.value = _state.value.copy(submission = submissions.firstOrNull())
+                    // Students only see their own submission - filter by student ID
+                    val ownSubmission = submissions.firstOrNull { it.studentId == studentId }
+                        ?: submissions.firstOrNull() // Fallback for backward compatibility
+                    _state.value = _state.value.copy(submission = ownSubmission)
                 }
             }
     }
@@ -89,7 +98,38 @@ class AssignmentDetailViewModel @Inject constructor(
         }
     }
 
+    fun gradeSubmission(submissionId: String, score: Int, feedback: String?) {
+        viewModelScope.launch {
+            _state.value = _state.value.copy(isGrading = true, gradeError = null, gradeSuccess = false)
+            repository.gradeSubmission(assignmentId, submissionId, score, feedback)
+                .onSuccess { gradedSubmission ->
+                    // Update the submission in the list
+                    val updatedList = _state.value.allSubmissions.map { sub ->
+                        if (sub.id == submissionId) gradedSubmission else sub
+                    }
+                    _state.value = _state.value.copy(
+                        isGrading = false,
+                        gradeSuccess = true,
+                        allSubmissions = updatedList,
+                    )
+                }
+                .onFailure { e ->
+                    _state.value = _state.value.copy(isGrading = false, gradeError = e.message ?: "Gagal menyimpan nilai")
+                }
+        }
+    }
+
     fun dismissSubmitSuccess() {
         _state.value = _state.value.copy(submitSuccess = false)
     }
+
+    fun dismissGradeSuccess() {
+        _state.value = _state.value.copy(gradeSuccess = false)
+    }
+
+    fun dismissGradeError() {
+        _state.value = _state.value.copy(gradeError = null)
+    }
 }
+
+

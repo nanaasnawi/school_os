@@ -7,6 +7,8 @@ import com.schoolos.android.domain.model.LearningMaterial
 import com.schoolos.android.domain.model.MaterialType
 import com.schoolos.android.domain.repository.LearningMaterialRepository
 import timber.log.Timber
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.RequestBody.Companion.toRequestBody
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -196,6 +198,18 @@ class LearningMaterialRepositoryImpl @Inject constructor(
             subject = subject,
             size = dto.storageKey ?: "Modul Digital"
         )
+    }
+
+    override suspend fun uploadMaterialFile(
+        bytes: ByteArray,
+        fileName: String,
+        mimeType: String
+    ): Result<String> = runCatching {
+        val mediaType = mimeType.toMediaTypeOrNull()
+        val requestBody = bytes.toRequestBody(mediaType)
+        val part = okhttp3.MultipartBody.Part.createFormData("file", fileName, requestBody)
+        val response = api.uploadMaterialFile(part)
+        response.data?.url ?: throw Exception(response.error?.message ?: "Gagal mengunggah file.")
     }
 
     override suspend fun toggleMaterialCompletion(id: String): Result<Boolean> = runCatching {

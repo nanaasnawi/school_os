@@ -70,6 +70,8 @@ import androidx.core.graphics.createBitmap
 fun LearningMaterialDetailScreen(
     materialId: String,
     onBack: () -> Unit = {},
+    onCreateMaterial: () -> Unit = {},
+    onAskTeacher: ((materialTitle: String, materialId: String, subjectName: String) -> Unit)? = null,
     viewModel: LearningViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
@@ -119,6 +121,10 @@ fun LearningMaterialDetailScreen(
 
     val material = materialState!!
     val isCompleted = material.isCompleted
+
+    // Role-aware UX: teachers distribute materials, students consume them
+    val learningState by viewModel.state.collectAsState()
+    val isTeacher = learningState.userRole.lowercase() in listOf("teacher", "guru")
 
     var textSizeMultiplier by remember { mutableStateOf(1.0f) }
 
@@ -198,54 +204,100 @@ fun LearningMaterialDetailScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column {
-                        Text("Status Pembelajaran", color = TextTertiary, fontSize = 11.sp)
-                        Spacer(Modifier.height(2.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                modifier = Modifier
-                                    .size(8.dp)
-                                    .clip(CircleShape)
-                                    .background(if (isCompleted) NeonSuccess else NeonBlue)
+                    if (isTeacher) {
+                        // ── TEACHER: distribution panel (no student "mark as done" UX) ──
+                        Column {
+                            Text("Status Distribusi", color = TextTertiary, fontSize = 11.sp)
+                            Spacer(Modifier.height(2.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(8.dp)
+                                        .clip(CircleShape)
+                                        .background(TeacherNeon)
+                                )
+                                Spacer(Modifier.width(6.dp))
+                                Text(
+                                    "${material.completedCount} siswa menyelesaikan",
+                                    color = TeacherNeon,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.ExtraBold
+                                )
+                            }
+                        }
+
+                        Button(
+                            onClick = onCreateMaterial,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = TeacherNeon,
+                                contentColor = Color.White
+                            ),
+                            shape = RoundedCornerShape(14.dp),
+                            modifier = Modifier.height(44.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
                             )
                             Spacer(Modifier.width(6.dp))
                             Text(
-                                if (isCompleted) "✓ Selesai Dipelajari" else "Sedang Dipelajari",
-                                color = if (isCompleted) NeonSuccess else NeonBlue,
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.ExtraBold
+                                text = "Buat Materi",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.sp
                             )
                         }
-                    }
+                    } else {
+                        // ── STUDENT: learning progress + mark-as-done ──
+                        Column {
+                            Text("Status Pembelajaran", color = TextTertiary, fontSize = 11.sp)
+                            Spacer(Modifier.height(2.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(8.dp)
+                                        .clip(CircleShape)
+                                        .background(if (isCompleted) NeonSuccess else NeonBlue)
+                                )
+                                Spacer(Modifier.width(6.dp))
+                                Text(
+                                    if (isCompleted) "✓ Selesai Dipelajari" else "Sedang Dipelajari",
+                                    color = if (isCompleted) NeonSuccess else NeonBlue,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.ExtraBold
+                                )
+                            }
+                        }
 
-                    Button(
-                        onClick = {
-                            viewModel.toggleMaterialCompletion(material.id)
-                            Toast.makeText(
-                                context,
-                                if (!isCompleted) "✓ Materi ditandai selesai! Progres berhasil diperbarui." else "Status materi diperbarui menjadi sedang dipelajari.",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (isCompleted) NeonSuccess.copy(alpha = 0.18f) else NeonBlue,
-                            contentColor = if (isCompleted) NeonSuccess else Color.White
-                        ),
-                        border = if (isCompleted) androidx.compose.foundation.BorderStroke(1.dp, NeonSuccess.copy(alpha = 0.4f)) else null,
-                        shape = RoundedCornerShape(14.dp),
-                        modifier = Modifier.height(44.dp)
-                    ) {
-                        Icon(
-                            imageVector = if (isCompleted) Icons.Default.CheckCircle else Icons.Default.DoneAll,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text(
-                            text = if (isCompleted) "Selesai (Batal)" else "Tandai Selesai",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 13.sp
-                        )
+                        Button(
+                            onClick = {
+                                viewModel.toggleMaterialCompletion(material.id)
+                                Toast.makeText(
+                                    context,
+                                    if (!isCompleted) "✓ Materi ditandai selesai! Progres berhasil diperbarui." else "Status materi diperbarui menjadi sedang dipelajari.",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (isCompleted) NeonSuccess.copy(alpha = 0.18f) else NeonBlue,
+                                contentColor = if (isCompleted) NeonSuccess else Color.White
+                            ),
+                            border = if (isCompleted) androidx.compose.foundation.BorderStroke(1.dp, NeonSuccess.copy(alpha = 0.4f)) else null,
+                            shape = RoundedCornerShape(14.dp),
+                            modifier = Modifier.height(44.dp)
+                        ) {
+                            Icon(
+                                imageVector = if (isCompleted) Icons.Default.CheckCircle else Icons.Default.DoneAll,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                text = if (isCompleted) "Selesai (Batal)" else "Tandai Selesai",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.sp
+                            )
+                        }
                     }
                 }
             }
@@ -410,13 +462,92 @@ fun LearningMaterialDetailScreen(
                                 }
                             }
 
+                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                                if (material.completedCount > 0) {
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .background(NeonBlue.copy(alpha = 0.15f))
+                                            .border(1.dp, NeonBlue.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
+                                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                                    ) {
+                                        Text("👥 ${material.completedCount} Siswa Belajar", color = NeonBlue, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                    }
+                                }
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(NeonSuccess.copy(alpha = 0.1f))
+                                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                                ) {
+                                    Text("Modul Aktif", color = NeonSuccess, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // ── TANYA GURU / KONSULTASI MATERI (In-App Q&A) ──────────────
+                if (!isTeacher && onAskTeacher != null) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(TeacherNeon.copy(alpha = 0.08f))
+                            .border(1.dp, TeacherNeon.copy(alpha = 0.3f), RoundedCornerShape(16.dp))
+                            .clickable { onAskTeacher(material.title, material.id, material.subject) }
+                            .padding(14.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .clip(CircleShape)
+                                        .background(TeacherNeon.copy(alpha = 0.15f)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        Icons.Default.Forum,
+                                        contentDescription = null,
+                                        tint = TeacherNeon,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                                Spacer(Modifier.width(10.dp))
+                                Column {
+                                    Text(
+                                        text = "Ada Bagian yang Belum Dipahami?",
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = TextPrimary
+                                    )
+                                    Text(
+                                        text = "Tanya guru pengampu langsung tanpa keluar app",
+                                        fontSize = 11.sp,
+                                        color = TextSecondary
+                                    )
+                                }
+                            }
                             Box(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(8.dp))
-                                    .background(NeonSuccess.copy(alpha = 0.1f))
-                                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                                    .background(TeacherNeon)
+                                    .padding(horizontal = 10.dp, vertical = 6.dp)
                             ) {
-                                Text("Modul Aktif", color = NeonSuccess, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                Text(
+                                    text = "Tanya Guru 💬",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.Black
+                                )
                             }
                         }
                     }

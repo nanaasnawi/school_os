@@ -1,5 +1,6 @@
 package com.schoolos.android.feature.quizzes
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.schoolos.android.domain.model.Quiz
@@ -16,10 +17,12 @@ data class QuizListUiState(
     val error: String? = null,
     val userRole: String = "student",
     val quizzes: List<Quiz> = emptyList(),
+    val subjectFilter: String? = null,
 )
 
 @HiltViewModel
 class QuizListViewModel @Inject constructor(
+    savedStateHandle: SavedStateHandle,
     private val repository: QuizRepository,
     private val authManager: com.schoolos.android.core.auth.AuthManager,
 ) : ViewModel() {
@@ -28,6 +31,9 @@ class QuizListViewModel @Inject constructor(
     val state = _state.asStateFlow()
 
     private val classId = ""
+
+    /** Optional subject filter passed via navigation (e.g. from a session detail). */
+    private var subjectFilter: String? = savedStateHandle.get<String>("subjectId")?.takeIf { it.isNotBlank() }
 
     init {
         viewModelScope.launch {
@@ -48,10 +54,12 @@ class QuizListViewModel @Inject constructor(
             _state.value = _state.value.copy(isLoading = true, error = null)
             repository.getQuizzes(classId)
                 .onSuccess { quizzes ->
+                    val filtered = subjectFilter?.let { filter -> quizzes.filter { q -> matchesSubject(q.subjectName, filter) } } ?: quizzes
                     _state.value = _state.value.copy(
                         isLoading = false,
                         isRefreshing = false,
-                        quizzes = quizzes.sortedByDescending { it.createdAt },
+                        quizzes = filtered.sortedByDescending { it.createdAt },
+                        subjectFilter = subjectFilter,
                     )
                 }
                 .onFailure { e ->
@@ -62,5 +70,19 @@ class QuizListViewModel @Inject constructor(
                     )
                 }
         }
+    }
+
+    /** Tolerant subject matching: exact, or bidirectional contains (case-insensitive). */
+    private fun matchesSubject(itemSubject: String?, filter: String): Boolean {
+        if (itemSubject.isNullOrBlank()) return false
+        val a = itemSubject.trim()
+        val b = filter.trim()
+        return a.equals(b, ignoreCase = true) || a.contains(b, ignoreCase = true) || b.contains(a, ignoreCase = true)
+    }
+
+    fun clearSubjectFilter() {
+        subjectFilter = null
+        _state.value = _state.value.copy(subjectFilter = null)
+        refresh()
     }
 }

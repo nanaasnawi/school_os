@@ -36,6 +36,7 @@ fun LearningMaterialListScreen(
     onBack: () -> Unit = {},
     onMaterialClick: (String) -> Unit = {},
     onCreateMaterial: () -> Unit = {},
+    subjectId: String = "",
     viewModel: LearningViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -43,7 +44,11 @@ fun LearningMaterialListScreen(
     val role = state.userRole.lowercase()
     val isTeacher = role in listOf("teacher", "guru")
 
-    val categories = listOf("Semua", "IPAS", "Matematika", "Belum Selesai", "Selesai")
+    val categories = if (isTeacher) {
+        listOf("Semua", "IPAS", "Matematika") // Teachers distribute — no personal-progress filters
+    } else {
+        listOf("Semua", "IPAS", "Matematika", "Belum Selesai", "Selesai")
+    }
 
     Scaffold(
         containerColor = CosmicBlack,
@@ -106,6 +111,16 @@ fun LearningMaterialListScreen(
                             }
                         }
                     }
+                }
+            }
+
+            // ── ACTIVE SUBJECT FILTER (from session detail) ──────────────────
+            if (state.subjectFilter != null) {
+                item {
+                    SubjectFilterChip(
+                        subject = state.subjectFilter!!,
+                        onClear = viewModel::clearSubjectFilter,
+                    )
                 }
             }
 
@@ -320,14 +335,14 @@ fun LearningMaterialListScreen(
 
             // ── MATERIAL CARDS ───────────────────────────────────────────────
             items(materials) { item ->
-                ModernMaterialCard(item = item, onClick = { onMaterialClick(item.id) })
+                ModernMaterialCard(item = item, isTeacher = isTeacher, onClick = { onMaterialClick(item.id) })
             }
         }
     }
 }
 
 @Composable
-private fun ModernMaterialCard(item: MaterialItem, onClick: () -> Unit) {
+private fun ModernMaterialCard(item: MaterialItem, isTeacher: Boolean = false, onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -363,8 +378,23 @@ private fun ModernMaterialCard(item: MaterialItem, onClick: () -> Unit) {
                     )
                 }
 
-                // Completion Status Badge
-                if (item.isCompleted) {
+                // Status Badge (role-aware)
+                if (isTeacher) {
+                    // Teachers see how many students completed — not personal progress
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(TeacherNeon.copy(alpha = 0.14f))
+                            .border(1.dp, TeacherNeon.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
+                            .padding(horizontal = 8.dp, vertical = 3.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.People, null, tint = TeacherNeon, modifier = Modifier.size(13.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("${item.completedCount} siswa selesai", color = TeacherNeon, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                } else if (item.isCompleted) {
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(8.dp))

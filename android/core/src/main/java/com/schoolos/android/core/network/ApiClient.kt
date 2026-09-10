@@ -49,14 +49,23 @@ class DynamicHostInterceptor(
             val isEmulator = android.os.Build.FINGERPRINT.startsWith("generic")
                 || android.os.Build.MODEL.contains("google_sdk")
                 || android.os.Build.MODEL.contains("Emulator")
+                || android.os.Build.HARDWARE.contains("goldfish")
+                || android.os.Build.HARDWARE.contains("ranchu")
 
-            val currentHost = primaryRequest.url.host
+            val buildConfigHost = try {
+                com.schoolos.android.core.common.BuildConfig.API_BASE_URL
+                    .removePrefix("http://")
+                    .removePrefix("https://")
+                    .split(":", "/")[0]
+            } catch (_: Exception) { null }
+
             val baseCandidates = if (isEmulator) {
-                listOf("10.0.2.2", "127.0.0.1")
+                listOfNotNull(buildConfigHost, "10.0.2.2", "127.0.0.1")
             } else {
-                listOf("127.0.0.1", "10.0.2.2")
+                listOfNotNull(buildConfigHost, "192.168.1.11").filter { it != "10.0.2.2" && it != "127.0.0.1" }
             }
-            val candidateHosts = baseCandidates.filter { it != currentHost }
+            val currentHost = primaryRequest.url.host
+            val candidateHosts = baseCandidates.distinct().filter { it != currentHost }
 
             var lastException: Exception = e
             for (fallbackHost in candidateHosts) {

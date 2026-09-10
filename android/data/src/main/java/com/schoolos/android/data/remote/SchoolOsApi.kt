@@ -41,12 +41,25 @@ interface SchoolOsApi {
     @GET("academic/subjects")
     suspend fun getSubjects(): ApiResponse<List<SubjectDto>>
 
+    @GET("academic/classes/students")
+    suspend fun getClassStudents(
+        @Query("class_name") className: String? = null,
+        @Query("class_id") classId: String? = null,
+        @Query("search") search: String? = null,
+    ): ApiResponse<List<ClassStudentDto>>
+
     // Materials
     @GET("learning/materials")
     suspend fun getMaterials(
         @Query("class_id") classId: String? = null,
         @Query("class_name") className: String? = null,
     ): ApiResponse<List<MaterialDto>>
+
+    @Multipart
+    @POST("learning/materials/upload")
+    suspend fun uploadMaterialFile(
+        @Part file: okhttp3.MultipartBody.Part,
+    ): ApiResponse<FileUploadResponse>
 
     // Assignments
     @GET("learning/assignments")
@@ -63,6 +76,13 @@ interface SchoolOsApi {
 
     @GET("learning/assignments/{id}/submissions")
     suspend fun getSubmissions(@Path("id") id: String): ApiResponse<List<SubmissionDto>>
+
+    @POST("learning/assignments/{id}/submissions/{subId}/grade")
+    suspend fun gradeSubmission(
+        @Path("id") assignmentId: String,
+        @Path("subId") submissionId: String,
+        @Body request: GradeSubmissionRequest,
+    ): ApiResponse<SubmissionDto>
 
     // Quizzes
     @GET("learning/quizzes")
@@ -161,6 +181,12 @@ interface SchoolOsApi {
 }
 
 @kotlinx.serialization.Serializable
+data class GradeSubmissionRequest(
+    val score: Int,
+    val feedback: String? = null,
+)
+
+@kotlinx.serialization.Serializable
 data class UnreadCountResponse(val count: Int)
 
 @kotlinx.serialization.Serializable
@@ -219,4 +245,9 @@ data class CreateQuizOptionRequestDto(
     @kotlinx.serialization.SerialName("choice_text") val choiceText: String,
     @kotlinx.serialization.SerialName("is_correct") val isCorrect: Boolean = false,
     @kotlinx.serialization.SerialName("order_index") val orderIndex: Int = 1,
+)
+
+@kotlinx.serialization.Serializable
+data class FileUploadResponse(
+    val url: String,
 )

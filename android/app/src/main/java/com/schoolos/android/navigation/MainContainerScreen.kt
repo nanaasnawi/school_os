@@ -31,6 +31,7 @@ import androidx.compose.material.icons.automirrored.filled.Message
 import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.ChildCare
+import androidx.compose.material.icons.filled.Forum
 import androidx.compose.material.icons.filled.Grade
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.People
@@ -98,11 +99,11 @@ fun MainContainerScreen(
     // Role-based nav items
     val navItems: List<BottomNavItem> = when {
         isTeacher -> listOf(
-            BottomNavItem(Screen.Home.route,          "Beranda",  Icons.Default.Home),
-            BottomNavItem(Screen.Sessions.route,      "Kelas",    Icons.Default.People),
-            BottomNavItem(Screen.Assignments.route,   "Tugas",    Icons.AutoMirrored.Filled.Assignment),
-            BottomNavItem(Screen.Notifications.route, "Pesan",    Icons.AutoMirrored.Filled.Message),
-            BottomNavItem(Screen.Profile.route,       "Akun",     Icons.Default.Person),
+            BottomNavItem(Screen.Home.route,    "Beranda", Icons.Default.Home),
+            BottomNavItem(Screen.Sessions.route, "Kelas",  Icons.Default.People),
+            BottomNavItem(Screen.Assignments.route, "Tugas", Icons.AutoMirrored.Filled.Assignment),
+            BottomNavItem(Screen.Chat.route,    "Tanya Jawab", Icons.Default.Forum),
+            BottomNavItem(Screen.Profile.route, "Akun",    Icons.Default.Person),
         )
         isParent -> listOf(
             BottomNavItem(Screen.Home.route,          "Beranda",  Icons.Default.Home),

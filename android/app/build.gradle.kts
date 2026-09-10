@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -5,6 +7,13 @@ plugins {
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
 }
+
+val localProps = Properties().apply {
+    val f = rootProject.file("local.properties")
+    if (f.exists()) load(f.inputStream())
+}
+val rawDevUrl: String = localProps.getProperty("dev.serverUrl", "http://10.0.2.2:8000/api/v1/") ?: "http://10.0.2.2:8000/api/v1/"
+val devServerUrl: String = if (!rawDevUrl.trimEnd('/').endsWith("/api/v1")) "${rawDevUrl.trimEnd('/')}/api/v1/" else "${rawDevUrl.trimEnd('/')}/"
 
 android {
     namespace = "com.schoolos.android"
@@ -20,7 +29,7 @@ android {
 
     buildTypes {
         debug {
-            buildConfigField("String", "API_BASE_URL", "\"http://127.0.0.1:8000/api/v1/\"")
+            buildConfigField("String", "API_BASE_URL", "\"$devServerUrl\"")
         }
         release {
             buildConfigField("String", "API_BASE_URL", "\"https://api.schoolos.app/api/v1/\"")

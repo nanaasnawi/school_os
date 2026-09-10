@@ -144,4 +144,18 @@ class AssignmentRepositoryImpl @Inject constructor(
         val response = api.getSubmissions(assignmentId)
         response.data?.map { it.dtoToDomain() } ?: emptyList()
     }
+
+    override suspend fun gradeSubmission(
+        assignmentId: String,
+        submissionId: String,
+        score: Int,
+        feedback: String?,
+    ): Result<AssignmentSubmission> = runCatching {
+        val response = api.gradeSubmission(
+            assignmentId,
+            submissionId,
+            com.schoolos.android.data.remote.GradeSubmissionRequest(score = score, feedback = feedback),
+        )
+        response.data?.dtoToDomain() ?: throw Exception("Gagal menyimpan nilai: respons kosong dari server.")
+    }
 }

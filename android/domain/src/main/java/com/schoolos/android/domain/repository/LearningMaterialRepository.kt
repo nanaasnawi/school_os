@@ -14,5 +14,10 @@ interface LearningMaterialRepository {
         subject: String,
         classId: String? = null
     ): Result<LearningMaterial>
+    suspend fun uploadMaterialFile(
+        bytes: ByteArray,
+        fileName: String,
+        mimeType: String
+    ): Result<String>
     suspend fun toggleMaterialCompletion(id: String): Result<Boolean>
 }

@@ -306,46 +306,10 @@ private fun CosmicNotificationTopBar(
                 Text(
                     "Pusat Notifikasi",
                     fontWeight = FontWeight.Black,
-                    fontSize = 20.sp,
+                    fontSize = 18.sp,
                     color = TextPrimary,
                     letterSpacing = (-0.5).sp
                 )            
-            }
-        }
-
-        if (unreadCount > 0) {
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(NeonBlue.copy(alpha = 0.12f))
-                    .border(1.dp, NeonBlue.copy(alpha = 0.35f), RoundedCornerShape(12.dp))
-                    .clickable(enabled = !markingAll, onClick = onMarkAllRead)
-                    .padding(horizontal = 12.dp, vertical = 7.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (markingAll) {
-                        CircularProgressIndicator(
-                            strokeWidth = 2.dp,
-                            color = NeonBlue,
-                            modifier = Modifier.size(13.dp)
-                        )
-                    } else {
-                        Icon(
-                            Icons.Default.DoneAll,
-                            contentDescription = null,
-                            tint = NeonBlue,
-                            modifier = Modifier.size(15.dp)
-                        )
-                    }
-                    Spacer(Modifier.width(6.dp))
-                    Text(
-                        "Baca Semua",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = NeonBlue
-                    )
-                }
             }
         }
     }

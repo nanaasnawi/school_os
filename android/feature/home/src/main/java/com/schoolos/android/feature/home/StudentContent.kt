@@ -52,14 +52,26 @@ import com.schoolos.android.core.designsystem.TextPrimary
 import com.schoolos.android.core.designsystem.TextSecondary
 import com.schoolos.android.core.designsystem.TextTertiary
 
+data class AgendaItemData(
+    val time: String,
+    val code: String,
+    val color: Color,
+    val sessionId: String,
+    val status: String,
+)
+
 fun LazyListScope.studentContent(
     onNavigateToSessions: () -> Unit,
+    onNavigateToSessionDetail: (String) -> Unit = {},
     onNavigateToAssignments: () -> Unit,
     onNavigateToQuizzes: () -> Unit,
     onNavigateToGrades: () -> Unit,
     onNavigateToProgress: () -> Unit,
     onNavigateToAchievements: () -> Unit,
     onNavigateToLearning: () -> Unit,
+    onNavigateToAssignmentWithSubject: (String) -> Unit = {},
+    onNavigateToQuizWithSubject: (String) -> Unit = {},
+    onNavigateToMaterialWithSubject: (String) -> Unit = {},
     nextSessionSubject: String = "-",
     nextSessionRoom: String = "-",
     nextSessionTime: String = "-",
@@ -84,15 +96,22 @@ fun LazyListScope.studentContent(
     }
 
     // ── 2. STUDENT TOOLBOX (Minimalist Circular) ──
+    // Determine current/active subject from today's sessions for context-aware navigation
+    val currentSubject = todaySessions.firstOrNull { it.status == "active" }?.subjectName
+        ?: todaySessions.firstOrNull()?.subjectName
+        ?: todaySessions.firstOrNull()?.notes?.substringBefore(" • ")?.trim()
+        ?: ""
+    val currentSubjectClean = currentSubject.substringBefore(" • ").substringBefore(" (Ruang").trim()
+
     item {
         Row(
             modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             val tools = listOf(
-                QuickAction("Tugas", Icons.AutoMirrored.Filled.Assignment, StudentNeon, onNavigateToAssignments),
-                QuickAction("Kuis", Icons.Default.Quiz, NeonWarning, onNavigateToQuizzes),
-                QuickAction("Materi", Icons.Default.Book, NeonBlue, onNavigateToLearning),
+                QuickAction("Tugas", Icons.AutoMirrored.Filled.Assignment, StudentNeon, { onNavigateToAssignmentWithSubject(currentSubjectClean) }),
+                QuickAction("Kuis", Icons.Default.Quiz, NeonWarning, { onNavigateToQuizWithSubject(currentSubjectClean) }),
+                QuickAction("Materi", Icons.Default.Book, NeonBlue, { onNavigateToMaterialWithSubject(currentSubjectClean) }),
                 QuickAction("Nilai", Icons.Default.Assessment, NeonSuccess, onNavigateToGrades),
                 QuickAction("Badge", Icons.Default.EmojiEvents, StudentNeon, onNavigateToAchievements),
             )
@@ -100,7 +119,7 @@ fun LazyListScope.studentContent(
         }
     }
 
-    // ── 3. COMPACT DAILY AGENDA STRIP ──
+    // ── 3. COMPACT DAILY AGENDA STRIP (Clickable) ──
     item {
         val agendaItems = todaySessions.map { s ->
             val title = s.subjectName ?: s.notes?.substringBefore(" • ") ?: "Mapel"
@@ -141,7 +160,7 @@ fun LazyListScope.studentContent(
                     }
                 }
             } ?: "-"
-            Triple(time, code, color)
+            AgendaItemData(time, code, color, s.id, s.status ?: "")
         }
 
         LightCard {
@@ -150,8 +169,14 @@ fun LazyListScope.studentContent(
                 Spacer(Modifier.height(14.dp))
                 if (agendaItems.isNotEmpty()) {
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        items(agendaItems) { (time, code, color) ->
-                            CompactAgendaItem(time, code, color)
+                        items(agendaItems, key = { it.sessionId }) { item ->
+                            CompactAgendaItem(
+                                time = item.time,
+                                code = item.code,
+                                color = item.color,
+                                isActive = item.status == "active",
+                                onClick = { onNavigateToSessionDetail(item.sessionId) }
+                            )
                         }
                     }
                 } else {
@@ -374,17 +399,37 @@ private fun StudentToolboxButton(action: QuickAction) {
 }
 
 @Composable
-private fun CompactAgendaItem(time: String, code: String, color: Color) {
+private fun CompactAgendaItem(
+    time: String,
+    code: String,
+    color: Color,
+    isActive: Boolean = false,
+    onClick: () -> Unit = {}
+) {
     Box(
         modifier = Modifier
             .width(80.dp)
             .clip(RoundedCornerShape(16.dp))
-            .background(color.copy(alpha = 0.06f))
-            .border(1.dp, color.copy(alpha = 0.2f), RoundedCornerShape(16.dp))
+            .background(if (isActive) color.copy(alpha = 0.12f) else color.copy(alpha = 0.06f))
+            .border(
+                width = if (isActive) 1.5.dp else 1.dp,
+                color = if (isActive) color.copy(alpha = 0.5f) else color.copy(alpha = 0.2f),
+                shape = RoundedCornerShape(16.dp)
+            )
+            .clickable(onClick = onClick)
             .padding(12.dp),
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            if (isActive) {
+                Box(
+                    modifier = Modifier
+                        .size(6.dp)
+                        .clip(CircleShape)
+                        .background(color)
+                )
+                Spacer(Modifier.height(4.dp))
+            }
             Text(code, fontWeight = FontWeight.Black, fontSize = 14.sp, color = color)
             Text(time, fontSize = 10.sp, color = TextTertiary, fontWeight = FontWeight.Bold)
         }

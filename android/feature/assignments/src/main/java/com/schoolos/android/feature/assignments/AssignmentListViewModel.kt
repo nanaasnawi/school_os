@@ -1,5 +1,6 @@
 package com.schoolos.android.feature.assignments
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.schoolos.android.domain.model.Assignment
@@ -21,10 +22,12 @@ data class AssignmentListUiState(
     val active: List<Assignment> = emptyList(),
     val dueSoon: List<Assignment> = emptyList(),
     val completed: List<Assignment> = emptyList(),
+    val subjectFilter: String? = null,
 )
 
 @HiltViewModel
 class AssignmentListViewModel @Inject constructor(
+    savedStateHandle: SavedStateHandle,
     private val repository: AssignmentRepository,
     private val authManager: com.schoolos.android.core.auth.AuthManager,
 ) : ViewModel() {
@@ -33,6 +36,9 @@ class AssignmentListViewModel @Inject constructor(
     val state = _state.asStateFlow()
 
     private val classId = ""
+
+    /** Optional subject filter passed via navigation (e.g. from a session detail). */
+    private var subjectFilter: String? = savedStateHandle.get<String>("subjectId")?.takeIf { it.isNotBlank() }
 
     init {
         viewModelScope.launch {
@@ -56,13 +62,15 @@ class AssignmentListViewModel @Inject constructor(
             _state.value = _state.value.copy(isLoading = true, error = null)
             repository.getAssignments(classId)
                 .onSuccess { assignments ->
-                    val grouped = groupAssignments(assignments)
+                    val filtered = subjectFilter?.let { filter -> assignments.filter { a -> matchesSubject(a.subjectName, filter) } } ?: assignments
+                    val grouped = groupAssignments(filtered)
                     _state.value = _state.value.copy(
                         isLoading = false,
                         isRefreshing = false,
                         active = grouped.active,
                         dueSoon = grouped.dueSoon,
                         completed = grouped.completed,
+                        subjectFilter = subjectFilter,
                     )
                 }
                 .onFailure { e ->
@@ -73,6 +81,20 @@ class AssignmentListViewModel @Inject constructor(
                     )
                 }
         }
+    }
+
+    /** Tolerant subject matching: exact, or bidirectional contains (case-insensitive). */
+    private fun matchesSubject(itemSubject: String?, filter: String): Boolean {
+        if (itemSubject.isNullOrBlank()) return false
+        val a = itemSubject.trim()
+        val b = filter.trim()
+        return a.equals(b, ignoreCase = true) || a.contains(b, ignoreCase = true) || b.contains(a, ignoreCase = true)
+    }
+
+    fun clearSubjectFilter() {
+        subjectFilter = null
+        _state.value = _state.value.copy(subjectFilter = null)
+        refresh()
     }
 
     private fun groupAssignments(assignments: List<Assignment>): Grouped {

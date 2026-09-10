@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
@@ -55,6 +56,7 @@ import com.schoolos.android.core.designsystem.TeacherNeon
 fun HomeScreen(
     onNavigateToNotifications: () -> Unit = {},
     onNavigateToSessions: () -> Unit = {},
+    onNavigateToSessionDetail: (String) -> Unit = {},
     onNavigateToAssignments: () -> Unit = {},
     onNavigateToQuizzes: () -> Unit = {},
     onNavigateToGrades: () -> Unit = {},
@@ -65,6 +67,10 @@ fun HomeScreen(
     onNavigateToAssignmentCreator: () -> Unit = {},
     onNavigateToQuizBuilder: () -> Unit = {},
     onNavigateToBroadcastCenter: () -> Unit = {},
+    onNavigateToAssignmentsWithSubject: (String) -> Unit = {},
+    onNavigateToQuizzesWithSubject: (String) -> Unit = {},
+    onNavigateToLearningWithSubject: (String) -> Unit = {},
+    onNavigateToRombelStudents: (String) -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
@@ -101,10 +107,13 @@ fun HomeScreen(
             modifier = Modifier.fillMaxSize(),
         ) {
             LazyColumn(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    // Edge-to-edge safe: never draw under the status bar
+                    .statusBarsPadding(),
                 contentPadding = PaddingValues(
                     start = 16.dp, end = 16.dp,
-                    top = 46.dp,
+                    top = 12.dp,
                     bottom = padding.calculateBottomPadding() + 0.dp,
                 ),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
@@ -289,6 +298,7 @@ fun HomeScreen(
                             onNavigateToQuizBuilder  = onNavigateToQuizBuilder,
                             onNavigateToBroadcastCenter = onNavigateToBroadcastCenter,
                             onNavigateToLearning     = onNavigateToLearning,
+                            onNavigateToRombelStudents = onNavigateToRombelStudents,
                             activeSubject            = state.activeSessionSubject,
                             activeClass              = teacherClass,
                             isHomeroom               = isHomeroom
@@ -310,12 +320,16 @@ fun HomeScreen(
                     )
                     else -> studentContent(
                         onNavigateToSessions     = onNavigateToSessions,
+                        onNavigateToSessionDetail = { sessionId -> onNavigateToSessionDetail(sessionId) },
                         onNavigateToAssignments  = onNavigateToAssignments,
                         onNavigateToQuizzes      = onNavigateToQuizzes,
                         onNavigateToGrades       = onNavigateToGrades,
                         onNavigateToProgress     = onNavigateToProgress,
                         onNavigateToAchievements = onNavigateToAchievements,
                         onNavigateToLearning     = onNavigateToLearning,
+                        onNavigateToAssignmentWithSubject = onNavigateToAssignmentsWithSubject,
+                        onNavigateToQuizWithSubject      = onNavigateToQuizzesWithSubject,
+                        onNavigateToMaterialWithSubject  = onNavigateToLearningWithSubject,
                         nextSessionSubject       = state.nextSessionSubject,
                         nextSessionRoom          = state.nextSessionRoom,
                         nextSessionTime          = state.nextSessionTime,

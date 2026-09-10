@@ -24,11 +24,16 @@ import com.schoolos.android.feature.auth.LoginScreen
 import com.schoolos.android.feature.grades.GradeDetailScreen
 import com.schoolos.android.feature.grades.GradebookListScreen
 import com.schoolos.android.feature.home.HomeScreen
+import com.schoolos.android.feature.home.RombelStudentsScreen
 import com.schoolos.android.feature.learning.LearningMaterialDetailScreen
 import com.schoolos.android.feature.learning.LearningMaterialListScreen
 import com.schoolos.android.feature.notifications.BroadcastCenterScreen
 import com.schoolos.android.feature.notifications.NotificationListScreen
+import com.schoolos.android.feature.profile.AboutAppScreen
+import com.schoolos.android.feature.profile.NotificationSettingsScreen
 import com.schoolos.android.feature.profile.ProfileScreen
+import com.schoolos.android.feature.profile.SchoolHelpContactScreen
+import com.schoolos.android.feature.profile.SecuritySettingsScreen
 import com.schoolos.android.feature.progress.ProgressScreen
 import com.schoolos.android.feature.quizzes.QuizAttemptScreen
 import com.schoolos.android.feature.quizzes.QuizBuilderScreen
@@ -42,12 +47,17 @@ import com.schoolos.android.core.network.MaintenanceManager
 import com.schoolos.android.feature.assignments.AssignmentCreatorScreen
 import com.schoolos.android.feature.auth.MaintenanceScreen
 import com.schoolos.android.feature.learning.MaterialCreatorScreen
+import com.schoolos.android.core.chat.ChatManager
+import com.schoolos.android.core.chat.InquiryType
+import com.schoolos.android.feature.notifications.ChatDetailScreen
+import com.schoolos.android.feature.notifications.TeacherChatScreen
 import kotlinx.coroutines.launch
 
 @Composable
 fun NavGraph(
     authManager: AuthManager,
     maintenanceManager: MaintenanceManager,
+    chatManager: ChatManager,
     navController: NavHostController = rememberNavController(),
 ) {
     var startCheck by remember { mutableStateOf(false) }
@@ -134,6 +144,7 @@ fun NavGraph(
             composable(Screen.Home.route) {
                 HomeScreen(
                     onNavigateToSessions = { navController.navigate(Screen.Sessions.route) },
+                    onNavigateToSessionDetail = { sessionId -> navController.navigate(Screen.SessionDetail.createRoute(sessionId)) },
                     onNavigateToAssignments = { navController.navigate(Screen.Assignments.route) },
                     onNavigateToQuizzes = { navController.navigate(Screen.Quizzes.route) },
                     onNavigateToNotifications = { navController.navigate(Screen.Notifications.route) },
@@ -144,7 +155,22 @@ fun NavGraph(
                     onNavigateToLearning = { navController.navigate(Screen.Learning.route) },
                     onNavigateToAssignmentCreator = { navController.navigate(Screen.AssignmentCreator.route) },
                     onNavigateToQuizBuilder = { navController.navigate(Screen.QuizBuilder.route) },
-                    onNavigateToBroadcastCenter = { navController.navigate(Screen.BroadcastCenter.route) }
+                    onNavigateToBroadcastCenter = { navController.navigate(Screen.BroadcastCenter.route) },
+                    onNavigateToAssignmentsWithSubject = { subject ->
+                        if (subject.isNotBlank()) navController.navigate(Screen.AssignmentsBySubject.createRoute(subject))
+                        else navController.navigate(Screen.Assignments.route)
+                    },
+                    onNavigateToQuizzesWithSubject = { subject ->
+                        if (subject.isNotBlank()) navController.navigate(Screen.QuizzesBySubject.createRoute(subject))
+                        else navController.navigate(Screen.Quizzes.route)
+                    },
+                    onNavigateToLearningWithSubject = { subject ->
+                        if (subject.isNotBlank()) navController.navigate(Screen.LearningBySubject.createRoute(subject))
+                        else navController.navigate(Screen.Learning.route)
+                    },
+                    onNavigateToRombelStudents = { className ->
+                        navController.navigate(Screen.RombelStudents.createRoute(className))
+                    }
                 )
             }
 
@@ -157,13 +183,39 @@ fun NavGraph(
                 )
             }
             composable(
+                route = Screen.LearningBySubject.route,
+                arguments = listOf(navArgument("subjectId") { type = NavType.StringType }),
+            ) { backStackEntry ->
+                val subjectId = backStackEntry.arguments?.getString("subjectId") ?: ""
+                LearningMaterialListScreen(
+                    subjectId = subjectId,
+                    onBack = { navController.popBackStack() },
+                    onMaterialClick = { id -> navController.navigate(Screen.LearningDetail.createRoute(id)) },
+                    onCreateMaterial = { navController.navigate(Screen.MaterialCreator.route) },
+                )
+            }
+            composable(
                 route = Screen.LearningDetail.route,
                 arguments = listOf(navArgument("id") { type = NavType.StringType }),
             ) { backStackEntry ->
                 val materialId = backStackEntry.arguments?.getString("id") ?: ""
                 LearningMaterialDetailScreen(
                     materialId = materialId,
-                    onBack = { navController.popBackStack() }
+                    onBack = { navController.popBackStack() },
+                    onCreateMaterial = { navController.navigate(Screen.MaterialCreator.route) },
+                    onAskTeacher = { title, id, subject ->
+                        val thread = chatManager.createInquiry(
+                            studentId = authState?.userId ?: "std-current",
+                            studentName = authState?.name ?: "Siswa",
+                            studentClass = authState?.className ?: "Kelas",
+                            subjectName = subject.ifBlank { "Materi Ajar" },
+                            inquiryType = InquiryType.MATERIAL,
+                            referenceTitle = title,
+                            referenceId = id,
+                            initialQuestion = "Halo Bapak/Ibu guru, saya ingin bertanya mengenai materi '$title' ini karena ada bagian yang belum saya pahami."
+                        )
+                        navController.navigate(Screen.ChatDetail.createRoute(thread.id, thread.studentName))
+                    }
                 )
             }
 
@@ -179,9 +231,18 @@ fun NavGraph(
             ) {
                 SessionDetailScreen(
                     onBack = { navController.popBackStack() },
-                    onOpenAssignments = { navController.navigate(Screen.Assignments.route) },
-                    onOpenQuizzes = { navController.navigate(Screen.Quizzes.route) },
-                    onOpenMaterials = { navController.navigate(Screen.Learning.route) }
+                    onOpenAssignments = { subject ->
+                        if (subject.isNotBlank()) navController.navigate(Screen.AssignmentsBySubject.createRoute(subject))
+                        else navController.navigate(Screen.Assignments.route)
+                    },
+                    onOpenQuizzes = { subject ->
+                        if (subject.isNotBlank()) navController.navigate(Screen.QuizzesBySubject.createRoute(subject))
+                        else navController.navigate(Screen.Quizzes.route)
+                    },
+                    onOpenMaterials = { subject ->
+                        if (subject.isNotBlank()) navController.navigate(Screen.LearningBySubject.createRoute(subject))
+                        else navController.navigate(Screen.Learning.route)
+                    }
                 )
             }
 
@@ -194,18 +255,55 @@ fun NavGraph(
                 )
             }
             composable(
+                route = Screen.AssignmentsBySubject.route,
+                arguments = listOf(navArgument("subjectId") { type = NavType.StringType }),
+            ) { backStackEntry ->
+                val subjectId = backStackEntry.arguments?.getString("subjectId") ?: ""
+                AssignmentListScreen(
+                    subjectId = subjectId,
+                    onAssignmentClick = { id -> navController.navigate(Screen.AssignmentDetail.createRoute(id)) },
+                    onCreateAssignment = { navController.navigate(Screen.AssignmentCreator.route) },
+                    onCreateQuiz = { navController.navigate(Screen.QuizBuilder.route) },
+                )
+            }
+            composable(
                 route = Screen.AssignmentDetail.route,
                 arguments = listOf(navArgument("id") { type = NavType.StringType }),
             ) {
                 AssignmentDetailScreen(
                     onBack = { navController.popBackStack() },
-                    onOpenMaterial = { id -> navController.navigate(Screen.LearningDetail.createRoute(id)) }
+                    onOpenMaterial = { id -> navController.navigate(Screen.LearningDetail.createRoute(id)) },
+                    onAskTeacher = { title, id, subject, teacher ->
+                        val thread = chatManager.createInquiry(
+                            studentId = authState?.userId ?: "std-current",
+                            studentName = authState?.name ?: "Siswa",
+                            studentClass = authState?.className ?: "Kelas",
+                            teacherName = teacher.ifBlank { "Guru Pengampu" },
+                            subjectName = subject.ifBlank { "Tugas" },
+                            inquiryType = InquiryType.ASSIGNMENT,
+                            referenceTitle = title,
+                            referenceId = id,
+                            initialQuestion = "Halo Bapak/Ibu guru, saya ingin berkonsultasi mengenai tugas '$title' ini karena ada hal yang ingin saya tanyakan."
+                        )
+                        navController.navigate(Screen.ChatDetail.createRoute(thread.id, thread.studentName))
+                    }
                 )
             }
 
             // Quizzes
             composable(Screen.Quizzes.route) {
                 QuizListScreen(
+                    onBack = { navController.popBackStack() },
+                    onQuizClick = { id -> navController.navigate(Screen.QuizDetail.createRoute(id)) },
+                )
+            }
+            composable(
+                route = Screen.QuizzesBySubject.route,
+                arguments = listOf(navArgument("subjectId") { type = NavType.StringType }),
+            ) { backStackEntry ->
+                val subjectId = backStackEntry.arguments?.getString("subjectId") ?: ""
+                QuizListScreen(
+                    subjectId = subjectId,
                     onBack = { navController.popBackStack() },
                     onQuizClick = { id -> navController.navigate(Screen.QuizDetail.createRoute(id)) },
                 )
@@ -277,6 +375,40 @@ fun NavGraph(
                 )
             }
 
+            // Chat & Q&A Consultation (Teacher & Student)
+            composable(Screen.Chat.route) {
+                TeacherChatScreen(
+                    chatManager = chatManager,
+                    onOpenThread = { threadId, studentName ->
+                        navController.navigate(Screen.ChatDetail.createRoute(threadId, studentName))
+                    }
+                )
+            }
+            composable(
+                route = Screen.ChatDetail.route,
+                arguments = listOf(
+                    navArgument("recipientId") { type = NavType.StringType },
+                    navArgument("recipientName") { type = NavType.StringType },
+                ),
+            ) { backStackEntry ->
+                val threadId = backStackEntry.arguments?.getString("recipientId") ?: ""
+                ChatDetailScreen(
+                    threadId = threadId,
+                    chatManager = chatManager,
+                    onBack = { navController.popBackStack() },
+                    onOpenReference = { type, refId ->
+                        if (!refId.isNullOrBlank()) {
+                            when (type) {
+                                InquiryType.MATERIAL -> navController.navigate(Screen.LearningDetail.createRoute(refId))
+                                InquiryType.ASSIGNMENT -> navController.navigate(Screen.AssignmentDetail.createRoute(refId))
+                                else -> {}
+                            }
+                        }
+                    },
+                    isTeacherMode = authState?.isTeacher ?: true
+                )
+            }
+
             // Progress
             composable(Screen.Progress.route) {
                 ProgressScreen(
@@ -301,9 +433,38 @@ fun NavGraph(
                             }
                         }
                     },
-                    onNavigateToNotifications = {
-                        navController.navigate(Screen.Notifications.route)
+                    onNavigateToSecurity = {
+                        navController.navigate(Screen.ProfileSecurity.route)
                     },
+                    onNavigateToNotifications = {
+                        navController.navigate(Screen.ProfileNotifications.route)
+                    },
+                    onNavigateToHelp = {
+                        navController.navigate(Screen.ProfileHelp.route)
+                    },
+                    onNavigateToAbout = {
+                        navController.navigate(Screen.ProfileAbout.route)
+                    },
+                )
+            }
+            composable(Screen.ProfileSecurity.route) {
+                SecuritySettingsScreen(
+                    onBack = { navController.popBackStack() }
+                )
+            }
+            composable(Screen.ProfileNotifications.route) {
+                NotificationSettingsScreen(
+                    onBack = { navController.popBackStack() }
+                )
+            }
+            composable(Screen.ProfileHelp.route) {
+                SchoolHelpContactScreen(
+                    onBack = { navController.popBackStack() }
+                )
+            }
+            composable(Screen.ProfileAbout.route) {
+                AboutAppScreen(
+                    onBack = { navController.popBackStack() }
                 )
             }
 
@@ -330,6 +491,18 @@ fun NavGraph(
                 BroadcastCenterScreen(
                     onBack = { navController.popBackStack() },
                     onSuccess = { navController.popBackStack() }
+                )
+            }
+
+            // Rombel Students List (Homeroom Teacher View)
+            composable(
+                route = Screen.RombelStudents.route,
+                arguments = listOf(navArgument("className") { type = NavType.StringType }),
+            ) { backStackEntry ->
+                val className = backStackEntry.arguments?.getString("className") ?: ""
+                RombelStudentsScreen(
+                    className = className,
+                    onBack = { navController.popBackStack() },
                 )
             }
         }
