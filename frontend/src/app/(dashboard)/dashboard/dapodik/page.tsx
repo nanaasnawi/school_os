@@ -200,7 +200,7 @@ export default function DapodikHubPage() {
   // Unduh biner aplikasi pendukung School OS Bridge (Sekali Saja)
   const handleDownloadBridgeExe = () => {
     const link = document.createElement('a');
-    link.href = 'https://raw.githubusercontent.com/nanaasnawi/school_os/main/frontend/public/downloads/schoolos-bridge.exe';
+    link.href = '/downloads/schoolos-bridge.exe';
     link.download = 'schoolos-bridge.exe';
     document.body.appendChild(link);
     link.click();
