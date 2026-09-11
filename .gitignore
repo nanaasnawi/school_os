@@ -42,6 +42,7 @@ docker-compose.override.yml
 /phone_ui.xml
 /backend/scratch/
 /backend/target_temp/
+/temp_stash/
 *.log
 *.exe
 !frontend/public/downloads/*.exe
