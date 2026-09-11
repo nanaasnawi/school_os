@@ -1,8 +1,0 @@
-target/
-target_temp/
-.env
-.env.*
-scratch/
-*.log
-uploads/
-.git
