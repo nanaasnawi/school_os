@@ -1,4 +1,3 @@
-import { getTenantItem, setTenantItem, removeTenantItem } from '@/lib/tenant-storage';
 /**
  * School OS — Dapodik Local Bridge & Anti-Corruption Layer (ACL) Engine
  * Real Database & API Integration Layer (Connects directly to Backend API /api/v1/dapodik)
@@ -64,24 +63,23 @@ async function fetchApi(endpoint: string, options: RequestInit = {}): Promise<Re
   try {
     const fullUrl = getApiUrl(endpoint);
     const res = await fetch(fullUrl, options);
-    if (res.ok) return res;
-  } catch (e) {
-    // Backend unreachable, fall through to Next.js route
+    return res;
+  } catch (e: any) {
+    throw new Error(`Gagal terhubung ke Backend API (${endpoint}). Pastikan server backend aktif.`);
   }
-  return fetch(endpoint, options);
 }
 
 async function safeFetchJson(res: Response): Promise<any> {
   const contentType = res.headers.get('content-type') || '';
   const text = await res.text();
-  
+
   if (!text || text.trim().length === 0) {
     throw new Error(`Server merespon body kosong (HTTP status ${res.status})`);
   }
 
   const trimmed = text.trim();
   if (trimmed.startsWith('<!DOCTYPE') || trimmed.startsWith('<html') || contentType.includes('text/html')) {
-    throw new Error(`Server API merespons halaman HTML/Web (HTTP status ${res.status}). Pastikan backend API Server aktif.`);
+    throw new Error(`Server API merespons halaman HTML (HTTP status ${res.status}). Pastikan backend Rust Axum aktif.`);
   }
 
   try {
@@ -164,8 +162,6 @@ export async function uploadDapodikPrefillFile(fileName: string, contentText: st
   throw new Error('Gagal memproses file prefill (.prf)');
 }
 
-
-
 /**
  * Perform Real Health Check against Local Bridge (Port 5775) & Dapodik (Port 5774)
  */
@@ -232,7 +228,7 @@ export async function getDapodikSyncRecords(): Promise<DapodikSyncRecord[]> {
     if (res.ok) {
       const json = await safeFetchJson(res);
       if (json && json.data && Array.isArray(json.data) && json.data.length > 0) {
-        const records = json.data.map((r: any) => ({
+        return json.data.map((r: any) => ({
           id: r.id,
           nisn: r.nisn,
           nik: r.nik,
@@ -246,18 +242,12 @@ export async function getDapodikSyncRecords(): Promise<DapodikSyncRecord[]> {
           stage: r.stage,
           lastSyncedAt: r.last_synced_at,
         }));
-        // Storage to cache removed as per user request (strict DB only)
-
-        return records;
       }
     }
   } catch (err: any) {
     // ignore
   }
 
-  // Fallback to cache removed as per user request (strict DB only)
-
-  // STRICT ZERO SAMPLE DATA! If 0 real records, return empty array []!
   return [];
 }
 
@@ -298,23 +288,15 @@ export async function pullDataFromDapodik(config?: PullDapodikConfig): Promise<{
   newRecordsCount: number;
   updatedRecords: DapodikSyncRecord[];
 }> {
-  const token =
-    apiClient.getToken() ||
-    (typeof window !== 'undefined'
-      ? localStorage.getItem('token') ||
-        localStorage.getItem('access_token') ||
-        localStorage.getItem('auth_token') ||
-        ''
-      : '');
+  const token = apiClient.getToken() || '';
   const cloudUrl = getApiUrl('').replace(/\/api\/v1\/?$/, '');
 
-  // Step 1: Call Silent Local Bridge on 127.0.0.1:5775 (CORS-enabled, zero-console)
   try {
     const bridgeRes = await fetch('http://127.0.0.1:5775/sync', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        cloud_url: cloudUrl || 'https://schoolosbackend-production.up.railway.app',
+        cloud_url: cloudUrl,
         cloud_token: token,
         npsn: config?.npsn?.trim() || undefined,
         dapodik_token: config?.bearerToken?.trim() || undefined,
@@ -325,7 +307,6 @@ export async function pullDataFromDapodik(config?: PullDapodikConfig): Promise<{
     if (bridgeRes.ok) {
       const bridgeJson = await bridgeRes.json();
       if (bridgeJson.success && bridgeJson.data) {
-        // Fetch fresh records from Cloud PostgreSQL now that sync has populated them
         const freshRecords = await getDapodikSyncRecords();
         if (typeof window !== 'undefined') {
           window.dispatchEvent(
@@ -346,7 +327,7 @@ export async function pullDataFromDapodik(config?: PullDapodikConfig): Promise<{
       let errObj;
       try {
         errObj = JSON.parse(errText);
-      } catch {}
+      } catch { }
       throw new Error(
         errObj?.error || 'Bridge lokal melaporkan kesalahan saat menarik data Dapodik.'
       );
@@ -360,9 +341,8 @@ export async function pullDataFromDapodik(config?: PullDapodikConfig): Promise<{
       throw err;
     }
 
-    // Bridge is not running on 127.0.0.1:5775
     throw new Error(
-      'Aplikasi Pendukung School OS (Bridge) belum aktif di komputer ini. Silakan jalankan SchoolOS-Bridge sekali saja agar tombol tarik data dapat membaca Dapodik lokal.'
+      'Aplikasi Pendukung School OS (Bridge) belum aktif di komputer ini.'
     );
   }
 }
@@ -449,4 +429,3 @@ export async function getDapodikAgentInfo(): Promise<DapodikAgentInfo | null> {
     return null;
   }
 }
-
