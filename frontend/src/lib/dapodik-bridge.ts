@@ -298,7 +298,14 @@ export async function pullDataFromDapodik(config?: PullDapodikConfig): Promise<{
   newRecordsCount: number;
   updatedRecords: DapodikSyncRecord[];
 }> {
-  const token = apiClient.getToken() || '';
+  const token =
+    apiClient.getToken() ||
+    (typeof window !== 'undefined'
+      ? localStorage.getItem('token') ||
+        localStorage.getItem('access_token') ||
+        localStorage.getItem('auth_token') ||
+        ''
+      : '');
   const cloudUrl = getApiUrl('').replace(/\/api\/v1\/?$/, '');
 
   // Step 1: Call Silent Local Bridge on 127.0.0.1:5775 (CORS-enabled, zero-console)
