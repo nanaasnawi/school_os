@@ -72,6 +72,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = (token: string, user: User) => {
     apiClient.setToken(token);
     setUser(user);
+    if (!user.full_name) {
+      fetch(getApiUrl('/api/v1/auth/me'), {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((res) => res.json())
+        .then((json) => {
+          if (json?.data?.full_name) {
+            setUser((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    full_name: json.data.full_name,
+                    role: json.data.role || prev.role,
+                  }
+                : prev
+            );
+          }
+        })
+        .catch(() => {});
+    }
   };
 
   const logout = () => {

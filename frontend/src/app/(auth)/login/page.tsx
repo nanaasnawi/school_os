@@ -129,8 +129,8 @@ export default function LoginPage() {
           login(token, {
             id: payload.sub || '1',
             email: payload.email || email,
-            full_name: payload.full_name || '',
-            role: payload.role || 'Administrator',
+            full_name: (data?.data as any)?.name || payload.full_name || '',
+            role: (data?.data as any)?.role || payload.role || 'Administrator',
           });
         } catch {
           login(token, { id: '1', email, role: 'Administrator' });

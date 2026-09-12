@@ -108,7 +108,10 @@ export default function QrScanPage() {
       if (res.ok) {
         const json = await res.json();
         if (json?.data) {
-          loadedUsers = json.data;
+          loadedUsers = json.data.map((u: any) => ({
+            ...u,
+            cached_raw_token: u.raw_token || null,
+          }));
         }
       } else {
         // Fallback to /api/v1/auth/users if qr-tokens/users needs standard fallback
@@ -138,11 +141,18 @@ export default function QrScanPage() {
           const cachedTokensRaw = localStorage.getItem('school_os_user_qr_tokens');
           if (cachedTokensRaw) {
             const cachedTokens: Record<string, string> = JSON.parse(cachedTokensRaw);
-            loadedUsers = loadedUsers.map((u) => ({
-              ...u,
-              cached_raw_token: cachedTokens[u.id] || null,
-              has_active_token: u.has_active_token || !!cachedTokens[u.id],
-            }));
+            loadedUsers = loadedUsers.map((u) => {
+              const raw = u.cached_raw_token || cachedTokens[u.id] || null;
+              if (raw && !cachedTokens[u.id]) {
+                cachedTokens[u.id] = raw;
+              }
+              return {
+                ...u,
+                cached_raw_token: raw,
+                has_active_token: u.has_active_token || !!raw,
+              };
+            });
+            localStorage.setItem('school_os_user_qr_tokens', JSON.stringify(cachedTokens));
           }
         } catch (e) {
           console.error(e);
@@ -273,6 +283,7 @@ export default function QrScanPage() {
           user_id: user.id,
           token_type: 'BADGE',
           label: `Kartu Akses ${user.role} - ${user.full_name}`,
+          force_reset: forceRegenerate,
         }),
       });
 
@@ -976,11 +987,15 @@ export default function QrScanPage() {
                             📥 QR
                           </button>
                           <button
-                            onClick={() => handleGenerateSingle(u, true)}
+                            onClick={() => {
+                              if (confirm(`Apakah kartu milik ${u.full_name} hilang atau dicuri?\n\nReset kartu akan MEMBATALKAN QR Code lama secara permanen sehingga kartu lama tidak bisa lagi digunakan untuk login.`)) {
+                                handleGenerateSingle(u, true);
+                              }
+                            }}
                             className={`${styles.actionBtn} ${styles.actionBtnDanger}`}
-                            title="Kartu hilang / lupa akses? Terbitkan QR baru dan otomatis batalkan QR lama"
+                            title="Kartu hilang / dicuri? Terbitkan QR baru dan otomatis batalkan QR lama"
                           >
-                            🔄 Reset
+                            🔄 Reset (Hilang/Dicuri)
                           </button>
                         </div>
                       </td>

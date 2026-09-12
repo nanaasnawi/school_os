@@ -22,7 +22,7 @@ export default function SystemAdminLogin() {
       const res = await fetch(getApiUrl('/api/v1/system/login'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email: email.trim(), password: password.trim() })
       });
 
       if (res.ok) {
@@ -86,7 +86,7 @@ export default function SystemAdminLogin() {
             
             <div className={styles.statusLine}>
               <span className={styles.statusDot} style={{ background: '#f87171', boxShadow: '0 0 8px #f87171' }} />
-              <span style={{ color: '#f87171' }}>System Admin Access \u2014 Restricted Area</span>
+              <span style={{ color: '#f87171' }}>System Admin Access — Restricted Area</span>
             </div>
           </div>
         </div>

@@ -693,7 +693,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <div className={styles.headerGreeting}>
               {pathname === '/dashboard' ? (
                 <>
-                  <h1 className={styles.greetingTitle}>Selamat datang, Admin 👋</h1>
+                  <h1 className={styles.greetingTitle} title={`Selamat datang, ${user?.full_name || user?.email || 'Admin'}`}>
+                    Selamat datang, {user?.full_name || user?.email || 'Admin'} 👋
+                  </h1>
                   <span className={styles.greetingSub}>Dashboard ringkasan — pantau kinerja sekolah hari ini</span>
                 </>
               ) : (

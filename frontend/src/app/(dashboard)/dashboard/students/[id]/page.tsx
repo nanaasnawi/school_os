@@ -25,6 +25,8 @@ type StudentDetail = {
   attendance?: string;
   guardian_name?: string;
   guardian_phone?: string;
+  nama_ayah?: string;
+  nama_ibu?: string;
 };
 
 export default function StudentDetailPage() {
@@ -67,8 +69,10 @@ export default function StudentDetailPage() {
               status: d.status || 'Active',
               gpa: '3.85',
               attendance: '96.5%',
-              guardian_name: d.guardian?.full_name || 'Belum Ada Data Ibu/Wali',
+              guardian_name: d.guardian?.full_name || d.nama_ibu || 'Belum Ada Data Ibu/Wali',
               guardian_phone: d.guardian?.phone_number || '-',
+              nama_ayah: d.nama_ayah || '-',
+              nama_ibu: d.nama_ibu || '-',
             });
             setLoading(false);
             return;
@@ -339,23 +343,34 @@ export default function StudentDetailPage() {
           </div>
 
           <div className={styles.card}>
-            <h3 className={styles.cardTitle}>Domisili &amp; Kontak Ibu Kandung / Wali</h3>
+            <h3 className={styles.cardTitle}>Data Orang Tua &amp; Wali Murid (Sensitif Dapodik)</h3>
             <div className={styles.infoGrid}>
+              <div className={styles.infoRow}>
+                <span className={styles.infoLabel}>Nama Ayah Kandung</span>
+                <span className={styles.infoVal}><strong>{student.nama_ayah && student.nama_ayah !== '-' ? student.nama_ayah : '(Belum Ada Data Ayah)'}</strong></span>
+              </div>
+              <div className={styles.infoRow}>
+                <span className={styles.infoLabel}>Nama Ibu Kandung</span>
+                <span className={styles.infoVal} style={{ color: '#38bdf8' }}><strong>{student.nama_ibu && student.nama_ibu !== '-' ? student.nama_ibu : '(Belum Ada Data Ibu)'}</strong></span>
+              </div>
+              <div className={styles.infoRow}>
+                <span className={styles.infoLabel}>Akun Login Wali (Ibu)</span>
+                <span className={styles.infoVal}>
+                  <strong style={{ color: '#34d399' }}>{student.guardian_name || student.nama_ibu}</strong>
+                  <span style={{ fontSize: '0.75rem', marginLeft: '0.5rem', opacity: 0.7 }}>(Prioritas Akun Ibu)</span>
+                </span>
+              </div>
               <div className={styles.infoRow}>
                 <span className={styles.infoLabel}>No. Handphone Siswa</span>
                 <span className={styles.infoVal}>{student.no_hp}</span>
               </div>
               <div className={styles.infoRow}>
-                <span className={styles.infoLabel}>Alamat Tempat Tinggal</span>
-                <span className={styles.infoVal}>{student.alamat_jalan}</span>
-              </div>
-              <div className={styles.infoRow}>
-                <span className={styles.infoLabel}>Nama Ibu Kandung / Wali</span>
-                <span className={styles.infoVal}><strong>{student.guardian_name}</strong></span>
-              </div>
-              <div className={styles.infoRow}>
                 <span className={styles.infoLabel}>No. Kontak Ibu / Wali</span>
                 <span className={styles.infoVal}>{student.guardian_phone}</span>
+              </div>
+              <div className={styles.infoRow}>
+                <span className={styles.infoLabel}>Alamat Domisili</span>
+                <span className={styles.infoVal}>{student.alamat_jalan}</span>
               </div>
             </div>
           </div>
