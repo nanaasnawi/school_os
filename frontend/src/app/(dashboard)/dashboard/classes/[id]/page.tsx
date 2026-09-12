@@ -232,22 +232,10 @@ function ClassDetailContent() {
   return (
     <div className={styles.page}>
       {toastMsg && (
-        <div style={{
-          position: 'fixed',
-          top: '20px',
-          right: '20px',
-          zIndex: 9999,
-          background: '#10b981',
-          color: '#fff',
-          padding: '0.85rem 1.25rem',
-          borderRadius: '10px',
-          fontWeight: 700,
-          boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.5rem',
-        }}>
-          {toastMsg}
+        <div className="toastContainer">
+          <div className="toast toastSuccess">
+            <span>{toastMsg}</span>
+          </div>
         </div>
       )}
 

@@ -241,44 +241,35 @@ export default function DapodikHubPage() {
 
   return (
     <div className={styles.page}>
-      {/* Toast Notification */}
+      {/* Toast Notification (Solid, Opaque, Positioned Below Topbar) */}
       {toastMessage && (
-        <div
-          style={{
-            position: 'fixed',
-            top: '20px',
-            right: '24px',
-            zIndex: 9999,
-            background:
-              toastMessage.includes('❌') || toastMessage.includes('⚠️')
-                ? 'rgba(239, 68, 68, 0.12)'
-                : 'rgba(22, 163, 74, 0.12)',
-            border: `1px solid ${
-              toastMessage.includes('❌') || toastMessage.includes('⚠️')
-                ? 'rgba(239, 68, 68, 0.3)'
-                : 'rgba(22, 163, 74, 0.3)'
-            }`,
-            color:
-              toastMessage.includes('❌') || toastMessage.includes('⚠️')
-                ? '#dc2626'
-                : 'var(--success)',
-            padding: '0.75rem 1.25rem',
-            borderRadius: '10px',
-            fontWeight: 700,
-            fontSize: '0.85rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.75rem',
-            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)',
-          }}
-        >
-          <div>{toastMessage}</div>
-          <button
-            onClick={() => setToastMessage(null)}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', fontWeight: 800, color: 'inherit' }}
+        <div className="toastContainer">
+          <div
+            className={`toast ${
+              toastMessage.includes('❌') || toastMessage.includes('⚠️') || toastMessage.toLowerCase().includes('gagal')
+                ? 'toastError'
+                : 'toastSuccess'
+            }`}
           >
-            ✕
-          </button>
+            <span>{toastMessage}</span>
+            <button
+              onClick={() => setToastMessage(null)}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                fontWeight: 800,
+                color: 'inherit',
+                fontSize: '1rem',
+                padding: '0 0.25rem',
+                lineHeight: 1,
+                opacity: 0.8,
+              }}
+              title="Tutup Notifikasi"
+            >
+              ✕
+            </button>
+          </div>
         </div>
       )}
 
