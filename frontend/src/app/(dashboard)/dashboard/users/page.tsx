@@ -8,6 +8,7 @@ import { exportToExcel } from '@/lib/exportExcel';
 type UserAccount = {
   id: string;
   username: string;
+  email?: string;
   role: 'admin' | 'teacher' | 'student' | 'parent';
   roleLabel: string;
   connectedEntity: string;
@@ -92,7 +93,8 @@ export default function UsersPage() {
 
               userAccounts.push({
                 id: u.id,
-                username: u.email,
+                username: u.username || u.email,
+                email: u.email,
                 role: role,
                 roleLabel: u.role || 'Pengguna',
                 connectedEntity: u.full_name,
@@ -349,6 +351,11 @@ export default function UsersPage() {
                   <tr key={u.id}>
                     <td className={styles.userEmail}>
                       <code style={{ fontSize: '0.85rem', color: '#2563eb', fontWeight: 800 }}>{u.username}</code>
+                      {u.email && u.email !== u.username && (
+                        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                          {u.email}
+                        </div>
+                      )}
                     </td>
                     <td>
                       <span style={{ fontFamily: 'monospace', fontSize: '0.8rem', background: 'var(--bg-elevated)', border: '1px solid var(--border-light)', padding: '3px 8px', borderRadius: '6px', fontWeight: 800, color: 'var(--text-primary)' }}>
