@@ -318,7 +318,7 @@ export default function DapodikHubPage() {
             className="btn btn-secondary btn-sm"
             style={{ fontWeight: 700, fontSize: '0.8rem', padding: '0.45rem 0.85rem' }}
           >
-            ⚙️ Pengaturan &amp; Bantuan
+            ⚙️ Pengaturan Dapodik
           </button>
 
           <button
@@ -451,48 +451,55 @@ export default function DapodikHubPage() {
             🏢
           </div>
           <div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Identitas Instansi</div>
-            <div style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '0.1rem' }}>
-              {npsnInput || agentInfo?.npsn ? `NPSN: ${npsnInput || agentInfo?.npsn}` : 'NPSN Belum Diatur'}
-            </div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
-              {schoolName || agentInfo?.schoolName || 'Pengaturan Sekolah'}
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Identitas Sekolah (NPSN)</div>
+            <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '0.1rem', fontFamily: 'monospace' }}>
+              {agentInfo?.npsn || '20101234'}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Main Content: Search & Student Table */}
-      <div className={styles.tableCard} style={{ border: '1px solid var(--border-light)', borderRadius: '14px', overflow: 'hidden' }}>
-        {/* Table Toolbar */}
+      {/* Main Content Area (Sync Matrix & Fast Search) */}
+      <div className={styles.card} style={{ border: '1px solid var(--border-light)', borderRadius: '14px', overflow: 'hidden' }}>
+        {/* Table Header Controls */}
         <div style={{
-          padding: '0.85rem 1.25rem',
+          padding: '1rem 1.25rem',
           borderBottom: '1px solid var(--border-light)',
           display: 'flex',
-          justifyContent: 'space-between',
           alignItems: 'center',
+          justifyContent: 'space-between',
           flexWrap: 'wrap',
           gap: '0.75rem',
           background: 'var(--bg-surface)',
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-            <span style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-primary)' }}>
-              Data Siswa Terdaftar
-            </span>
-            <span className="badge badge-info" style={{ fontWeight: 700, fontSize: '0.75rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span style={{ fontWeight: 800, fontSize: '0.95rem' }}>Data Siswa Terdaftar</span>
+            <span className="badge badge-info" style={{ fontWeight: 700 }}>
               {filteredRecords.length} Siswa
             </span>
           </div>
 
-          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flex: 1, maxWidth: '360px' }}>
             <input
               type="text"
               placeholder="🔍 Cari nama siswa, NISN, atau kelas..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="input input-sm"
-              style={{ minWidth: '280px', fontSize: '0.8rem' }}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPageMatrix(1);
+              }}
+              className="input"
+              style={{ width: '100%', fontSize: '0.85rem' }}
             />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="btn btn-secondary btn-sm"
+                style={{ padding: '0.4rem 0.6rem', fontSize: '0.75rem' }}
+              >
+                ✕
+              </button>
+            )}
           </div>
         </div>
 
@@ -642,7 +649,7 @@ export default function DapodikHubPage() {
             style={{
               background: 'var(--bg-card)',
               borderRadius: '16px',
-              maxWidth: '560px',
+              maxWidth: '540px',
               width: '100%',
               overflow: 'hidden',
               border: '1px solid var(--border-light)',
@@ -652,34 +659,46 @@ export default function DapodikHubPage() {
           >
             {/* Modal Header */}
             <div style={{
-              padding: '1rem 1.25rem',
+              padding: '1.15rem 1.4rem',
               borderBottom: '1px solid var(--border-light)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
             }}>
               <div>
-                <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                  ⚙️ Pengaturan &amp; Bantuan Dapodik
+                <h2 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                  ⚙️ Pengaturan Dapodik
                 </h2>
-                <p style={{ margin: '0.2rem 0 0', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-                  Konfigurasi koneksi Web Service Dapodik sekolah Anda.
+                <p style={{ margin: '0.2rem 0 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                  Konfigurasi Web Service &amp; Konektor School OS Bridge
                 </p>
               </div>
               <button
                 onClick={() => setShowConfigModal(false)}
-                style={{ background: 'none', border: 'none', fontSize: '1.4rem', cursor: 'pointer', color: 'var(--text-muted)' }}
+                style={{
+                  background: 'var(--bg-elevated)',
+                  border: '1px solid var(--border-light)',
+                  borderRadius: '50%',
+                  width: '32px',
+                  height: '32px',
+                  fontSize: '0.9rem',
+                  cursor: 'pointer',
+                  color: 'var(--text-muted)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
               >
                 ✕
               </button>
             </div>
 
             {/* Modal Body */}
-            <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1.2rem', maxHeight: '75vh', overflowY: 'auto' }}>
-              {/* Form Konfigurasi */}
+            <div style={{ padding: '1.25rem 1.4rem', display: 'flex', flexDirection: 'column', gap: '1.15rem', maxHeight: '75vh', overflowY: 'auto' }}>
+              {/* Form Konfigurasi Web Service */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-primary)' }}>
-                  1. Konfigurasi Web Service Dapodik
+                <div style={{ fontWeight: 700, fontSize: '0.84rem', color: 'var(--text-primary)' }}>
+                  Koneksi Web Service Dapodik
                 </div>
 
                 <div>
@@ -724,79 +743,121 @@ export default function DapodikHubPage() {
                   />
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.25rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.2rem' }}>
                   <button
                     onClick={handleSaveDapodikSettings}
                     disabled={isSavingSettings}
                     className="btn btn-primary btn-sm"
-                    style={{ fontWeight: 800 }}
+                    style={{ fontWeight: 800, borderRadius: '8px' }}
                   >
                     {isSavingSettings ? '💾 Menyimpan...' : '💾 Simpan Konfigurasi'}
                   </button>
                 </div>
               </div>
 
-              <hr style={{ border: 'none', borderTop: '1px solid var(--border-light)', margin: '0.25rem 0' }} />
+              <hr style={{ border: 'none', borderTop: '1px solid var(--border-light)', margin: 0 }} />
 
-              {/* Bantuan Bridge Portabel (Opsional) */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <span style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--text-primary)' }}>
-                    2. School OS Bridge (Native Silent &amp; Autostart)
-                  </span>
-                  <span className="badge badge-success" style={{ fontSize: '0.68rem', fontWeight: 700 }}>
-                    Sekali Pasang, Selamanya Aktif
-                  </span>
+              {/* Seamless School OS Bridge Connector */}
+              <div style={{
+                background: 'var(--bg-elevated)',
+                border: '1px solid var(--border-light)',
+                borderRadius: '14px',
+                padding: '1rem 1.15rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.85rem',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <div style={{
+                      width: '38px',
+                      height: '38px',
+                      borderRadius: '11px',
+                      background: 'linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%)',
+                      color: '#ffffff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '1.15rem',
+                      boxShadow: '0 4px 12px rgba(14, 165, 233, 0.25)',
+                      flexShrink: 0,
+                    }}>
+                      ⚡
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <span>School OS Bridge</span>
+                        <span style={{
+                          fontSize: '0.68rem',
+                          fontWeight: 700,
+                          padding: '0.15rem 0.5rem',
+                          borderRadius: '999px',
+                          background: isConnected ? 'rgba(16, 185, 129, 0.12)' : 'rgba(14, 165, 233, 0.12)',
+                          color: isConnected ? '#059669' : '#0284c7',
+                          border: `1px solid ${isConnected ? 'rgba(16, 185, 129, 0.25)' : 'rgba(14, 165, 233, 0.25)'}`,
+                        }}>
+                          {isConnected ? '● Aktif' : 'Background Sync'}
+                        </span>
+                      </div>
+                      <p style={{ margin: '0.15rem 0 0', fontSize: '0.76rem', color: 'var(--text-muted)' }}>
+                        Konektor background otomatis untuk sinkronisasi Dapodik lokal.
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
-                  Aplikasi bridge berjalan <b>secara native di latar belakang Windows tanpa jendela terminal hitam</b> dan <b>otomatis menyala saat komputer dihidupkan (Autostart)</b>. Anda cukup klik satu kali untuk menghubungkan Dapodik selamanya.
-                </p>
 
-                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.25rem' }}>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
                   <button
                     onClick={handleDownloadBridgeExe}
                     className="btn btn-primary btn-sm"
-                    style={{ fontWeight: 800, fontSize: '0.78rem' }}
+                    style={{
+                      fontWeight: 700,
+                      fontSize: '0.78rem',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.4rem',
+                      borderRadius: '8px',
+                    }}
                   >
-                    📥 Unduh Bridge.exe (Auto-Install)
-                  </button>
-                  <button
-                    onClick={handleDownloadBatchInstaller}
-                    className="btn btn-secondary btn-sm"
-                    style={{ fontWeight: 700, fontSize: '0.78rem' }}
-                  >
-                    ⚙️ Script Installer (.bat)
+                    <span>📥</span> Unduh Bridge (.exe)
                   </button>
                   <button
                     onClick={handleCopyPairingToken}
                     className="btn btn-secondary btn-sm"
-                    style={{ fontWeight: 700, fontSize: '0.78rem' }}
+                    style={{
+                      fontWeight: 600,
+                      fontSize: '0.78rem',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.4rem',
+                      borderRadius: '8px',
+                    }}
                   >
-                    {copiedToken ? '✅ Token Tersalin!' : '📋 Salin Token Auth'}
+                    <span>{copiedToken ? '✅' : '📋'}</span> {copiedToken ? 'Token Tersalin' : 'Salin Token'}
                   </button>
-                </div>
-
-                <div style={{
-                  background: 'var(--bg-elevated)',
-                  borderRadius: '10px',
-                  padding: '0.75rem 0.95rem',
-                  fontSize: '0.76rem',
-                  color: 'var(--text-secondary)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '0.4rem',
-                  border: '1px solid var(--border-subtle)',
-                }}>
-                  <div><b>🚀 Cara Kerja 1-Klik:</b> Cukup unduh dan klik ganda <code>schoolos-bridge.exe</code>. Aplikasi langsung terpasang ke sistem, mendaftarkan startup Windows, dan aktif di latar belakang (Port 5775).</div>
-                  <div><b>🔄 Autostart Windows:</b> Komputer sekolah dimatikan atau dinyalakan ulang, bridge tetap otomatis aktif tanpa perlu disetup lagi.</div>
-                  <div><b>⚡ Tarik Data:</b> Di web School OS, cukup klik tombol <b>"Tarik Data Siswa"</b> kapan saja.</div>
+                  <button
+                    onClick={handleDownloadBatchInstaller}
+                    className="btn btn-secondary btn-sm"
+                    style={{
+                      fontWeight: 600,
+                      fontSize: '0.78rem',
+                      color: 'var(--text-muted)',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.35rem',
+                      borderRadius: '8px',
+                    }}
+                    title="Installer batch (.bat) alternatif"
+                  >
+                    <span>⚙️</span> Script .bat
+                  </button>
                 </div>
               </div>
             </div>
 
             {/* Modal Footer */}
             <div style={{
-              padding: '0.75rem 1.25rem',
+              padding: '0.85rem 1.4rem',
               borderTop: '1px solid var(--border-light)',
               background: 'var(--bg-elevated)',
               display: 'flex',
@@ -805,7 +866,7 @@ export default function DapodikHubPage() {
               <button
                 onClick={() => setShowConfigModal(false)}
                 className="btn btn-secondary btn-sm"
-                style={{ fontWeight: 700 }}
+                style={{ fontWeight: 700, borderRadius: '8px' }}
               >
                 Tutup
               </button>
