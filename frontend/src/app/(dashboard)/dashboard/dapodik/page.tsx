@@ -12,8 +12,48 @@ import {
   getDapodikAgentInfo,
 } from '@/lib/dapodik-bridge';
 import { apiClient } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
+
+function formatIndonesianDateTime(isoString?: string | null): string {
+  if (!isoString) return '';
+  try {
+    const d = new Date(isoString);
+    if (isNaN(d.getTime())) return isoString;
+    return new Intl.DateTimeFormat('id-ID', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    }).format(d) + ' WIB';
+  } catch {
+    return isoString;
+  }
+}
+
+function getRelativeTimeIndonesian(isoString?: string | null): string {
+  if (!isoString) return '';
+  try {
+    const d = new Date(isoString);
+    const now = new Date();
+    const diffSec = Math.floor((now.getTime() - d.getTime()) / 1000);
+    if (diffSec < 45) return 'Baru saja';
+    if (diffSec < 3600) return `${Math.max(1, Math.floor(diffSec / 60))} menit lalu`;
+    if (diffSec < 86400) return `${Math.floor(diffSec / 3600)} jam lalu`;
+    const diffDays = Math.floor(diffSec / 86400);
+    if (diffDays === 1) return 'Kemarin';
+    if (diffDays < 30) return `${diffDays} hari lalu`;
+    return '';
+  } catch {
+    return '';
+  }
+}
 
 export default function DapodikHubPage() {
+  const { user } = useAuth();
+  const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
+  const [lastSyncedBy, setLastSyncedBy] = useState<string | null>(null);
   const [syncRecords, setSyncRecords] = useState<DapodikSyncRecord[]>([]);
   const [healthStatus, setHealthStatus] = useState<DapodikHealthStatus | null>(null);
   const [agentInfo, setAgentInfo] = useState<DapodikAgentInfo | null>(null);
@@ -85,6 +125,25 @@ export default function DapodikHubPage() {
           if (agent.schoolName) setSchoolName(agent.schoolName);
           if (agent.dapodikToken) setDapodikTokenInput(agent.dapodikToken);
           if (agent.dapodikUrl) setDapodikUrlInput(agent.dapodikUrl);
+          if (agent.lastSyncedAt) {
+            setLastSyncedAt(agent.lastSyncedAt);
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('dapodik_last_synced_at', agent.lastSyncedAt);
+            }
+          }
+          if (agent.lastSyncedBy) {
+            setLastSyncedBy(agent.lastSyncedBy);
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('dapodik_last_synced_by', agent.lastSyncedBy);
+            }
+          }
+        }
+
+        if (!agent?.lastSyncedAt && liveRecords.length > 0) {
+          const firstRecTime = liveRecords[0]?.lastSyncedAt;
+          if (firstRecTime) {
+            setLastSyncedAt(firstRecTime);
+          }
         }
 
         // Secondary fallback to /api/v1/schools/profile
@@ -219,6 +278,7 @@ export default function DapodikHubPage() {
 
   // Pull Data Handler
   const handlePullData = async () => {
+    const operatorName = user?.full_name || user?.email || 'Administrator';
     setIsPulling(true);
     setToastMessage('🔍 Menghubungi Dapodik lokal untuk menarik data...');
 
@@ -227,9 +287,17 @@ export default function DapodikHubPage() {
         npsn: npsnInput.trim() || agentInfo?.npsn || undefined,
         bearerToken: dapodikTokenInput.trim() || agentInfo?.dapodikToken || undefined,
         dapodikUrl: dapodikUrlInput.trim() || agentInfo?.dapodikUrl || 'http://127.0.0.1:5774',
+        syncedBy: operatorName,
       });
       setSyncRecords(res.updatedRecords);
-      setToastMessage(`🎉 Berhasil menyinkronkan ${res.newRecordsCount} data siswa dari Dapodik!`);
+      const nowIso = new Date().toISOString();
+      setLastSyncedAt(nowIso);
+      setLastSyncedBy(operatorName);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('dapodik_last_synced_at', nowIso);
+        localStorage.setItem('dapodik_last_synced_by', operatorName);
+      }
+      setToastMessage(`🎉 Berhasil menyinkronkan ${res.newRecordsCount} data dari Dapodik!`);
     } catch (err: any) {
       setToastMessage(`ℹ️ ${err.message || 'Gagal menarik data dari Dapodik lokal.'}`);
     } finally {
@@ -321,6 +389,49 @@ export default function DapodikHubPage() {
             {isPulling ? '🔄 Sedang Menarik Data...' : '📥 Tarik Data'}
           </button>
         </div>
+      </div>
+
+      {/* Dapodik Audit Trail Banner */}
+      <div className={styles.auditBanner}>
+        <div className={styles.auditLeft}>
+          <div className={`${styles.auditIcon} ${lastSyncedAt ? styles.auditIconActive : styles.auditIconInactive}`}>
+            🕒
+          </div>
+          <div className={styles.auditContent}>
+            <div className={styles.auditLabel}>
+              Riwayat Sinkronisasi Terakhir
+            </div>
+            <div className={styles.auditDetails}>
+              {lastSyncedAt ? (
+                <>
+                  <span className={styles.auditTime}>
+                    {formatIndonesianDateTime(lastSyncedAt)}
+                  </span>
+                  {getRelativeTimeIndonesian(lastSyncedAt) && (
+                    <span className={styles.auditRelative}>
+                      {getRelativeTimeIndonesian(lastSyncedAt)}
+                    </span>
+                  )}
+                  <span style={{ color: 'var(--text-muted)' }}>•</span>
+                  <span className={styles.auditOperator}>
+                    Oleh: <strong className={styles.auditOperatorName}>{lastSyncedBy || user?.full_name || user?.email || 'Administrator'}</strong>
+                  </span>
+                </>
+              ) : (
+                <span className={styles.auditEmpty}>
+                  Belum pernah dilakukan sinkronisasi data dari Dapodik.
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {lastSyncedAt && (
+          <div className={styles.auditBadge}>
+            <span>✓</span>
+            <span>Data Tersinkron</span>
+          </div>
+        )}
       </div>
 
       {/* Clean Metric Summary Cards (Simple, No Machine Jargon) */}

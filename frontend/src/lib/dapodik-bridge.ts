@@ -49,6 +49,7 @@ export interface PullDapodikConfig {
   dapodikUrl?: string;
   npsn?: string;
   bearerToken?: string;
+  syncedBy?: string;
 }
 
 function getHeaders() {
@@ -308,6 +309,7 @@ export async function pullDataFromDapodik(config?: PullDapodikConfig): Promise<{
         npsn: config?.npsn?.trim() || undefined,
         dapodik_token: config?.bearerToken?.trim() || undefined,
         dapodik_url: config?.dapodikUrl?.trim() || 'http://127.0.0.1:5774',
+        synced_by: config?.syncedBy?.trim() || undefined,
       }),
     });
 
@@ -410,6 +412,8 @@ export interface DapodikAgentInfo {
   totalStudents: number;
   totalTeachers: number;
   totalClasses: number;
+  lastSyncedAt?: string;
+  lastSyncedBy?: string;
 }
 
 export async function getDapodikAgentInfo(): Promise<DapodikAgentInfo | null> {
@@ -430,6 +434,8 @@ export async function getDapodikAgentInfo(): Promise<DapodikAgentInfo | null> {
       totalStudents: Number(data.total_students) || 0,
       totalTeachers: Number(data.total_teachers) || 0,
       totalClasses: Number(data.total_classes) || 0,
+      lastSyncedAt: data.last_synced_at || undefined,
+      lastSyncedBy: data.last_synced_by || undefined,
     };
   } catch (e) {
     console.error('Failed to fetch agent info:', e);
