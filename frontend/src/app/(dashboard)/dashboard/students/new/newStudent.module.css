@@ -1,0 +1,115 @@
+/* ── Register New Student Page — Light Premium Compact ── */
+.page {
+  padding: 1.25rem 1.5rem;
+  max-width: 960px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  animation: fadeInUp 0.35s var(--ease-out) forwards;
+}
+
+/* Header */
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.headerLeft { display: flex; flex-direction: column; gap: 0.25rem; }
+.subtitle { font-size: 0.8rem; color: var(--text-muted); }
+
+/* Alerts */
+.errorBanner {
+  padding: 0.75rem 1rem;
+  background: rgba(225, 29, 72, 0.08);
+  border: 1px solid rgba(225, 29, 72, 0.25);
+  border-radius: var(--radius-md);
+  color: var(--rose);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.successBanner {
+  padding: 0.75rem 1rem;
+  background: rgba(5, 150, 105, 0.08);
+  border: 1px solid rgba(5, 150, 105, 0.25);
+  border-radius: var(--radius-md);
+  color: var(--emerald);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+/* Form Container */
+.formContainer {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-dim);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem 1.5rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.form { display: flex; flex-direction: column; gap: 1.5rem; }
+
+.formSection {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--border-dim);
+}
+.formSection:last-of-type { border-bottom: none; padding-bottom: 0; }
+
+.sectionTitleRow { display: flex; align-items: center; gap: 0.75rem; }
+.stepNum {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(79, 70, 229, 0.1);
+  color: var(--accent);
+  font-size: 0.8rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.sectionTitle { font-size: 0.95rem; font-weight: 700; color: var(--text-primary); }
+.sectionSub { font-size: 0.74rem; color: var(--text-muted); }
+
+.inputGridTwo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+@media (max-width: 640px) { .inputGridTwo { grid-template-columns: 1fr; } }
+
+.formGroup { display: flex; flex-direction: column; gap: 0.35rem; }
+.label { font-size: 0.78rem; font-weight: 700; color: var(--text-primary); }
+.req { color: var(--rose); margin-left: 2px; }
+
+.input, .select {
+  width: 100%;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-dim);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: 0.8125rem;
+  padding: 0.45rem 0.75rem;
+  outline: none;
+  transition: all var(--dur-fast) ease;
+}
+.input:focus, .select:focus {
+  background: var(--bg-surface);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+.formActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding-top: 0.75rem;
+}

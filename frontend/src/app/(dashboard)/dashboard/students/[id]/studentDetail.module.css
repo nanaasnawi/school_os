@@ -1,0 +1,256 @@
+/* ── Student Detail Page — Dark Premium v2 ── */
+.page {
+  padding: 2.25rem 2.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  animation: fadeInUp 0.4s var(--ease-out) forwards;
+}
+
+/* Loading */
+.loadingScreen {
+  min-height: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  color: var(--text-muted);
+}
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid rgba(99, 102, 241, 0.2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+.loadingText { font-size: 0.9rem; font-weight: 500; }
+
+/* Breadcrumb */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+.breadLink {
+  color: var(--text-muted);
+  text-decoration: none;
+}
+.breadLink:hover { color: var(--accent-hover); }
+.breadSep { opacity: 0.4; }
+.breadCurrent { color: var(--text-secondary); font-weight: 600; }
+
+/* Hero Card */
+.heroCard {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-dim);
+  border-radius: var(--radius-lg);
+  padding: 1.75rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.heroLeft {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.avatarBox {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-lg);
+  background: var(--accent-gradient);
+  color: white;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.35);
+  flex-shrink: 0;
+}
+
+.heroInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.nameRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.studentName {
+  font-size: 1.75rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--text-primary);
+}
+
+.statusChip {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  padding: 0.2rem 0.65rem;
+  border-radius: var(--radius-full);
+}
+.status_ACTIVE { background: rgba(16, 185, 129, 0.12); color: var(--emerald); border: 1px solid rgba(16, 185, 129, 0.25); }
+.status_INACTIVE { background: rgba(71, 85, 105, 0.15); color: var(--text-muted); border: 1px solid var(--border-dim); }
+.status_GRADUATED { background: rgba(99, 102, 241, 0.12); color: var(--accent-hover); border: 1px solid rgba(99, 102, 241, 0.25); }
+
+.studentSub {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+.monoText { font-family: var(--font-mono); color: var(--text-secondary); }
+
+.heroActions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* Stats Summary Bar */
+.statsBar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.statBox {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-dim);
+  border-radius: var(--radius-md);
+  padding: 1.125rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.statBoxIcon { font-size: 1.5rem; }
+.statBoxVal {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+.statBoxLabel {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* Tabs Row */
+.tabsRow {
+  display: flex;
+  gap: 0.5rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-dim);
+  border-radius: var(--radius-md);
+  padding: 0.25rem;
+}
+.tabBtn {
+  flex: 1;
+  padding: 0.55rem 1rem;
+  border-radius: var(--radius-sm);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  transition: all var(--dur-fast) ease;
+}
+.tabBtn:hover { color: var(--text-primary); background: var(--bg-elevated); }
+.tabActive { background: var(--accent-gradient); color: white !important; }
+
+/* Grid Layout */
+.gridTwo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+@media (max-width: 850px) {
+  .gridTwo { grid-template-columns: 1fr; }
+}
+
+.card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-dim);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.125rem;
+}
+.cardTitle {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+  padding-bottom: 0.625rem;
+  border-bottom: 1px solid var(--border-dim);
+}
+
+.infoGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.infoRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.85rem;
+}
+.infoLabel { color: var(--text-muted); font-weight: 500; }
+.infoVal { color: var(--text-primary); font-weight: 600; }
+.textGreen { color: var(--emerald); font-weight: 600; }
+
+/* Grade list */
+.gradeList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+.gradeRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.625rem 0.875rem;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-dim);
+}
+.gradeSubject { font-size: 0.85rem; font-weight: 600; color: var(--text-primary); }
+.gradeRight { display: flex; align-items: center; gap: 0.75rem; }
+.gradeScore { font-size: 0.82rem; color: var(--text-secondary); font-family: var(--font-mono); }
+
+.letterBadge {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-xs);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 800;
+  font-family: var(--font-display);
+}
+.letter_A { background: rgba(16, 185, 129, 0.15); color: var(--emerald); }
+.letter_B { background: rgba(99, 102, 241, 0.15); color: var(--accent-hover); }
+.letter_C { background: rgba(245, 158, 11, 0.15); color: var(--amber); }
