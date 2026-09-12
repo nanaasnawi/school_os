@@ -327,7 +327,7 @@ export default function DapodikHubPage() {
             className="btn btn-primary"
             style={{ fontWeight: 800, fontSize: '0.85rem', padding: '0.5rem 1.1rem' }}
           >
-            {isPulling ? '🔄 Sedang Menarik Data...' : '📥 Tarik Data Siswa'}
+            {isPulling ? '🔄 Sedang Menarik Data...' : '📥 Tarik Data'}
           </button>
         </div>
       </div>
