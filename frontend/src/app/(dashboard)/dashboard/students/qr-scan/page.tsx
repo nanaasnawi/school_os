@@ -683,11 +683,17 @@ export default function QrScanPage() {
 
   return (
     <div className={styles.page}>
-      {/* Top Header */}
+      {/* Top Header Card */}
       <div className={styles.header}>
         <div className={styles.headerTitleGroup}>
-          <div className={styles.headerIcon}>📱</div>
-          <div>
+          <div className={styles.headerIcon}>
+            <span>📱</span>
+          </div>
+          <div className={styles.headerTextGroup}>
+            <div className={styles.headerBadge}>
+              <span className={styles.pulseDot} />
+              <span>Modul Autentikasi Zero-Password Android</span>
+            </div>
             <h1 className={styles.headerTitle}>Pusat Kartu Akses QR Login Mobile</h1>
             <p className={styles.headerSub}>
               Unduh dan kelola kartu login resmi Android untuk <strong>Siswa</strong>, <strong>Guru</strong>, dan <strong>Wali Murid</strong>.
@@ -699,76 +705,83 @@ export default function QrScanPage() {
         <div className={styles.headerActions}>
           <button
             onClick={() => setShowCameraModal(true)}
-            className="btn btn-secondary"
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem' }}
+            className={styles.headerBtnSecondary}
+            title="Uji pemindaian kartu menggunakan webcam laptop/PC"
           >
-            📷 Uji Scanner Kamera
+            <span>📷</span>
+            <span>Uji Scanner Kamera</span>
           </button>
           <button
             onClick={handleOpenPrintSheet}
             disabled={isGenerating || filteredUsers.length === 0}
-            className="btn btn-secondary"
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem' }}
+            className={styles.headerBtnSecondary}
+            title="Cetak kartu dalam format lembar A4 siap gunting"
           >
-            🖨️ Cetak Lembar Kartu (PDF)
+            <span>🖨️</span>
+            <span>Cetak Lembar Kartu (PDF)</span>
           </button>
           <button
             onClick={handleBulkDownloadZip}
             disabled={isGenerating || selectedIds.size === 0}
-            className="btn btn-primary"
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem' }}
+            className={styles.headerBtnPrimary}
+            title="Unduh seluruh kartu yang dipilih dalam arsip ZIP"
           >
-            📦 Unduh Kolektif ({selectedIds.size}) ZIP
+            <span>📦</span>
+            <span>Unduh Kolektif ({selectedIds.size}) ZIP</span>
           </button>
         </div>
       </div>
 
-      {/* Quick Statistics Bar */}
+      {/* Quick Statistics Bento Grid */}
       <div className={styles.statsGrid}>
-        <div className={styles.statCard}>
-          <div className={styles.statIconWrap} style={{ background: 'rgba(99, 102, 241, 0.12)', color: '#6366f1' }}>
-            👥
+        <div className={`${styles.statCard} ${styles.statCardTotal}`}>
+          <div className={styles.statTopRow}>
+            <div className={`${styles.statIconWrap} ${styles.statIconTotal}`}>👥</div>
+            <span className={styles.statBadge}>Semua Akun</span>
           </div>
-          <div>
-            <div className={styles.statVal}>{users.length}</div>
-            <div className={styles.statLabel}>Total Akun Mobile</div>
-          </div>
+          <div className={styles.statVal}>{users.length}</div>
+          <div className={styles.statLabel}>Total Akun Mobile</div>
+          <div className={styles.statSub}>Seluruh akun terdaftar di sistem</div>
         </div>
 
-        <div className={styles.statCard}>
-          <div className={styles.statIconWrap} style={{ background: 'rgba(14, 165, 233, 0.12)', color: '#0284c7' }}>
-            🎓
+        <div className={`${styles.statCard} ${styles.statCardStudent}`}>
+          <div className={styles.statTopRow}>
+            <div className={`${styles.statIconWrap} ${styles.statIconStudent}`}>🎓</div>
+            <span className={styles.statBadge}>Presensi &amp; CBT</span>
           </div>
-          <div>
-            <div className={styles.statVal}>{users.filter((u) => u.role.toLowerCase().includes('siswa') && !u.role.toLowerCase().includes('wali')).length}</div>
-            <div className={styles.statLabel}>Siswa</div>
+          <div className={styles.statVal}>
+            {users.filter((u) => u.role.toLowerCase().includes('siswa') && !u.role.toLowerCase().includes('wali')).length}
           </div>
+          <div className={styles.statLabel}>Siswa</div>
+          <div className={styles.statSub}>Login scan presensi &amp; ujian CBT</div>
         </div>
 
-        <div className={styles.statCard}>
-          <div className={styles.statIconWrap} style={{ background: 'rgba(16, 185, 129, 0.12)', color: '#059669' }}>
-            👨‍🏫
+        <div className={`${styles.statCard} ${styles.statCardTeacher}`}>
+          <div className={styles.statTopRow}>
+            <div className={`${styles.statIconWrap} ${styles.statIconTeacher}`}>👨‍🏫</div>
+            <span className={styles.statBadge}>Pendidik &amp; Staff</span>
           </div>
-          <div>
-            <div className={styles.statVal}>{users.filter((u) => u.role.toLowerCase().includes('guru') || u.role.toLowerCase().includes('tendik')).length}</div>
-            <div className={styles.statLabel}>Guru &amp; Tendik</div>
+          <div className={styles.statVal}>
+            {users.filter((u) => u.role.toLowerCase().includes('guru') || u.role.toLowerCase().includes('tendik') || u.role.toLowerCase().includes('kepala')).length}
           </div>
+          <div className={styles.statLabel}>Guru &amp; Tendik</div>
+          <div className={styles.statSub}>Akses jurnal kelas &amp; presensi guru</div>
         </div>
 
-        <div className={styles.statCard}>
-          <div className={styles.statIconWrap} style={{ background: 'rgba(168, 85, 247, 0.12)', color: '#9333ea' }}>
-            👪
+        <div className={`${styles.statCard} ${styles.statCardParent}`}>
+          <div className={styles.statTopRow}>
+            <div className={`${styles.statIconWrap} ${styles.statIconParent}`}>👪</div>
+            <span className={styles.statBadge}>Portal Wali</span>
           </div>
-          <div>
-            <div className={styles.statVal}>
-              {users.filter((u) => u.role.toLowerCase().includes('wali') || u.role.toLowerCase().includes('orang tua') || u.role.toLowerCase().includes('parent')).length}
-            </div>
-            <div className={styles.statLabel}>Wali Murid</div>
+          <div className={styles.statVal}>
+            {users.filter((u) => u.role.toLowerCase().includes('wali') || u.role.toLowerCase().includes('orang tua') || u.role.toLowerCase().includes('parent')).length}
           </div>
+          <div className={styles.statLabel}>Wali Murid</div>
+          <div className={styles.statSub}>Monitoring nilai &amp; absensi anak</div>
         </div>
       </div>
 
-      {/* Controls: Role Tabs, Class Filter, Status, Search */}
+      {/* Controls: Role Tabs, Search, Class Filter, Status Filter */}
       <div className={styles.controlsCard}>
         <div className={styles.tabsRow}>
           <div className={styles.roleTabs}>
@@ -776,33 +789,40 @@ export default function QrScanPage() {
               onClick={() => setActiveTab('ALL')}
               className={`${styles.tabBtn} ${activeTab === 'ALL' ? styles.tabBtnActive : ''}`}
             >
-              Semua Akun <span className={styles.tabCount}>{users.length}</span>
+              <span>Semua Akun</span>
+              <span className={styles.tabCount}>{users.length}</span>
             </button>
             <button
               onClick={() => setActiveTab('SISWA')}
               className={`${styles.tabBtn} ${activeTab === 'SISWA' ? styles.tabBtnActive : ''}`}
             >
-              🎓 Siswa <span className={styles.tabCount}>{users.filter((u) => u.role.toLowerCase().includes('siswa') && !u.role.toLowerCase().includes('wali')).length}</span>
+              <span>🎓 Siswa</span>
+              <span className={styles.tabCount}>
+                {users.filter((u) => u.role.toLowerCase().includes('siswa') && !u.role.toLowerCase().includes('wali')).length}
+              </span>
             </button>
             <button
               onClick={() => setActiveTab('GURU')}
               className={`${styles.tabBtn} ${activeTab === 'GURU' ? styles.tabBtnActive : ''}`}
             >
-              👨‍🏫 Guru <span className={styles.tabCount}>{users.filter((u) => u.role.toLowerCase().includes('guru') || u.role.toLowerCase().includes('tendik')).length}</span>
+              <span>👨‍🏫 Guru</span>
+              <span className={styles.tabCount}>
+                {users.filter((u) => u.role.toLowerCase().includes('guru') || u.role.toLowerCase().includes('tendik') || u.role.toLowerCase().includes('kepala')).length}
+              </span>
             </button>
             <button
               onClick={() => setActiveTab('WALI')}
               className={`${styles.tabBtn} ${activeTab === 'WALI' ? styles.tabBtnActive : ''}`}
             >
-              👪 Wali Murid{' '}
+              <span>👪 Wali Murid</span>
               <span className={styles.tabCount}>
                 {users.filter((u) => u.role.toLowerCase().includes('wali') || u.role.toLowerCase().includes('orang tua') || u.role.toLowerCase().includes('parent')).length}
               </span>
             </button>
           </div>
 
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-            Menampilkan <strong>{filteredUsers.length}</strong> pengguna
+          <div className={styles.counterBadge}>
+            Menampilkan <strong>{filteredUsers.length}</strong> dari <strong>{users.length}</strong> pengguna
           </div>
         </div>
 
@@ -811,11 +831,21 @@ export default function QrScanPage() {
             <span className={styles.searchIcon}>🔍</span>
             <input
               type="text"
-              placeholder="Cari nama siswa/guru, NISN, NIP, email..."
+              placeholder="Cari nama, NISN, NIP, email..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className={styles.searchInput}
             />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch('')}
+                className={styles.clearSearchBtn}
+                title="Hapus pencarian"
+              >
+                ✕
+              </button>
+            )}
           </div>
 
           <div className={styles.selectGroup}>
@@ -825,10 +855,10 @@ export default function QrScanPage() {
                 onChange={(e) => setClassFilter(e.target.value)}
                 className={styles.customSelect}
               >
-                <option value="ALL">Semua Rombel/Kelas</option>
+                <option value="ALL">🏫 Semua Rombel/Kelas</option>
                 {availableClasses.map((c) => (
                   <option key={c} value={c}>
-                    {c}
+                    Kelas {c}
                   </option>
                 ))}
               </select>
@@ -839,9 +869,9 @@ export default function QrScanPage() {
               onChange={(e) => setTokenStatusFilter(e.target.value as any)}
               className={styles.customSelect}
             >
-              <option value="ALL">Semua Status QR</option>
-              <option value="ACTIVE">✓ Memiliki QR Aktif</option>
-              <option value="NONE">Belum Memiliki QR</option>
+              <option value="ALL">📋 Semua Status QR</option>
+              <option value="ACTIVE">● Memiliki QR Aktif</option>
+              <option value="NONE">○ Belum Memiliki QR</option>
             </select>
           </div>
         </div>
@@ -850,16 +880,17 @@ export default function QrScanPage() {
         {selectedIds.size > 0 && (
           <div className={styles.bulkRibbon}>
             <div className={styles.bulkInfo}>
-              <span>✓ Terpilih: <strong>{selectedIds.size}</strong> akun</span>
+              <span className={styles.bulkBadgeCount}>✓ {selectedIds.size}</span>
+              <span>akun terpilih untuk tindakan massal</span>
             </div>
             <div className={styles.bulkActions}>
-              <button onClick={handleBulkDownloadZip} disabled={isGenerating} className="btn btn-primary" style={{ padding: '0.45rem 0.9rem', fontSize: '0.82rem' }}>
+              <button onClick={handleBulkDownloadZip} disabled={isGenerating} className={styles.bulkBtnPrimary}>
                 📦 Unduh Semua Terpilih (ZIP)
               </button>
-              <button onClick={handleOpenPrintSheet} disabled={isGenerating} className="btn btn-secondary" style={{ padding: '0.45rem 0.9rem', fontSize: '0.82rem' }}>
-                🖨️ Cetak Kartu Terpilih
+              <button onClick={handleOpenPrintSheet} disabled={isGenerating} className={styles.bulkBtnSecondary}>
+                🖨️ Cetak Lembar Terpilih
               </button>
-              <button onClick={() => setSelectedIds(new Set())} className="btn btn-secondary" style={{ padding: '0.45rem 0.75rem', fontSize: '0.82rem' }}>
+              <button onClick={() => setSelectedIds(new Set())} className={styles.bulkBtnGhost}>
                 Batal Pilih
               </button>
             </div>
@@ -873,12 +904,13 @@ export default function QrScanPage() {
           <table className={styles.table}>
             <thead>
               <tr>
-                <th style={{ width: '40px', textAlign: 'center' }}>
+                <th style={{ width: '48px', textAlign: 'center' }}>
                   <input
                     type="checkbox"
                     checked={isAllSelected}
                     onChange={toggleSelectAll}
-                    style={{ cursor: 'pointer', width: '16px', height: '16px' }}
+                    className={styles.tableCheckbox}
+                    aria-label="Pilih semua akun"
                   />
                 </th>
                 <th>Profil Pengguna</th>
@@ -892,14 +924,19 @@ export default function QrScanPage() {
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={7} style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-muted)' }}>
-                    ⏳ Memuat data akun mobile dan status QR token...
+                  <td colSpan={7} className={styles.emptyCell}>
+                    <div className={styles.loadingSpinner} />
+                    <span>Memuat data akun mobile dan status QR token...</span>
                   </td>
                 </tr>
               ) : filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={7} style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-muted)' }}>
-                    Tidak ada data pengguna yang sesuai dengan filter pencarian.
+                  <td colSpan={7} className={styles.emptyCell}>
+                    <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🔍</div>
+                    <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>Tidak Ada Pengguna Ditemukan</div>
+                    <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                      Coba ubah kata kunci pencarian atau sesuaikan filter peran / kelas.
+                    </div>
                   </td>
                 </tr>
               ) : (
@@ -908,30 +945,42 @@ export default function QrScanPage() {
                   const roleLower = u.role.toLowerCase();
 
                   let roleBadgeClass = styles.roleBadgeStudent;
-                  if (roleLower.includes('guru') || roleLower.includes('tendik')) {
+                  let roleIcon = '🎓';
+                  let roleText = u.role || 'Siswa';
+
+                  if (roleLower.includes('admin') || roleLower.includes('kepala')) {
+                    roleBadgeClass = styles.roleBadgeAdmin;
+                    roleIcon = '👑';
+                    roleText = u.role || 'Kepala Sekolah';
+                  } else if (roleLower.includes('guru') || roleLower.includes('tendik')) {
                     roleBadgeClass = styles.roleBadgeTeacher;
+                    roleIcon = '👨‍🏫';
+                    roleText = u.role || 'Guru';
                   } else if (roleLower.includes('wali') || roleLower.includes('orang tua') || roleLower.includes('parent')) {
                     roleBadgeClass = styles.roleBadgeParent;
-                  } else if (roleLower.includes('admin') || roleLower.includes('kepala')) {
-                    roleBadgeClass = styles.roleBadgeAdmin;
+                    roleIcon = '👪';
+                    roleText = u.role || 'Wali Murid';
                   }
 
+                  const initial = u.full_name ? u.full_name.charAt(0).toUpperCase() : 'U';
+
                   return (
-                    <tr key={u.id} style={{ background: isChecked ? 'rgba(99, 102, 241, 0.04)' : undefined }}>
+                    <tr key={u.id} className={isChecked ? styles.rowSelected : undefined}>
                       <td style={{ textAlign: 'center' }}>
                         <input
                           type="checkbox"
                           checked={isChecked}
                           onChange={() => toggleSelectUser(u.id)}
-                          style={{ cursor: 'pointer', width: '16px', height: '16px' }}
+                          className={styles.tableCheckbox}
+                          aria-label={`Pilih ${u.full_name}`}
                         />
                       </td>
                       <td>
                         <div className={styles.userCell}>
                           <div className={styles.userAvatar}>
-                            {u.full_name ? u.full_name.charAt(0).toUpperCase() : 'U'}
+                            {initial}
                           </div>
-                          <div>
+                          <div className={styles.userInfo}>
                             <div className={styles.userName}>{u.full_name}</div>
                             <div className={styles.userEmail}>{u.email}</div>
                           </div>
@@ -939,27 +988,38 @@ export default function QrScanPage() {
                       </td>
                       <td>
                         <span className={`${styles.roleBadge} ${roleBadgeClass}`}>
-                          {u.role || 'Pengguna'}
+                          <span>{roleIcon}</span>
+                          <span>{roleText}</span>
                         </span>
                       </td>
                       <td>
-                        <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>
-                          {u.identifier || '—'}
-                        </span>
+                        {u.identifier ? (
+                          <span className={styles.idChip}>
+                            {u.identifier}
+                          </span>
+                        ) : (
+                          <span className={styles.dashText}>—</span>
+                        )}
                       </td>
                       <td>
-                        <span style={{ fontWeight: 600, color: '#6366f1' }}>
-                          {u.class_name || '—'}
-                        </span>
+                        {u.class_name ? (
+                          <span className={styles.classChip}>
+                            {u.class_name}
+                          </span>
+                        ) : (
+                          <span className={styles.dashText}>—</span>
+                        )}
                       </td>
                       <td>
                         {u.has_active_token ? (
                           <span className={styles.tokenBadgeActive}>
-                            ● QR Aktif
+                            <span className={styles.pulseActiveDot} />
+                            QR Aktif
                           </span>
                         ) : (
                           <span className={styles.tokenBadgeNone}>
-                            ○ Belum Terbit
+                            <span className={styles.pulseNoneDot} />
+                            Belum Terbit
                           </span>
                         )}
                       </td>
@@ -967,7 +1027,7 @@ export default function QrScanPage() {
                         <div className={styles.actionsCell}>
                           <button
                             onClick={() => handleOpenPreview(u)}
-                            className={styles.actionBtn}
+                            className={`${styles.actionBtn} ${styles.actionBtnGhost}`}
                             title="Pratinjau Kartu ID Digital"
                           >
                             👁️ Lihat
@@ -981,7 +1041,7 @@ export default function QrScanPage() {
                           </button>
                           <button
                             onClick={() => handleDownloadQrOnly(u)}
-                            className={styles.actionBtn}
+                            className={`${styles.actionBtn} ${styles.actionBtnSecondary}`}
                             title="Unduh File QR Saja"
                           >
                             📥 QR
@@ -993,9 +1053,9 @@ export default function QrScanPage() {
                               }
                             }}
                             className={`${styles.actionBtn} ${styles.actionBtnDanger}`}
-                            title="Kartu hilang / dicuri? Terbitkan QR baru dan otomatis batalkan QR lama"
+                            title="Reset QR Token (Batalkan QR lama & terbitkan baru)"
                           >
-                            🔄 Reset (Hilang/Dicuri)
+                            🔄 Reset
                           </button>
                         </div>
                       </td>
