@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import styles from './quizzes.module.css';
 import { listTeachers, listClasses, listStudents } from '@/lib/sdk/sdk.gen';
+import { getApiUrl } from '@/lib/api';
 
 type QuizItem = {
   id: string;
@@ -107,10 +108,10 @@ export default function QuizzesPage() {
         listTeachers({ query: { page_size: 100 } as any }).catch(() => null),
         listClasses({ query: { page_size: 100 } as any }).catch(() => null),
         listStudents({ query: { page_size: 100 } as any }).catch(() => null),
-        fetch('/api/v1/academic/subjects', {
+        fetch(getApiUrl('/api/v1/academic/subjects'), {
           headers: token ? { Authorization: `Bearer ${token}` } : {}
         }).then(r => r.ok ? r.json() : null).catch(() => null),
-        fetch('/api/v1/learning/quizzes', {
+        fetch(getApiUrl('/api/v1/learning/quizzes'), {
           headers: token ? { Authorization: `Bearer ${token}` } : {}
         }).then(r => r.ok ? r.json() : null).catch(() => null),
       ]);
@@ -191,7 +192,7 @@ export default function QuizzesPage() {
         class_id: newQuiz.classRoom,
       };
 
-      const res = await fetch('/api/v1/learning/quizzes', {
+      const res = await fetch(getApiUrl('/api/v1/learning/quizzes'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -204,7 +205,7 @@ export default function QuizzesPage() {
         const resJson = await res.json();
         const created = resJson.data;
         if (created?.id) {
-          await fetch(`/api/v1/learning/quizzes/${created.id}/publish`, {
+          await fetch(getApiUrl(`/api/v1/learning/quizzes/${created.id}/publish`), {
             method: 'POST',
             headers: token ? { Authorization: `Bearer ${token}` } : {}
           }).catch(() => null);
@@ -243,7 +244,7 @@ export default function QuizzesPage() {
     setShowAddQuestion(false);
     try {
       const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
-      const res = await fetch(`/api/v1/learning/quizzes/${quiz.id}/questions`, {
+      const res = await fetch(getApiUrl(`/api/v1/learning/quizzes/${quiz.id}/questions`), {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
       if (res.ok) {
@@ -281,7 +282,7 @@ export default function QuizzesPage() {
         })) : [],
       };
 
-      const res = await fetch(`/api/v1/learning/quizzes/${viewQuestionsQuiz.id}/questions`, {
+      const res = await fetch(getApiUrl(`/api/v1/learning/quizzes/${viewQuestionsQuiz.id}/questions`), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -302,7 +303,7 @@ export default function QuizzesPage() {
         setShowAddQuestion(false);
 
         // Reload questions
-        const qRes = await fetch(`/api/v1/learning/quizzes/${viewQuestionsQuiz.id}/questions`, {
+        const qRes = await fetch(getApiUrl(`/api/v1/learning/quizzes/${viewQuestionsQuiz.id}/questions`), {
           headers: token ? { Authorization: `Bearer ${token}` } : {}
         });
         if (qRes.ok) {

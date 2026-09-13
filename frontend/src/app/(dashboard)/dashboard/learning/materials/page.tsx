@@ -36,6 +36,7 @@ export default function MaterialsPage() {
 
   // Modal Input State
   const [showAddModal, setShowAddModal] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [newMaterial, setNewMaterial] = useState({
     title: '',
     subject: '',
@@ -77,18 +78,22 @@ export default function MaterialsPage() {
           const list = teacherRes.data.data;
           setTeachers(list);
           if (list.length > 0) {
-            setNewMaterial(prev => ({ ...prev, author: list[0].full_name }));
+            setNewMaterial(prev => ({ ...prev, author: prev.author || list[0].full_name }));
           }
         }
 
         if (classRes?.data?.data) {
-          setClassesList(classRes.data.data);
+          const cList = classRes.data.data;
+          setClassesList(cList);
+          if (cList.length > 0) {
+            setNewMaterial(prev => ({ ...prev, grade: prev.grade || cList[0].name }));
+          }
         }
 
         if (subjectRes?.data && Array.isArray(subjectRes.data)) {
           setSubjectsList(subjectRes.data);
           if (subjectRes.data.length > 0) {
-            setNewMaterial(prev => ({ ...prev, subject: subjectRes.data[0].name }));
+            setNewMaterial(prev => ({ ...prev, subject: prev.subject || subjectRes.data[0].name }));
           }
         }
 
@@ -123,8 +128,9 @@ export default function MaterialsPage() {
   const handlePdfFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setSelectedFile(file);
       setNewMaterial(prev => ({ ...prev, pdfFileName: file.name }));
-      showToast('✓ File PDF dipilih');
+      showToast('✓ File PDF dipilih: ' + file.name);
     }
   };
 
@@ -145,7 +151,7 @@ export default function MaterialsPage() {
       showToast('⚠️ Masukkan link YouTube');
       return;
     }
-    if (newMaterial.format === 'PDF' && !newMaterial.pdfFileName) {
+    if (newMaterial.format === 'PDF' && !newMaterial.pdfFileName && !selectedFile) {
       showToast('⚠️ Pilih file PDF');
       return;
     }
@@ -155,15 +161,42 @@ export default function MaterialsPage() {
       const matchedClass = classesList.find((c: any) => c.name === newMaterial.grade);
       const classId = matchedClass?.id || newMaterial.grade;
 
+      let storageKey = newMaterial.format === 'PDF' ? newMaterial.pdfFileName : null;
+      let externalUrl = newMaterial.format === 'VIDEO' ? newMaterial.youtubeUrl : null;
+
+      // If a real PDF file was selected, upload it to the server upload endpoint
+      if (newMaterial.format === 'PDF' && selectedFile) {
+        try {
+          const formData = new FormData();
+          formData.append('file', selectedFile);
+          const uploadRes = await fetch(getApiUrl('/api/v1/learning/materials/upload'), {
+            method: 'POST',
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+            body: formData,
+          });
+          if (uploadRes.ok) {
+            const uploadJson = await uploadRes.json();
+            if (uploadJson.data?.key) {
+              storageKey = uploadJson.data.key;
+            }
+            if (uploadJson.data?.url) {
+              externalUrl = uploadJson.data.url;
+            }
+          }
+        } catch (uploadErr) {
+          console.warn('File upload fallback:', uploadErr);
+        }
+      }
+
       const payload = {
         material_type: newMaterial.format.toLowerCase(),
         title: newMaterial.title,
-        description: `${newMaterial.subject} • ${newMaterial.grade} • ${newMaterial.author} • ${newMaterial.description || 'Modul Pelajaran'}`,
-        storage_key: newMaterial.format === 'PDF' ? newMaterial.pdfFileName : null,
-        external_url: newMaterial.format === 'VIDEO' ? newMaterial.youtubeUrl : null,
+        description: `${newMaterial.subject || 'Umum'} • ${newMaterial.grade || 'Semua Rombel'} • ${newMaterial.author || 'Guru'} • ${newMaterial.description || 'Modul Pelajaran'}`,
+        storage_key: storageKey,
+        external_url: externalUrl,
         order_index: 0,
         visibility: 'published',
-        class_id: classId,
+        class_id: classId || null,
       };
 
       const res = await fetch(getApiUrl('/api/v1/learning/materials'), {
@@ -196,6 +229,7 @@ export default function MaterialsPage() {
         };
         setMaterials(prev => [item, ...prev]);
         setShowAddModal(false);
+        setSelectedFile(null);
         showToast('✓ Materi berhasil dipublish');
       } else {
         showToast('⚠️ Gagal mempublish materi');

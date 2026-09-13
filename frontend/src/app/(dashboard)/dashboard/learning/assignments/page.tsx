@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import styles from './assignments.module.css';
 import { listTeachers, listStudents, listClasses } from '@/lib/sdk/sdk.gen';
+import { getApiUrl } from '@/lib/api';
 
 type AssignmentItem = {
   id: string;
@@ -82,7 +83,7 @@ export default function AssignmentsPage() {
     if (!asgId) return;
     try {
       const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
-      const res = await fetch(`/api/v1/learning/assignments/${asgId}/submissions`, {
+      const res = await fetch(getApiUrl(`/api/v1/learning/assignments/${asgId}/submissions`), {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
       if (res.ok) {
@@ -135,10 +136,10 @@ export default function AssignmentsPage() {
           listTeachers({ query: { page_size: 100 } as any }).catch(() => null),
           listClasses({ query: { page_size: 100 } as any }).catch(() => null),
           listStudents({ query: { page_size: 500 } as any }).catch(() => null),
-          fetch('/api/v1/academic/subjects', {
+          fetch(getApiUrl('/api/v1/academic/subjects'), {
             headers: token ? { Authorization: `Bearer ${token}` } : {}
           }).then(r => r.ok ? r.json() : null).catch(() => null),
-          fetch('/api/v1/learning/assignments', {
+          fetch(getApiUrl('/api/v1/learning/assignments'), {
             headers: token ? { Authorization: `Bearer ${token}` } : {}
           }).then(r => r.ok ? r.json() : null).catch(() => null),
         ]);
@@ -227,7 +228,7 @@ export default function AssignmentsPage() {
         class_id: newAssignment.className,
       };
 
-      const res = await fetch('/api/v1/learning/assignments', {
+      const res = await fetch(getApiUrl('/api/v1/learning/assignments'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -271,7 +272,7 @@ export default function AssignmentsPage() {
     setIsSavingGrade(true);
     try {
       const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
-      const res = await fetch(`/api/v1/learning/assignments/${selectedId}/submissions/${gradingSub.id}/grade`, {
+      const res = await fetch(getApiUrl(`/api/v1/learning/assignments/${selectedId}/submissions/${gradingSub.id}/grade`), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
