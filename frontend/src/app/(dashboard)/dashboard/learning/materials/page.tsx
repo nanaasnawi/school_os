@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { listTeachers, listClasses } from '@/lib/sdk/sdk.gen';
 import { getApiUrl } from '@/lib/api';
@@ -37,9 +37,21 @@ export default function MaterialsPage() {
   // Library Books State (Mode Perpustakaan Guru)
   const [libraryBooks, setLibraryBooks] = useState<any[]>([]);
   const [selectedBook, setSelectedBook] = useState<any | null>(null);
+  const [bookSearchQuery, setBookSearchQuery] = useState('');
   const [bookStartPage, setBookStartPage] = useState<number>(1);
   const [bookEndPage, setBookEndPage] = useState<number>(10);
   const [creationMode, setCreationMode] = useState<'MANUAL' | 'LIBRARY'>('MANUAL');
+
+  const filteredBooks = useMemo(() => {
+    if (!bookSearchQuery.trim()) return libraryBooks;
+    const q = bookSearchQuery.toLowerCase();
+    return libraryBooks.filter((b: any) => 
+      (b.title && b.title.toLowerCase().includes(q)) || 
+      (b.subject_name && b.subject_name.toLowerCase().includes(q)) ||
+      (b.grade_level_name && b.grade_level_name.toLowerCase().includes(q)) ||
+      (b.author && b.author.toLowerCase().includes(q))
+    );
+  }, [libraryBooks, bookSearchQuery]);
 
   // Modal Input State
   const [showAddModal, setShowAddModal] = useState(false);
@@ -645,7 +657,22 @@ startxref
                   </div>
 
                   <div>
-                    <label style={{ fontSize: '0.76rem', fontWeight: 700 }}>Pilih Buku Teks Kurikulum *</label>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+                      <label style={{ fontSize: '0.76rem', fontWeight: 700, margin: 0 }}>Pilih Buku Teks Kurikulum *</label>
+                      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                        {filteredBooks.length} dari {libraryBooks.length} buku tersedia
+                      </span>
+                    </div>
+
+                    <input
+                      type="text"
+                      placeholder="🔍 Cari buku atau mapel (contoh: Matematika, Fisika, Kelas 10, dsb)..."
+                      value={bookSearchQuery}
+                      onChange={e => setBookSearchQuery(e.target.value)}
+                      className="input"
+                      style={{ marginBottom: '0.5rem', fontSize: '0.8rem', padding: '0.45rem 0.75rem' }}
+                    />
+
                     <select
                       value={selectedBook?.id || ''}
                       onChange={e => {
@@ -660,14 +687,14 @@ startxref
                       className="input"
                       style={{ fontWeight: 800 }}
                     >
-                      {libraryBooks.length > 0 ? (
-                        libraryBooks.map(b => (
+                      {filteredBooks.length > 0 ? (
+                        filteredBooks.map((b: any) => (
                           <option key={b.id} value={b.id}>
-                            {b.title} — {b.publisher || 'Kemendikbudristek'} ({b.total_pages} Hal.)
+                            {b.title} {b.grade_level_name ? `[${b.grade_level_name}]` : ''} — {b.publisher || 'Kemendikbudristek'} ({b.total_pages} Hal.)
                           </option>
                         ))
                       ) : (
-                        <option value="">Belum ada buku di perpustakaan</option>
+                        <option value="">Tidak ada buku yang cocok dengan pencarian "{bookSearchQuery}"</option>
                       )}
                     </select>
                   </div>
@@ -677,9 +704,23 @@ startxref
                       <div style={{ fontSize: '2rem' }}>📕</div>
                       <div style={{ flex: 1 }}>
                         <div style={{ fontWeight: 800, fontSize: '0.84rem', color: 'var(--text-primary)' }}>{selectedBook.title}</div>
-                        <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>{selectedBook.author || 'Tim Penulis'} • {selectedBook.publisher || 'Kemendikbud'}</div>
+                        <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                          {selectedBook.author || 'Tim Penulis'} • {selectedBook.publisher || 'Kemendikbudristek'}
+                          {selectedBook.grade_level_name ? ` • ${selectedBook.grade_level_name}` : ''}
+                        </div>
                         <div style={{ fontSize: '0.72rem', color: '#2563eb', fontWeight: 700, marginTop: '2px' }}>Total {selectedBook.total_pages} Halaman</div>
                       </div>
+                      {selectedBook.file_url && (
+                        <a
+                          href={selectedBook.file_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="btn btn-secondary btn-sm"
+                          style={{ fontSize: '0.72rem', padding: '0.35rem 0.65rem', whiteSpace: 'nowrap' }}
+                        >
+                          👁️ Pratinjau PDF
+                        </a>
+                      )}
                     </div>
                   )}
 
