@@ -217,6 +217,7 @@ export default function MaterialsPage() {
         }
       }
 
+      const targetTeacher = teachers.find((t: any) => t.full_name === newMaterial.author);
       const payload = {
         material_type: newMaterial.format.toLowerCase(),
         title: newMaterial.title,
@@ -226,6 +227,7 @@ export default function MaterialsPage() {
         order_index: 0,
         visibility: 'published',
         class_id: classId || null,
+        teacher_id: targetTeacher?.id || null,
       };
 
       const res = await fetch(getApiUrl('/api/v1/learning/materials'), {
@@ -251,8 +253,8 @@ export default function MaterialsPage() {
           downloads: 0,
           completedCount: 0,
           date: 'Hari ini',
-          youtubeUrl: newMaterial.youtubeUrl,
-          pdfFileName: newMaterial.pdfFileName,
+          youtubeUrl: externalUrl ? externalUrl : undefined,
+          pdfFileName: storageKey ? storageKey : undefined,
           imagePreviewUrl: newMaterial.imagePreviewUrl,
           description: newMaterial.description,
         };
@@ -280,6 +282,7 @@ export default function MaterialsPage() {
       return;
     }
     const targetSubject = subjectsList.find(s => s.name === newMaterial.subject);
+    const targetTeacher = teachers.find((t: any) => t.full_name === newMaterial.author) || teachers[0];
     try {
       const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
       const startP = Math.max(1, Number(bookStartPage) || 1);
@@ -290,6 +293,7 @@ export default function MaterialsPage() {
         instructions: newMaterial.description || `Silakan baca dan pelajari buku "${selectedBook.title}" halaman ${startP} sampai ${endP}.`,
         class_id: targetClass.id,
         subject_id: targetSubject?.id || null,
+        teacher_id: targetTeacher?.id || null,
         start_page: startP,
         end_page: endP
       };
@@ -774,6 +778,26 @@ startxref
                         ))}
                       </select>
                     </div>
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.76rem', fontWeight: 700 }}>Guru Pengampu *</label>
+                    <select
+                      value={newMaterial.author}
+                      onChange={e => setNewMaterial({ ...newMaterial, author: e.target.value })}
+                      className="input"
+                      style={{ fontWeight: 600 }}
+                    >
+                      {teachers.length > 0 ? (
+                        teachers.map((t: any) => (
+                          <option key={t.id} value={t.full_name}>
+                            {t.full_name} {t.nip ? `(NIP: ${t.nip})` : ''}
+                          </option>
+                        ))
+                      ) : (
+                        <option value="">Belum ada data guru pengampu</option>
+                      )}
+                    </select>
                   </div>
 
                   <div>
