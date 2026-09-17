@@ -34,6 +34,13 @@ export default function MaterialsPage() {
   const [classesList, setClassesList] = useState<any[]>([]);
   const [subjectsList, setSubjectsList] = useState<any[]>([]);
 
+  // Library Books State (Mode Perpustakaan Guru)
+  const [libraryBooks, setLibraryBooks] = useState<any[]>([]);
+  const [selectedBook, setSelectedBook] = useState<any | null>(null);
+  const [bookStartPage, setBookStartPage] = useState<number>(1);
+  const [bookEndPage, setBookEndPage] = useState<number>(10);
+  const [creationMode, setCreationMode] = useState<'MANUAL' | 'LIBRARY'>('MANUAL');
+
   // Modal Input State
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -63,7 +70,7 @@ export default function MaterialsPage() {
     async function loadData() {
       try {
         const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
-        const [teacherRes, classRes, subjectRes, materialsRes] = await Promise.all([
+        const [teacherRes, classRes, subjectRes, materialsRes, libraryRes] = await Promise.all([
           listTeachers({ query: { page_size: 100 } as any }).catch(() => null),
           listClasses({ query: { page_size: 100 } as any }).catch(() => null),
           fetch(getApiUrl('/api/v1/academic/subjects'), {
@@ -71,8 +78,18 @@ export default function MaterialsPage() {
           }).then(r => r.ok ? r.json() : null).catch(() => null),
           fetch(getApiUrl('/api/v1/learning/materials'), {
             headers: token ? { Authorization: `Bearer ${token}` } : {}
+          }).then(r => r.ok ? r.json() : null).catch(() => null),
+          fetch(getApiUrl('/api/v1/learning/library/books'), {
+            headers: token ? { Authorization: `Bearer ${token}` } : {}
           }).then(r => r.ok ? r.json() : null).catch(() => null)
         ]);
+
+        if (libraryRes?.data && Array.isArray(libraryRes.data)) {
+          setLibraryBooks(libraryRes.data);
+          if (libraryRes.data.length > 0) {
+            setSelectedBook(libraryRes.data[0]);
+          }
+        }
 
         if (teacherRes?.data?.data) {
           const list = teacherRes.data.data;
@@ -239,6 +256,67 @@ export default function MaterialsPage() {
     }
   };
 
+  const handleAssignLibraryBook = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedBook) {
+      showToast('⚠️ Silakan pilih buku dari katalog perpustakaan');
+      return;
+    }
+    const targetClass = classesList.find(c => c.name === newMaterial.grade) || classesList[0];
+    if (!targetClass) {
+      showToast('⚠️ Silakan pilih rombel target');
+      return;
+    }
+    const targetSubject = subjectsList.find(s => s.name === newMaterial.subject);
+    try {
+      const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
+      const startP = Math.max(1, Number(bookStartPage) || 1);
+      const endP = Math.min(selectedBook.total_pages || 300, Math.max(startP, Number(bookEndPage) || 10));
+      const payload = {
+        book_id: selectedBook.id,
+        title: `Materi Bacaan: ${selectedBook.title} (Hal. ${startP}–${endP})`,
+        instructions: newMaterial.description || `Silakan baca dan pelajari buku "${selectedBook.title}" halaman ${startP} sampai ${endP}.`,
+        class_id: targetClass.id,
+        subject_id: targetSubject?.id || null,
+        start_page: startP,
+        end_page: endP
+      };
+
+      const res = await fetch(getApiUrl('/api/v1/learning/library/assign'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        const resJson = await res.json();
+        const item: MaterialItem = {
+          id: resJson.data || `mat-${Date.now()}`,
+          title: payload.title,
+          subject: newMaterial.subject || selectedBook.subject_name || 'Umum',
+          grade: targetClass.name,
+          author: newMaterial.author || selectedBook.author || 'Kemendikbudristek',
+          format: 'PDF',
+          size: `${selectedBook.total_pages} Hal.`,
+          downloads: 0,
+          completedCount: 0,
+          date: 'Hari ini',
+          description: payload.instructions,
+        };
+        setMaterials(prev => [item, ...prev]);
+        setShowAddModal(false);
+        showToast('✓ Tugas materi bacaan buku perpustakaan berhasil diterbitkan');
+      } else {
+        showToast('⚠️ Gagal menugaskan materi buku');
+      }
+    } catch {
+      showToast('⚠️ Terjadi kendala koneksi');
+    }
+  };
+
   const handleDeleteMaterial = async (id: string, title: string) => {
     if (!confirm(`Hapus modul "${title}"?`)) return;
     try {
@@ -360,11 +438,18 @@ startxref
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
           <Link href="/dashboard/learning" className="btn btn-secondary btn-sm">
             ← Kembali ke Workspace
           </Link>
-          <button className="btn btn-primary btn-sm" onClick={() => setShowAddModal(true)}>
+          <button
+            className="btn btn-secondary btn-sm"
+            style={{ background: 'var(--accent-dim)', color: '#2563eb', fontWeight: 800, border: '1px solid rgba(37,99,235,0.3)' }}
+            onClick={() => { setCreationMode('LIBRARY'); setShowAddModal(true); }}
+          >
+            📚 Katalog Buku Perpustakaan ({libraryBooks.length})
+          </button>
+          <button className="btn btn-primary btn-sm" onClick={() => { setCreationMode('MANUAL'); setShowAddModal(true); }}>
             + Unggah Modul Ajar Baru
           </button>
         </div>
@@ -503,16 +588,176 @@ startxref
           }} onClick={e => e.stopPropagation()}>
             <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid var(--border-light)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                + Unggah Modul Ajar Digital Baru
+                {creationMode === 'LIBRARY' ? '📚 Pilih Buku dari Katalog Perpustakaan' : '✍️ Unggah Modul Ajar Mandiri'}
               </h3>
               <button style={{ border: 'none', background: 'none', fontSize: '1.4rem', cursor: 'pointer', color: 'var(--text-muted)' }} onClick={() => setShowAddModal(false)}>×</button>
             </div>
 
-            <form onSubmit={handleCreateMaterial} style={{ overflowY: 'auto' }}>
-              <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+            {/* Mode Switcher Tabs */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', background: 'var(--bg-elevated)', borderBottom: '1px solid var(--border-light)' }}>
+              <button
+                type="button"
+                onClick={() => setCreationMode('LIBRARY')}
+                style={{
+                  padding: '0.75rem',
+                  fontWeight: 800,
+                  fontSize: '0.82rem',
+                  border: 'none',
+                  background: creationMode === 'LIBRARY' ? 'var(--bg-card)' : 'transparent',
+                  color: creationMode === 'LIBRARY' ? '#2563eb' : 'var(--text-muted)',
+                  borderBottom: creationMode === 'LIBRARY' ? '2px solid #2563eb' : 'none',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.4rem'
+                }}
+              >
+                <span>📚</span> Katalog Buku ({libraryBooks.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setCreationMode('MANUAL')}
+                style={{
+                  padding: '0.75rem',
+                  fontWeight: 800,
+                  fontSize: '0.82rem',
+                  border: 'none',
+                  background: creationMode === 'MANUAL' ? 'var(--bg-card)' : 'transparent',
+                  color: creationMode === 'MANUAL' ? '#2563eb' : 'var(--text-muted)',
+                  borderBottom: creationMode === 'MANUAL' ? '2px solid #2563eb' : 'none',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.4rem'
+                }}
+              >
+                <span>✍️</span> Input Modul Manual
+              </button>
+            </div>
+
+            {creationMode === 'LIBRARY' ? (
+              <form onSubmit={handleAssignLibraryBook} style={{ overflowY: 'auto' }}>
+                <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div style={{ background: 'var(--accent-dim)', border: '1px solid rgba(37,99,235,0.25)', borderRadius: '12px', padding: '0.85rem', fontSize: '0.78rem', color: 'var(--text-primary)' }}>
+                    💡 <strong>Perpustakaan Guru:</strong> Pilih buku teks resmi Kemendikbudristek yang tersedia dan tentukan halaman yang wajib dipelajari siswa.
+                  </div>
+
                   <div>
-                    <label style={{ fontSize: '0.76rem', fontWeight: 700 }}>Rombel Target *</label>
+                    <label style={{ fontSize: '0.76rem', fontWeight: 700 }}>Pilih Buku Teks Kurikulum *</label>
+                    <select
+                      value={selectedBook?.id || ''}
+                      onChange={e => {
+                        const b = libraryBooks.find(item => item.id === e.target.value);
+                        if (b) {
+                          setSelectedBook(b);
+                          if (b.subject_name && subjectsList.some(s => s.name.toLowerCase() === b.subject_name.toLowerCase())) {
+                            setNewMaterial(prev => ({ ...prev, subject: b.subject_name }));
+                          }
+                        }
+                      }}
+                      className="input"
+                      style={{ fontWeight: 800 }}
+                    >
+                      {libraryBooks.length > 0 ? (
+                        libraryBooks.map(b => (
+                          <option key={b.id} value={b.id}>
+                            {b.title} — {b.publisher || 'Kemendikbudristek'} ({b.total_pages} Hal.)
+                          </option>
+                        ))
+                      ) : (
+                        <option value="">Belum ada buku di perpustakaan</option>
+                      )}
+                    </select>
+                  </div>
+
+                  {selectedBook && (
+                    <div style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-light)', borderRadius: '12px', padding: '0.85rem', display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                      <div style={{ fontSize: '2rem' }}>📕</div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 800, fontSize: '0.84rem', color: 'var(--text-primary)' }}>{selectedBook.title}</div>
+                        <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>{selectedBook.author || 'Tim Penulis'} • {selectedBook.publisher || 'Kemendikbud'}</div>
+                        <div style={{ fontSize: '0.72rem', color: '#2563eb', fontWeight: 700, marginTop: '2px' }}>Total {selectedBook.total_pages} Halaman</div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                    <div>
+                      <label style={{ fontSize: '0.76rem', fontWeight: 700 }}>Dari Halaman *</label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={selectedBook?.total_pages || 999}
+                        required
+                        value={bookStartPage}
+                        onChange={e => setBookStartPage(Number(e.target.value))}
+                        className="input"
+                      />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '0.76rem', fontWeight: 700 }}>Sampai Halaman *</label>
+                      <input
+                        type="number"
+                        min={bookStartPage}
+                        max={selectedBook?.total_pages || 999}
+                        required
+                        value={bookEndPage}
+                        onChange={e => setBookEndPage(Number(e.target.value))}
+                        className="input"
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                    <div>
+                      <label style={{ fontSize: '0.76rem', fontWeight: 700 }}>Rombel Target *</label>
+                      <select
+                        value={newMaterial.grade}
+                        onChange={e => setNewMaterial({ ...newMaterial, grade: e.target.value })}
+                        className="input"
+                      >
+                        {classesList.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '0.76rem', fontWeight: 700 }}>Mata Pelajaran</label>
+                      <select
+                        value={newMaterial.subject}
+                        onChange={e => setNewMaterial({ ...newMaterial, subject: e.target.value })}
+                        className="input"
+                      >
+                        {subjectsList.map((s: any) => (
+                          <option key={s.id || s.code} value={s.name}>{s.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.76rem', fontWeight: 700 }}>Instruksi / Catatan Siswa (Opsional)</label>
+                    <textarea
+                      placeholder="contoh: Silakan baca dan pelajari bab ini sebelum pertemuan tatap muka berikutnya..."
+                      value={newMaterial.description}
+                      onChange={e => setNewMaterial({ ...newMaterial, description: e.target.value })}
+                      className="input"
+                      rows={3}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ padding: '0.875rem 1.25rem', borderTop: '1px solid var(--border-light)', display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', background: 'var(--bg-elevated)' }}>
+                  <button type="button" className="btn btn-secondary btn-sm" onClick={() => setShowAddModal(false)}>Batal</button>
+                  <button type="submit" className="btn btn-primary btn-sm">📖 Terbitkan Tugas Bacaan Buku</button>
+                </div>
+              </form>
+            ) : (
+              <form onSubmit={handleCreateMaterial} style={{ overflowY: 'auto' }}>
+                <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                    <div>
+                      <label style={{ fontSize: '0.76rem', fontWeight: 700 }}>Rombel Target *</label>
                     <select
                       value={newMaterial.grade}
                       onChange={e => setNewMaterial({ ...newMaterial, grade: e.target.value })}
@@ -650,6 +895,7 @@ startxref
                 <button type="submit" className="btn btn-primary btn-sm">🚀 Publish ke Android App</button>
               </div>
             </form>
+          )}
           </div>
         </div>
       )}
