@@ -18,8 +18,12 @@ type MaterialItem = {
   date: string;
   youtubeUrl?: string;
   pdfFileName?: string;
+  externalUrl?: string;
   imagePreviewUrl?: string;
   description?: string;
+  startPage?: number;
+  endPage?: number;
+  sourceType?: string;
 };
 
 const INITIAL_MATERIALS: MaterialItem[] = [];
@@ -132,21 +136,31 @@ export default function MaterialsPage() {
 
         if (materialsRes?.data && Array.isArray(materialsRes.data)) {
           const mapped: MaterialItem[] = materialsRes.data.map((m: any) => {
-            const descParts = (m.description || '').split(' • ');
+            const descParts = (m.description || '').includes(' • ') ? m.description.split(' • ') : [];
+            const isVideo = m.material_type === 'video' || (m.external_url && (m.external_url.includes('youtube.com') || m.external_url.includes('youtu.be')));
+            const isPdf = m.material_type === 'document' || m.material_type === 'pdf' || (m.external_url && m.external_url.toLowerCase().endsWith('.pdf')) || Boolean(m.storage_key) || m.source_type === 'LIBRARY';
+            const formatType: 'PDF' | 'VIDEO' | 'TEXT' = isVideo ? 'VIDEO' : isPdf ? 'PDF' : 'TEXT';
+
             return {
               id: m.id,
               title: m.title,
-              subject: descParts[0] || 'Umum',
-              grade: descParts[1] || 'Semua Rombel',
-              author: descParts[2] || 'Admin',
-              format: (m.material_type?.toUpperCase() || 'PDF') as 'PDF' | 'VIDEO' | 'TEXT',
-              size: m.storage_key || (m.material_type === 'video' ? 'Video Online' : '1.8 MB'),
+              subject: m.subject_name || descParts[0] || 'Umum',
+              grade: m.class_name || descParts[1] || 'Semua Rombel',
+              author: m.teacher_name || descParts[2] || 'Guru Pengampu',
+              format: formatType,
+              size: m.start_page && m.end_page 
+                ? `Hal. ${m.start_page}–${m.end_page}` 
+                : m.storage_key || (isVideo ? 'Video Online' : '1.8 MB'),
               downloads: 12,
               completedCount: m.completed_count || 0,
               date: m.created_at ? new Date(m.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Hari ini',
-              youtubeUrl: m.external_url,
-              pdfFileName: m.storage_key,
-              description: descParts.slice(3).join(' • ') || m.description,
+              youtubeUrl: isVideo ? m.external_url : undefined,
+              externalUrl: m.external_url,
+              pdfFileName: isPdf ? (m.storage_key || (m.external_url ? m.external_url.split('/').pop() : 'Buku_Kurikulum.pdf')) : undefined,
+              description: descParts.length > 3 ? descParts.slice(3).join(' • ') : m.description,
+              startPage: m.start_page,
+              endPage: m.end_page,
+              sourceType: m.source_type,
             };
           });
           setMaterials(mapped);
@@ -318,13 +332,18 @@ export default function MaterialsPage() {
           title: payload.title,
           subject: newMaterial.subject || selectedBook.subject_name || 'Umum',
           grade: targetClass.name,
-          author: newMaterial.author || selectedBook.author || 'Kemendikbudristek',
+          author: targetTeacher?.full_name || newMaterial.author || 'Guru Pengampu',
           format: 'PDF',
-          size: `${selectedBook.total_pages} Hal.`,
+          size: `Hal. ${startP}–${endP}`,
           downloads: 0,
           completedCount: 0,
           date: 'Hari ini',
           description: payload.instructions,
+          externalUrl: selectedBook.file_url,
+          pdfFileName: selectedBook.file_url ? selectedBook.file_url.split('/').pop() : `${selectedBook.title}.pdf`,
+          startPage: startP,
+          endPage: endP,
+          sourceType: 'LIBRARY',
         };
         setMaterials(prev => [item, ...prev]);
         setShowAddModal(false);
@@ -532,13 +551,19 @@ startxref
                       <span className="badge badge-info" style={{ fontWeight: 800 }}>{m.subject}</span>
                       <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 700, marginTop: '2px' }}>{m.grade}</div>
                     </td>
-                    <td style={{ padding: '0.85rem 1rem', fontWeight: 700, color: 'var(--text-muted)' }}>{m.author}</td>
+                    <td style={{ padding: '0.85rem 1rem', fontWeight: 700, color: 'var(--text-primary)' }}>{m.author}</td>
                     <td style={{ padding: '0.85rem 1rem' }}>
                       <span className={`badge ${m.format === 'PDF' ? 'badge-info' : m.format === 'VIDEO' ? 'badge-warning' : 'badge-active'}`}>
-                        {m.format === 'VIDEO' ? '🎥 YouTube' : m.format === 'PDF' ? '📄 PDF' : '📝 Teks'}
+                        {m.format === 'VIDEO' ? '🎥 Video' : m.format === 'PDF' ? '📄 Buku / PDF' : '📝 Teks'}
                       </span>
-                      {m.pdfFileName && <div style={{ fontSize: '0.7rem', color: '#2563eb', fontWeight: 700 }}>{m.pdfFileName}</div>}
-                      {m.youtubeUrl && <div style={{ fontSize: '0.7rem', color: '#dc2626', fontWeight: 700 }}>Link YouTube</div>}
+                      {m.format === 'PDF' && (m.startPage ? (
+                        <div style={{ fontSize: '0.7rem', color: '#2563eb', fontWeight: 700, marginTop: '2px' }}>Hal. {m.startPage} — {m.endPage}</div>
+                      ) : m.pdfFileName ? (
+                        <div style={{ fontSize: '0.7rem', color: '#2563eb', fontWeight: 700, marginTop: '2px' }}>{m.pdfFileName}</div>
+                      ) : null)}
+                      {m.format === 'VIDEO' && m.youtubeUrl && (
+                        <div style={{ fontSize: '0.7rem', color: '#dc2626', fontWeight: 700, marginTop: '2px' }}>Link Video</div>
+                      )}
                     </td>
                     <td style={{ padding: '0.85rem 1rem' }}>
                       <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', background: m.completedCount > 0 ? '#dcfce7' : 'var(--bg-elevated)', padding: '0.2rem 0.55rem', borderRadius: '8px', border: `1px solid ${m.completedCount > 0 ? '#86efac' : 'var(--border-light)'}` }}>
@@ -992,35 +1017,75 @@ startxref
           <div style={{
             background: 'var(--bg-card)',
             borderRadius: '16px',
-            maxWidth: '520px',
+            maxWidth: '560px',
             width: '100%',
             overflow: 'hidden',
             border: '1px solid var(--border-light)',
           }} onClick={e => e.stopPropagation()}>
             <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid var(--border-light)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)' }}>{previewMaterial.title}</h3>
+              <div>
+                <span className={`badge ${previewMaterial.format === 'PDF' ? 'badge-info' : previewMaterial.format === 'VIDEO' ? 'badge-warning' : 'badge-active'}`} style={{ fontSize: '0.7rem', marginBottom: '4px' }}>
+                  {previewMaterial.format === 'PDF' ? '📕 Buku / Modul PDF' : previewMaterial.format === 'VIDEO' ? '🎥 Video Pembelajaran' : '📝 Teks Artikel'}
+                </span>
+                <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)' }}>{previewMaterial.title}</h3>
+              </div>
               <button style={{ border: 'none', background: 'none', fontSize: '1.4rem', cursor: 'pointer', color: 'var(--text-muted)' }} onClick={() => setPreviewMaterial(null)}>×</button>
             </div>
             <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
-              <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--text-muted)' }}>{previewMaterial.description}</p>
-              {previewMaterial.youtubeUrl && <div style={{ fontSize: '0.78rem', color: '#dc2626', fontWeight: 700 }}>▶️ YouTube: {previewMaterial.youtubeUrl}</div>}
-              {previewMaterial.pdfFileName && <div style={{ fontSize: '0.78rem', color: '#2563eb', fontWeight: 700 }}>📄 PDF: {previewMaterial.pdfFileName}</div>}
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', fontSize: '0.76rem' }}>
+                <span style={{ background: 'var(--bg-elevated)', padding: '0.25rem 0.5rem', borderRadius: '6px', fontWeight: 700 }}>
+                  📚 {previewMaterial.subject}
+                </span>
+                <span style={{ background: 'var(--bg-elevated)', padding: '0.25rem 0.5rem', borderRadius: '6px', fontWeight: 700 }}>
+                  🏫 {previewMaterial.grade}
+                </span>
+                <span style={{ background: 'var(--bg-elevated)', padding: '0.25rem 0.5rem', borderRadius: '6px', fontWeight: 700 }}>
+                  👨‍🏫 {previewMaterial.author}
+                </span>
+                {previewMaterial.startPage && previewMaterial.endPage && (
+                  <span style={{ background: '#dbeafe', color: '#1e40af', padding: '0.25rem 0.5rem', borderRadius: '6px', fontWeight: 800 }}>
+                    📖 Halaman {previewMaterial.startPage} — {previewMaterial.endPage}
+                  </span>
+                )}
+              </div>
+
+              <div style={{ background: 'var(--bg-elevated)', borderRadius: '8px', padding: '0.85rem', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                <strong>Instruksi Belajar:</strong>
+                <p style={{ margin: '4px 0 0 0', lineHeight: 1.5 }}>{previewMaterial.description}</p>
+              </div>
+
+              {previewMaterial.format === 'VIDEO' && previewMaterial.youtubeUrl && (
+                <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', padding: '0.85rem' }}>
+                  <div style={{ fontSize: '0.78rem', color: '#dc2626', fontWeight: 700, marginBottom: '6px' }}>▶️ Video Pembelajaran:</div>
+                  <a href={previewMaterial.youtubeUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb', fontSize: '0.8rem', wordBreak: 'break-all' }}>
+                    {previewMaterial.youtubeUrl}
+                  </a>
+                </div>
+              )}
+
+              {previewMaterial.format === 'PDF' && (previewMaterial.externalUrl || previewMaterial.pdfFileName) && (
+                <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem' }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#1e40af' }}>📄 Berkas Buku / Dokumen PDF</div>
+                    <div style={{ fontSize: '0.72rem', color: '#3b82f6', marginTop: '2px' }}>
+                      {previewMaterial.startPage ? `Fokus Halaman ${previewMaterial.startPage} sampai ${previewMaterial.endPage}` : (previewMaterial.pdfFileName || 'Buku Teks Kurikulum')}
+                    </div>
+                  </div>
+                  {previewMaterial.externalUrl && (
+                    <a
+                      href={previewMaterial.externalUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn btn-primary btn-sm"
+                      style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}
+                    >
+                      📖 Buka PDF Buku ↗
+                    </a>
+                  )}
+                </div>
+              )}
             </div>
             <div style={{ padding: '0.875rem 1.25rem', borderTop: '1px solid var(--border-light)', background: 'var(--bg-elevated)', display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
-              {previewMaterial.pdfFileName && (
-                <button
-                  className="btn btn-primary btn-sm"
-                  onClick={() => handleDownloadPdf(
-                    previewMaterial.pdfFileName || 'Modul.pdf',
-                    previewMaterial.title,
-                    previewMaterial.subject,
-                    previewMaterial.author,
-                    previewMaterial.description || ''
-                  )}
-                >
-                  📥 Unduh PDF
-                </button>
-              )}
               <button className="btn btn-secondary btn-sm" onClick={() => setPreviewMaterial(null)}>Tutup</button>
             </div>
           </div>
