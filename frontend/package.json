@@ -43,5 +43,12 @@
     "prettier": "^3.9.4",
     "typescript": "^5.9.3",
     "vitest": "^4.1.10"
+  },
+  "lavamoat": {
+    "allowScripts": {
+      "eslint-config-next>eslint-import-resolver-typescript>unrs-resolver#1.12.2": true,
+      "html2pdf.js>jspdf>core-js#3.50.0": true,
+      "next>sharp#0.34.5": true
+    }
   }
 }

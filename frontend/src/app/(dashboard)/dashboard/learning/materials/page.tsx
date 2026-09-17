@@ -103,20 +103,24 @@ export default function MaterialsPage() {
           }
         }
 
-        if (teacherRes?.data?.data) {
-          const list = teacherRes.data.data;
-          setTeachers(list);
-          if (list.length > 0) {
-            setNewMaterial(prev => ({ ...prev, author: prev.author || list[0].full_name }));
-          }
+        const teacherList = Array.isArray((teacherRes as any)?.data?.data)
+          ? (teacherRes as any).data.data
+          : Array.isArray((teacherRes as any)?.data)
+            ? (teacherRes as any).data
+            : [];
+        if (teacherList.length > 0) {
+          setTeachers(teacherList);
+          setNewMaterial(prev => ({ ...prev, author: prev.author || teacherList[0].full_name }));
         }
 
-        if (classRes?.data?.data) {
-          const cList = classRes.data.data;
+        const cList = Array.isArray((classRes as any)?.data?.data)
+          ? (classRes as any).data.data
+          : Array.isArray((classRes as any)?.data)
+            ? (classRes as any).data
+            : [];
+        if (cList.length > 0) {
           setClassesList(cList);
-          if (cList.length > 0) {
-            setNewMaterial(prev => ({ ...prev, grade: prev.grade || cList[0].name }));
-          }
+          setNewMaterial(prev => ({ ...prev, grade: prev.grade || cList[0].name }));
         }
 
         if (subjectRes?.data && Array.isArray(subjectRes.data)) {
@@ -862,7 +866,11 @@ startxref
                     className="input"
                   >
                     {teachers.length > 0 ? (
-                      teachers.map((t: any) => <option key={t.id} value={t.full_name}>{t.full_name}</option>)
+                      teachers.map((t: any) => (
+                        <option key={t.id} value={t.full_name}>
+                          {t.full_name} {t.nip ? `(NIP: ${t.nip})` : ''}
+                        </option>
+                      ))
                     ) : (
                       <option value="">Belum ada guru</option>
                     )}
