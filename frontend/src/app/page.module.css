@@ -4,7 +4,7 @@
   position: relative;
   min-height: 100vh;
   width: 100%;
-  background: #090d16;
+  background: #000000;
   color: #f8fafc;
   overflow-x: hidden;
   display: flex;
@@ -355,14 +355,14 @@
 }
 
 .mockupWindow {
-  background: #0d1322;
+  background: #08080a;
   border-radius: 14px;
   border: 1px solid rgba(255, 255, 255, 0.06);
   overflow: hidden;
 }
 
 .mockupHeader {
-  background: rgba(15, 23, 42, 0.85);
+  background: rgba(10, 10, 12, 0.9);
   padding: 0.75rem 1.25rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   display: flex;
@@ -730,7 +730,7 @@
 /* ── Footer ── */
 .footer {
   border-top: 1px solid rgba(255, 255, 255, 0.08);
-  background: #060911;
+  background: #000000;
   padding: 3rem 1.5rem;
   margin-top: auto;
 }
