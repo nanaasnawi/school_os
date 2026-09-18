@@ -1,7 +1,7 @@
 # ADR 0006: Frontend Feature-Sliced Design & Presentation Layer Pureness
 
 - **Status**: Accepted
-- **Date**: 2026-08-04
+- **Date**: 2025-08-04
 - **Author**: Engineering Architecture Team
 
 ## Context

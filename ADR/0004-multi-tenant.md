@@ -1,7 +1,7 @@
 # ADR-0004: Multi-Tenant Architecture
 
 **Status:** Accepted
-**Date:** 2026-07-20
+**Date:** 2025-07-20
 
 ## Context
 
