@@ -1063,15 +1063,15 @@ startxref
                 </div>
               )}
 
-              {previewMaterial.format === 'PDF' && (previewMaterial.externalUrl || previewMaterial.pdfFileName) && (
+              {previewMaterial.format === 'PDF' && (
                 <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem' }}>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#1e40af' }}>📄 Berkas Buku / Dokumen PDF</div>
+                    <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#1e40af' }}>📄 Berkas Buku / Dokumen PDF Resmi</div>
                     <div style={{ fontSize: '0.72rem', color: '#3b82f6', marginTop: '2px' }}>
-                      {previewMaterial.startPage ? `Fokus Halaman ${previewMaterial.startPage} sampai ${previewMaterial.endPage}` : (previewMaterial.pdfFileName || 'Buku Teks Kurikulum')}
+                      {previewMaterial.startPage ? `Fokus Halaman ${previewMaterial.startPage} sampai ${previewMaterial.endPage}` : (previewMaterial.pdfFileName || 'Buku Teks Kurikulum SIBI')}
                     </div>
                   </div>
-                  {previewMaterial.externalUrl && (
+                  {previewMaterial.externalUrl ? (
                     <a
                       href={previewMaterial.externalUrl}
                       target="_blank"
@@ -1081,6 +1081,10 @@ startxref
                     >
                       📖 Buka PDF Buku ↗
                     </a>
+                  ) : (
+                    <span style={{ fontSize: '0.72rem', color: '#dc2626', background: '#fee2e2', padding: '0.25rem 0.5rem', borderRadius: '6px', fontWeight: 700 }}>
+                      ⚠️ Dalam Revisi Kemendikdasmen
+                    </span>
                   )}
                 </div>
               )}
