@@ -198,7 +198,7 @@ School OS/
 ```mermaid
 graph TD
     subgraph Clients [Client Layer]
-        WebClient[Web Browser / Next.js Admin & Teacher]
+        WebClient[Web Browser / Next.js Admin & Teacher] 
         ParentPortal[Parent Portal / Next.js Responsive]
         MobileClient[Android Native App / Compose]
     end
