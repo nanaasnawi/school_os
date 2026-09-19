@@ -41,7 +41,7 @@ School OS tidak hanya mengelola administrasi akademik, tetapi juga menjadi media
 +---------------+          +-------------------+          +-----------------+
 
                                      |
-                             Shared Business Domain
+                            Shared Business Domain
                                      |
                          +-----------v------------+
                          | Android Student App    |
