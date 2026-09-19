@@ -24,96 +24,96 @@ Sistem ini disusun dalam struktur **Monorepo** yang menampung *Backend (Rust)*, 
 
 ```
 School OS/
-├── .github/                     # Workflow CI/CD GitHub Actions
-├── ADR/                         # Architectural Decision Records (ADR 0001 - 0007)
-├── android/                     # Aplikasi Mobile Android (Kotlin Clean Architecture + Compose)
-│   ├── app/                     # Modul utama aplikasi Android (Application, MainActivity, NavGraph)
-│   ├── core/                    # Library internal, Design System, SystemNotificationHelper, AuthManager
-│   ├── data/                    # Data sources, Remote API clients, Repository implementations, DTOs
-│   ├── domain/                  # Use cases, Domain models, Repository interfaces
-│   ├── feature/                 # 11 Modul Fitur UI Berbasis Jetpack Compose:
-│   │   ├── achievements/        # Gamifikasi & Lencana Prestasi Siswa
-│   │   ├── assignments/         # Pengerjaan Tugas (Pilihan Ganda/Esai), Upload Berkas, & Pemeriksaan Guru
-│   │   ├── auth/                # Login, Validasi Sesi, & Pemindai Login QR Code (CameraX)
-│   │   ├── grades/              # Buku Nilai & Transkrip Nilai Akademik
-│   │   ├── home/                # Dashboard Dinamis (Siswa, Guru, Orang Tua, & Wali Kelas)
-│   │   ├── learning/            # Akses Materi, Video Pembelajaran, & Buku Kurikulum Nasional SIBI
-│   │   ├── notifications/       # Broadcast Center, SSE Stream, FCM Push Receiver, & Chat Tanya Guru
-│   │   ├── profile/             # Profil, Ganti Tema (Dark/Light), Bantuan Sekolah, & Pengaturan Keamanan
-│   │   ├── progress/            # Grafik & Visualisasi Kemajuan Belajar Siswa
-│   │   ├── quizzes/             # CBT Interactive Player, Timer Ujian, Anti-Cheat, & Nilai Instan
-│   │   └── sessions/            # Jadwal Pelajaran Harian & Presensi Sesi Kelas
-│   └── build.gradle.kts         # Konfigurasi Gradle Root (Kotlin DSL, MinSDK 26, TargetSDK 35)
-├── backend/                     # Rust Workspace Utama
-│   ├── Cargo.toml               # Config Rust Workspace (api-server, school-core, local-bridge, hash-gen)
-│   ├── api-server/              # Entry point HTTP REST API (Axum Framework)
+├── .github/                     
+├── ADR/                         
+├── android/                     
+│   ├── app/                     
+│   ├── core/                    
+│   ├── data/                    
+│   ├── domain/                  
+│   ├── feature/                 
+│   │   ├── achievements/        
+│   │   ├── assignments/         
+│   │   ├── auth/                
+│   │   ├── grades/              
+│   │   ├── home/                
+│   │   ├── learning/            
+│   │   ├── notifications/       
+│   │   ├── profile/             
+│   │   ├── progress/            
+│   │   ├── quizzes/             
+│   │   └── sessions/            
+│   └── build.gradle.kts         
+├── backend/                     
+│   ├── Cargo.toml               
+│   ├── api-server/              
 │   │   ├── Cargo.toml
 │   │   └── src/
-│   │       ├── bootstrap/       # Inisialisasi State Aplikasi, DB Pools, Context, & Worker Runners
-│   │       ├── infrastructure/  # Komponen Infrastruktur:
-│   │       │   ├── fcm.rs       # FCM HTTP v1 High-Priority Push Engine (Lockscreen & Standby Wakeup)
-│   │       │   ├── smart_reminder_worker.rs # Worker Jadwal Mengajar Guru & Materi Terjadwal (Quiet Hours)
-│   │       │   └── observability/ # Prometheus Metrics, Tracing, & Logging
-│   │       ├── presentation/    # Endpoints HTTP / Handlers per modul:
-│   │       │   ├── academic/    # API Akademik (Kelas, Rombel, Tahun Ajaran, Mata Pelajaran, Jadwal)
-│   │       │   ├── analytics/   # API Laporan Analitik & Statistik Akademik
-│   │       │   ├── announcements/# API Pengumuman Sekolah, Broadcast Multi-Target, & SSE Stream (/stream)
-│   │       │   ├── auth/        # API Autentikasi (JWT Login, Token Refresh, QR Login Token)
-│   │       │   ├── dapodik/     # API Integrasi, Pemetaan Status, & Audit Sinkronisasi Dapodik
-│   │       │   ├── health/      # Health Check, Liveness, & Readiness Probes
-│   │       │   ├── learning/    # Modul Pembelajaran Lengkap:
-│   │       │   │   ├── achievement/ # Gamifikasi & Penghargaan Siswa
-│   │       │   │   ├── assessment/  # Pengaturan Aturan & Rekapitulasi Nilai Akhir
-│   │       │   │   ├── assignments/ # Pembuatan Tugas, Soal PG/Esai, Pengumpulan, & Penilaian Guru
-│   │       │   │   ├── curricula/   # Kurikulum Nasional & Sekolah
-│   │       │   │   ├── feed/        # Classroom Feeds & Linimasa Kelas
-│   │       │   │   ├── inquiries/   # Tanya Guru / Q&A Konsultasi Interaktif Siswa-Guru (Chat Persistence)
-│   │       │   │   ├── lessons/     # Rencana Pembelajaran Harian & Jurnal Guru
-│   │       │   │   ├── library/     # Perpustakaan Digital Nasional SIBI Kemdikdasmen & Progres Baca
-│   │       │   │   ├── materials/   # Modul Belajar, Bahan Ajar, & Tracking Penyelesaian Siswa
-│   │       │   │   ├── progress/    # Pelacakan Kemajuan Kompetensi Belajar Siswa
-│   │       │   │   ├── quizzes/     # Computer-Based Testing (CBT), Bank Soal, & Timer Kuis
-│   │       │   │   ├── sessions/    # Jadwal Sesi Pelajaran & Presensi Kehadiran
-│   │       │   │   └── syllabuses/  # Silabus Mata Pelajaran
-│   │       │   ├── notifications/# API Notifikasi Pengguna, Preferensi Kanal, & Deduplikasi
-│   │       │   ├── people/      # API Data Siswa, Guru, Tenaga Kependidikan, & Wali Murid
-│   │       │   ├── school/      # API Profil Sekolah, Logo, & Pengaturan Sinkronisasi Dapodik
-│   │       │   ├── system/      # API Pengaturan Sistem Global & Maintenance Mode Gatekeeper
-│   │       │   └── tenant/      # API Manajemen Tenant/Sekolah & Verifikasi NPSN
-│   │       ├── error.rs         # Penanganan error terpadu & pemetaan HTTP status
-│   │       ├── extractors.rs    # Custom Axum Extractors (Auth User Context, Tenant ID)
-│   │       ├── idempotency.rs   # Middleware proteksi idempotency request
-│   │       ├── middleware.rs    # Middleware CORS, Security Headers, RBAC Permission, & Tracing
-│   │       ├── response.rs      # Format standar JSON Response API
-│   │       └── main.rs          # Entry point pengelasan server Axum
-│   ├── school-core/             # Crate Logika Domain Bisnis Murni (Clean Architecture & DDD)
+│   │       ├── bootstrap/       
+│   │       ├── infrastructure/  
+│   │       │   ├── fcm.rs       
+│   │       │   ├── smart_reminder_worker.rs 
+│   │       │   └── observability/ 
+│   │       ├── presentation/    
+│   │       │   ├── academic/    
+│   │       │   ├── analytics/   
+│   │       │   ├── announcements/
+│   │       │   ├── auth/        
+│   │       │   ├── dapodik/     
+│   │       │   ├── health/      
+│   │       │   ├── learning/    
+│   │       │   │   ├── achievement/ 
+│   │       │   │   ├── assessment/  
+│   │       │   │   ├── assignments/ 
+│   │       │   │   ├── curricula/   
+│   │       │   │   ├── feed/        
+│   │       │   │   ├── inquiries/   
+│   │       │   │   ├── lessons/     
+│   │       │   │   ├── library/     
+│   │       │   │   ├── materials/   
+│   │       │   │   ├── progress/    
+│   │       │   │   ├── quizzes/     
+│   │       │   │   ├── sessions/    
+│   │       │   │   └── syllabuses/  
+│   │       │   ├── notifications/
+│   │       │   ├── people/      
+│   │       │   ├── school/      
+│   │       │   ├── system/      
+│   │       │   └── tenant/      
+│   │       ├── error.rs         
+│   │       ├── extractors.rs    
+│   │       ├── idempotency.rs   
+│   │       ├── middleware.rs    
+│   │       ├── response.rs      
+│   │       └── main.rs          
+│   ├── school-core/             
 │   │   ├── Cargo.toml
 │   │   └── src/
-│   │       ├── academic/        # Domain Kurikulum, Silabus, Rombel, & Tahun Ajaran
-│   │       ├── audit/           # Log Audit Transaksi Sensitif
-│   │       ├── authorization/   # RBAC & Evaluasi Hak Akses Pengguna
-│   │       ├── common/          # Value Objects, Error Types, & Pagination Models
-│   │       ├── communication/   # Pengumuman & Feed Kelas
-│   │       ├── config/          # Konfigurasi Domain
-│   │       ├── identity/        # Domain Akun, Password Hashing (Argon2), & Kredensial
-│   │       ├── integration/     # Kontrak & Transformasi Integrasi Eksternal
-│   │       ├── learning/        # Mesin Inti Pembelajaran, Tugas, Kuis, & Penilaian
-│   │       ├── notification/    # Logika Pengiriman, Preferensi, & Template Notifikasi
-│   │       ├── people/          # Domain Siswa, Guru, Staf, & Orang Tua
-│   │       ├── permission/      # Registri & Enumerasi Hak Akses Granular
-│   │       ├── policy/          # Aturan Bisnis & Kebijakan Batas Waktu Evaluasi
-│   │       └── reporting/       # Rekapitulasi Rapor & Analitik Pembelajaran
-│   ├── local-bridge/            # Agen Daemon Latar Belakang untuk Sinkronisasi Dapodik
+│   │       ├── academic/        
+│   │       ├── audit/           
+│   │       ├── authorization/   
+│   │       ├── common/          
+│   │       ├── communication/   
+│   │       ├── config/          
+│   │       ├── identity/        
+│   │       ├── integration/     
+│   │       ├── learning/        
+│   │       ├── notification/    
+│   │       ├── people/          
+│   │       ├── permission/      
+│   │       ├── policy/          
+│   │       └── reporting/       
+│   ├── local-bridge/            
 │   │   ├── Cargo.toml
 │   │   └── src/
-│   │       ├── auth/            # Otentikasi Agen ke Server Lokal & Dapodik
-│   │       ├── dapodik_acl/     # Access Control List & Parser DB Dapodik
-│   │       ├── domain/          # Model transformasi skema Dapodik <-> School OS
-│   │       ├── store/           # Penyimpanan lokal (SQLite & Windows Credential Manager / Keyring)
-│   │       ├── sync/            # Engine Sinkronisasi (PULL Data Pokok & PUSH Nilai)
-│   │       └── main.rs          # Runner daemon agen lokal
-│   ├── hash-gen/                # CLI Utilitas Pengujian Hashing Password (Argon2)
-│   └── migrations/              # 58 File Migrasi Database PostgreSQL (SQLx)
+│   │       ├── auth/            
+│   │       ├── dapodik_acl/     
+│   │       ├── domain/          
+│   │       ├── store/           
+│   │       ├── sync/            
+│   │       └── main.rs          
+│   ├── hash-gen/                
+│   └── migrations/              
 │       ├── 0001_create_tenant_schema.sql - 0006_create_access_control_schema.sql
 │       ├── 20260708205700_create_idempotency_keys.sql & outbox_events
 │       ├── 20260708220000 - 231000 (Materi, Tugas, Kuis, Penilaian, Progress, Notifikasi)
@@ -125,35 +125,35 @@ School OS/
 │       ├── 20260917030000_create_assignment_questions.sql (Soal PG & Esai Tugas)
 │       ├── 20260917040000_create_notification_dedup_and_queue.sql (Queue & Dedup)
 │       └── 20260917050000 - 080000 (Perpustakaan Digital Buku SIBI Kemdikdasmen)
-├── frontend/                    # Aplikasi Web Next.js (App Router + Feature-Sliced Design)
+├── frontend/                    
 │   ├── package.json
 │   ├── tsconfig.json
-│   ├── openapi-ts.config.ts     # Konfigurasi Auto-generate SDK Client dari OpenAPI Rust
+│   ├── openapi-ts.config.ts     
 │   └── src/
-│       ├── app/                 # Next.js App Router (Pages & Layouts)
-│       │   ├── (auth)/          # Halaman Login Multi-Role, QR Login, & Lupa Password
-│       │   ├── (dashboard)/     # 19 Menu Dashboard Operasional Sekolah:
-│       │   │   └── dashboard/   # Classes, Students, Teachers, Learning, Quizzes, Grading, Dapodik, dll.
-│       │   ├── parent/          # Portal Khusus Orang Tua / Wali Murid (Nilai, Presensi, Pengumuman)
-│       │   ├── system-admin/    # Portal Super Admin (Multi-Tenant Management & Maintenance Mode)
-│       │   ├── api/             # Next.js API Routes Proxy (opsional)
-│       │   ├── layout.tsx       # Root Layout & Theme Provider
-│       │   └── globals.css      # Design System Pure CSS Variables & Utility Classes
-│       ├── authorization/       # Logic Otentikasi & Guard Komponen Frontend
-│       ├── components/          # Reusable UI Components (DataTable, Modal, Form Controls)
-│       ├── contexts/            # React Contexts (User Session, UI State)
-│       ├── features/            # Modul Fitur Frontend:
-│       │   ├── assessment/      # Komponen Penilaian & Rekapitulasi Nilai
-│       │   ├── assignment/      # Komponen Manajemen Tugas & Grading Guru
-│       │   ├── lesson/          # Komponen Sesi Pembelajaran & Jurnal Guru
-│       │   ├── material/        # Manajemen Modul, Bahan Ajar, & Video
-│       │   └── quiz/            # Interaktif Player Kuis Siswa
-│       ├── lib/                 # Utilitas SDK & Integrasi API (`api.ts`, `dapodik-bridge.ts`)
-│       ├── providers/           # Providers Wrapper (`QueryClientProvider`, ThemeProvider)
-│       └── shared/              # Utilitas & Tipe Data Terbagi (Helpers, Validasi)
-├── docker-compose.yml           # Mengisolasi PostgreSQL di Port 5433 (Mencegah Bentrok Port Dapodik 5432)
-├── start-schoolos.ps1           # Script Otomasi Running Environment (PowerShell)
-└── docs/                        # Dokumentasi Sistem (Arsitektur & Panduan Penggunaan)
+│       ├── app/                 
+│       │   ├── (auth)/          
+│       │   ├── (dashboard)/     
+│       │   │   └── dashboard/   
+│       │   ├── parent/          
+│       │   ├── system-admin/    
+│       │   ├── api/             
+│       │   ├── layout.tsx       
+│       │   └── globals.css      
+│       ├── authorization/       
+│       ├── components/          
+│       ├── contexts/            
+│       ├── features/            
+│       │   ├── assessment/      
+│       │   ├── assignment/      
+│       │   ├── lesson/          
+│       │   ├── material/        
+│       │   └── quiz/            
+│       ├── lib/                 
+│       ├── providers/           
+│       └── shared/              
+├── docker-compose.yml           
+├── start-schoolos.ps1           
+└── docs/                        
 ```
 
 ---
