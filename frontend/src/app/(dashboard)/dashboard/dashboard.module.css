@@ -600,14 +600,34 @@
   display: grid;
   grid-template-columns: 1.8fr 1.2fr;
   gap: 1rem;
+  align-items: start;
 }
 @media (max-width: 1100px) { .rowThreeGrid { grid-template-columns: 1fr; } }
 
-/* ── Rombel Grid ── */
+/* ── Rombel Grid — Redesigned Dense ── */
+.rombelSummary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.6rem;
+}
+@media (max-width: 700px) { .rombelSummary { grid-template-columns: repeat(2, 1fr); } }
+.rombelSummaryItem {
+  background: linear-gradient(135deg, var(--accent-dim), transparent);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: 0.6rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+.rombelSummaryLabel { font-size: 0.66rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.rombelSummaryValue { font-size: 1.15rem; font-weight: 800; color: var(--text-primary); line-height: 1.1; }
+.rombelSummaryValue small { font-size: 0.68rem; font-weight: 600; color: var(--text-muted); }
+.rombelSummaryValueSm { font-size: 0.8rem; font-weight: 800; color: var(--text-primary); line-height: 1.25; }
 .rombelGrid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 0.65rem;
+  gap: 0.6rem;
 }
 @media (max-width: 900px) { .rombelGrid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 550px) { .rombelGrid { grid-template-columns: 1fr; } }
@@ -616,16 +636,37 @@
   background: var(--bg-elevated);
   border: 1px solid var(--border-light);
   border-radius: var(--radius-md);
-  padding: 0.7rem 0.8rem;
+  border-left: 3px solid var(--accent);
+  padding: 0.6rem 0.7rem;
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
+  text-decoration: none;
   transition: all var(--dur-fast) ease;
 }
 .rombelItem:hover {
   background: var(--bg-hover);
   border-color: var(--accent);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+.rombelVarC { border-left-color: #2563eb; }
+.rombelVarB { border-left-color: #059669; }
+.rombelVarA { border-left-color: #d97706; }
+.rombelTopRow {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.rombelRank {
+  font-size: 0.6rem;
+  font-weight: 800;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-medium);
+  color: var(--text-muted);
+  border-radius: 5px;
+  padding: 0.05rem 0.3rem;
+  flex-shrink: 0;
 }
 
 .rombelHeader {
@@ -635,15 +676,52 @@
 }
 
 .rombelName {
-  font-size: 0.78rem;
+  font-size: 0.74rem;
   font-weight: 700;
   color: var(--text-primary);
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .rombelCount {
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   font-weight: 800;
   color: var(--accent);
+  white-space: nowrap;
+  margin-left: auto;
+}
+.rombelCount small { font-weight: 600; color: var(--text-muted); font-size: 0.64rem; }
+.rombelMetaRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.62rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+.rombelInsight {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  background: linear-gradient(135deg, rgba(14,165,233,0.10), rgba(147,51,234,0.08));
+  border: 1px solid rgba(14,165,233,0.25);
+  border-radius: var(--radius-md);
+  padding: 0.6rem 0.75rem;
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+.rombelFoot {
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border-light);
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
 }
 
 .rombelTrack {

@@ -247,6 +247,15 @@ export default function DashboardPage() {
   const maleItem = genderData.find(g => g.gender === 'L') || { count: 0, percentage: 0 };
   const femaleItem = genderData.find(g => g.gender === 'P') || { count: 0, percentage: 0 };
 
+  // Rombel derived stats (untuk redesign distribusi rombel)
+  const sortedRombel = [...rombelList].sort((a, b) => (b.student_count || 0) - (a.student_count || 0));
+  const totalRombelSiswa = sortedRombel.reduce((s, r) => s + (r.student_count || 0), 0);
+  const avgRombel = sortedRombel.length ? Math.round(totalRombelSiswa / sortedRombel.length) : 0;
+  const maxRombel = sortedRombel[0];
+  const minRombel = sortedRombel.length ? sortedRombel[sortedRombel.length - 1] : undefined;
+  const maxRombelCount = Math.max(...rombelList.map((r) => r.student_count || 0), 1);
+  const rombelKecil = sortedRombel.filter((r) => (r.student_count || 0) < 12).length;
+
   return (
     <div className={styles.page}>
       {/* ── Sub-Bar: Live Clock, Status Badges & Refresh Trigger ── */}
@@ -735,16 +744,36 @@ export default function DashboardPage() {
 
       {/* ── 4. Row 3: Kapasitas Siswa per Rombel & Live Activity Log ── */}
       <div className={styles.rowThreeGrid}>
-        {/* Card 1: Distribusi Siswa per Rombel Aktif */}
+        {/* Card 1: Distribusi Siswa per Rombel — Redesigned */}
         <div className={styles.card}>
           <div className={styles.cardHeader}>
             <h2 className={styles.cardTitle}>
               <span>🏫</span>
-              <span>Distribusi Siswa per Rombongan Belajar (Rombel)</span>
+              <span>Distribusi Siswa per Rombel</span>
             </h2>
             <span className={styles.cardBadge}>
               {metrics.active_classes > 0 ? `${metrics.active_classes} Rombel Aktif` : 'Belum Ada Rombel'}
             </span>
+          </div>
+
+          {/* Summary strip — hilangkan ruang kosong */}
+          <div className={styles.rombelSummary}>
+            <div className={styles.rombelSummaryItem}>
+              <span className={styles.rombelSummaryLabel}>👥 Total</span>
+              <span className={styles.rombelSummaryValue}>{totalRombelSiswa.toLocaleString('id-ID')}</span>
+            </div>
+            <div className={styles.rombelSummaryItem}>
+              <span className={styles.rombelSummaryLabel}>📊 Rata2</span>
+              <span className={styles.rombelSummaryValue}>{avgRombel}<small>/rombel</small></span>
+            </div>
+            <div className={styles.rombelSummaryItem}>
+              <span className={styles.rombelSummaryLabel}>🔥 Terpadat</span>
+              <span className={styles.rombelSummaryValueSm}>{maxRombel ? `${maxRombel.name} · ${maxRombel.student_count}` : '-'}</span>
+            </div>
+            <div className={styles.rombelSummaryItem}>
+              <span className={styles.rombelSummaryLabel}>💡 &lt;12 siswa</span>
+              <span className={styles.rombelSummaryValue}>{rombelKecil}<small> rombel</small></span>
+            </div>
           </div>
 
           <div className={styles.rombelGrid}>
@@ -753,25 +782,41 @@ export default function DashboardPage() {
                 {isLoading ? 'Memuat rombel...' : 'Belum ada data rombel'}
               </div>
             ) : (
-              rombelList.map((rombel) => {
-                const maxCount = Math.max(...rombelList.map(r => r.student_count), 1);
-                const pct = Number(((rombel.student_count / maxCount) * 100).toFixed(0));
+              sortedRombel.map((rombel, idx) => {
+                const pct = Math.max(6, Math.round(((rombel.student_count || 0) / maxRombelCount) * 100));
+                const share = totalRombelSiswa ? ((rombel.student_count / totalRombelSiswa) * 100).toFixed(1) : '0.0';
+                const nm = (rombel.name || '').toUpperCase();
+                const variant = nm.includes('PAKET C') ? styles.rombelVarC : nm.includes('PAKET B') ? styles.rombelVarB : nm.includes('PAKET A') ? styles.rombelVarA : '';
+                const icon = nm.includes('PAKET C') ? '🎓' : nm.includes('PAKET B') ? '📘' : nm.includes('PAKET A') ? '📗' : '🏫';
                 return (
-                  <div key={rombel.id} className={styles.rombelItem}>
-                    <div className={styles.rombelHeader}>
+                  <Link key={rombel.id} href="/dashboard/classes" className={`${styles.rombelItem} ${variant}`}>
+                    <div className={styles.rombelTopRow}>
+                      <span className={styles.rombelRank}>#{idx + 1}</span>
+                      <span>{icon}</span>
                       <span className={styles.rombelName}>{rombel.name}</span>
-                      <span className={styles.rombelCount}>{rombel.student_count} Siswa</span>
+                      <span className={styles.rombelCount}>{rombel.student_count}<small> siswa</small></span>
                     </div>
                     <div className={styles.rombelTrack}>
                       <div className={styles.rombelFill} style={{ width: `${pct}%` }} />
                     </div>
-                  </div>
+                    <div className={styles.rombelMetaRow}>
+                      <span>{share}% total</span>
+                      <span>{pct}% max</span>
+                    </div>
+                  </Link>
                 );
               })
             )}
           </div>
 
-          <div style={{ paddingTop: '0.4rem', borderTop: '1px solid var(--border-light)', marginTop: 'auto' }}>
+          {rombelList.length > 0 && (
+            <div className={styles.rombelInsight}>
+              <span>✨</span>
+              <span><b>{maxRombel?.name} ({maxRombel?.student_count})</b> terpadat · <b>{minRombel?.name} ({minRombel?.student_count})</b> tersedikit{rombelKecil > 0 ? ` · ${rombelKecil} rombel <12 siswa perlu merger/PPDB.` : ' · distribusi merata.'}</span>
+            </div>
+          )}
+
+          <div className={styles.rombelFoot}>
             <Link href="/dashboard/classes" className={styles.linkMore}>
               <span>Kelola Seluruh {metrics.total_classes} Rombel Belajar</span>
               <span>→</span>
