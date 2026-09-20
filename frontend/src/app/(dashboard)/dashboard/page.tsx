@@ -649,7 +649,7 @@ export default function DashboardPage() {
                 {isLoading ? 'Memuat pengumuman...' : 'Belum ada pengumuman resmi'}
               </div>
             ) : (
-              announcements.map((ann) => {
+              announcements.slice(0, 3).map((ann) => {
                 const isPenting = ann.category.toUpperCase() === 'PENTING';
                 return (
                   <div key={ann.id} className={styles.announcementCard}>
