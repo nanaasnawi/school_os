@@ -254,3 +254,109 @@
 .letter_A { background: rgba(16, 185, 129, 0.15); color: var(--emerald); }
 .letter_B { background: rgba(99, 102, 241, 0.15); color: var(--accent-hover); }
 .letter_C { background: rgba(245, 158, 11, 0.15); color: var(--amber); }
+.letter_D { background: rgba(249, 115, 22, 0.15); color: #ea580c; }
+.letter_E { background: rgba(239, 68, 68, 0.15); color: #dc2626; }
+
+/* ── Redesign: insight strip, empty states, akademik panels ── */
+.insightStrip {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+}
+@media (max-width: 900px) { .insightStrip { grid-template-columns: 1fr; } }
+.insightItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-dim);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 0.9rem;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+.insightDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  margin-top: 0.4rem;
+  flex-shrink: 0;
+}
+.countPill {
+  font-size: 0.65rem;
+  font-weight: 800;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-dim);
+  color: var(--text-muted);
+  border-radius: 9999px;
+  padding: 0.1rem 0.5rem;
+  margin-left: 0.5rem;
+  vertical-align: middle;
+}
+.cardTitle {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+.emptyNote { font-size: 0.82rem; color: var(--text-muted); }
+.emptyBox {
+  background: var(--bg-elevated);
+  border: 1px dashed var(--border-dim);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+.avgBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: linear-gradient(135deg, rgba(16,185,129,0.12), rgba(56,189,248,0.10));
+  border: 1px solid rgba(16,185,129,0.25);
+  border-radius: var(--radius-md);
+  padding: 0.85rem 1rem;
+}
+.avgBanner .letterBadge { width: 40px; height: 40px; font-size: 1.1rem; border-radius: 12px; }
+.avgLabel { font-size: 0.7rem; font-weight: 600; color: var(--text-muted); }
+.avgVal { font-size: 1.4rem; font-weight: 800; color: var(--text-primary); letter-spacing: -0.02em; }
+.gradeSub { font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; }
+.sideStack { display: flex; flex-direction: column; gap: 1.25rem; min-width: 0; }
+.progressGrid { display: flex; flex-direction: column; gap: 0.6rem; }
+.progressItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+.progressItem b { color: var(--text-primary); }
+.meterTrack {
+  width: 100%;
+  height: 8px;
+  background: var(--bg-elevated);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+.meterFill {
+  height: 100%;
+  background: linear-gradient(90deg, #10b981, #38bdf8);
+  border-radius: 9999px;
+  transition: width 0.6s ease;
+}
+.teacherNote {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-dim);
+  border-radius: var(--radius-md);
+  padding: 0.65rem 0.8rem;
+  font-size: 0.76rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
