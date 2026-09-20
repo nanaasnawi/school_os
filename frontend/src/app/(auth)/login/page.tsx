@@ -24,7 +24,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showAndroidModal, setShowAndroidModal] = useState(false);
-  const [schoolName, setSchoolName] = useState('School OS');
+  const [schoolName, setSchoolName] = useState('Akselerasi Edu');
   const [schoolLogoUrl, setSchoolLogoUrl] = useState('');
   const [maintenance, setMaintenance] = useState<{ is_active: boolean; message: string } | null>(null);
   const [checkingMaintenance, setCheckingMaintenance] = useState(false);
@@ -112,7 +112,7 @@ export default function LoginPage() {
   }, [isAuthenticated, isLoading, router]);
 
   useEffect(() => {
-    document.title = 'Masuk — School OS';
+    document.title = 'Masuk — Akselerasi Edu';
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -342,7 +342,7 @@ export default function LoginPage() {
           <div className={styles.brandContent}>
 
             {/* Logo */}
-            <div className={styles.logoMark}>
+            <div className={styles.logoMark} style={{ padding: '4px', overflow: 'hidden' }}>
               {schoolLogoUrl ? (
                 <img
                   src={schoolLogoUrl}
@@ -351,25 +351,11 @@ export default function LoginPage() {
                   onError={() => setSchoolLogoUrl('')}
                 />
               ) : (
-                <svg viewBox="0 0 64 64" fill="none" width="48" height="48">
-                  <defs>
-                    <linearGradient id="lgLogin" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-                      <stop stopColor="#6366F1" />
-                      <stop offset="0.5" stopColor="#8B5CF6" />
-                      <stop offset="1" stopColor="#06B6D4" />
-                    </linearGradient>
-                    <linearGradient id="capGradLogin" x1="16" y1="12" x2="48" y2="36" gradientUnits="userSpaceOnUse">
-                      <stop stopColor="#FFFFFF" />
-                      <stop offset="1" stopColor="#E0E7FF" />
-                    </linearGradient>
-                  </defs>
-                  <rect width="64" height="64" rx="18" fill="url(#lgLogin)" />
-                  <path d="M32 10L50 18V32C50 43.5 42.5 51.5 32 55C21.5 51.5 14 43.5 14 32V18L32 10Z" fill="white" fillOpacity="0.15" stroke="white" strokeWidth="2.2" strokeLinejoin="round" />
-                  <path d="M32 18L48 26L32 34L16 26L32 18Z" fill="url(#capGradLogin)" />
-                  <path d="M22 30.5V38C22 41 26.5 43.5 32 43.5C37.5 43.5 42 41 42 38V30.5" stroke="white" strokeWidth="2.8" strokeLinecap="round" />
-                  <path d="M44 28V36" stroke="#FDE047" strokeWidth="2.2" strokeLinecap="round" />
-                  <circle cx="44" cy="37" r="1.5" fill="#FDE047" />
-                </svg>
+                <img
+                  src="/logo.png"
+                  alt="Akselerasi Edu"
+                  style={{ width: '48px', height: '48px', objectFit: 'contain' }}
+                />
               )}
             </div>
 

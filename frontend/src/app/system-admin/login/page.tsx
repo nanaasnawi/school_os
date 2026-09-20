@@ -53,18 +53,18 @@ export default function SystemAdminLogin() {
         <div className={styles.brandPanel} style={{ background: 'linear-gradient(150deg, rgba(14,165,233,0.04) 0%, rgba(2,132,199,0.02) 50%, rgba(56,189,248,0.01) 100%)' }}>
           <div className={styles.brandContent}>
             {/* Logo */}
-            <div className={styles.logoMark} style={{ background: 'linear-gradient(135deg, rgba(239,68,68,0.25), rgba(220,38,38,0.15))', borderColor: 'rgba(239,68,68,0.35)' }}>
-              <svg viewBox="0 0 64 64" fill="none" width="48" height="48">
-                <rect width="64" height="64" rx="18" fill="rgba(239,68,68,0.5)" />
-                <path d="M32 10L50 18V32C50 43.5 42.5 51.5 32 55C21.5 51.5 14 43.5 14 32V18L32 10Z" fill="white" fillOpacity="0.15" stroke="white" strokeWidth="2.2" strokeLinejoin="round" />
-                <path d="M22 30.5V38C22 41 26.5 43.5 32 43.5C37.5 43.5 42 41 42 38V30.5" stroke="white" strokeWidth="2.8" strokeLinecap="round" />
-              </svg>
+            <div className={styles.logoMark} style={{ padding: '4px', background: 'linear-gradient(135deg, rgba(239,68,68,0.25), rgba(220,38,38,0.15))', borderColor: 'rgba(239,68,68,0.35)' }}>
+              <img
+                src="/logo.png"
+                alt="Akselerasi Edu"
+                style={{ width: '48px', height: '48px', objectFit: 'contain' }}
+              />
             </div>
 
             {/* Brand heading */}
             <div className={styles.brandHeading}>
               <h1 className={styles.brandName} style={{ color: '#fca5a5' }}>Command Center</h1>
-              <p className={styles.brandTagline}>School OS Super Admin Portal</p>
+              <p className={styles.brandTagline}>Akselerasi Edu Super Admin Portal</p>
             </div>
 
             <div className={styles.featureList}>
