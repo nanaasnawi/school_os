@@ -19,3 +19,10 @@ desktop.ini
 
 # Root node_modules (if any root utility scripts)
 /node_modules/
+
+# Secrets & Service Accounts
+*firebase-service-account*.json
+*-adminsdk-*.json
+.env
+.env.*
+!.env.example
