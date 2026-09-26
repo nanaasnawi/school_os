@@ -379,9 +379,13 @@ export default function QuizzesPage() {
           <Link href="/dashboard/learning" className="btn btn-secondary btn-sm">
             ← Kembali ke Workspace
           </Link>
-          <button className="btn btn-primary btn-sm" onClick={() => setShowAddModal(true)}>
+          <Link
+            href="/dashboard/learning/quizzes/create"
+            className="btn btn-primary btn-sm"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
+          >
             + Buat Kuis CBT Baru
-          </button>
+          </Link>
         </div>
       </div>
 

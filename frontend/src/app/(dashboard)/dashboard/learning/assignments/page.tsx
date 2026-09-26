@@ -511,9 +511,13 @@ export default function AssignmentsPage() {
           <Link href="/dashboard/learning" className="btn btn-secondary btn-sm">
             ← Kembali ke Workspace
           </Link>
-          <button className="btn btn-primary btn-sm" onClick={() => setShowAddModal(true)}>
-            + Buat Tugas Baru (Guru)
-          </button>
+          <Link
+            href="/dashboard/learning/assignments/create"
+            className="btn btn-primary btn-sm"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
+          >
+            + Buat Tugas Baru
+          </Link>
         </div>
       </div>
 

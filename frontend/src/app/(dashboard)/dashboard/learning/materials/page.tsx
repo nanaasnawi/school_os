@@ -481,16 +481,20 @@ startxref
           <Link href="/dashboard/learning" className="btn btn-secondary btn-sm">
             ← Kembali ke Workspace
           </Link>
-          <button
+          <Link
+            href="/dashboard/learning/materials/create"
             className="btn btn-secondary btn-sm"
-            style={{ background: 'var(--accent-dim)', color: '#2563eb', fontWeight: 800, border: '1px solid rgba(37,99,235,0.3)' }}
-            onClick={() => { setCreationMode('LIBRARY'); setShowAddModal(true); }}
+            style={{ background: 'var(--accent-dim)', color: '#2563eb', fontWeight: 800, border: '1px solid rgba(37,99,235,0.3)', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
           >
             📚 Katalog Buku Perpustakaan ({libraryBooks.length})
-          </button>
-          <button className="btn btn-primary btn-sm" onClick={() => { setCreationMode('MANUAL'); setShowAddModal(true); }}>
+          </Link>
+          <Link
+            href="/dashboard/learning/materials/create"
+            className="btn btn-primary btn-sm"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
+          >
             + Unggah Modul Ajar Baru
-          </button>
+          </Link>
         </div>
       </div>
 
