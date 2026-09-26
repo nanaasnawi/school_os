@@ -65,12 +65,12 @@ async function fetchApi(endpoint: string, options: RequestInit = {}): Promise<Re
     const fullUrl = getApiUrl(endpoint);
     const res = await fetch(fullUrl, options);
     return res;
-  } catch (e: any) {
+  } catch {
     throw new Error(`Gagal terhubung ke Backend API (${endpoint}). Pastikan server backend aktif.`);
   }
 }
 
-async function safeFetchJson(res: Response): Promise<any> {
+async function safeFetchJson<T = Record<string, unknown>>(res: Response): Promise<T> {
   const contentType = res.headers.get('content-type') || '';
   const text = await res.text();
 
@@ -84,8 +84,8 @@ async function safeFetchJson(res: Response): Promise<any> {
   }
 
   try {
-    return JSON.parse(text);
-  } catch (e) {
+    return JSON.parse(text) as T;
+  } catch {
     throw new Error(`Respon API bukan JSON valid (HTTP status ${res.status})`);
   }
 }
@@ -108,7 +108,12 @@ export async function generateDapodikPrefill(payload: GeneratePrefillPayload): P
         mirror_url: payload.mirrorUrl,
       }),
     });
-    const json = await safeFetchJson(res);
+    const json = await safeFetchJson<{
+      success?: boolean;
+      message?: string;
+      error?: { message?: string };
+      data?: { message: string; total_siswa_imported: number };
+    }>(res);
     if (!res.ok || !json.success) {
       const errorMsg = json?.error?.message || json?.message || 'Gagal memproses file prefill Kemendikdasmen';
       throw new Error(errorMsg);
@@ -120,9 +125,9 @@ export async function generateDapodikPrefill(payload: GeneratePrefillPayload): P
         totalImported: json.data.total_siswa_imported,
       };
     }
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('[DapodikBridge] Error generating prefill:', err);
-    throw new Error(err.message || 'Gagal memproses file prefill Kemendikdasmen');
+    throw new Error(err instanceof Error ? err.message : 'Gagal memproses file prefill Kemendikdasmen');
   }
   throw new Error('Gagal memproses file prefill Kemendikdasmen');
 }
@@ -144,7 +149,12 @@ export async function uploadDapodikPrefillFile(fileName: string, contentText: st
         content_text: contentText,
       }),
     });
-    const json = await safeFetchJson(res);
+    const json = await safeFetchJson<{
+      success?: boolean;
+      message?: string;
+      error?: { message?: string };
+      data?: { message: string; total_siswa_imported: number };
+    }>(res);
     if (!res.ok || !json.success) {
       const errorMsg = json?.error?.message || json?.message || 'Gagal memproses file prefill (.prf)';
       throw new Error(errorMsg);
@@ -156,9 +166,9 @@ export async function uploadDapodikPrefillFile(fileName: string, contentText: st
         totalImported: json.data.total_siswa_imported,
       };
     }
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('[DapodikBridge] Error uploading prefill file:', err);
-    throw new Error(err.message || 'Gagal memproses file .prf lokal');
+    throw new Error(err instanceof Error ? err.message : 'Gagal memproses file .prf lokal');
   }
   throw new Error('Gagal memproses file prefill (.prf)');
 }
@@ -227,25 +237,25 @@ export async function getDapodikSyncRecords(): Promise<DapodikSyncRecord[]> {
       headers: getHeaders(),
     });
     if (res.ok) {
-      const json = await safeFetchJson(res);
+      const json = await safeFetchJson<{ data?: Array<Record<string, unknown>> }>(res);
       if (json && json.data && Array.isArray(json.data) && json.data.length > 0) {
-        return json.data.map((r: any) => ({
-          id: r.id,
-          nisn: r.nisn,
-          nik: r.nik,
-          namaSchoolOS: r.nama_school_os,
-          namaDapodik: r.nama_dapodik,
-          rombel: r.rombel,
-          identityState: r.identity_state,
-          mobilityCase: r.mobility_case,
-          classification: r.classification,
-          actionRecommended: r.action_recommended,
-          stage: r.stage,
-          lastSyncedAt: r.last_synced_at,
+        return json.data.map((r) => ({
+          id: String(r.id ?? ''),
+          nisn: String(r.nisn ?? ''),
+          nik: String(r.nik ?? ''),
+          namaSchoolOS: String(r.nama_school_os ?? ''),
+          namaDapodik: String(r.nama_dapodik ?? ''),
+          rombel: String(r.rombel ?? ''),
+          identityState: r.identity_state as DapodikSyncRecord['identityState'],
+          mobilityCase: r.mobility_case as DapodikSyncRecord['mobilityCase'],
+          classification: r.classification as DapodikSyncRecord['classification'],
+          actionRecommended: r.action_recommended as DapodikSyncRecord['actionRecommended'],
+          stage: r.stage as DapodikSyncRecord['stage'],
+          lastSyncedAt: String(r.last_synced_at ?? ''),
         }));
       }
     }
-  } catch (err: any) {
+  } catch {
     // ignore
   }
 
@@ -262,21 +272,21 @@ export async function getDapodikOutboxJobs(): Promise<DapodikOutboxJob[]> {
       headers: getHeaders(),
     });
     if (res.ok) {
-      const json = await safeFetchJson(res);
+      const json = await safeFetchJson<{ data?: Array<Record<string, unknown>> }>(res);
       if (json && json.data && Array.isArray(json.data)) {
-        return json.data.map((j: any) => ({
-          jobId: j.job_id,
-          reqId: j.req_id,
-          operation: j.operation,
-          entityId: j.entity_id,
-          idempotencyKey: j.idempotency_key,
-          attempts: j.attempts,
-          status: j.status,
-          createdAt: j.created_at,
+        return json.data.map((j) => ({
+          jobId: String(j.job_id ?? ''),
+          reqId: String(j.req_id ?? ''),
+          operation: j.operation as DapodikOutboxJob['operation'],
+          entityId: String(j.entity_id ?? ''),
+          idempotencyKey: String(j.idempotency_key ?? ''),
+          attempts: Number(j.attempts ?? 0),
+          status: j.status as DapodikOutboxJob['status'],
+          createdAt: String(j.created_at ?? ''),
         }));
       }
     }
-  } catch (err: any) {
+  } catch {
     // ignore
   }
   return [];
@@ -333,7 +343,7 @@ export async function pullDataFromDapodik(config?: PullDapodikConfig): Promise<{
       }
     } else {
       const errText = await bridgeRes.text();
-      let errObj;
+      let errObj: { error?: string } | undefined;
       try {
         errObj = JSON.parse(errText);
       } catch { }
@@ -341,11 +351,12 @@ export async function pullDataFromDapodik(config?: PullDapodikConfig): Promise<{
         errObj?.error || 'Bridge lokal melaporkan kesalahan saat menarik data Dapodik.'
       );
     }
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
     if (
-      err.message &&
-      !err.message.includes('Failed to fetch') &&
-      !err.message.includes('NetworkError')
+      errorMsg &&
+      !errorMsg.includes('Failed to fetch') &&
+      !errorMsg.includes('NetworkError')
     ) {
       throw err;
     }
@@ -375,7 +386,21 @@ export async function pushDataToDapodik(
         operation: operation,
       }),
     });
-    const json = await safeFetchJson(res);
+    const json = await safeFetchJson<{
+      success?: boolean;
+      message?: string;
+      error?: { message?: string };
+      data?: {
+        job_id: string;
+        req_id: string;
+        operation: 'INSERT_STUDENT' | 'UPDATE_MUTATION' | 'ROMBEL_ASSIGNMENT';
+        entity_id: string;
+        idempotency_key: string;
+        attempts: number;
+        status: DapodikOutboxJob['status'];
+        created_at: string;
+      };
+    }>(res);
     if (!res.ok || !json.success) {
       const errorMsg = json?.error?.message || json?.message || 'Gagal mengirim outbox job ke Dapodik';
       throw new Error(errorMsg);
@@ -395,9 +420,9 @@ export async function pushDataToDapodik(
         },
       };
     }
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('[DapodikBridge] Error pushing data:', err);
-    throw new Error(err.message || 'Gagal menghubungi Dapodik WebService Backend');
+    throw new Error(err instanceof Error ? err.message : 'Gagal menghubungi Dapodik WebService Backend');
   }
 
   throw new Error('Gagal memproses Dapodik Push Job');
@@ -423,12 +448,35 @@ export async function getDapodikAgentInfo(): Promise<DapodikAgentInfo | null> {
       headers: getHeaders(),
     });
     if (!res.ok) return null;
-    const json = await safeFetchJson(res);
+    const json = await safeFetchJson<{
+      data?: {
+        tenant_id: string;
+        school_name: string;
+        npsn: string;
+        dapodik_url?: string;
+        dapodik_token?: string;
+        total_students?: number | string;
+        total_teachers?: number | string;
+        total_classes?: number | string;
+        last_synced_at?: string;
+        last_synced_by?: string;
+      };
+      tenant_id?: string;
+      school_name?: string;
+      npsn?: string;
+      dapodik_url?: string;
+      dapodik_token?: string;
+      total_students?: number | string;
+      total_teachers?: number | string;
+      total_classes?: number | string;
+      last_synced_at?: string;
+      last_synced_by?: string;
+    }>(res);
     const data = json.data || json;
     return {
-      tenantId: data.tenant_id,
-      schoolName: data.school_name,
-      npsn: data.npsn,
+      tenantId: data.tenant_id ?? '',
+      schoolName: data.school_name ?? '',
+      npsn: data.npsn ?? '',
       dapodikUrl: data.dapodik_url,
       dapodikToken: data.dapodik_token,
       totalStudents: Number(data.total_students) || 0,

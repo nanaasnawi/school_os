@@ -1,5 +1,5 @@
 'use client';
-import { getTenantItem, setTenantItem, removeTenantItem } from '@/lib/tenant-storage';
+import { getTenantItem } from '@/lib/tenant-storage';
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -24,12 +24,12 @@ type FinalGradeEntry = {
 };
 
 export default function FinalGradesPage() {
-  const [hasSavedGrades, setHasSavedGrades] = useState(false);
+  const [hasSavedGrades] = useState(() => (typeof window !== 'undefined' ? localStorage.getItem('has_saved_grades') === 'true' : false));
   const [finalGrades, setFinalGrades] = useState<FinalGradeEntry[]>([]);
-  const [classesList, setClassesList] = useState<any[]>([]);
+  const [classesList, setClassesList] = useState<Array<{ id: string; name: string }>>([]);
   const [selectedClass, setSelectedClass] = useState('ALL');
   const [search, setSearch] = useState('');
-  const [schoolName, setSchoolName] = useState('');
+  const [schoolName, setSchoolName] = useState(() => (typeof window !== 'undefined' ? getTenantItem('dapodik_nama_sekolah') || '' : ''));
 
   // Selected Student Transcript Modal
   const [selectedTranscript, setSelectedTranscript] = useState<FinalGradeEntry | null>(null);
@@ -42,13 +42,6 @@ export default function FinalGradesPage() {
   };
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const stored = getTenantItem('dapodik_nama_sekolah');
-      if (stored) setSchoolName(stored);
-      const isSaved = localStorage.getItem('has_saved_grades') === 'true';
-      setHasSavedGrades(isSaved);
-    }
-
     async function loadData() {
       try {
         const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
@@ -59,12 +52,12 @@ export default function FinalGradesPage() {
         }).catch(() => null);
 
         const [studentRes, classRes] = await Promise.all([
-          listStudents({ query: { page_size: 500 } as any }).catch(() => null),
-          listClasses({ query: { page_size: 100 } as any }).catch(() => null),
+          listStudents({ query: { page_size: 500 } }).catch(() => null),
+          listClasses().catch(() => null),
         ]);
 
         if (classRes?.data?.data) {
-          setClassesList(classRes.data.data);
+          setClassesList(classRes.data.data as Array<{ id: string; name: string }>);
         }
 
         const isSaved = typeof window !== 'undefined' && localStorage.getItem('has_saved_grades') === 'true';
@@ -76,7 +69,7 @@ export default function FinalGradesPage() {
             return;
           }
 
-          let savedScoresMap: Record<string, any> = {};
+          let savedScoresMap: Record<string, { formatif1?: number; formatif2?: number; pts?: number; pas?: number }> = {};
           if (typeof window !== 'undefined') {
             try {
               const raw = localStorage.getItem('saved_gradebook_scores');
@@ -86,14 +79,14 @@ export default function FinalGradesPage() {
             }
           }
 
-          const mapped: FinalGradeEntry[] = list.map((s: any) => {
+          const mapped: FinalGradeEntry[] = list.map((s) => {
             const saved = savedScoresMap[s.id];
-            const m = saved ? saved.formatif1 : 0;
-            const ind = saved ? saved.formatif2 : 0;
-            const ip = saved ? saved.pts : 0;
-            const ipS = saved ? saved.pas : 0;
-            const p = saved ? saved.formatif1 : 0;
-            const eng = saved ? saved.formatif2 : 0;
+            const m = saved?.formatif1 ?? 0;
+            const ind = saved?.formatif2 ?? 0;
+            const ip = saved?.pts ?? 0;
+            const ipS = saved?.pas ?? 0;
+            const p = saved?.formatif1 ?? 0;
+            const eng = saved?.formatif2 ?? 0;
 
             const avg = Math.round(((m + ind + ip + ipS + p + eng) / 6) * 10) / 10;
             const pred: 'A' | 'B' | 'C' = avg >= 88 ? 'A' : avg >= 75 ? 'B' : 'C';
@@ -166,13 +159,10 @@ export default function FinalGradesPage() {
 
   const [currentPage, setCurrentPage] = React.useState(1);
   const itemsPerPage = 10;
-  
-  React.useEffect(() => { 
-    setCurrentPage(1); 
-  }, [filtered.length]);
 
   const totalPages = Math.ceil(filtered.length / itemsPerPage) || 1;
-  const paginated = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const safePage = Math.min(currentPage, totalPages);
+  const paginated = filtered.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
 
   return (
     <div className={styles.page}>
@@ -318,23 +308,23 @@ export default function FinalGradesPage() {
           {filtered.length > itemsPerPage && (
             <div style={{ padding: '0.75rem 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-elevated)', borderTop: '1px solid var(--border-light)', fontSize: '0.8rem' }}>
               <span style={{ color: 'var(--text-muted)' }}>
-                Menampilkan {(currentPage - 1) * itemsPerPage + 1} - {Math.min(currentPage * itemsPerPage, filtered.length)} dari {filtered.length} siswa
+                Menampilkan {(safePage - 1) * itemsPerPage + 1} - {Math.min(safePage * itemsPerPage, filtered.length)} dari {filtered.length} siswa
               </span>
               <div style={{ display: 'flex', gap: '0.35rem' }}>
                 <button
                   className="btn btn-secondary btn-sm"
-                  disabled={currentPage === 1}
+                  disabled={safePage <= 1}
                   onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                   style={{ padding: '0.2rem 0.6rem', fontSize: '0.75rem' }}
                 >
                   &laquo; Prev
                 </button>
                 <span style={{ padding: '0.2rem 0.6rem', fontWeight: 700, display: 'flex', alignItems: 'center' }}>
-                  Halaman {currentPage} dari {totalPages}
+                  Halaman {safePage} dari {totalPages}
                 </span>
                 <button
                   className="btn btn-secondary btn-sm"
-                  disabled={currentPage === totalPages}
+                  disabled={safePage >= totalPages}
                   onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                   style={{ padding: '0.2rem 0.6rem', fontSize: '0.75rem' }}
                 >

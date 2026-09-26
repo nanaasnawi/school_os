@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import styles from './enrollmentDetail.module.css';
-import { getStudentById, listStudents } from '@/lib/sdk/sdk.gen';
+import { listStudents } from '@/lib/sdk/sdk.gen';
 
 type EnrollmentProfile = {
   id: string;
@@ -28,11 +28,12 @@ export default function EnrollmentDetailPage() {
     async function loadDetail() {
       try {
         // Fetch real student list or detail
-        const res = await listStudents({ query: { page_size: 500 } as any }).catch(() => null);
+        const res = await listStudents({ query: { page_size: 500 } }).catch(() => null);
+        type RawStudent = { id: string; full_name: string; nisn: string; class_name?: string; status?: string };
         if (res?.data?.data) {
-          const list = res.data.data;
+          const list = res.data.data as RawStudent[];
           // Find matching student or fallback to first student
-          const found = list.find((s: any, idx: number) => String(idx + 101) === id || s.id === id) || list[0];
+          const found = list.find((s, idx: number) => String(idx + 101) === id || s.id === id) || list[0];
           
           if (found) {
             setProfile({

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { lessonFormSchema, LessonFormValues } from '../schemas/lesson-schema';
 import { useCreateLesson } from '../mutations/use-create-lesson';
@@ -28,7 +28,7 @@ export function LessonCreateModal({
     handleSubmit,
     reset,
     setValue,
-    watch,
+    control,
     formState: { errors },
   } = useForm<LessonFormValues>({
     resolver: zodResolver(lessonFormSchema),
@@ -41,7 +41,7 @@ export function LessonCreateModal({
     },
   });
 
-  const selectedMaterialIds = watch('material_ids') || [];
+  const selectedMaterialIds = useWatch({ control, name: 'material_ids' }) || [];
 
   if (!isOpen) return null;
 
@@ -130,7 +130,7 @@ export function LessonCreateModal({
               </p>
             ) : (
               <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                {materials.map((mat: Record<string, unknown>) => {
+                {materials.map((mat) => {
                   const matId = String(mat.id);
                   const isSelected = selectedMaterialIds.includes(matId);
                   return (

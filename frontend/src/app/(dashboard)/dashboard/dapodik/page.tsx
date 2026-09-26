@@ -88,14 +88,11 @@ export default function DapodikHubPage() {
     );
   });
 
-  useEffect(() => {
-    setCurrentPageMatrix(1);
-  }, [searchQuery, syncRecords]);
-
   const totalMatrixPages = Math.ceil(filteredRecords.length / itemsPerPage) || 1;
+  const safeMatrixPage = Math.min(currentPageMatrix, totalMatrixPages);
   const paginatedMatrix = filteredRecords.slice(
-    (currentPageMatrix - 1) * itemsPerPage,
-    currentPageMatrix * itemsPerPage
+    (safeMatrixPage - 1) * itemsPerPage,
+    safeMatrixPage * itemsPerPage
   );
 
   useEffect(() => {
@@ -157,10 +154,10 @@ export default function DapodikHubPage() {
               const pJson = await pRes.json();
               const sch = pJson?.data;
               if (sch) {
-                if (sch.name && !schoolName) setSchoolName(sch.name);
-                if (sch.npsn && !npsnInput) setNpsnInput(sch.npsn);
-                if (sch.dapodik_token && !dapodikTokenInput) setDapodikTokenInput(sch.dapodik_token);
-                if (sch.dapodik_url && !dapodikUrlInput) setDapodikUrlInput(sch.dapodik_url);
+                if (sch.name) setSchoolName(prev => prev || sch.name);
+                if (sch.npsn) setNpsnInput(prev => prev || sch.npsn);
+                if (sch.dapodik_token) setDapodikTokenInput(prev => prev || sch.dapodik_token);
+                if (sch.dapodik_url) setDapodikUrlInput(prev => prev || sch.dapodik_url);
               }
             }
           }
@@ -237,8 +234,9 @@ export default function DapodikHubPage() {
       } else {
         setToastMessage('⚠️ Gagal menyimpan pengaturan.');
       }
-    } catch (e: any) {
-      setToastMessage(`❌ Error: ${e.message}`);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Unknown error';
+      setToastMessage(`❌ Error: ${msg}`);
     } finally {
       setIsSavingSettings(false);
     }
@@ -298,8 +296,9 @@ export default function DapodikHubPage() {
         localStorage.setItem('dapodik_last_synced_by', operatorName);
       }
       setToastMessage(`🎉 Berhasil menyinkronkan ${res.newRecordsCount} data dari Dapodik!`);
-    } catch (err: any) {
-      setToastMessage(`ℹ️ ${err.message || 'Gagal menarik data dari Dapodik lokal.'}`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Gagal menarik data dari Dapodik lokal.';
+      setToastMessage(`ℹ️ ${msg}`);
     } finally {
       setIsPulling(false);
     }

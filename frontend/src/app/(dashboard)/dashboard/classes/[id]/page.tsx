@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, Suspense } from 'react';
-import { useParams, useSearchParams, useRouter } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import styles from './classDetail.module.css';
 
@@ -45,7 +45,6 @@ export default function ClassDetailPage() {
 function ClassDetailContent() {
   const params = useParams();
   const searchParams = useSearchParams();
-  const router = useRouter();
   const id = (params?.id as string) || '';
 
   const [profile, setProfile] = useState<ClassProfile>(DEFAULT_FALLBACK);
@@ -82,13 +81,17 @@ function ClassDetailContent() {
           fetch('/api/v1/students?page_size=1000', { headers }).then(r => r.json()).catch(() => null),
         ]);
 
-        const teacherArray = Array.isArray(teacherRes?.data) ? teacherRes.data : Array.isArray(teacherRes?.data?.data) ? teacherRes.data.data : [];
-        const classArray = Array.isArray(classRes?.data) ? classRes.data : Array.isArray(classRes?.data?.data) ? classRes.data.data : [];
-        const studentArray = Array.isArray(studentRes?.data) ? studentRes.data : Array.isArray(studentRes?.data?.data) ? studentRes.data.data : [];
+        type RawTeacher = { id: string; full_name?: string };
+        type RawClass = { id: string; name: string; homeroom_teacher_id?: string };
+        type RawStudent = { id: string; nisn: string; full_name: string; gender?: string; class_name?: string; updated_at?: string };
+
+        const teacherArray: RawTeacher[] = Array.isArray(teacherRes?.data) ? teacherRes.data : Array.isArray(teacherRes?.data?.data) ? teacherRes.data.data : [];
+        const classArray: RawClass[] = Array.isArray(classRes?.data) ? classRes.data : Array.isArray(classRes?.data?.data) ? classRes.data.data : [];
+        const studentArray: RawStudent[] = Array.isArray(studentRes?.data) ? studentRes.data : Array.isArray(studentRes?.data?.data) ? studentRes.data.data : [];
 
         const dynamicTeachers: { id: string; name: string }[] = [];
         const teacherMap = new Map<string, string>();
-        teacherArray.forEach((t: any) => {
+        teacherArray.forEach((t) => {
           if (t.id && t.full_name) {
             const nameUpper = t.full_name.toUpperCase();
             teacherMap.set(t.id, nameUpper);
@@ -97,17 +100,17 @@ function ClassDetailContent() {
         });
         setTeachersList(dynamicTeachers);
 
-        let currentClass: any = null;
+        let currentClass: RawClass | null = null;
         if (classArray.length > 0) {
-          currentClass = classArray.find((c: any) => c.id === id || c.name === id) || classArray[0];
+          currentClass = classArray.find((c) => c.id === id || c.name === id) || classArray[0];
         }
 
         if (currentClass) {
           const teacherName = currentClass.homeroom_teacher_id ? teacherMap.get(currentClass.homeroom_teacher_id) : null;
           
-          const enrolled = studentArray.filter((s: any) => s.class_name === currentClass.name);
+          const enrolled = studentArray.filter((s) => s.class_name === currentClass?.name);
           
-          const mappedStudents: RombelStudent[] = enrolled.map((s: any) => ({
+          const mappedStudents: RombelStudent[] = enrolled.map((s) => ({
             id: s.id,
             nisn: s.nisn,
             full_name: s.full_name,

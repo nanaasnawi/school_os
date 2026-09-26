@@ -243,8 +243,8 @@ export default function StaffPage() {
   const sorted = React.useMemo(() => {
     if (!sortField) return filtered;
     return [...filtered].sort((a, b) => {
-      const av = String((a as any)[sortField] ?? '').toLowerCase();
-      const bv = String((b as any)[sortField] ?? '').toLowerCase();
+      const av = String((a as Record<string, unknown>)[sortField] ?? '').toLowerCase();
+      const bv = String((b as Record<string, unknown>)[sortField] ?? '').toLowerCase();
       const cmp = av.localeCompare(bv, 'id');
       return sortOrder === 'asc' ? cmp : -cmp;
     });
@@ -253,13 +253,10 @@ export default function StaffPage() {
   // --- Client-Side Pagination ---
   const [currentPage, setCurrentPage] = React.useState(1);
   const itemsPerPage = 10;
-  
-  React.useEffect(() => { 
-    setCurrentPage(1); 
-  }, [filtered.length, sortField, sortOrder]);
 
   const totalPages = Math.ceil(sorted.length / itemsPerPage) || 1;
-  const paginated = sorted.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const safePage = Math.min(currentPage, totalPages);
+  const paginated = sorted.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
   // ------------------------------
 
   return (
@@ -411,16 +408,16 @@ export default function StaffPage() {
           <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Menampilkan {paginated.length} dari total {filtered.length} hasil</span>
           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
             <button 
-              disabled={currentPage === 1} 
-              onClick={() => setCurrentPage(prev => prev - 1)}
+              disabled={safePage === 1} 
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
               className="btn btn-secondary btn-sm"
             >
               Prev
             </button>
-            <span style={{ fontSize: '0.8rem', fontWeight: 700, margin: '0 0.5rem' }}>Halaman {currentPage} dari {totalPages}</span>
+            <span style={{ fontSize: '0.8rem', fontWeight: 700, margin: '0 0.5rem' }}>Halaman {safePage} dari {totalPages}</span>
             <button 
-              disabled={currentPage === totalPages} 
-              onClick={() => setCurrentPage(prev => prev + 1)}
+              disabled={safePage === totalPages} 
+              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
               className="btn btn-secondary btn-sm"
             >
               Next

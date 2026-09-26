@@ -1,8 +1,7 @@
 'use client';
-import { getTenantItem, setTenantItem, removeTenantItem } from '@/lib/tenant-storage';
+import { getTenantItem } from '@/lib/tenant-storage';
 
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
 import styles from './announcements.module.css';
 import { listTeachers } from '@/lib/sdk/sdk.gen';
 
@@ -23,8 +22,13 @@ export default function AnnouncementsPage() {
   const [announcements, setAnnouncements] = useState<AnnouncementItem[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [search, setSearch] = useState('');
-  const [schoolName, setSchoolName] = useState('');
-  const [teachersList, setTeachersList] = useState<any[]>([]);
+  const [schoolName, setSchoolName] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return getTenantItem('dapodik_nama_sekolah') || '';
+    }
+    return '';
+  });
+  const [teachersList, setTeachersList] = useState<Array<{ id: string; full_name: string; subject?: string }>>([]);
 
   // Modals
   const [showAddModal, setShowAddModal] = useState(false);
@@ -49,13 +53,6 @@ export default function AnnouncementsPage() {
   };
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const stored = getTenantItem('dapodik_nama_sekolah');
-      if (stored) {
-        setSchoolName(stored);
-      }
-    }
-
     const getToken = () => {
       if (typeof window === 'undefined') return null;
       return localStorage.getItem('auth_token') || localStorage.getItem('token');
@@ -72,9 +69,9 @@ export default function AnnouncementsPage() {
           }
         }).catch(() => null);
 
-        const teacherRes = await listTeachers({ query: { page_size: 100 } as any }).catch(() => null);
+        const teacherRes = await listTeachers({ query: { page_size: 100 } }).catch(() => null);
         if (teacherRes?.data?.data) {
-          setTeachersList(teacherRes.data.data);
+          setTeachersList(teacherRes.data.data as unknown as Array<{ id: string; full_name: string; subject?: string }>);
         }
 
         // Fetch announcements from backend API
@@ -261,12 +258,9 @@ export default function AnnouncementsPage() {
   const [currentPage, setCurrentPage] = React.useState(1);
   const itemsPerPage = 10;
   
-  React.useEffect(() => { 
-    setCurrentPage(1); 
-  }, [filtered.length]);
-
   const totalPages = Math.ceil(filtered.length / itemsPerPage) || 1;
-  const paginated = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const safePage = Math.min(currentPage, totalPages);
+  const paginated = filtered.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
 
   return (
     <div className={styles.page}>
@@ -395,6 +389,32 @@ export default function AnnouncementsPage() {
         )}
       </div>
 
+      {/* Pagination Controls */}
+      {filtered.length > itemsPerPage && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem', padding: '0.75rem 1rem', background: 'var(--bg-card)', borderRadius: '12px', border: '1px solid var(--border-light)', fontSize: '0.8rem' }}>
+          <span style={{ color: 'var(--text-muted)' }}>
+            Menampilkan {(safePage - 1) * itemsPerPage + 1} - {Math.min(safePage * itemsPerPage, filtered.length)} dari {filtered.length} pengumuman
+          </span>
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            <button
+              className="btn btn-secondary btn-sm"
+              disabled={safePage <= 1}
+              onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+            >
+              Prev
+            </button>
+            <span style={{ fontWeight: 700 }}>Halaman {safePage} dari {totalPages}</span>
+            <button
+              className="btn btn-secondary btn-sm"
+              disabled={safePage >= totalPages}
+              onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ── MODAL BUAT PENGUMUMAN BARU & PUSH NOTIFICATION ── */}
       {showAddModal && (
         <div style={{
@@ -446,7 +466,7 @@ export default function AnnouncementsPage() {
                     <label style={{ fontSize: '0.76rem', fontWeight: 700 }}>Kategori *</label>
                     <select
                       value={newAnn.category}
-                      onChange={e => setNewAnn({ ...newAnn, category: e.target.value as any })}
+                      onChange={e => setNewAnn({ ...newAnn, category: e.target.value as AnnouncementItem['category'] })}
                       className="input"
                     >
                       <option value="AKADEMIK">AKADEMIK</option>

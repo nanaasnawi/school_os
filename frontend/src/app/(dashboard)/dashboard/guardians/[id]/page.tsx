@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import styles from './guardianDetail.module.css';
@@ -53,24 +53,7 @@ export default function GuardianDetailPage() {
   const params = useParams();
   const id = (params?.id as string) || '1';
 
-  const [profile, setProfile] = useState<GuardianProfile>(DEFAULT_FALLBACK);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const demoMatch = DEMO_GUARDIANS[id] || { ...DEFAULT_FALLBACK, id, full_name: `Guardian #${id}` };
-    setProfile(demoMatch);
-    setLoading(false);
-  }, [id]);
-
-  if (loading) {
-    return (
-      <div className={styles.loadingScreen}>
-        <div className={styles.spinner} />
-        <span>Loading guardian details...</span>
-      </div>
-    );
-  }
-
+  const profile: GuardianProfile = DEMO_GUARDIANS[id] || { ...DEFAULT_FALLBACK, id, full_name: `Guardian #${id}` };
   const initials = profile.full_name?.split(' ').map((n: string) => n[0]).join('').slice(0, 2) || 'GD';
 
   return (

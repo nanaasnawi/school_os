@@ -1,23 +1,12 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import styles from './assignments.module.css';
 import { listTeachers, listStudents, listClasses } from '@/lib/sdk/sdk.gen';
 import { getApiUrl } from '@/lib/api';
-
-type QuestionChoice = {
-  choice_text: string;
-  is_correct: boolean;
-};
-
-type AssignmentQuestion = {
-  id?: string;
-  question_text: string;
-  question_type: 'MULTIPLE_CHOICE' | 'ESSAY';
-  points: number;
-  choices: QuestionChoice[];
-};
+import { useAssignments, useAssignmentSubmissions, AssignmentQuestion, SubmissionAnswer } from '@/features/assignment';
+import { useSubjects } from '@/features/material';
 
 type AssignmentItem = {
   id: string;
@@ -30,19 +19,6 @@ type AssignmentItem = {
   submittedCount: number;
   assignmentType?: string;
   questions?: AssignmentQuestion[];
-};
-
-type SubmissionAnswer = {
-  question_id: string;
-  question_text: string;
-  question_type: string;
-  max_points: number;
-  chosen_choice_id?: string;
-  chosen_choice_text?: string;
-  is_correct?: boolean;
-  text_answer?: string;
-  points_earned: number;
-  teacher_feedback?: string;
 };
 
 type SubmissionItem = {
@@ -60,23 +36,25 @@ type SubmissionItem = {
   answers: SubmissionAnswer[];
 };
 
-const INITIAL_ASSIGNMENTS: AssignmentItem[] = [];
-
 export default function AssignmentsPage() {
-  const [assignments, setAssignments] = useState<AssignmentItem[]>(INITIAL_ASSIGNMENTS);
   const [selectedId, setSelectedId] = useState('');
-  const [submissions, setSubmissions] = useState<SubmissionItem[]>([]);
   
-  // Teachers, Classes, Students, Subjects
-  const [teachers, setTeachers] = useState<any[]>([]);
-  const [classesList, setClassesList] = useState<any[]>([]);
-  const [studentsList, setStudentsList] = useState<any[]>([]);
-  const [subjectsList, setSubjectsList] = useState<any[]>([]);
+  // TanStack Query Hooks
+  const { data: assignmentsData = [], refetch: refetchAssignments } = useAssignments();
+  const { data: subjectsList = [] } = useSubjects();
+
+  const activeAssignmentId = selectedId || (assignmentsData.length > 0 ? assignmentsData[0].id : '');
+  const { data: submissionsData = [], refetch: refetchSubmissions } = useAssignmentSubmissions(activeAssignmentId);
+
+  // Teachers, Classes, Students
+  const [teachers, setTeachers] = useState<Array<{ id: string; full_name: string }>>([]);
+  const [classesList, setClassesList] = useState<Array<{ id: string; name: string }>>([]);
+  const [studentsList, setStudentsList] = useState<Array<{ id: string; full_name: string; nisn?: string }>>([]);
 
   // Modals
   const [showAddModal, setShowAddModal] = useState(false);
   const [assignmentFormat, setAssignmentFormat] = useState<'HOMEWORK_PR' | 'STRUCTURED_QUESTIONS' | 'HYBRID'>('STRUCTURED_QUESTIONS');
-  const [newAssignment, setNewAssignment] = useState({
+  const [newAssignment, setNewAssignment] = useState(() => ({
     title: '',
     description: '',
     instructions: '',
@@ -86,7 +64,7 @@ export default function AssignmentsPage() {
     teacherName: '',
     dueDate: new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0],
     dueTime: '23:59',
-  });
+  }));
 
   // Questions Builder State
   const [questions, setQuestions] = useState<AssignmentQuestion[]>([
@@ -127,144 +105,102 @@ export default function AssignmentsPage() {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  const fetchSubmissionsForAssignment = async (asgId: string, currentStudents: any[]) => {
-    if (!asgId) return;
-    try {
-      const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
-      const res = await fetch(getApiUrl(`/api/v1/learning/assignments/${asgId}/submissions`), {
-        headers: token ? { Authorization: `Bearer ${token}` } : {}
-      });
-      if (res.ok) {
-        const json = await res.json();
-        if (Array.isArray(json.data)) {
-          const studentMap = new Map(currentStudents.map(s => [s.id, s]));
-          const mapped: SubmissionItem[] = json.data.map((sub: any) => {
-            const student = studentMap.get(sub.student_id);
-            const studentName = sub.student_name || student?.full_name || 'Peserta Didik';
-            const nisn = sub.student_nisn || student?.nisn || '-';
+  const submissions = useMemo<SubmissionItem[]>(() => {
+    const studentMap = new Map(studentsList.map(s => [s.id, s]));
+    return submissionsData.map((sub) => {
+      const student = studentMap.get(sub.student_id);
+      const studentName = sub.student_name || student?.full_name || 'Peserta Didik';
+      const nisn = sub.student_nisn || student?.nisn || '-';
 
-            let timeFormatted = 'Hari ini via Android App';
-            if (sub.submitted_at) {
-              const d = new Date(sub.submitted_at);
-              timeFormatted = `${d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })} (${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')} WIB)`;
-            }
-
-            const fileName = sub.file_url ? sub.file_url.split('/').pop() : null;
-            const fileType = fileName && (fileName.toLowerCase().endsWith('.png') || fileName.toLowerCase().endsWith('.jpg') || fileName.toLowerCase().endsWith('.jpeg')) ? 'IMAGE' : (fileName ? 'PDF' : undefined);
-
-            const answersList: SubmissionAnswer[] = Array.isArray(sub.answers) ? sub.answers : [];
-
-            return {
-              id: sub.id,
-              studentName,
-              nisn,
-              time: timeFormatted,
-              score: sub.score !== null && sub.score !== undefined ? sub.score : 0,
-              status: sub.status === 'Graded' || sub.status === 'graded' || (sub.score !== null && sub.score !== undefined) ? 'Dinilai' : 'Menunggu Penilaian',
-              attachmentName: fileName || (answersList.length === 0 ? `Lembar_Jawaban_${studentName.replace(/\s+/g, '_')}.pdf` : undefined),
-              attachmentType: fileType || 'PDF',
-              fileUrl: sub.file_url || undefined,
-              studentAnswerText: sub.content || '',
-              teacherFeedback: sub.feedback || '',
-              answers: answersList,
-            };
-          });
-          setSubmissions(mapped);
-          setAssignments(prev => prev.map(a => a.id === asgId ? { ...a, submittedCount: mapped.length } : a));
-          return;
-        }
+      let timeFormatted = 'Hari ini via Android App';
+      if (sub.submitted_at) {
+        const d = new Date(sub.submitted_at);
+        timeFormatted = `${d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })} (${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')} WIB)`;
       }
-    } catch (err) {
-      console.error('Error fetching submissions from backend:', err);
-    }
-    setSubmissions([]);
-  };
+
+      const fileName = sub.file_url ? sub.file_url.split('/').pop() : null;
+      const fileType = fileName && (fileName.toLowerCase().endsWith('.png') || fileName.toLowerCase().endsWith('.jpg') || fileName.toLowerCase().endsWith('.jpeg')) ? 'IMAGE' : (fileName ? 'PDF' : undefined);
+
+      const answersList: SubmissionAnswer[] = Array.isArray(sub.answers) ? sub.answers : [];
+
+      return {
+        id: sub.id,
+        studentName,
+        nisn,
+        time: timeFormatted,
+        score: sub.score !== null && sub.score !== undefined ? sub.score : 0,
+        status: sub.status === 'Graded' || sub.status === 'graded' || (sub.score !== null && sub.score !== undefined) ? 'Dinilai' : 'Menunggu Penilaian',
+        attachmentName: fileName || (answersList.length === 0 ? `Lembar_Jawaban_${studentName.replace(/\s+/g, '_')}.pdf` : undefined),
+        attachmentType: fileType || 'PDF',
+        fileUrl: sub.file_url || undefined,
+        studentAnswerText: sub.content || '',
+        teacherFeedback: sub.feedback || '',
+        answers: answersList,
+      };
+    });
+  }, [submissionsData, studentsList]);
+
+  const assignments = useMemo<AssignmentItem[]>(() => {
+    return assignmentsData.map((a) => {
+      let dueFormatted = 'Segera';
+      if (a.due_at) {
+        const d = new Date(a.due_at);
+        dueFormatted = `${d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })} (${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')} WIB)`;
+      }
+      return {
+        id: a.id,
+        title: a.title,
+        className: a.class_name || '-',
+        subjectName: a.subject_name || '-',
+        teacherName: a.teacher_name || '-',
+        due: dueFormatted,
+        totalStudents: 28,
+        submittedCount: a.id === activeAssignmentId ? submissions.length : 0,
+        assignmentType: a.assignment_type,
+        questions: a.questions || [],
+      };
+    });
+  }, [assignmentsData, activeAssignmentId, submissions.length]);
 
   useEffect(() => {
-    async function loadData() {
+    async function loadMetadata() {
       try {
-        const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
-        const [teacherRes, classRes, studentRes, subjectRes, assignmentsRes] = await Promise.all([
-          listTeachers({ query: { page_size: 100 } as any }).catch(() => null),
-          listClasses({ query: { page_size: 100 } as any }).catch(() => null),
-          listStudents({ query: { page_size: 500 } as any }).catch(() => null),
-          fetch(getApiUrl('/api/v1/academic/subjects'), {
-            headers: token ? { Authorization: `Bearer ${token}` } : {}
-          }).then(r => r.ok ? r.json() : null).catch(() => null),
-          fetch(getApiUrl('/api/v1/learning/assignments'), {
-            headers: token ? { Authorization: `Bearer ${token}` } : {}
-          }).then(r => r.ok ? r.json() : null).catch(() => null),
+        const [teacherRes, classRes, studentRes] = await Promise.all([
+          listTeachers({ query: { page_size: 100 } }).catch(() => null),
+          listClasses({ query: { page_size: 100 } }).catch(() => null),
+          listStudents({ query: { page_size: 500 } }).catch(() => null),
         ]);
 
-        let loadedStudents: any[] = [];
         if (studentRes?.data?.data) {
-          loadedStudents = studentRes.data.data;
-          setStudentsList(loadedStudents);
+          setStudentsList(studentRes.data.data as Array<{ id: string; full_name: string; nisn?: string }>);
         }
 
         if (teacherRes?.data?.data) {
-          const list = teacherRes.data.data;
+          const list = teacherRes.data.data as Array<{ id: string; full_name: string }>;
           setTeachers(list);
           if (list.length > 0) {
-            setNewAssignment(prev => ({ ...prev, teacherName: list[0].full_name }));
+            setNewAssignment(prev => ({ ...prev, teacherName: prev.teacherName || list[0].full_name }));
           }
         }
         if (classRes?.data?.data) {
-          const allRombels = classRes.data.data;
+          const allRombels = classRes.data.data as Array<{ id: string; name: string }>;
           setClassesList(allRombels);
           if (allRombels.length > 0) {
-            setNewAssignment(prev => ({ ...prev, className: allRombels[0].name }));
+            setNewAssignment(prev => ({ ...prev, className: prev.className || allRombels[0].name }));
           }
-        }
-        if (subjectRes?.data && Array.isArray(subjectRes.data)) {
-          setSubjectsList(subjectRes.data);
-          if (subjectRes.data.length > 0) {
-            setNewAssignment(prev => ({ ...prev, subjectName: subjectRes.data[0].name }));
-          }
-        }
-
-        let firstAsgId = '';
-        if (assignmentsRes?.data && Array.isArray(assignmentsRes.data) && assignmentsRes.data.length > 0) {
-          const mapped: AssignmentItem[] = assignmentsRes.data.map((a: any) => {
-            let dueFormatted = 'Segera';
-            if (a.due_at) {
-              const d = new Date(a.due_at);
-              dueFormatted = `${d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })} (${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')} WIB)`;
-            }
-            return {
-              id: a.id,
-              title: a.title,
-              className: a.class_name || '-',
-              subjectName: a.subject_name || '-',
-              teacherName: a.teacher_name || '-',
-              due: dueFormatted,
-              totalStudents: 28,
-              submittedCount: 0,
-              assignmentType: a.assignment_type,
-              questions: a.questions || [],
-            };
-          });
-          setAssignments(mapped);
-          firstAsgId = mapped[0].id;
-          setSelectedId(firstAsgId);
-        }
-
-        if (firstAsgId) {
-          await fetchSubmissionsForAssignment(firstAsgId, loadedStudents);
         }
       } catch (err) {
-        console.error('Error loading assignments data:', err);
+        console.error('Error loading assignments metadata:', err);
       }
     }
-    loadData();
+    loadMetadata();
   }, []);
 
   const handleSelectAssignment = (id: string) => {
     setSelectedId(id);
-    fetchSubmissionsForAssignment(id, studentsList);
   };
 
-  const selected = assignments.find(a => a.id === selectedId) || assignments[0];
+  const selected = assignments.find(a => a.id === activeAssignmentId) || assignments[0];
 
   // Questions Builder Helper Methods
   const addQuestion = (type: 'MULTIPLE_CHOICE' | 'ESSAY') => {
@@ -332,7 +268,7 @@ export default function AssignmentsPage() {
       const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
 
       // Filter valid questions if structured questions enabled
-      let payloadQuestions: any[] = [];
+      let payloadQuestions: Array<{ points?: number; [key: string]: unknown }> = [];
       if (assignmentFormat === 'STRUCTURED_QUESTIONS' || assignmentFormat === 'HYBRID') {
         payloadQuestions = questions
           .filter(q => q.question_text.trim().length > 0)
@@ -356,9 +292,10 @@ export default function AssignmentsPage() {
       const totalQuestionsPoints = payloadQuestions.reduce((acc, q) => acc + (q.points || 0), 0);
       const computedMaxScore = totalQuestionsPoints > 0 ? totalQuestionsPoints : (Number(newAssignment.maxScore) || 100);
 
+      const effectiveSubject = newAssignment.subjectName || (subjectsList.length > 0 ? subjectsList[0].name : 'Umum');
       const payload = {
         title: newAssignment.title,
-        description: `${newAssignment.subjectName} • ${newAssignment.className} • ${newAssignment.teacherName} • ${newAssignment.description || 'Tugas Baru'}`,
+        description: `${effectiveSubject} • ${newAssignment.className} • ${newAssignment.teacherName} • ${newAssignment.description || 'Tugas Baru'}`,
         instructions: newAssignment.instructions || undefined,
         max_score: computedMaxScore,
         due_at: `${newAssignment.dueDate}T${newAssignment.dueTime}:00Z`,
@@ -379,22 +316,10 @@ export default function AssignmentsPage() {
       if (res.ok) {
         const resJson = await res.json();
         const created = resJson.data;
-        const item: AssignmentItem = {
-          id: created?.id || `asg-${Date.now()}`,
-          title: newAssignment.title,
-          className: newAssignment.className,
-          subjectName: newAssignment.subjectName,
-          teacherName: newAssignment.teacherName,
-          due: `${newAssignment.dueDate} (${newAssignment.dueTime} WIB)`,
-          totalStudents: 28,
-          submittedCount: 0,
-          assignmentType: payload.assignment_type,
-          questions: created?.questions || payloadQuestions,
-        };
-
-        setAssignments(prev => [item, ...prev]);
-        setSelectedId(item.id);
-        setSubmissions([]);
+        await refetchAssignments();
+        if (created?.id) {
+          setSelectedId(created.id);
+        }
         setShowAddModal(false);
         showToast('✓ Tugas berhasil dibuat & disinkronkan ke Android Guru & Siswa');
       } else {
@@ -433,7 +358,7 @@ export default function AssignmentsPage() {
     setIsSavingGrade(true);
     try {
       const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
-      const res = await fetch(getApiUrl(`/api/v1/learning/assignments/${selectedId}/submissions/${gradingSub.id}/grade`), {
+      const res = await fetch(getApiUrl(`/api/v1/learning/assignments/${activeAssignmentId}/submissions/${gradingSub.id}/grade`), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -451,34 +376,11 @@ export default function AssignmentsPage() {
       });
 
       if (res.ok) {
-        setSubmissions(prev => prev.map(s => {
-          if (s.id === gradingSub.id) {
-            return {
-              ...s,
-              score: Number(inputScore),
-              status: 'Dinilai',
-              teacherFeedback: inputFeedback,
-              answers: gradingAnswers,
-            };
-          }
-          return s;
-        }));
+        await refetchSubmissions();
         setGradingSub(null);
         showToast('✓ Nilai & feedback berhasil disimpan ke database!');
       } else {
-        // Fallback optimistic update
-        setSubmissions(prev => prev.map(s => {
-          if (s.id === gradingSub.id) {
-            return {
-              ...s,
-              score: Number(inputScore),
-              status: 'Dinilai',
-              teacherFeedback: inputFeedback,
-              answers: gradingAnswers,
-            };
-          }
-          return s;
-        }));
+        await refetchSubmissions();
         setGradingSub(null);
         showToast('✓ Nilai berhasil diperbarui');
       }
@@ -615,7 +517,7 @@ export default function AssignmentsPage() {
                                 fileName: sub.attachmentName!,
                                 studentName: sub.studentName,
                                 nisn: sub.nisn,
-                                fileType: sub.attachmentType as any || 'PDF',
+                                fileType: (sub.attachmentType as 'PDF' | 'IMAGE') || 'PDF',
                                 subjectName: selected.subjectName,
                                 fileUrl: sub.fileUrl,
                               })}
@@ -727,13 +629,13 @@ export default function AssignmentsPage() {
                 <div>
                   <label style={{ fontSize: '0.76rem', fontWeight: 700 }}>Mata Pelajaran *</label>
                   <select
-                    value={newAssignment.subjectName}
+                    value={newAssignment.subjectName || (subjectsList.length > 0 ? subjectsList[0].name : '')}
                     onChange={e => setNewAssignment({ ...newAssignment, subjectName: e.target.value })}
                     className="input"
                   >
                     {subjectsList.length > 0 ? (
-                      subjectsList.map((s: any) => (
-                        <option key={s.id || s.code} value={s.name}>{s.name}</option>
+                      subjectsList.map((s: { id?: string; code?: string; name: string }) => (
+                        <option key={s.id || s.code || s.name} value={s.name}>{s.name}</option>
                       ))
                     ) : (
                       <option value="">Belum ada mata pelajaran</option>
@@ -750,7 +652,7 @@ export default function AssignmentsPage() {
                   className="input"
                 >
                   {teachers.length > 0 ? (
-                    teachers.map((t: any) => <option key={t.id} value={t.full_name}>{t.full_name}</option>)
+                    teachers.map(t => <option key={t.id} value={t.full_name}>{t.full_name}</option>)
                   ) : (
                     <option value="">Belum ada guru</option>
                   )}
@@ -1115,7 +1017,7 @@ export default function AssignmentsPage() {
 
                   {gradingSub.studentAnswerText && (
                     <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: 1.5, background: 'var(--bg-card)', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border-light)' }}>
-                      <strong>Catatan Siswa:</strong> "{gradingSub.studentAnswerText}"
+                      <strong>Catatan Siswa:</strong> &ldquo;{gradingSub.studentAnswerText}&rdquo;
                     </div>
                   )}
 
@@ -1136,7 +1038,7 @@ export default function AssignmentsPage() {
                           fileName: gradingSub.attachmentName!,
                           studentName: gradingSub.studentName,
                           nisn: gradingSub.nisn,
-                          fileType: gradingSub.attachmentType as any || 'PDF',
+                          fileType: (gradingSub.attachmentType as 'PDF' | 'IMAGE') || 'PDF',
                           subjectName: selected.subjectName,
                           fileUrl: gradingSub.fileUrl,
                         })}

@@ -112,8 +112,16 @@ export default function StudentDetailPage() {
           if (gRes.ok) {
             const gJson = await gRes.json();
             const arr = Array.isArray(gJson?.data) ? gJson.data : [];
+            type RawGrade = {
+              id: string | number;
+              subject_name?: string | null;
+              component_name?: string;
+              raw_score?: number | null;
+              max_raw_score?: number | null;
+              calculated_at?: string;
+            };
             if (!cancelled) {
-              setGrades(arr.map((e: any) => ({
+              setGrades((arr as RawGrade[]).map((e) => ({
                 id: String(e.id),
                 subject_name: e.subject_name || null,
                 component_name: e.component_name || '-',

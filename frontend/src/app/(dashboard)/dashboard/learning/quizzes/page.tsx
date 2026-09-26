@@ -47,6 +47,22 @@ type QuizQuestionItem = {
   choices: QuizChoiceItem[];
 };
 
+interface TeacherItem {
+  id: string;
+  full_name: string;
+}
+
+interface ClassItem {
+  id: string;
+  name: string;
+}
+
+interface SubjectItem {
+  id?: string;
+  code?: string;
+  name: string;
+}
+
 const INITIAL_QUIZZES: QuizItem[] = [];
 
 export default function QuizzesPage() {
@@ -54,11 +70,10 @@ export default function QuizzesPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
 
-  // Teachers, Classes, Students, Subjects
-  const [teachers, setTeachers] = useState<any[]>([]);
-  const [classesList, setClassesList] = useState<any[]>([]);
-  const [subjectsList, setSubjectsList] = useState<any[]>([]);
-  const [students, setStudents] = useState<any[]>([]);
+  // Teachers, Classes, Subjects
+  const [teachers, setTeachers] = useState<TeacherItem[]>([]);
+  const [classesList, setClassesList] = useState<ClassItem[]>([]);
+  const [subjectsList, setSubjectsList] = useState<SubjectItem[]>([]);
   const [cbtScores, setCbtScores] = useState<StudentCbtScore[]>([]);
 
   // Modal Buat Kuis Baru
@@ -101,79 +116,78 @@ export default function QuizzesPage() {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  const loadData = async () => {
-    try {
-      const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
-      const [teacherRes, classRes, studentRes, subjectRes, quizRes] = await Promise.all([
-        listTeachers({ query: { page_size: 100 } as any }).catch(() => null),
-        listClasses({ query: { page_size: 100 } as any }).catch(() => null),
-        listStudents({ query: { page_size: 100 } as any }).catch(() => null),
-        fetch(getApiUrl('/api/v1/academic/subjects'), {
-          headers: token ? { Authorization: `Bearer ${token}` } : {}
-        }).then(r => r.ok ? r.json() : null).catch(() => null),
-        fetch(getApiUrl('/api/v1/learning/quizzes'), {
-          headers: token ? { Authorization: `Bearer ${token}` } : {}
-        }).then(r => r.ok ? r.json() : null).catch(() => null),
-      ]);
-
-      if (teacherRes?.data?.data) {
-        const list = teacherRes.data.data;
-        setTeachers(list);
-        if (list.length > 0) setNewQuiz(prev => ({ ...prev, teacherName: list[0].full_name }));
-      }
-
-      if (classRes?.data?.data) {
-        const allRombels = classRes.data.data;
-        setClassesList(allRombels);
-        if (allRombels.length > 0) setNewQuiz(prev => ({ ...prev, classRoom: allRombels[0].name }));
-      }
-
-      if (subjectRes?.data && Array.isArray(subjectRes.data)) {
-        setSubjectsList(subjectRes.data);
-        if (subjectRes.data.length > 0) setNewQuiz(prev => ({ ...prev, subject: subjectRes.data[0].name }));
-      }
-
-      if (quizRes?.data && Array.isArray(quizRes.data) && quizRes.data.length > 0) {
-        const mapped: QuizItem[] = quizRes.data.map((q: any) => ({
-          id: q.id,
-          title: q.title,
-          subject: q.subject_name || '-',
-          classRoom: q.class_name || '-',
-          teacherName: q.teacher_name || '-',
-          duration: `${q.duration_minutes || 30} Menit`,
-          totalQuestions: q.questions_count || 0,
-          status: (q.status as any) || 'PUBLISHED',
-          participants: 12,
-          maxParticipants: 28,
-          avgScore: 84,
-        }));
-        setQuizzes(mapped);
-      }
-
-      if (studentRes?.data?.data) {
-        const list = studentRes.data.data;
-        setStudents(list);
-
-        const scores: StudentCbtScore[] = list.slice(0, 12).map((s: any, idx: number) => {
-          const sc = 75 + (idx % 6) * 5;
-          return {
-            nisn: s.nisn,
-            studentName: s.full_name,
-            score: sc,
-            timeSpent: `${25 + (idx % 15)} Menit`,
-            correctAnswers: Math.round((sc / 100) * 20),
-            totalQuestions: 20,
-            status: sc >= 75 ? 'Lulus KKM' : 'Remedial',
-          };
-        });
-        setCbtScores(scores);
-      }
-    } catch (err) {
-      console.error('Error loading quizzes data:', err);
-    }
-  };
-
   useEffect(() => {
+    const loadData = async () => {
+      try {
+        const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
+        const [teacherRes, classRes, studentRes, subjectRes, quizRes] = await Promise.all([
+          listTeachers({ query: { page_size: 100 } }).catch(() => null),
+          listClasses({ query: { page_size: 100 } }).catch(() => null),
+          listStudents({ query: { page_size: 100 } }).catch(() => null),
+          fetch(getApiUrl('/api/v1/academic/subjects'), {
+            headers: token ? { Authorization: `Bearer ${token}` } : {}
+          }).then(r => r.ok ? r.json() : null).catch(() => null),
+          fetch(getApiUrl('/api/v1/learning/quizzes'), {
+            headers: token ? { Authorization: `Bearer ${token}` } : {}
+          }).then(r => r.ok ? r.json() : null).catch(() => null),
+        ]);
+
+        if (teacherRes?.data?.data) {
+          const list = teacherRes.data.data;
+          setTeachers(list);
+          if (list.length > 0) setNewQuiz(prev => ({ ...prev, teacherName: list[0].full_name }));
+        }
+
+        if (classRes?.data?.data) {
+          const allRombels = classRes.data.data;
+          setClassesList(allRombels);
+          if (allRombels.length > 0) setNewQuiz(prev => ({ ...prev, classRoom: allRombels[0].name }));
+        }
+
+        if (subjectRes?.data && Array.isArray(subjectRes.data)) {
+          setSubjectsList(subjectRes.data);
+          if (subjectRes.data.length > 0) setNewQuiz(prev => ({ ...prev, subject: subjectRes.data[0].name }));
+        }
+
+        if (quizRes?.data && Array.isArray(quizRes.data) && quizRes.data.length > 0) {
+          const mapped: QuizItem[] = quizRes.data.map((q: Record<string, unknown>) => ({
+            id: String(q.id),
+            title: String(q.title || ''),
+            subject: String(q.subject_name || '-'),
+            classRoom: String(q.class_name || '-'),
+            teacherName: String(q.teacher_name || '-'),
+            duration: `${q.duration_minutes || 30} Menit`,
+            totalQuestions: Number(q.questions_count) || 0,
+            status: (q.status as QuizItem['status']) || 'PUBLISHED',
+            participants: 12,
+            maxParticipants: 28,
+            avgScore: 84,
+          }));
+          setQuizzes(mapped);
+        }
+
+        if (studentRes?.data?.data) {
+          const list = studentRes.data.data;
+
+          const scores: StudentCbtScore[] = list.slice(0, 12).map((s: { nisn: string; full_name: string }, idx: number) => {
+            const sc = 75 + (idx % 6) * 5;
+            return {
+              nisn: s.nisn,
+              studentName: s.full_name,
+              score: sc,
+              timeSpent: `${25 + (idx % 15)} Menit`,
+              correctAnswers: Math.round((sc / 100) * 20),
+              totalQuestions: 20,
+              status: sc >= 75 ? 'Lulus KKM' : 'Remedial',
+            };
+          });
+          setCbtScores(scores);
+        }
+      } catch (err) {
+        console.error('Error loading quizzes data:', err);
+      }
+    };
+
     loadData();
   }, []);
 
@@ -346,13 +360,9 @@ export default function QuizzesPage() {
   // --- Client-Side Pagination ---
   const [currentPage, setCurrentPage] = React.useState(1);
   const itemsPerPage = 10;
-  
-  React.useEffect(() => { 
-    setCurrentPage(1); 
-  }, [filtered.length]);
-
   const totalPages = Math.ceil(filtered.length / itemsPerPage) || 1;
-  const paginated = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const safePage = Math.min(Math.max(1, currentPage), totalPages);
+  const paginated = filtered.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
 
   const totalPgCount = questionsList.filter(q => q.question_type.toUpperCase().includes('CHOICE') || q.question_type.toUpperCase() === 'PG').length;
   const totalEssayCount = questionsList.filter(q => !q.question_type.toUpperCase().includes('CHOICE') && q.question_type.toUpperCase() !== 'PG').length;
@@ -512,16 +522,16 @@ export default function QuizzesPage() {
           <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Menampilkan {paginated.length} dari total {filtered.length} hasil</span>
           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
             <button 
-              disabled={currentPage === 1} 
-              onClick={() => setCurrentPage(prev => prev - 1)}
+              disabled={safePage <= 1} 
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
               className="btn btn-secondary btn-sm"
             >
               Prev
             </button>
-            <span style={{ fontSize: '0.8rem', fontWeight: 700, margin: '0 0.5rem' }}>Halaman {currentPage} dari {totalPages}</span>
+            <span style={{ fontSize: '0.8rem', fontWeight: 700, margin: '0 0.5rem' }}>Halaman {safePage} dari {totalPages}</span>
             <button 
-              disabled={currentPage === totalPages} 
-              onClick={() => setCurrentPage(prev => prev + 1)}
+              disabled={safePage >= totalPages} 
+              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
               className="btn btn-secondary btn-sm"
             >
               Next
@@ -1086,7 +1096,7 @@ export default function QuizzesPage() {
                     style={{ width: '100%' }}
                   >
                     {subjectsList.length > 0 ? (
-                      subjectsList.map((s: any) => (
+                      subjectsList.map((s: SubjectItem) => (
                         <option key={s.id || s.name} value={s.name}>{s.name}</option>
                       ))
                     ) : (
@@ -1111,7 +1121,7 @@ export default function QuizzesPage() {
                     style={{ width: '100%' }}
                   >
                     {classesList.length > 0 ? (
-                      classesList.map((c: any) => (
+                      classesList.map((c: ClassItem) => (
                         <option key={c.id || c.name} value={c.name}>{c.name}</option>
                       ))
                     ) : (
@@ -1133,7 +1143,7 @@ export default function QuizzesPage() {
                     style={{ width: '100%' }}
                   >
                     {teachers.length > 0 ? (
-                      teachers.map((t: any) => (
+                      teachers.map((t: TeacherItem) => (
                         <option key={t.id} value={t.full_name}>{t.full_name}</option>
                       ))
                     ) : (

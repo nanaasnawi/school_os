@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { materialFormSchema, MaterialFormValues } from '../schemas/material-schema';
 import { useCreateMaterial } from '../mutations/use-create-material';
@@ -22,7 +22,7 @@ export function MaterialUploadModal({ isOpen, onClose, defaultSubjectId = '00000
     handleSubmit,
     reset,
     setValue,
-    watch,
+    control,
     formState: { errors },
   } = useForm<MaterialFormValues>({
     resolver: zodResolver(materialFormSchema),
@@ -35,7 +35,7 @@ export function MaterialUploadModal({ isOpen, onClose, defaultSubjectId = '00000
     },
   });
 
-  const selectedType = watch('material_type');
+  const selectedType = useWatch({ control, name: 'material_type' }) || 'pdf';
 
   if (!isOpen) return null;
 

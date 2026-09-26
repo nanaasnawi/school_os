@@ -1,12 +1,15 @@
 'use client';
-import { getTenantItem, setTenantItem, removeTenantItem } from '@/lib/tenant-storage';
+import { getTenantItem } from '@/lib/tenant-storage';
 
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
 import styles from './gradebook.module.css';
 import { listStudents, listClasses } from '@/lib/sdk/sdk.gen';
 import { exportToExcel } from '@/lib/exportExcel';
 import { getApiUrl } from '@/lib/api';
+
+type RawStudent = { id: string; full_name: string; nisn: string; class_name?: string };
+type RawClass = { id: string; name: string };
+type RawSubject = { id: string; name: string };
 
 type GradebookEntry = {
   studentId: string;
@@ -26,13 +29,13 @@ export default function GradebookPage() {
   const [selectedClass, setSelectedClass] = useState('ALL');
   const [selectedSubject, setSelectedSubject] = useState('Pendidikan Agama Islam dan Budi Pekerti');
   const [gradebook, setGradebook] = useState<GradebookEntry[]>([]);
-  const [studentsList, setStudentsList] = useState<any[]>([]);
-  const [classesList, setClassesList] = useState<any[]>([]);
-  const [subjectsList, setSubjectsList] = useState<any[]>([]);
+  const [studentsList, setStudentsList] = useState<RawStudent[]>([]);
+  const [classesList, setClassesList] = useState<RawClass[]>([]);
+  const [subjectsList, setSubjectsList] = useState<RawSubject[]>([]);
   const [search, setSearch] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [isLoadingGrades, setIsLoadingGrades] = useState(false);
-  const [schoolName, setSchoolName] = useState('Sekolah');
+  const [schoolName] = useState(() => (typeof window !== 'undefined' ? getTenantItem('dapodik_nama_sekolah') || 'Sekolah' : 'Sekolah'));
 
   // Toast
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -43,16 +46,16 @@ export default function GradebookPage() {
 
   const fetchGradesForSubject = async (
     subjectName: string,
-    students: any[],
-    subjects: any[]
+    students: RawStudent[],
+    subjects: RawSubject[]
   ) => {
     if (!students || students.length === 0) return;
     setIsLoadingGrades(true);
     const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
-    const matchedSubject = subjects.find((s: any) => s.name === subjectName);
+    const matchedSubject = subjects.find(s => s.name === subjectName);
     const subjectId = matchedSubject?.id;
 
-    let savedScoresMap: Record<string, any> = {};
+    const savedScoresMap: Record<string, { formatif1?: number; formatif2?: number; pts?: number; pas?: number }> = {};
 
     try {
       const qParams = new URLSearchParams();
@@ -64,28 +67,28 @@ export default function GradebookPage() {
       }).then(r => r.ok ? r.json() : null);
 
       if (gbRes?.data && Array.isArray(gbRes.data)) {
-        gbRes.data.forEach((e: any) => {
+        gbRes.data.forEach((e: { student_id: string; raw_score?: string; component_name?: string }) => {
           if (!savedScoresMap[e.student_id]) {
             savedScoresMap[e.student_id] = {};
           }
-          const raw = parseFloat(e.raw_score) || 0;
+          const raw = parseFloat(e.raw_score || '0') || 0;
           if (e.component_name === 'Formatif 1') savedScoresMap[e.student_id].formatif1 = raw;
           else if (e.component_name === 'Formatif 2') savedScoresMap[e.student_id].formatif2 = raw;
-          else if (e.component_name.includes('PTS')) savedScoresMap[e.student_id].pts = raw;
-          else if (e.component_name.includes('PAS')) savedScoresMap[e.student_id].pas = raw;
+          else if (e.component_name?.includes('PTS')) savedScoresMap[e.student_id].pts = raw;
+          else if (e.component_name?.includes('PAS')) savedScoresMap[e.student_id].pas = raw;
         });
       }
     } catch (e) {
       console.warn('Backend gradebook fetch error:', e);
     }
 
-    const mappedEntries: GradebookEntry[] = students.map((s: any) => {
+    const mappedEntries: GradebookEntry[] = students.map((s) => {
       const saved = savedScoresMap[s.id];
       
-      let f1 = saved ? (saved.formatif1 ?? 0) : 0;
-      let f2 = saved ? (saved.formatif2 ?? 0) : 0;
-      let p = saved ? (saved.pts ?? 0) : 0;
-      let pasVal = saved ? (saved.pas ?? 0) : 0;
+      const f1 = saved ? (saved.formatif1 ?? 0) : 0;
+      const f2 = saved ? (saved.formatif2 ?? 0) : 0;
+      const p = saved ? (saved.pts ?? 0) : 0;
+      const pasVal = saved ? (saved.pas ?? 0) : 0;
 
       const total = Math.round((f1 * 0.2 + f2 * 0.2 + p * 0.3 + pasVal * 0.3) * 10) / 10;
       const pred: 'A' | 'B' | 'C' = total >= 88 ? 'A' : total >= 75 ? 'B' : 'C';
@@ -111,42 +114,37 @@ export default function GradebookPage() {
   };
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const stored = getTenantItem('dapodik_nama_sekolah');
-      if (stored) setSchoolName(stored);
-    }
-
     async function loadData() {
       try {
         const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
         const [studentRes, classRes, subjectRes] = await Promise.all([
-          listStudents({ query: { page_size: 500 } as any }).catch(() => null),
-          listClasses({ query: { page_size: 100 } as any }).catch(() => null),
+          listStudents({ query: { page_size: 500 } }).catch(() => null),
+          listClasses({ query: { page_size: 100 } }).catch(() => null),
           fetch(getApiUrl('/api/v1/academic/subjects'), {
             headers: token ? { Authorization: `Bearer ${token}` } : {}
           }).then(r => r.ok ? r.json() : null).catch(() => null)
         ]);
 
-        let loadedClasses: any[] = [];
-        let loadedSubjects: any[] = [];
-        let loadedStudents: any[] = [];
+        let loadedClasses: RawClass[] = [];
+        let loadedSubjects: RawSubject[] = [];
+        let loadedStudents: RawStudent[] = [];
 
         if (classRes?.data?.data) {
-          loadedClasses = classRes.data.data;
+          loadedClasses = classRes.data.data as RawClass[];
           setClassesList(loadedClasses);
         }
 
         if (subjectRes?.data && Array.isArray(subjectRes.data)) {
-          loadedSubjects = subjectRes.data;
+          loadedSubjects = subjectRes.data as RawSubject[];
           setSubjectsList(loadedSubjects);
         }
 
         if (studentRes?.data?.data) {
-          loadedStudents = studentRes.data.data;
+          loadedStudents = studentRes.data.data as RawStudent[];
           setStudentsList(loadedStudents);
         }
 
-        const initialSub = loadedSubjects.length > 0 ? loadedSubjects[0].name : selectedSubject;
+        const initialSub = loadedSubjects.length > 0 ? loadedSubjects[0].name : 'Pendidikan Agama Islam dan Budi Pekerti';
         if (loadedSubjects.length > 0) {
           setSelectedSubject(initialSub);
         }
@@ -184,9 +182,9 @@ export default function GradebookPage() {
     setIsSaving(true);
     const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
 
-    const matchedSubject = subjectsList.find((s: any) => s.name === selectedSubject);
+    const matchedSubject = subjectsList.find(s => s.name === selectedSubject);
     const subjectId = matchedSubject?.id;
-    const matchedClass = classesList.find((c: any) => c.name === selectedClass);
+    const matchedClass = classesList.find(c => c.name === selectedClass);
     const classId = matchedClass?.id;
 
     const payloadGrades = gradebook.map(g => ({
@@ -224,9 +222,10 @@ export default function GradebookPage() {
       showToast(`💾 Nilai [${selectedSubject}] berhasil disimpan & disinkronkan ke Database!`);
       // Re-fetch to ensure complete sync
       await fetchGradesForSubject(selectedSubject, studentsList, subjectsList);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to sync grades to backend:', err);
-      showToast(`⚠️ ${err?.message || 'Gagal menyimpan nilai ke database'}`);
+      const message = err instanceof Error ? err.message : 'Gagal menyimpan nilai ke database';
+      showToast(`⚠️ ${message}`);
     } finally {
       setIsSaving(false);
     }
@@ -274,12 +273,9 @@ export default function GradebookPage() {
   const [currentPage, setCurrentPage] = React.useState(1);
   const itemsPerPage = 10;
   
-  React.useEffect(() => { 
-    setCurrentPage(1); 
-  }, [filtered.length]);
-
   const totalPages = Math.ceil(filtered.length / itemsPerPage) || 1;
-  const paginated = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const safePage = Math.min(currentPage, totalPages);
+  const paginated = filtered.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
 
   return (
     <div className={styles.page}>
@@ -348,8 +344,8 @@ export default function GradebookPage() {
         </select>
 
         <select value={selectedSubject} onChange={(e) => handleSubjectChange(e.target.value)} className="input" style={{ width: '220px' }} disabled={isLoadingGrades || isSaving}>
-          {subjectsList.map((s: any) => (
-            <option key={s.id || s.code} value={s.name}>{s.name}</option>
+          {subjectsList.map((s: RawSubject) => (
+            <option key={s.id || s.name} value={s.name}>{s.name}</option>
           ))}
         </select>
 
@@ -505,23 +501,23 @@ export default function GradebookPage() {
         {filtered.length > itemsPerPage && (
           <div style={{ padding: '0.75rem 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-elevated)', borderTop: '1px solid var(--border-light)', fontSize: '0.8rem' }}>
             <span style={{ color: 'var(--text-muted)' }}>
-              Menampilkan {(currentPage - 1) * itemsPerPage + 1} - {Math.min(currentPage * itemsPerPage, filtered.length)} dari {filtered.length} siswa
+              Menampilkan {(safePage - 1) * itemsPerPage + 1} - {Math.min(safePage * itemsPerPage, filtered.length)} dari {filtered.length} siswa
             </span>
             <div style={{ display: 'flex', gap: '0.35rem' }}>
               <button
                 className="btn btn-secondary btn-sm"
-                disabled={currentPage === 1}
+                disabled={safePage === 1}
                 onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                 style={{ padding: '0.2rem 0.6rem', fontSize: '0.75rem' }}
               >
                 &laquo; Prev
               </button>
               <span style={{ padding: '0.2rem 0.6rem', fontWeight: 700, display: 'flex', alignItems: 'center' }}>
-                Halaman {currentPage} dari {totalPages}
+                Halaman {safePage} dari {totalPages}
               </span>
               <button
                 className="btn btn-secondary btn-sm"
-                disabled={currentPage === totalPages}
+                disabled={safePage === totalPages}
                 onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                 style={{ padding: '0.2rem 0.6rem', fontSize: '0.75rem' }}
               >

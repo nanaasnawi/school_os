@@ -1,11 +1,12 @@
+/* eslint-disable @next/next/no-img-element */
 'use client';
-import { getTenantItem, setTenantItem, removeTenantItem } from '@/lib/tenant-storage';
+import { getTenantItem } from '@/lib/tenant-storage';
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import QRCode from 'qrcode';
 import styles from './report-cards.module.css';
-import { listStudents, listClasses, listTeachers } from '@/lib/sdk/sdk.gen';
+import { listStudents } from '@/lib/sdk/sdk.gen';
 
 type SubjectCompetency = {
   subjectName: string;
@@ -13,6 +14,37 @@ type SubjectCompetency = {
   predicate: 'A' | 'B' | 'C' | '-';
   description: string;
 };
+
+interface RawStudent {
+  id: string;
+  nisn: string;
+  nipd?: string | null;
+  full_name: string;
+  class_name?: string | null;
+  class_id?: string | null;
+  wali_kelas?: string | null;
+  homeroom_teacher?: string | null;
+  gender?: string | null;
+  birth_date?: string | null;
+  birth_place?: string | null;
+  religion?: string | null;
+  alamat_jalan?: string | null;
+  address?: string | null;
+  no_hp?: string | null;
+}
+
+interface ClassItem {
+  id?: string;
+  name: string;
+  homeroom_teacher_id?: string;
+}
+
+interface TeacherItem {
+  id?: string;
+  full_name?: string;
+  subject?: string;
+  role?: string;
+}
 
 type StudentRaporProfile = {
   studentId: string;
@@ -46,9 +78,7 @@ type StudentRaporProfile = {
 
 export default function ReportCardsPage() {
   const [reportCards, setReportCards] = useState<StudentRaporProfile[]>([]);
-  const [classesList, setClassesList] = useState<any[]>([]);
-  const [subjectsList, setSubjectsList] = useState<any[]>([]);
-  const [teachersList, setTeachersList] = useState<any[]>([]);
+  const [classesList, setClassesList] = useState<ClassItem[]>([]);
   const [selectedClass, setSelectedClass] = useState('ALL');
   const [search, setSearch] = useState('');
   const [hasSavedGrades, setHasSavedGrades] = useState(false);
@@ -111,7 +141,7 @@ export default function ReportCardsPage() {
         const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
         const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
         const [studentRes, classRes, subjectRes, teacherRes, staffRes, schoolProfileRes] = await Promise.all([
-          listStudents({ query: { page_size: 500 } as any }).catch(() => null),
+          listStudents({ query: { page_size: 500 } }).catch(() => null),
           fetch('/api/v1/academic/classes?page_size=200', { headers }).then(r => r.ok ? r.json() : null).catch(() => null),
           fetch('/api/v1/academic/subjects', {
             headers: token ? { Authorization: `Bearer ${token}` } : {}
@@ -127,7 +157,6 @@ export default function ReportCardsPage() {
 
         let activeSchoolName = '';
         let activeNpsn = '';
-        let activeNss = '';
         let activeHeadmaster = '';
         let activeHeadmasterNip = '';
         let activeLogo = '';
@@ -150,7 +179,7 @@ export default function ReportCardsPage() {
 
         // 1. Dynamic Headmaster from Staff & Dapodik
         if (staffRes?.data && Array.isArray(staffRes.data)) {
-          const kepsekStaff = staffRes.data.find((s: any) => 
+          const kepsekStaff = staffRes.data.find((s: { job_title?: string; jenis_ptk?: string; full_name?: string; nip?: string }) => 
             (s.job_title && s.job_title.toLowerCase().includes('kepala')) ||
             (s.jenis_ptk && s.jenis_ptk.toLowerCase().includes('kepala'))
           );
@@ -161,19 +190,14 @@ export default function ReportCardsPage() {
         }
 
         // 2. Check Teachers List
-        let loadedTeachers: any[] = [];
-        if (teacherRes?.data?.data) {
-          loadedTeachers = teacherRes.data.data;
-          setTeachersList(loadedTeachers);
-
-          if (!activeHeadmaster) {
-            const headmasterObj = loadedTeachers.find((t: any) => 
-              (t.subject && t.subject.toLowerCase().includes('kepala')) ||
-              (t.role && t.role.toLowerCase().includes('kepala'))
-            );
-            if (headmasterObj?.full_name) {
-              activeHeadmaster = headmasterObj.full_name;
-            }
+        const teacherArray: TeacherItem[] = Array.isArray(teacherRes?.data) ? teacherRes.data : Array.isArray(teacherRes?.data?.data) ? teacherRes.data.data : [];
+        if (!activeHeadmaster && teacherArray.length > 0) {
+          const headmasterObj = teacherArray.find(t => 
+            (t.subject && t.subject.toLowerCase().includes('kepala')) ||
+            (t.role && t.role.toLowerCase().includes('kepala'))
+          );
+          if (headmasterObj?.full_name) {
+            activeHeadmaster = headmasterObj.full_name;
           }
         }
 
@@ -194,6 +218,7 @@ export default function ReportCardsPage() {
           }
           if (schoolProfileRes.data.phone_number) activeTelepon = schoolProfileRes.data.phone_number;
           if (schoolProfileRes.data.email) activeEmail = schoolProfileRes.data.email;
+          if (schoolProfileRes.data.website) activeWebsite = schoolProfileRes.data.website;
         }
 
         // 4. Local storage overrides if customized
@@ -224,18 +249,15 @@ export default function ReportCardsPage() {
           website: activeWebsite,
         }));
 
-        const teacherArray = Array.isArray(teacherRes?.data) ? teacherRes.data : Array.isArray(teacherRes?.data?.data) ? teacherRes.data.data : [];
-        const classArray = Array.isArray(classRes?.data) ? classRes.data : Array.isArray(classRes?.data?.data) ? classRes.data.data : [];
+        const classArray: ClassItem[] = Array.isArray(classRes?.data) ? classRes.data : Array.isArray(classRes?.data?.data) ? classRes.data.data : [];
 
         if (classArray.length > 0) {
           setClassesList(classArray);
-        } else if (classRes?.data?.data) {
-          setClassesList(classRes.data.data);
         }
 
         // Map teacher IDs to teacher names
         const teacherMap = new Map<string, string>();
-        teacherArray.forEach((t: any) => {
+        teacherArray.forEach(t => {
           if (t.id && t.full_name) {
             teacherMap.set(t.id, t.full_name.toUpperCase());
           }
@@ -243,7 +265,7 @@ export default function ReportCardsPage() {
 
         // Map class name / id to homeroom teacher
         const classWaliMap = new Map<string, string>();
-        classArray.forEach((c: any) => {
+        classArray.forEach(c => {
           const tName = c.homeroom_teacher_id ? teacherMap.get(c.homeroom_teacher_id) : null;
           if (c.name && tName) {
             classWaliMap.set(c.name.toUpperCase().trim(), tName);
@@ -252,8 +274,6 @@ export default function ReportCardsPage() {
             classWaliMap.set(c.id, tName);
           }
         });
-
-
 
         let dynamicSubjectNames = [
           'Pendidikan Agama Islam dan Budi Pekerti',
@@ -266,17 +286,14 @@ export default function ReportCardsPage() {
           'Informatika'
         ];
 
-        if (subjectRes?.data && Array.isArray(subjectRes.data)) {
-          setSubjectsList(subjectRes.data);
-          if (subjectRes.data.length > 0) {
-            dynamicSubjectNames = subjectRes.data.map((s: any) => s.name);
-          }
+        if (subjectRes?.data && Array.isArray(subjectRes.data) && subjectRes.data.length > 0) {
+          dynamicSubjectNames = subjectRes.data.map((s: { name: string }) => s.name);
         }
 
         const isSaved = typeof window !== 'undefined' && localStorage.getItem('has_saved_grades') === 'true';
         setHasSavedGrades(isSaved);
 
-        let savedScoresMap: Record<string, any> = {};
+        let savedScoresMap: Record<string, { formatif1?: number; formatif2?: number; pts?: number; pas?: number }> = {};
         if (typeof window !== 'undefined') {
           try {
             const raw = localStorage.getItem('saved_gradebook_scores');
@@ -288,7 +305,7 @@ export default function ReportCardsPage() {
 
         if (studentRes?.data?.data) {
           const list = studentRes.data.data;
-          const mappedRapors: StudentRaporProfile[] = list.map((s: any, idx: number) => {
+          const mappedRapors: StudentRaporProfile[] = list.map((s: RawStudent, idx: number) => {
             const cls = s.class_name || 'Rombel General';
             const phaseStr = cls.includes('PAKET A') || cls.includes('SD') ? 'Fase A/B/C (SD)' : cls.includes('PAKET B') || cls.includes('SMP') ? 'Fase D (SMP)' : 'Fase E/F (SMA)';
 
@@ -314,7 +331,11 @@ export default function ReportCardsPage() {
 
               let sc = 0;
               if (saved) {
-                sc = Math.round((saved.formatif1 * 0.2 + saved.formatif2 * 0.2 + saved.pts * 0.3 + saved.pas * 0.3) * 10) / 10;
+                const f1 = saved.formatif1 ?? 80;
+                const f2 = saved.formatif2 ?? 80;
+                const pts = saved.pts ?? 80;
+                const pas = saved.pas ?? 80;
+                sc = Math.round((f1 * 0.2 + f2 * 0.2 + pts * 0.3 + pas * 0.3) * 10) / 10;
               } else {
                 sc = 80 + (idx % 15);
               }
@@ -385,7 +406,6 @@ export default function ReportCardsPage() {
     if (!activeRapor) return;
     setIsExportingPdf(true);
     try {
-      // @ts-ignore
       const html2pdfModule = (await import('html2pdf.js')).default;
       const element = document.getElementById('rapor-document-export-container');
       if (!element) {
@@ -413,7 +433,7 @@ export default function ReportCardsPage() {
         pagebreak: { mode: ['css', 'legacy'] },
       };
 
-      await html2pdfModule().set(opt as any).from(element).save();
+      await html2pdfModule().set(opt as Record<string, unknown>).from(element).save();
       showToast('✓ Berkas PDF Rapor Resmi berhasil diunduh ke komputer!');
     } catch (err) {
       console.error('PDF export error:', err);
@@ -435,13 +455,9 @@ export default function ReportCardsPage() {
 
   const [currentPage, setCurrentPage] = React.useState(1);
   const itemsPerPage = 10;
-  
-  React.useEffect(() => { 
-    setCurrentPage(1); 
-  }, [filtered.length]);
-
   const totalPages = Math.ceil(filtered.length / itemsPerPage) || 1;
-  const paginated = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const safePage = Math.min(Math.max(1, currentPage), totalPages);
+  const paginated = filtered.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
 
   const currentDateStr = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
 
@@ -570,23 +586,23 @@ export default function ReportCardsPage() {
         {filtered.length > itemsPerPage && (
           <div style={{ padding: '0.75rem 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-elevated)', borderTop: '1px solid var(--border-light)', fontSize: '0.8rem' }}>
             <span style={{ color: 'var(--text-muted)' }}>
-              Menampilkan {(currentPage - 1) * itemsPerPage + 1} - {Math.min(currentPage * itemsPerPage, filtered.length)} dari {filtered.length} siswa
+              Menampilkan {(safePage - 1) * itemsPerPage + 1} - {Math.min(safePage * itemsPerPage, filtered.length)} dari {filtered.length} siswa
             </span>
             <div style={{ display: 'flex', gap: '0.35rem' }}>
               <button
                 className="btn btn-secondary btn-sm"
-                disabled={currentPage === 1}
+                disabled={safePage === 1}
                 onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                 style={{ padding: '0.2rem 0.6rem', fontSize: '0.75rem' }}
               >
                 &laquo; Prev
               </button>
               <span style={{ padding: '0.2rem 0.6rem', fontWeight: 700, display: 'flex', alignItems: 'center' }}>
-                Halaman {currentPage} dari {totalPages}
+                Halaman {safePage} dari {totalPages}
               </span>
               <button
                 className="btn btn-secondary btn-sm"
-                disabled={currentPage === totalPages}
+                disabled={safePage === totalPages}
                 onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                 style={{ padding: '0.2rem 0.6rem', fontSize: '0.75rem' }}
               >
@@ -1378,7 +1394,7 @@ export default function ReportCardsPage() {
                         <div style={{ border: '1px solid #0f172a', borderRadius: '4px', padding: '0.65rem' }}>
                           <h4 style={{ margin: '0 0 0.35rem 0', fontSize: '0.8rem', fontWeight: 800 }}>C. CATATAN PROFIL PELAJAR PANCASILA (P5)</h4>
                           <p style={{ margin: 0, fontSize: '0.72rem', color: '#475569', lineHeight: 1.45 }}>
-                            "{activeRapor.p5CharacterNote}"
+                            &ldquo;{activeRapor.p5CharacterNote}&rdquo;
                           </p>
                         </div>
                       </div>

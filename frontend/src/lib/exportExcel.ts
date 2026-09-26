@@ -4,7 +4,7 @@ import * as XLSX from 'xlsx';
  * Utility helper to export structured JSON data to a formatted Excel (.xlsx) file.
  */
 export function exportToExcel(
-  data: Record<string, any>[],
+  data: Record<string, unknown>[],
   filename: string,
   sheetName: string = 'Sheet1'
 ) {

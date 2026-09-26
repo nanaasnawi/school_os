@@ -1,5 +1,5 @@
 'use client';
-import { getTenantItem, setTenantItem, removeTenantItem } from '@/lib/tenant-storage';
+import { getTenantItem } from '@/lib/tenant-storage';
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -31,15 +31,15 @@ export default function StudentsPage() {
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [classFilter, setClassFilter] = useState('ALL');
   const [isLoading, setIsLoading] = useState(true);
-  const [schoolName, setSchoolName] = useState('');
+  const [schoolName, setSchoolName] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return getTenantItem('dapodik_nama_sekolah') || '';
+    }
+    return '';
+  });
 
   // Load school profile & students
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const sName = getTenantItem('dapodik_nama_sekolah');
-      if (sName) setSchoolName(sName);
-    }
-
     async function loadData() {
       setIsLoading(true);
       try {
@@ -50,10 +50,27 @@ export default function StudentsPage() {
           if (json?.data?.name) setSchoolName(json.data.name);
         }).catch(() => null);
 
-        const response = await listStudents({ query: { page_size: 500 } as any });
+        const response = await listStudents({ query: { page_size: 500 } });
         if (response.data && response.data.success && response.data.data && response.data.data.length > 0) {
-          const apiStudents = response.data.data || [];
-          const mapped: StudentItem[] = apiStudents.map((apiStudent: any, idx: number) => {
+          type RawStudent = {
+            id: string;
+            nisn: string;
+            nipd?: string;
+            full_name: string;
+            nik?: string;
+            gender?: string;
+            place_of_birth?: string;
+            date_of_birth?: string;
+            religion?: string;
+            alamat_jalan?: string;
+            no_hp?: string;
+            email?: string;
+            class_name?: string;
+            rombel?: string;
+            status?: string;
+          };
+          const apiStudents = response.data.data as RawStudent[];
+          const mapped: StudentItem[] = apiStudents.map((apiStudent) => {
             const name = apiStudent.full_name || '';
             const statusLower = (apiStudent.status || '').toLowerCase();
             const isMutated = statusLower === 'transferredout' || statusLower === 'transferred' || statusLower === 'mutasi_out';
@@ -274,12 +291,9 @@ export default function StudentsPage() {
   const [currentPage, setCurrentPage] = React.useState(1);
   const itemsPerPage = 10;
 
-  React.useEffect(() => {
-    setCurrentPage(1);
-  }, [filtered.length, sortField, sortOrder]);
-
   const totalPages = Math.ceil(sorted.length / itemsPerPage) || 1;
-  const paginated = sorted.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const safePage = Math.min(currentPage, totalPages);
+  const paginated = sorted.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
 
   return (
     <div className={styles.page}>
@@ -586,16 +600,16 @@ export default function StudentsPage() {
             <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Menampilkan {paginated.length} dari total {filtered.length} hasil</span>
             <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
               <button
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage(prev => prev - 1)}
+                disabled={safePage === 1}
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                 className="btn btn-secondary btn-sm"
               >
                 Prev
               </button>
-              <span style={{ fontSize: '0.8rem', fontWeight: 700, margin: '0 0.5rem' }}>Halaman {currentPage} dari {totalPages}</span>
+              <span style={{ fontSize: '0.8rem', fontWeight: 700, margin: '0 0.5rem' }}>Halaman {safePage} dari {totalPages}</span>
               <button
-                disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage(prev => prev + 1)}
+                disabled={safePage === totalPages}
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                 className="btn btn-secondary btn-sm"
               >
                 Next

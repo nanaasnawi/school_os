@@ -1,8 +1,7 @@
 'use client';
-import { getTenantItem, setTenantItem, removeTenantItem } from '@/lib/tenant-storage';
+import { getTenantItem } from '@/lib/tenant-storage';
 
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
 import styles from './guardians.module.css';
 import { listStudents } from '@/lib/sdk/sdk.gen';
 import { exportToExcel } from '@/lib/exportExcel';
@@ -22,8 +21,7 @@ export default function GuardiansPage() {
   const [guardians, setGuardians] = useState<GuardianItem[]>([]);
   const [search, setSearch] = useState('');
   const [relationFilter, setRelationFilter] = useState('ALL');
-  const [schoolName, setSchoolName] = useState('');
-  const [hasCustomData, setHasCustomData] = useState(false);
+  const [schoolName] = useState(() => (typeof window !== 'undefined' ? getTenantItem('dapodik_nama_sekolah') || '' : ''));
 
   // Modals & Form
   const [showAddModal, setShowAddModal] = useState(false);
@@ -43,11 +41,6 @@ export default function GuardiansPage() {
   };
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const stored = getTenantItem('dapodik_nama_sekolah');
-      if (stored) setSchoolName(stored);
-    }
-
     async function loadData() {
       try {
         const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
@@ -57,17 +50,25 @@ export default function GuardiansPage() {
 
         if (res.ok) {
           const json = await res.json();
+          type RawGuardian = {
+            id: string;
+            full_name: string;
+            relationship: string;
+            student_name: string;
+            student_nisn: string;
+            phone?: string;
+            is_real_data?: boolean;
+          };
           if (json?.data && json.data.length > 0) {
-            setGuardians(json.data.map((g: any) => ({
+            setGuardians((json.data as RawGuardian[]).map((g) => ({
               id: g.id,
               full_name: g.full_name,
               relationship: g.relationship,
               student_name: g.student_name,
               student_nisn: g.student_nisn,
               phone: g.phone || '-',
-              isRealData: g.is_real_data,
+              isRealData: Boolean(g.is_real_data),
             })));
-            setHasCustomData(json.data.some((g: any) => g.is_real_data));
             return;
           }
         }
@@ -77,10 +78,10 @@ export default function GuardiansPage() {
 
       // Fallback to student list if overview is empty
       try {
-        const studentRes = await listStudents({ query: { page_size: 500 } as any }).catch(() => null);
+        const studentRes = await listStudents({ query: { page_size: 500 } }).catch(() => null);
         if (studentRes?.data?.data) {
           const list = studentRes.data.data;
-          const mappedGuardians: GuardianItem[] = list.map((s: any, idx: number) => ({
+          const mappedGuardians: GuardianItem[] = list.map((s: { full_name: string; nisn: string }, idx: number) => ({
             id: String(idx + 1),
             full_name: '(Belum Ada Data Wali)',
             relationship: 'Belum Diisi',
@@ -101,7 +102,6 @@ export default function GuardiansPage() {
 
   const saveGuardiansState = (updatedList: GuardianItem[]) => {
     setGuardians(updatedList);
-    setHasCustomData(true);
     if (typeof window !== 'undefined') {
       localStorage.setItem('dapodik_guardians_data', JSON.stringify(updatedList));
     }
@@ -190,13 +190,10 @@ export default function GuardiansPage() {
 
   const [currentPage, setCurrentPage] = React.useState(1);
   const itemsPerPage = 10;
-  
-  React.useEffect(() => { 
-    setCurrentPage(1); 
-  }, [filtered.length]);
 
   const totalPages = Math.ceil(filtered.length / itemsPerPage) || 1;
-  const paginated = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const safePage = Math.min(currentPage, totalPages);
+  const paginated = filtered.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
 
   const realGuardiansCount = guardians.filter(g => g.isRealData).length;
 
@@ -353,16 +350,16 @@ export default function GuardiansPage() {
             <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Menampilkan {paginated.length} dari total {filtered.length} hasil</span>
             <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
               <button 
-                disabled={currentPage === 1} 
-                onClick={() => setCurrentPage(prev => prev - 1)}
+                disabled={safePage === 1} 
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                 className="btn btn-secondary btn-sm"
               >
                 Prev
               </button>
-              <span style={{ fontSize: '0.8rem', fontWeight: 700, margin: '0 0.5rem' }}>Halaman {currentPage} dari {totalPages}</span>
+              <span style={{ fontSize: '0.8rem', fontWeight: 700, margin: '0 0.5rem' }}>Halaman {safePage} dari {totalPages}</span>
               <button 
-                disabled={currentPage === totalPages} 
-                onClick={() => setCurrentPage(prev => prev + 1)}
+                disabled={safePage === totalPages} 
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                 className="btn btn-secondary btn-sm"
               >
                 Next

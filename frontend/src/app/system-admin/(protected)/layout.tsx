@@ -9,15 +9,20 @@ export default function SystemAdminLayout({ children }: { children: React.ReactN
   const pathname = usePathname();
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
-  const [isDark, setIsDark] = useState(false);
+  const [isDark, setIsDark] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('school_os_theme') === 'dark';
+    }
+    return false;
+  });
 
   useEffect(() => {
-    const saved = localStorage.getItem('school_os_theme');
-    if (saved === 'dark') {
-      setIsDark(true);
+    if (isDark) {
       document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
     }
-  }, []);
+  }, [isDark]);
 
   const toggleTheme = () => {
     const next = !isDark;

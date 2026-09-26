@@ -35,7 +35,15 @@ type LatencyPoint = {
 };
 
 // Custom tooltip for latency chart
-const LatencyTooltip = ({ active, payload, label }: any) => {
+const LatencyTooltip = ({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean;
+  payload?: Array<{ value: number }>;
+  label?: string;
+}) => {
   if (active && payload && payload.length) {
     const val = payload[0]?.value as number;
     const color = val < 20 ? '#10b981' : val < 100 ? '#f59e0b' : '#ef4444';
@@ -55,7 +63,6 @@ const LatencyTooltip = ({ active, payload, label }: any) => {
 
 export default function ServerHealthPage() {
   const [overview, setOverview] = useState<SystemOverview | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [latency, setLatency] = useState<number | null>(null);
   const [lastChecked, setLastChecked] = useState<Date>(new Date());
   const [latencyHistory, setLatencyHistory] = useState<LatencyPoint[]>([]);
@@ -106,15 +113,18 @@ export default function ServerHealthPage() {
         const next = [...prev, { time: timeLabel, latency: 0, label: timeLabel }];
         return next.slice(-20);
       });
-    } finally {
-      setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    checkHealth();
-    intervalRef.current = setInterval(checkHealth, 10000); // check every 10s
+    const timer = setTimeout(() => {
+      void checkHealth();
+    }, 0);
+    intervalRef.current = setInterval(() => {
+      void checkHealth();
+    }, 10000); // check every 10s
     return () => {
+      clearTimeout(timer);
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
   }, [checkHealth]);

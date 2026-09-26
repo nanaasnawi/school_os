@@ -19,14 +19,29 @@ type AssignmentQuestionForm = {
   choices: QuestionChoice[];
 };
 
+interface TeacherItem {
+  id: string;
+  full_name: string;
+}
+
+interface ClassItem {
+  id: string;
+  name: string;
+}
+
+interface SubjectItem {
+  id?: string;
+  code?: string;
+  name: string;
+}
+
 export default function CreateAssignmentPage() {
   const router = useRouter();
 
   // Master Data
-  const [teachers, setTeachers] = useState<any[]>([]);
-  const [classesList, setClassesList] = useState<any[]>([]);
-  const [subjectsList, setSubjectsList] = useState<any[]>([]);
-  const [isLoadingMaster, setIsLoadingMaster] = useState(true);
+  const [teachers, setTeachers] = useState<TeacherItem[]>([]);
+  const [classesList, setClassesList] = useState<ClassItem[]>([]);
+  const [subjectsList, setSubjectsList] = useState<SubjectItem[]>([]);
 
   // Assignment Format: STRUCTURED_QUESTIONS vs HOMEWORK_PR
   const [assignmentFormat, setAssignmentFormat] = useState<'STRUCTURED_QUESTIONS' | 'HOMEWORK_PR'>('STRUCTURED_QUESTIONS');
@@ -36,12 +51,11 @@ export default function CreateAssignmentPage() {
   const [subjectName, setSubjectName] = useState('');
   const [className, setClassName] = useState('');
   const [teacherName, setTeacherName] = useState('');
-  const [dueDate, setDueDate] = useState<string>(
+  const [dueDate, setDueDate] = useState<string>(() =>
     new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0]
   );
   const [dueTime, setDueTime] = useState<string>('23:59');
   const [instructions, setInstructions] = useState('');
-  const [description, setDescription] = useState('');
 
   // Structured Questions State
   const [questions, setQuestions] = useState<AssignmentQuestionForm[]>([
@@ -77,12 +91,11 @@ export default function CreateAssignmentPage() {
 
   useEffect(() => {
     async function loadMasterData() {
-      setIsLoadingMaster(true);
       try {
         const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
         const [teacherRes, classRes, subjectRes] = await Promise.all([
-          listTeachers({ query: { page_size: 100 } as any }).catch(() => null),
-          listClasses({ query: { page_size: 100 } as any }).catch(() => null),
+          listTeachers({ query: { page_size: 100 } }).catch(() => null),
+          listClasses({ query: { page_size: 100 } }).catch(() => null),
           fetch(getApiUrl('/api/v1/academic/subjects'), {
             headers: token ? { Authorization: `Bearer ${token}` } : {}
           }).then(r => r.ok ? r.json() : null).catch(() => null),
@@ -104,8 +117,6 @@ export default function CreateAssignmentPage() {
         }
       } catch (err) {
         console.error('Error loading master data for assignment create:', err);
-      } finally {
-        setIsLoadingMaster(false);
       }
     }
     loadMasterData();
@@ -187,7 +198,7 @@ export default function CreateAssignmentPage() {
       return;
     }
 
-    let payloadQuestions: any[] = [];
+    let payloadQuestions: Array<{ points?: number; [key: string]: unknown }> = [];
     if (assignmentFormat === 'STRUCTURED_QUESTIONS') {
       const validQuestions = questions.filter(q => q.question_text.trim().length > 0);
       if (validQuestions.length === 0) {
@@ -237,7 +248,7 @@ export default function CreateAssignmentPage() {
 
       const payload = {
         title: title.trim(),
-        description: `${subjectName || 'Umum'} • ${className || 'Semua Rombel'} • ${teacherName || 'Guru Pengampu'} • ${description || 'Tugas Pembelajaran Terstruktur'}`,
+        description: `${subjectName || 'Umum'} • ${className || 'Semua Rombel'} • ${teacherName || 'Guru Pengampu'} • ${instructions.slice(0, 100) || 'Tugas Pembelajaran Terstruktur'}`,
         instructions: instructions.trim() || undefined,
         max_score: computedMaxScore,
         due_at: `${dueDate}T${dueTime}:00Z`,
@@ -264,9 +275,10 @@ export default function CreateAssignmentPage() {
       setTimeout(() => {
         router.push('/dashboard/learning/assignments');
       }, 800);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error creating assignment:', err);
-      showToast(err?.message || '⚠️ Terjadi kendala saat menerbitkan tugas', 'error');
+      const message = err instanceof Error ? err.message : '⚠️ Terjadi kendala saat menerbitkan tugas';
+      showToast(message, 'error');
     } finally {
       setIsSubmitting(false);
     }

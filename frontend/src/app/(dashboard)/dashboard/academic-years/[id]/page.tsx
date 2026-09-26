@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import styles from './yearDetail.module.css';
@@ -46,23 +46,9 @@ export default function AcademicYearDetailPage() {
   const params = useParams();
   const id = (params?.id as string) || '1';
 
-  const [profile, setProfile] = useState<YearProfile>(DEFAULT_FALLBACK);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const demoMatch = DEMO_YEARS[id] || { ...DEFAULT_FALLBACK, id, name: `Year #${id}` };
-    setProfile(demoMatch);
-    setLoading(false);
+  const profile: YearProfile = useMemo(() => {
+    return DEMO_YEARS[id] || { ...DEFAULT_FALLBACK, id, name: `Year #${id}` };
   }, [id]);
-
-  if (loading) {
-    return (
-      <div className={styles.loadingScreen}>
-        <div className={styles.spinner} />
-        <span>Loading academic year details...</span>
-      </div>
-    );
-  }
 
   return (
     <div className={styles.page}>

@@ -12,7 +12,7 @@ export default function NewStudentPage() {
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
-  const [classesList, setClassesList] = useState<any[]>([]);
+  const [classesList, setClassesList] = useState<Array<{ id: string; name: string }>>([]);
 
   const [formData, setFormData] = useState({
     nisn: '',
@@ -27,9 +27,9 @@ export default function NewStudentPage() {
   });
 
   React.useEffect(() => {
-    listClasses({ query: { page_size: 100 } as any })
+    listClasses({ query: { page_size: 100 } })
       .then(res => {
-        const list = res?.data?.data;
+        const list = res?.data?.data as Array<{ id: string; name: string }> | undefined;
         if (Array.isArray(list) && list.length > 0) {
           setClassesList(list);
           setFormData(prev => ({ ...prev, assigned_class: list[0].name }));

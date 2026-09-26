@@ -1,5 +1,5 @@
 'use client';
-import { getTenantItem, setTenantItem, removeTenantItem } from '@/lib/tenant-storage';
+import { getTenantItem } from '@/lib/tenant-storage';
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -36,10 +36,21 @@ type GradebookStudent = {
   teacherNote: string;
 };
 
+interface ClassItem {
+  id: string;
+  name: string;
+}
+
+interface SubjectItem {
+  id?: string;
+  code?: string;
+  name: string;
+}
+
 export default function AssessmentsPage() {
   const [studentsGradebook, setStudentsGradebook] = useState<GradebookStudent[]>([]);
-  const [classesList, setClassesList] = useState<any[]>([]);
-  const [subjectsList, setSubjectsList] = useState<any[]>([]);
+  const [classesList, setClassesList] = useState<ClassItem[]>([]);
+  const [subjectsList, setSubjectsList] = useState<SubjectItem[]>([]);
   const [selectedClassFilter, setSelectedClassFilter] = useState('ALL');
   const [selectedSubjectFilter, setSelectedSubjectFilter] = useState('ALL');
   const [selectedPredicateFilter, setSelectedPredicateFilter] = useState('ALL');
@@ -70,8 +81,8 @@ export default function AssessmentsPage() {
       try {
         const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
         const [studentRes, classRes, subjectRes] = await Promise.all([
-          listStudents({ query: { page_size: 200 } as any }).catch(() => null),
-          listClasses({ query: { page_size: 100 } as any }).catch(() => null),
+          listStudents({ query: { page_size: 200 } }).catch(() => null),
+          listClasses({ query: { page_size: 100 } }).catch(() => null),
           fetch('/api/v1/academic/subjects', {
             headers: token ? { Authorization: `Bearer ${token}` } : {}
           }).then(r => r.ok ? r.json() : null).catch(() => null)
@@ -86,13 +97,13 @@ export default function AssessmentsPage() {
         if (subjectRes?.data && Array.isArray(subjectRes.data)) {
           setSubjectsList(subjectRes.data);
           if (subjectRes.data.length > 0) {
-            activeSubjects = subjectRes.data.map((s: any) => s.name);
+            activeSubjects = subjectRes.data.map((s: SubjectItem) => s.name);
           }
         }
 
         if (studentRes?.data?.data) {
           const list = studentRes.data.data;
-          const mapped: GradebookStudent[] = list.map((s: any, idx: number) => {
+          const mapped: GradebookStudent[] = list.map((s: { id: string; nisn: string; full_name: string; class_name?: string | null }, idx: number) => {
             const q = 75 + (idx % 22);
             const a = 78 + (idx % 18);
             const u1 = 72 + (idx % 24);
@@ -217,13 +228,9 @@ export default function AssessmentsPage() {
   // --- Client-Side Pagination ---
   const [currentPage, setCurrentPage] = React.useState(1);
   const itemsPerPage = 10;
-  
-  React.useEffect(() => { 
-    setCurrentPage(1); 
-  }, [filtered.length]);
-
   const totalPages = Math.ceil(filtered.length / itemsPerPage) || 1;
-  const paginated = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const safePage = Math.min(Math.max(1, currentPage), totalPages);
+  const paginated = filtered.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
   // ------------------------------
 
   return (
@@ -308,8 +315,8 @@ export default function AssessmentsPage() {
           style={{ width: '170px' }}
         >
           <option value="ALL">Semua Mata Pelajaran</option>
-          {subjectsList.map((s: any) => (
-            <option key={s.id || s.code} value={s.name}>{s.name}</option>
+          {subjectsList.map((s: SubjectItem) => (
+            <option key={s.id || s.code || s.name} value={s.name}>{s.name}</option>
           ))}
         </select>
 
@@ -408,9 +415,28 @@ export default function AssessmentsPage() {
           </table>
         )}
 
-        <div style={{ padding: '0.85rem 1.25rem', background: 'var(--bg-elevated)', borderTop: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-          <span>Menampilkan <strong>{filtered.length}</strong> dari {studentsGradebook.length} data nilai siswa</span>
-          <span>Akumulasi Rapor Otomatis Kurikulum Merdeka</span>
+        <div style={{ padding: '0.85rem 1.25rem', background: 'var(--bg-elevated)', borderTop: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+          <span>Menampilkan <strong>{paginated.length}</strong> dari {filtered.length} siswa (Halaman {safePage} dari {totalPages})</span>
+          {totalPages > 1 && (
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                disabled={safePage <= 1}
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              >
+                ← Prev
+              </button>
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                disabled={safePage >= totalPages}
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              >
+                Next →
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -528,7 +554,7 @@ export default function AssessmentsPage() {
                 <div style={{ background: 'var(--accent-dim)', border: '1px solid var(--border-subtle)', borderRadius: '10px', padding: '0.85rem 1.1rem' }}>
                   <div style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--accent)' }}>💬 Catatan Wali Kelas &amp; Perkembangan Karakter:</div>
                   <p style={{ margin: '0.3rem 0 0 0', fontSize: '0.8rem', color: '#1e3a8a', lineHeight: 1.4 }}>
-                    "{transcriptStudent.teacherNote}"
+                    &ldquo;{transcriptStudent.teacherNote}&rdquo;
                   </p>
                 </div>
               </div>

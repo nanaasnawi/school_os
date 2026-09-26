@@ -7,7 +7,6 @@ import { login as sdkLogin } from '@/lib/sdk';
 import { getApiUrl } from '@/lib/api';
 import { 
   Server, 
-  ShieldAlert, 
   RefreshCw, 
   Activity, 
   HardDrive, 
@@ -24,7 +23,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showAndroidModal, setShowAndroidModal] = useState(false);
-  const [schoolName, setSchoolName] = useState('Akselerasi Edu');
+  const schoolName = 'Akselerasi Edu';
   const [schoolLogoUrl, setSchoolLogoUrl] = useState('');
   const [maintenance, setMaintenance] = useState<{ is_active: boolean; message: string } | null>(null);
   const [checkingMaintenance, setCheckingMaintenance] = useState(false);
@@ -75,7 +74,25 @@ export default function LoginPage() {
   };
 
   useEffect(() => {
-    checkMaintenanceStatus();
+    let isMounted = true;
+    fetch(getApiUrl('/api/v1/system/maintenance-status'))
+      .then((res) => (res.ok ? res.json() : null))
+      .then((json) => {
+        if (!isMounted || !json) return;
+        if (json.data && json.data.maintenance_mode) {
+          setMaintenance({
+            is_active: true,
+            message: json.data.maintenance_message || 'Sistem sedang dalam peningkatan performa server terjadwal. Silakan kembali dalam beberapa menit.'
+          });
+        } else {
+          setMaintenance({ is_active: false, message: '' });
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // Auto-countdown timer for maintenance check
@@ -126,11 +143,12 @@ export default function LoginPage() {
         try {
           const payloadBase64 = token.split('.')[1];
           const payload = JSON.parse(atob(payloadBase64));
+          const responseData = data?.data as Record<string, unknown> | undefined;
           login(token, {
             id: payload.sub || '1',
             email: payload.email || email,
-            full_name: (data?.data as any)?.name || payload.full_name || '',
-            role: (data?.data as any)?.role || payload.role || 'Administrator',
+            full_name: (responseData?.name as string) || payload.full_name || '',
+            role: (responseData?.role as string) || payload.role || 'Administrator',
           });
         } catch {
           login(token, { id: '1', email, role: 'Administrator' });
@@ -138,26 +156,28 @@ export default function LoginPage() {
         router.push('/dashboard');
         return;
       }
+      const errObj = apiErr as { message?: string } | undefined;
       if (!response) {
         setError('Tidak dapat terhubung ke server. Pastikan server aplikasi sedang berjalan.');
       } else if (response.status === 401 || response.status === 400) {
         setError('Email atau kata sandi yang kamu masukkan salah.');
-      } else if (response.status === 503 || response.status === 423 || (apiErr as any)?.message?.includes('Mode Pemeliharaan')) {
+      } else if (response.status === 503 || response.status === 423 || errObj?.message?.includes('Mode Pemeliharaan')) {
         setMaintenance({
           is_active: true,
-          message: (apiErr as any)?.message || 'Sistem sedang dalam peningkatan performa server terjadwal.'
+          message: errObj?.message || 'Sistem sedang dalam peningkatan performa server terjadwal.'
         });
       } else {
         setError('Terjadi kesalahan pada server (Status: ' + response.status + ').');
       }
-    } catch (err: any) {
-      if (err?.message?.includes('Pemeliharaan') || err?.message?.includes('503')) {
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      if (message.includes('Pemeliharaan') || message.includes('503')) {
         setMaintenance({
           is_active: true,
-          message: err?.message || 'Mode pemeliharaan sedang aktif.'
+          message: message || 'Mode pemeliharaan sedang aktif.'
         });
       } else {
-        setError(err?.message || 'Gagal terhubung ke server.');
+        setError(message || 'Gagal terhubung ke server.');
       }
     } finally {
       setLoading(false);

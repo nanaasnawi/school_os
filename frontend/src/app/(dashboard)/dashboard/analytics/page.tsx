@@ -32,7 +32,7 @@ export default function AnalyticsPage() {
 
       {executedAction && (
         <div className="badge badge-success" style={{ padding: '0.65rem 1rem', fontSize: '0.8rem' }}>
-          ✓ Rekomendasi Keputusan "{executedAction}" Berhasil Dieksekusi! Notifikasi &amp; Jadwal Otomatis Diterbitkan.
+          ✓ Rekomendasi Keputusan &quot;{executedAction}&quot; Berhasil Dieksekusi! Notifikasi &amp; Jadwal Otomatis Diterbitkan.
         </div>
       )}
 

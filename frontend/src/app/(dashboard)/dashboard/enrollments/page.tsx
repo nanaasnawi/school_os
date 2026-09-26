@@ -1,5 +1,5 @@
 'use client';
-import { getTenantItem, setTenantItem, removeTenantItem } from '@/lib/tenant-storage';
+import { getTenantItem } from '@/lib/tenant-storage';
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -16,9 +16,14 @@ type EnrollmentItem = {
   is_active: boolean;
 };
 
+type ClassOption = {
+  id: string;
+  name: string;
+};
+
 export default function EnrollmentsPage() {
   const [enrollments, setEnrollments] = useState<EnrollmentItem[]>([]);
-  const [classesList, setClassesList] = useState<any[]>([]);
+  const [classesList, setClassesList] = useState<ClassOption[]>([]);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [classFilter, setClassFilter] = useState('ALL');
@@ -45,12 +50,12 @@ export default function EnrollmentsPage() {
     async function loadData() {
       try {
         const [studentRes, classRes] = await Promise.all([
-          listStudents({ query: { page_size: 500 } as any }).catch(() => null),
-          listClasses({ query: { page_size: 100 } as any }).catch(() => null),
+          listStudents({ query: { page_size: 500 } }).catch(() => null),
+          listClasses().catch(() => null),
         ]);
 
         if (classRes?.data?.data) {
-          const allRombels = classRes.data.data;
+          const allRombels = classRes.data.data as ClassOption[];
           setClassesList(allRombels);
           if (allRombels.length > 0) {
             setFormData(prev => ({ ...prev, class_name: allRombels[0].name }));
@@ -58,7 +63,7 @@ export default function EnrollmentsPage() {
         }
 
         if (studentRes?.data?.data) {
-          const mappedEnrollments: EnrollmentItem[] = studentRes.data.data.map((s: any, idx: number) => {
+          const mappedEnrollments: EnrollmentItem[] = studentRes.data.data.map((s, idx: number) => {
             const statusStr = String(s.status || '').toLowerCase();
             const isActive = statusStr.includes('aktif') || statusStr.includes('active') || statusStr === '';
             return {
@@ -130,13 +135,10 @@ export default function EnrollmentsPage() {
   // --- Client-Side Pagination ---
   const [currentPage, setCurrentPage] = React.useState(1);
   const itemsPerPage = 10;
-  
-  React.useEffect(() => { 
-    setCurrentPage(1); 
-  }, [filtered.length]);
 
   const totalPages = Math.ceil(filtered.length / itemsPerPage) || 1;
-  const paginated = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const safePage = Math.min(currentPage, totalPages);
+  const paginated = filtered.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
   // ------------------------------
 
   return (
@@ -245,7 +247,7 @@ export default function EnrollmentsPage() {
             ) : (
               <tr>
                 <td colSpan={5} style={{ textAlign: 'center', padding: '2.5rem 1rem', color: 'var(--text-muted)' }}>
-                  Tidak ada data pendaftaran siswa yang ditemukan.
+                  {isLoading ? 'Memuat data pendaftaran siswa...' : 'Tidak ada data pendaftaran siswa yang ditemukan.'}
                 </td>
               </tr>
             )}
@@ -256,16 +258,16 @@ export default function EnrollmentsPage() {
           <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Menampilkan {paginated.length} dari total {filtered.length} hasil</span>
           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
             <button 
-              disabled={currentPage === 1} 
-              onClick={() => setCurrentPage(prev => prev - 1)}
+              disabled={safePage <= 1} 
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
               className="btn btn-secondary btn-sm"
             >
               Prev
             </button>
-            <span style={{ fontSize: '0.8rem', fontWeight: 700, margin: '0 0.5rem' }}>Halaman {currentPage} dari {totalPages}</span>
+            <span style={{ fontSize: '0.8rem', fontWeight: 700, margin: '0 0.5rem' }}>Halaman {safePage} dari {totalPages}</span>
             <button 
-              disabled={currentPage === totalPages} 
-              onClick={() => setCurrentPage(prev => prev + 1)}
+              disabled={safePage >= totalPages} 
+              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
               className="btn btn-secondary btn-sm"
             >
               Next

@@ -12,7 +12,7 @@ export default function NewClassPage() {
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
-  const [teachersList, setTeachersList] = useState<any[]>([]);
+  const [teachersList, setTeachersList] = useState<Array<{ id: string; full_name: string }>>([]);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -22,12 +22,13 @@ export default function NewClassPage() {
   });
 
   React.useEffect(() => {
-    listTeachers({ query: { page_size: 100 } as any })
+    listTeachers({ query: { page_size: 100 } })
       .then(res => {
         const list = res?.data?.data;
         if (Array.isArray(list) && list.length > 0) {
-          setTeachersList(list);
-          setFormData(prev => ({ ...prev, homeroom_teacher: list[0].full_name }));
+          const typedList = list as Array<{ id: string; full_name: string }>;
+          setTeachersList(typedList);
+          setFormData(prev => ({ ...prev, homeroom_teacher: typedList[0].full_name }));
         }
       })
       .catch(() => null);
@@ -125,7 +126,7 @@ export default function NewClassPage() {
               disabled={loading}
             >
               {teachersList.length > 0 ? (
-                teachersList.map((t: any) => (
+                teachersList.map((t) => (
                   <option key={t.id} value={t.full_name}>
                     Guru {t.full_name}
                   </option>

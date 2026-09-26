@@ -22,6 +22,22 @@ type MaterialItem = {
   androidSynced: boolean;
 };
 
+interface TeacherItem {
+  id: string;
+  full_name: string;
+}
+
+interface ClassItem {
+  id: string;
+  name: string;
+}
+
+interface SubjectItem {
+  id?: string;
+  code?: string;
+  name: string;
+}
+
 const INITIAL_MATERIALS: MaterialItem[] = [];
 
 export default function LearningPage() {
@@ -39,19 +55,16 @@ function LearningPageContent() {
 
   const [materials, setMaterials] = useState<MaterialItem[]>(INITIAL_MATERIALS);
   const [viewRole, setViewRole] = useState<'teacher' | 'admin'>('teacher');
-  const [selectedClassFilter, setSelectedClassFilter] = useState<string>(classParam || 'ALL');
-  const [selectedSubjectFilter, setSelectedSubjectFilter] = useState<string>(subjectParam || 'ALL');
+  const [userClassFilter, setUserClassFilter] = useState<string | null>(null);
+  const [userSubjectFilter, setUserSubjectFilter] = useState<string | null>(null);
+
+  const selectedClassFilter = userClassFilter ?? classParam ?? 'ALL';
+  const selectedSubjectFilter = userSubjectFilter ?? subjectParam ?? 'ALL';
   
   // Teachers, Classes, and Subjects for dropdowns
-  const [teachers, setTeachers] = useState<any[]>([]);
-  const [classesList, setClassesList] = useState<any[]>([]);
-  const [subjectsList, setSubjectsList] = useState<any[]>([]);
-
-  // Sync query params when URL changes
-  useEffect(() => {
-    if (classParam) setSelectedClassFilter(classParam);
-    if (subjectParam) setSelectedSubjectFilter(subjectParam);
-  }, [classParam, subjectParam]);
+  const [teachers, setTeachers] = useState<TeacherItem[]>([]);
+  const [classesList, setClassesList] = useState<ClassItem[]>([]);
+  const [subjectsList, setSubjectsList] = useState<SubjectItem[]>([]);
 
   // Modal Input Materi State
   const [showAddModal, setShowAddModal] = useState(false);
@@ -83,8 +96,8 @@ function LearningPageContent() {
       try {
         const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
         const [teacherRes, classRes, subjectRes, materialsRes] = await Promise.all([
-          listTeachers({ query: { page_size: 100 } as any }).catch(() => null),
-          listClasses({ query: { page_size: 100 } as any }).catch(() => null),
+          listTeachers({ query: { page_size: 100 } }).catch(() => null),
+          listClasses({ query: { page_size: 100 } }).catch(() => null),
           fetch('/api/v1/academic/subjects', {
             headers: token ? { Authorization: `Bearer ${token}` } : {}
           }).then(r => r.ok ? r.json() : null).catch(() => null),
@@ -111,21 +124,21 @@ function LearningPageContent() {
         }
 
         if (materialsRes?.data && Array.isArray(materialsRes.data)) {
-          const mapped: MaterialItem[] = materialsRes.data.map((m: any) => {
-            const descParts = (m.description || '').split(' • ');
+          const mapped: MaterialItem[] = materialsRes.data.map((m: Record<string, unknown>) => {
+            const descParts = String(m.description || '').split(' • ');
             return {
-              id: m.id,
+              id: String(m.id),
               className: descParts[1] || 'Semua Rombel',
               subjectName: descParts[0] || 'Pelajaran Umum',
               teacherName: descParts[2] || 'Guru Pengampu',
-              chapterTitle: m.title,
-              contentType: (m.material_type?.toUpperCase() || 'PDF') as 'PDF' | 'VIDEO' | 'TEXT',
-              description: descParts.slice(3).join(' • ') || m.description || 'Modul pembelajaran digital',
+              chapterTitle: String(m.title || ''),
+              contentType: (String(m.material_type || 'PDF').toUpperCase()) as 'PDF' | 'VIDEO' | 'TEXT',
+              description: descParts.slice(3).join(' • ') || String(m.description || 'Modul pembelajaran digital'),
               topics: 'Pembelajaran Rombel',
-              youtubeUrl: m.external_url,
-              pdfFileName: m.storage_key,
+              youtubeUrl: m.external_url ? String(m.external_url) : undefined,
+              pdfFileName: m.storage_key ? String(m.storage_key) : undefined,
               imagePreviewUrl: '',
-              publishedAt: m.created_at ? new Date(m.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Hari ini',
+              publishedAt: m.created_at ? new Date(String(m.created_at)).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Hari ini',
               androidSynced: true,
             };
           });
@@ -344,7 +357,7 @@ startxref
           <button 
             className="btn btn-ghost btn-sm" 
             style={{ color: '#a5b4fc', fontSize: '0.78rem' }}
-            onClick={() => { setSelectedClassFilter('ALL'); setSelectedSubjectFilter('ALL'); }}
+            onClick={() => { setUserClassFilter('ALL'); setUserSubjectFilter('ALL'); }}
           >
             ✕ Reset Filter
           </button>
@@ -389,7 +402,7 @@ startxref
             <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Rombel:</span>
             <select
               value={selectedClassFilter}
-              onChange={e => setSelectedClassFilter(e.target.value)}
+              onChange={e => setUserClassFilter(e.target.value)}
               className="input"
               style={{ padding: '0.3rem 0.6rem', fontSize: '0.78rem', width: '140px' }}
             >
@@ -402,7 +415,7 @@ startxref
             <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Mata Pelajaran:</span>
             <select
               value={selectedSubjectFilter}
-              onChange={e => setSelectedSubjectFilter(e.target.value)}
+              onChange={e => setUserSubjectFilter(e.target.value)}
               className="input"
               style={{ padding: '0.3rem 0.6rem', fontSize: '0.78rem', width: '180px' }}
             >
@@ -427,6 +440,7 @@ startxref
 
               {m.imagePreviewUrl && (
                 <div style={{ width: '100%', height: '120px', borderRadius: '8px', overflow: 'hidden', marginTop: '0.5rem' }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={m.imagePreviewUrl} alt="Illustration" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 </div>
               )}
@@ -578,7 +592,7 @@ startxref
                     onChange={e => setNewMaterial({ ...newMaterial, teacherName: e.target.value })}
                     className="input"
                   >
-                    {teachers.map((t: any) => <option key={t.id} value={t.full_name}>{t.full_name}</option>)}
+                    {teachers.map((t: TeacherItem) => <option key={t.id} value={t.full_name}>{t.full_name}</option>)}
                   </select>
                 </div>
 
@@ -600,7 +614,7 @@ startxref
                   <label style={{ fontSize: '0.76rem', fontWeight: 700 }}>Tipe Format Materi *</label>
                   <select
                     value={newMaterial.contentType}
-                    onChange={e => setNewMaterial({ ...newMaterial, contentType: e.target.value as any })}
+                    onChange={e => setNewMaterial({ ...newMaterial, contentType: e.target.value as MaterialItem['contentType'] })}
                     className="input"
                   >
                     <option value="PDF">Dokumen Modul PDF (Tombol Upload File)</option>

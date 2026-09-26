@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { listTeachers, listClasses } from '@/lib/sdk/sdk.gen';
 import { getApiUrl } from '@/lib/api';
+import { useMaterials, useLibraryBooks, useSubjects, LibraryBook } from '@/features/material';
 
 type MaterialItem = {
   id: string;
@@ -26,36 +27,74 @@ type MaterialItem = {
   sourceType?: string;
 };
 
-const INITIAL_MATERIALS: MaterialItem[] = [];
-
 export default function MaterialsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSubject, setSelectedSubject] = useState('ALL');
-  const [materials, setMaterials] = useState<MaterialItem[]>(INITIAL_MATERIALS);
   
-  // Teachers, Classes, and Subjects for dropdowns
-  const [teachers, setTeachers] = useState<any[]>([]);
-  const [classesList, setClassesList] = useState<any[]>([]);
-  const [subjectsList, setSubjectsList] = useState<any[]>([]);
+  // TanStack Query integration
+  const { data: libraryBooks = [] } = useLibraryBooks();
+  const { data: subjectsList = [] } = useSubjects();
+  const { data: materialsData = [], refetch: refetchMaterials } = useMaterials();
+
+  // Teachers and Classes for dropdowns
+  const [teachers, setTeachers] = useState<Array<{ id: string; full_name: string }>>([]);
+  const [classesList, setClassesList] = useState<Array<{ id: string; name: string }>>([]);
 
   // Library Books State (Mode Perpustakaan Guru)
-  const [libraryBooks, setLibraryBooks] = useState<any[]>([]);
-  const [selectedBook, setSelectedBook] = useState<any | null>(null);
+  const [selectedBook, setSelectedBook] = useState<LibraryBook | null>(null);
   const [bookSearchQuery, setBookSearchQuery] = useState('');
   const [bookStartPage, setBookStartPage] = useState<number>(1);
   const [bookEndPage, setBookEndPage] = useState<number>(10);
   const [creationMode, setCreationMode] = useState<'MANUAL' | 'LIBRARY'>('MANUAL');
 
+  useEffect(() => {
+    if (libraryBooks.length > 0 && !selectedBook) {
+      setSelectedBook(libraryBooks[0]);
+    }
+  }, [libraryBooks, selectedBook]);
+
   const filteredBooks = useMemo(() => {
     if (!bookSearchQuery.trim()) return libraryBooks;
     const q = bookSearchQuery.toLowerCase();
-    return libraryBooks.filter((b: any) => 
+    return libraryBooks.filter((b) => 
       (b.title && b.title.toLowerCase().includes(q)) || 
       (b.subject_name && b.subject_name.toLowerCase().includes(q)) ||
       (b.grade_level_name && b.grade_level_name.toLowerCase().includes(q)) ||
       (b.author && b.author.toLowerCase().includes(q))
     );
   }, [libraryBooks, bookSearchQuery]);
+
+  const materials = useMemo<MaterialItem[]>(() => {
+    return materialsData.map((m) => {
+      const desc = m.description || '';
+      const descParts = desc.includes(' • ') ? desc.split(' • ') : [];
+      const isVideo = m.material_type === 'video' || (m.external_url && (m.external_url.includes('youtube.com') || m.external_url.includes('youtu.be')));
+      const isPdf = m.material_type === 'document' || m.material_type === 'pdf' || (m.external_url && m.external_url.toLowerCase().endsWith('.pdf')) || Boolean(m.storage_key) || m.source_type === 'LIBRARY';
+      const formatType: 'PDF' | 'VIDEO' | 'TEXT' = isVideo ? 'VIDEO' : isPdf ? 'PDF' : 'TEXT';
+
+      return {
+        id: m.id,
+        title: m.title,
+        subject: m.subject_name || descParts[0] || 'Umum',
+        grade: m.class_name || descParts[1] || 'Semua Rombel',
+        author: m.teacher_name || descParts[2] || 'Guru Pengampu',
+        format: formatType,
+        size: m.start_page && m.end_page 
+          ? `Hal. ${m.start_page}–${m.end_page}` 
+          : m.storage_key || (isVideo ? 'Video Online' : '1.8 MB'),
+        downloads: 12,
+        completedCount: m.completed_count || 0,
+        date: m.created_at ? new Date(m.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Hari ini',
+        youtubeUrl: isVideo ? m.external_url : undefined,
+        externalUrl: m.external_url,
+        pdfFileName: isPdf ? (m.storage_key || (m.external_url ? m.external_url.split('/').pop() : 'Buku_Kurikulum.pdf')) : undefined,
+        description: descParts.length > 3 ? descParts.slice(3).join(' • ') : desc,
+        startPage: m.start_page,
+        endPage: m.end_page,
+        sourceType: m.source_type,
+      };
+    });
+  }, [materialsData]);
 
   // Modal Input State
   const [showAddModal, setShowAddModal] = useState(false);
@@ -83,94 +122,46 @@ export default function MaterialsPage() {
   };
 
   useEffect(() => {
-    async function loadData() {
+    async function loadMetadata() {
       try {
-        const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
-        const [teacherRes, classRes, subjectRes, materialsRes, libraryRes] = await Promise.all([
-          listTeachers({ query: { page_size: 100 } as any }).catch(() => null),
-          listClasses({ query: { page_size: 100 } as any }).catch(() => null),
-          fetch(getApiUrl('/api/v1/academic/subjects'), {
-            headers: token ? { Authorization: `Bearer ${token}` } : {}
-          }).then(r => r.ok ? r.json() : null).catch(() => null),
-          fetch(getApiUrl('/api/v1/learning/materials'), {
-            headers: token ? { Authorization: `Bearer ${token}` } : {}
-          }).then(r => r.ok ? r.json() : null).catch(() => null),
-          fetch(getApiUrl('/api/v1/learning/library/books'), {
-            headers: token ? { Authorization: `Bearer ${token}` } : {}
-          }).then(r => r.ok ? r.json() : null).catch(() => null)
+        const [teacherRes, classRes] = await Promise.all([
+          listTeachers({ query: { page_size: 100 } }).catch(() => null),
+          listClasses().catch(() => null),
         ]);
 
-        if (libraryRes?.data && Array.isArray(libraryRes.data)) {
-          setLibraryBooks(libraryRes.data);
-          if (libraryRes.data.length > 0) {
-            setSelectedBook(libraryRes.data[0]);
-          }
-        }
-
-        const teacherList = Array.isArray((teacherRes as any)?.data?.data)
-          ? (teacherRes as any).data.data
-          : Array.isArray((teacherRes as any)?.data)
-            ? (teacherRes as any).data
+        const teacherList = Array.isArray(teacherRes?.data?.data)
+          ? teacherRes.data.data
+          : Array.isArray(teacherRes?.data)
+            ? teacherRes.data
             : [];
         if (teacherList.length > 0) {
-          setTeachers(teacherList);
-          setNewMaterial(prev => ({ ...prev, author: prev.author || teacherList[0].full_name }));
+          const typedTeachers = teacherList as Array<{ id: string; full_name: string }>;
+          setTeachers(typedTeachers);
+          setNewMaterial(prev => ({ ...prev, author: prev.author || typedTeachers[0].full_name }));
         }
 
-        const cList = Array.isArray((classRes as any)?.data?.data)
-          ? (classRes as any).data.data
-          : Array.isArray((classRes as any)?.data)
-            ? (classRes as any).data
+        const cList = Array.isArray(classRes?.data?.data)
+          ? classRes.data.data
+          : Array.isArray(classRes?.data)
+            ? classRes.data
             : [];
         if (cList.length > 0) {
-          setClassesList(cList);
-          setNewMaterial(prev => ({ ...prev, grade: prev.grade || cList[0].name }));
-        }
-
-        if (subjectRes?.data && Array.isArray(subjectRes.data)) {
-          setSubjectsList(subjectRes.data);
-          if (subjectRes.data.length > 0) {
-            setNewMaterial(prev => ({ ...prev, subject: prev.subject || subjectRes.data[0].name }));
-          }
-        }
-
-        if (materialsRes?.data && Array.isArray(materialsRes.data)) {
-          const mapped: MaterialItem[] = materialsRes.data.map((m: any) => {
-            const descParts = (m.description || '').includes(' • ') ? m.description.split(' • ') : [];
-            const isVideo = m.material_type === 'video' || (m.external_url && (m.external_url.includes('youtube.com') || m.external_url.includes('youtu.be')));
-            const isPdf = m.material_type === 'document' || m.material_type === 'pdf' || (m.external_url && m.external_url.toLowerCase().endsWith('.pdf')) || Boolean(m.storage_key) || m.source_type === 'LIBRARY';
-            const formatType: 'PDF' | 'VIDEO' | 'TEXT' = isVideo ? 'VIDEO' : isPdf ? 'PDF' : 'TEXT';
-
-            return {
-              id: m.id,
-              title: m.title,
-              subject: m.subject_name || descParts[0] || 'Umum',
-              grade: m.class_name || descParts[1] || 'Semua Rombel',
-              author: m.teacher_name || descParts[2] || 'Guru Pengampu',
-              format: formatType,
-              size: m.start_page && m.end_page 
-                ? `Hal. ${m.start_page}–${m.end_page}` 
-                : m.storage_key || (isVideo ? 'Video Online' : '1.8 MB'),
-              downloads: 12,
-              completedCount: m.completed_count || 0,
-              date: m.created_at ? new Date(m.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Hari ini',
-              youtubeUrl: isVideo ? m.external_url : undefined,
-              externalUrl: m.external_url,
-              pdfFileName: isPdf ? (m.storage_key || (m.external_url ? m.external_url.split('/').pop() : 'Buku_Kurikulum.pdf')) : undefined,
-              description: descParts.length > 3 ? descParts.slice(3).join(' • ') : m.description,
-              startPage: m.start_page,
-              endPage: m.end_page,
-              sourceType: m.source_type,
-            };
-          });
-          setMaterials(mapped);
+          const typedClasses = cList as Array<{ id: string; name: string }>;
+          setClassesList(typedClasses);
+          setNewMaterial(prev => ({ ...prev, grade: prev.grade || typedClasses[0].name }));
         }
       } catch (err) {
-        console.error('Error loading learning data:', err);
+        console.error('Error loading metadata:', err);
       }
     }
-    loadData();
+    loadMetadata();
   }, []);
+
+  useEffect(() => {
+    if (subjectsList.length > 0 && !newMaterial.subject) {
+      setNewMaterial(prev => ({ ...prev, subject: subjectsList[0].name }));
+    }
+  }, [subjectsList, newMaterial.subject]);
 
   const handlePdfFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -258,25 +249,7 @@ export default function MaterialsPage() {
       });
 
       if (res.ok) {
-        const resJson = await res.json();
-        const created = resJson.data;
-        const item: MaterialItem = {
-          id: created?.id || `mat-${Date.now()}`,
-          title: newMaterial.title,
-          subject: newMaterial.subject,
-          grade: newMaterial.grade,
-          author: newMaterial.author,
-          format: newMaterial.format,
-          size: newMaterial.format === 'VIDEO' ? '32.0 MB' : '2.1 MB',
-          downloads: 0,
-          completedCount: 0,
-          date: 'Hari ini',
-          youtubeUrl: externalUrl ? externalUrl : undefined,
-          pdfFileName: storageKey ? storageKey : undefined,
-          imagePreviewUrl: newMaterial.imagePreviewUrl,
-          description: newMaterial.description,
-        };
-        setMaterials(prev => [item, ...prev]);
+        await refetchMaterials();
         setShowAddModal(false);
         setSelectedFile(null);
         showToast('✓ Materi berhasil dipublish');
@@ -300,7 +273,7 @@ export default function MaterialsPage() {
       return;
     }
     const targetSubject = subjectsList.find(s => s.name === newMaterial.subject);
-    const targetTeacher = teachers.find((t: any) => t.full_name === newMaterial.author) || teachers[0];
+    const targetTeacher = teachers.find(t => t.full_name === newMaterial.author) || teachers[0];
     try {
       const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
       const startP = Math.max(1, Number(bookStartPage) || 1);
@@ -326,26 +299,7 @@ export default function MaterialsPage() {
       });
 
       if (res.ok) {
-        const resJson = await res.json();
-        const item: MaterialItem = {
-          id: resJson.data || `mat-${Date.now()}`,
-          title: payload.title,
-          subject: newMaterial.subject || selectedBook.subject_name || 'Umum',
-          grade: targetClass.name,
-          author: targetTeacher?.full_name || newMaterial.author || 'Guru Pengampu',
-          format: 'PDF',
-          size: `Hal. ${startP}–${endP}`,
-          downloads: 0,
-          completedCount: 0,
-          date: 'Hari ini',
-          description: payload.instructions,
-          externalUrl: selectedBook.file_url,
-          pdfFileName: selectedBook.file_url ? selectedBook.file_url.split('/').pop() : `${selectedBook.title}.pdf`,
-          startPage: startP,
-          endPage: endP,
-          sourceType: 'LIBRARY',
-        };
-        setMaterials(prev => [item, ...prev]);
+        await refetchMaterials();
         setShowAddModal(false);
         showToast('✓ Tugas materi bacaan buku perpustakaan berhasil diterbitkan');
       } else {
@@ -365,7 +319,7 @@ export default function MaterialsPage() {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
       if (res.ok) {
-        setMaterials(prev => prev.filter(m => m.id !== id));
+        await refetchMaterials();
         showToast('✓ Materi berhasil dihapus');
       } else {
         showToast('⚠️ Gagal menghapus materi');
@@ -716,8 +670,8 @@ startxref
                         const b = libraryBooks.find(item => item.id === e.target.value);
                         if (b) {
                           setSelectedBook(b);
-                          if (b.subject_name && subjectsList.some(s => s.name.toLowerCase() === b.subject_name.toLowerCase())) {
-                            setNewMaterial(prev => ({ ...prev, subject: b.subject_name }));
+                          if (b.subject_name && subjectsList.some(s => s.name.toLowerCase() === b.subject_name?.toLowerCase())) {
+                            setNewMaterial(prev => ({ ...prev, subject: b.subject_name || prev.subject }));
                           }
                         }
                       }}
@@ -725,7 +679,7 @@ startxref
                       style={{ fontWeight: 800 }}
                     >
                       {filteredBooks.length > 0 ? (
-                        filteredBooks.map((b: any) => (
+                        filteredBooks.map((b: LibraryBook) => (
                           <option key={b.id} value={b.id}>
                             {b.title} {b.grade_level_name ? `[${b.grade_level_name}]` : ''} — {b.publisher || 'Kemendikbudristek'} ({b.total_pages} Hal.)
                           </option>

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { listTeachers, listClasses } from '@/lib/sdk/sdk.gen';
 import { getApiUrl } from '@/lib/api';
+import { useLibraryBooks, useSubjects, LibraryBook, AcademicSubject } from '@/features/material';
 
 export default function CreateMaterialPage() {
   const router = useRouter();
@@ -12,15 +13,15 @@ export default function CreateMaterialPage() {
   // Mode: LIBRARY (600+ Buku Kemendikbudristek) vs MANUAL (Upload File / Video / Teks)
   const [creationMode, setCreationMode] = useState<'LIBRARY' | 'MANUAL'>('LIBRARY');
 
-  // Master Data
+  // Master Data via TanStack Query (ARCH-01 & ARCH-02)
+  const { data: libraryBooks = [], isLoading: isLoadingBooks } = useLibraryBooks();
+  const { data: subjectsList = [], isLoading: isLoadingSubjects } = useSubjects();
   const [teachers, setTeachers] = useState<any[]>([]);
   const [classesList, setClassesList] = useState<any[]>([]);
-  const [subjectsList, setSubjectsList] = useState<any[]>([]);
-  const [libraryBooks, setLibraryBooks] = useState<any[]>([]);
   const [loadingInitial, setLoadingInitial] = useState(true);
 
   // Library Mode State
-  const [selectedBook, setSelectedBook] = useState<any | null>(null);
+  const [selectedBook, setSelectedBook] = useState<LibraryBook | null>(null);
   const [bookSearchQuery, setBookSearchQuery] = useState('');
   const [selectedSubjectFilter, setSelectedSubjectFilter] = useState('ALL');
   const [selectedGradeFilter, setSelectedGradeFilter] = useState('ALL');
@@ -50,19 +51,12 @@ export default function CreateMaterialPage() {
   };
 
   useEffect(() => {
-    async function loadMasterData() {
+    async function loadSdkData() {
       setLoadingInitial(true);
       try {
-        const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
-        const [teacherRes, classRes, subjectRes, libraryRes] = await Promise.all([
+        const [teacherRes, classRes] = await Promise.all([
           listTeachers({ query: { page_size: 100 } as any }).catch(() => null),
           listClasses({ query: { page_size: 100 } as any }).catch(() => null),
-          fetch(getApiUrl('/api/v1/academic/subjects'), {
-            headers: token ? { Authorization: `Bearer ${token}` } : {}
-          }).then(r => r.ok ? r.json() : null).catch(() => null),
-          fetch(getApiUrl('/api/v1/learning/library/books'), {
-            headers: token ? { Authorization: `Bearer ${token}` } : {}
-          }).then(r => r.ok ? r.json() : null).catch(() => null)
         ]);
 
         if (teacherRes?.data?.data) {
@@ -75,29 +69,22 @@ export default function CreateMaterialPage() {
           setClassesList(list);
           if (list.length > 0) setTargetGrade(list[0].name);
         }
-        if (subjectRes?.data && Array.isArray(subjectRes.data)) {
-          setSubjectsList(subjectRes.data);
-          if (subjectRes.data.length > 0) setSubject(subjectRes.data[0].name);
-        }
-        if (libraryRes?.data && Array.isArray(libraryRes.data)) {
-          setLibraryBooks(libraryRes.data);
-          if (libraryRes.data.length > 0) {
-            setSelectedBook(libraryRes.data[0]);
-            setTitle(`Materi Bacaan: ${libraryRes.data[0].title} (Hal. 1–15)`);
-          }
-        }
       } catch (err) {
-        console.error('Error loading master data:', err);
+        console.error('Error loading SDK master data:', err);
       } finally {
         setLoadingInitial(false);
       }
     }
-    loadMasterData();
+    loadSdkData();
   }, []);
+
+  // Derived book & subject when TanStack Query caches populate
+  const currentBook = selectedBook ?? (libraryBooks.length > 0 ? libraryBooks[0] : null);
+  const currentSubject = subject || (subjectsList.length > 0 ? subjectsList[0].name : '');
 
   // Filtered Books for Library Catalog
   const filteredBooks = useMemo(() => {
-    return libraryBooks.filter((b: any) => {
+    return libraryBooks.filter((b: LibraryBook) => {
       const q = bookSearchQuery.toLowerCase().trim();
       const matchSearch = !q || (
         (b.title && b.title.toLowerCase().includes(q)) ||
@@ -122,19 +109,20 @@ export default function CreateMaterialPage() {
   // Distinct subjects from books
   const bookSubjects = useMemo(() => {
     const set = new Set<string>();
-    libraryBooks.forEach((b: any) => {
+    libraryBooks.forEach((b: LibraryBook) => {
       if (b.subject_name) set.add(b.subject_name);
     });
     return Array.from(set).sort();
   }, [libraryBooks]);
 
-  const handleSelectBook = (book: any) => {
+  const handleSelectBook = (book: LibraryBook) => {
     setSelectedBook(book);
     const startP = Math.max(1, bookStartPage || 1);
     const endP = Math.min(book.total_pages || 100, Math.max(startP, bookEndPage || 15));
     setTitle(`Materi Bacaan: ${book.title} (Hal. ${startP}–${endP})`);
     if (book.subject_name) {
-      const matched = subjectsList.find(s => s.name.toLowerCase() === book.subject_name.toLowerCase());
+      const subjectName = book.subject_name.toLowerCase();
+      const matched = subjectsList.find(s => s.name && s.name.toLowerCase() === subjectName);
       if (matched) setSubject(matched.name);
     }
   };
@@ -142,8 +130,8 @@ export default function CreateMaterialPage() {
   const handlePageChange = (start: number, end: number) => {
     setBookStartPage(start);
     setBookEndPage(end);
-    if (selectedBook) {
-      setTitle(`Materi Bacaan: ${selectedBook.title} (Hal. ${start}–${end})`);
+    if (currentBook) {
+      setTitle(`Materi Bacaan: ${currentBook.title} (Hal. ${start}–${end})`);
     }
   };
 
@@ -160,33 +148,29 @@ export default function CreateMaterialPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim()) {
-      showToast('⚠️ Silakan masukkan judul modul pembelajaran', 'warning');
-      return;
-    }
-
     const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
     const targetClassObj = classesList.find(c => c.name === targetGrade) || classesList[0];
     const targetTeacherObj = teachers.find(t => t.full_name === author) || teachers[0];
-    const targetSubjectObj = subjectsList.find(s => s.name === subject);
+    const targetSubjectObj = subjectsList.find(s => s.name === currentSubject);
 
     setIsSubmitting(true);
 
     try {
       if (creationMode === 'LIBRARY') {
-        if (!selectedBook) {
+        if (!currentBook) {
           showToast('⚠️ Silakan pilih salah satu buku dari katalog perpustakaan', 'warning');
           setIsSubmitting(false);
           return;
         }
 
         const startP = Math.max(1, Number(bookStartPage) || 1);
-        const endP = Math.min(selectedBook.total_pages || 300, Math.max(startP, Number(bookEndPage) || 10));
+        const endP = Math.min(currentBook.total_pages || 300, Math.max(startP, Number(bookEndPage) || 10));
+        const finalTitle = title.trim() || `Materi Bacaan: ${currentBook.title} (Hal. ${startP}–${endP})`;
 
         const payload = {
-          book_id: selectedBook.id,
-          title: title.trim(),
-          instructions: description.trim() || `Silakan baca dan pelajari buku "${selectedBook.title}" halaman ${startP} sampai ${endP}.`,
+          book_id: currentBook.id,
+          title: finalTitle,
+          instructions: description.trim() || `Silakan baca dan pelajari buku "${currentBook.title}" halaman ${startP} sampai ${endP}.`,
           class_id: targetClassObj?.id || null,
           subject_id: targetSubjectObj?.id || null,
           teacher_id: targetTeacherObj?.id || null,
@@ -502,8 +486,8 @@ export default function CreateMaterialPage() {
                 background: 'var(--bg-elevated)'
               }}>
                 {filteredBooks.length > 0 ? (
-                  filteredBooks.map((book: any) => {
-                    const isSelected = selectedBook?.id === book.id;
+                  filteredBooks.map((book: LibraryBook) => {
+                    const isSelected = currentBook?.id === book.id;
                     return (
                       <div
                         key={book.id}
@@ -572,7 +556,7 @@ export default function CreateMaterialPage() {
               </div>
 
               {/* Selected Book Confirmation & Page Range Config */}
-              {selectedBook && (
+              {currentBook && (
                 <div style={{
                   background: 'var(--accent-light)',
                   border: '1.5px solid var(--accent)',
@@ -587,16 +571,16 @@ export default function CreateMaterialPage() {
                       <span style={{ fontSize: '1.4rem' }}>📖</span>
                       <div>
                         <div style={{ fontWeight: 800, fontSize: '0.88rem', color: '#0369a1' }}>
-                          Buku Terpilih: {selectedBook.title}
+                          Buku Terpilih: {currentBook.title}
                         </div>
                         <div style={{ fontSize: '0.75rem', color: '#0284c7' }}>
-                          {selectedBook.publisher || 'Kemendikbudristek'} • Total {selectedBook.total_pages || 100} Halaman
+                          {currentBook.publisher || 'Kemendikbudristek'} • Total {currentBook.total_pages || 100} Halaman
                         </div>
                       </div>
                     </div>
-                    {selectedBook.file_url && (
+                    {currentBook.file_url && (
                       <a
-                        href={selectedBook.file_url}
+                        href={currentBook.file_url}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="btn btn-secondary btn-sm"
@@ -609,14 +593,14 @@ export default function CreateMaterialPage() {
 
                   <div style={{ borderTop: '1px dashed rgba(14, 165, 233, 0.3)', paddingTop: '0.75rem', display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
                     <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#0369a1' }}>
-                      Tentukan Rentang Halaman Materi Wajib Dibaca:
+                       Tentukan Rentang Halaman Materi Wajib Dibaca:
                     </span>
                     <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
                       <span style={{ fontSize: '0.75rem', color: '#0284c7' }}>Dari Hal.</span>
                       <input
                         type="number"
                         min={1}
-                        max={selectedBook.total_pages || 500}
+                        max={currentBook.total_pages || 500}
                         value={bookStartPage}
                         onChange={e => handlePageChange(Math.max(1, parseInt(e.target.value) || 1), bookEndPage)}
                         className="input"
@@ -626,7 +610,7 @@ export default function CreateMaterialPage() {
                       <input
                         type="number"
                         min={bookStartPage}
-                        max={selectedBook.total_pages || 500}
+                        max={currentBook.total_pages || 500}
                         value={bookEndPage}
                         onChange={e => handlePageChange(bookStartPage, Math.max(bookStartPage, parseInt(e.target.value) || 1))}
                         className="input"

@@ -1,5 +1,5 @@
 'use client';
-import { getTenantItem, setTenantItem, removeTenantItem } from '@/lib/tenant-storage';
+import { getTenantItem } from '@/lib/tenant-storage';
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -16,14 +16,19 @@ type AuditLogItem = {
   ip: string;
   deviceInfo: string;
   status: 'SUCCESS' | 'WARNING' | 'FAILED';
-  payloadJson: any;
+  payloadJson: Record<string, unknown> | null;
 };
 
 export default function ActivityLogsPage() {
   const [logs, setLogs] = useState<AuditLogItem[]>([]);
   const [platformFilter, setPlatformFilter] = useState<string>('ALL');
   const [search, setSearch] = useState('');
-  const [schoolName, setSchoolName] = useState('');
+  const [schoolName, setSchoolName] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return getTenantItem('dapodik_nama_sekolah') || '';
+    }
+    return '';
+  });
   const [inspectedLog, setInspectedLog] = useState<AuditLogItem | null>(null);
 
   // Toast
@@ -34,15 +39,6 @@ export default function ActivityLogsPage() {
   };
 
   useEffect(() => {
-    let activeSchool = '';
-    if (typeof window !== 'undefined') {
-      const stored = getTenantItem('dapodik_nama_sekolah');
-      if (stored) {
-        activeSchool = stored;
-        setSchoolName(stored);
-      }
-    }
-
     async function loadData() {
       try {
         const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
@@ -60,7 +56,7 @@ export default function ActivityLogsPage() {
     loadData();
 
     // Load persisted real audit logs if created by system transactions
-    const refreshLogs = (e?: any) => {
+    const refreshLogs = (e?: Event) => {
       if (typeof window !== 'undefined') {
         try {
           const storedLogs = localStorage.getItem('school_os_audit_logs');
@@ -68,7 +64,8 @@ export default function ActivityLogsPage() {
           if (!Array.isArray(currentList)) currentList = [];
 
           if (e && e.type === 'dapodik_data_updated') {
-            const count = e.detail?.count || 0;
+            const customEvt = e as CustomEvent<{ count?: number }>;
+            const count = customEvt.detail?.count || 0;
             const newAuditItem: AuditLogItem = {
               id: `log-${Date.now()}`,
               eventId: `evt_${Date.now()}`,
@@ -135,12 +132,9 @@ export default function ActivityLogsPage() {
   const [currentPage, setCurrentPage] = React.useState(1);
   const itemsPerPage = 10;
   
-  React.useEffect(() => { 
-    setCurrentPage(1); 
-  }, [filtered.length]);
-
   const totalPages = Math.ceil(filtered.length / itemsPerPage) || 1;
-  const paginated = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const safePage = Math.min(currentPage, totalPages);
+  const paginated = filtered.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
 
   return (
     <div className={styles.page}>

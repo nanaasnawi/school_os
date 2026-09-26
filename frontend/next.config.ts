@@ -2,10 +2,6 @@ import type { NextConfig } from 'next';
 import path from 'path';
 
 const nextConfig: NextConfig = {
-  typescript: {
-    // Prevent build failures from strict type mismatches on Vercel
-    ignoreBuildErrors: true,
-  },
   turbopack: {
     root: path.resolve(__dirname),
   },

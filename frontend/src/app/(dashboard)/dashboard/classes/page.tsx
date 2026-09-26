@@ -1,10 +1,9 @@
 'use client';
-import { getTenantItem, setTenantItem, removeTenantItem } from '@/lib/tenant-storage';
+import { getTenantItem } from '@/lib/tenant-storage';
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import styles from './classes.module.css';
-import { listClasses, listTeachers, listStudents } from '@/lib/sdk/sdk.gen';
 import { getDapodikSyncRecords } from '@/lib/dapodik-bridge';
 import { exportToExcel } from '@/lib/exportExcel';
 
@@ -44,7 +43,7 @@ export default function ClassesPage() {
 
         const teacherMap = new Map<string, string>();
         const dynamicTeachers: { id: string; name: string }[] = [];
-        teacherArray.forEach((t: any) => {
+        teacherArray.forEach((t: { id?: string; full_name?: string }) => {
           if (t.id && t.full_name) {
             const nameUpper = t.full_name.toUpperCase();
             teacherMap.set(t.id, nameUpper);
@@ -54,7 +53,7 @@ export default function ClassesPage() {
         setTeachersList(dynamicTeachers);
 
         const studentCountMap = new Map<string, number>();
-        studentArray.forEach((s: any) => {
+        studentArray.forEach((s: { class_name?: string }) => {
           const className = s.class_name;
           if (className) {
             studentCountMap.set(className, (studentCountMap.get(className) || 0) + 1);
@@ -62,8 +61,8 @@ export default function ClassesPage() {
         });
 
         if (classArray.length > 0) {
-          const actualClasses = classArray.filter((c: any) => !c.name?.toUpperCase().startsWith('KKA'));
-          const mapped: ClassItem[] = actualClasses.map((c: any) => {
+          const actualClasses = classArray.filter((c: { name?: string }) => !c.name?.toUpperCase().startsWith('KKA'));
+          const mapped: ClassItem[] = actualClasses.map((c: { id: string; name: string; homeroom_teacher_id?: string; room?: string }) => {
             const teacherName = c.homeroom_teacher_id ? teacherMap.get(c.homeroom_teacher_id) : null;
             const count = studentCountMap.get(c.name) || 0;
             let category: ClassItem['category'] = 'REGULER';
@@ -248,7 +247,7 @@ export default function ClassesPage() {
           }),
         }).catch(() => null);
       }
-    } catch (_) {}
+    } catch {}
 
     setClassesList(classesList.map(c => c.id === editClass.id ? {
       ...c,
@@ -294,12 +293,9 @@ export default function ClassesPage() {
   const [currentPage, setCurrentPage] = React.useState(1);
   const itemsPerPage = 24;
   
-  React.useEffect(() => { 
-    setCurrentPage(1); 
-  }, [filtered.length, gradeFilter, search]);
-
   const totalPages = Math.ceil(filtered.length / itemsPerPage) || 1;
-  const paginated = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const safePage = Math.min(currentPage, totalPages);
+  const paginated = filtered.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
 
   const getBadgeStyle = (category: ClassItem['category']) => {
     if (category === 'PAKET_B') return 'badge-info';
