@@ -23,7 +23,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showAndroidModal, setShowAndroidModal] = useState(false);
-  const schoolName = 'Akselerasi Edu';
+  const [schoolName, setSchoolName] = useState('School OS');
   const [schoolLogoUrl, setSchoolLogoUrl] = useState('');
   const [maintenance, setMaintenance] = useState<{ is_active: boolean; message: string } | null>(null);
   const [checkingMaintenance, setCheckingMaintenance] = useState(false);
@@ -90,6 +90,20 @@ export default function LoginPage() {
       })
       .catch(() => {});
 
+    fetch(getApiUrl('/api/v1/schools/info'))
+      .then((res) => (res.ok ? res.json() : null))
+      .then((json) => {
+        if (!isMounted || !json?.data) return;
+        if (json.data.name) {
+          setSchoolName(json.data.name);
+          document.title = `Masuk — ${json.data.name}`;
+        }
+        if (json.data.logo_url) {
+          setSchoolLogoUrl(json.data.logo_url);
+        }
+      })
+      .catch(() => {});
+
     return () => {
       isMounted = false;
     };
@@ -129,7 +143,7 @@ export default function LoginPage() {
   }, [isAuthenticated, isLoading, router]);
 
   useEffect(() => {
-    document.title = 'Masuk — Akselerasi Edu';
+    document.title = 'Masuk — School OS';
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -373,7 +387,7 @@ export default function LoginPage() {
               ) : (
                 <img
                   src="/logo.png"
-                  alt="Akselerasi Edu"
+                  alt={schoolName || "School OS"}
                   style={{ width: '48px', height: '48px', objectFit: 'contain' }}
                 />
               )}

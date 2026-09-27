@@ -126,18 +126,7 @@ export default function AnnouncementsPage() {
     const authorName = newAnn.author || `Kepala Sekolah ${schoolName}`;
     const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
 
-    let createdItem: AnnouncementItem = {
-      id: `ann-${Date.now()}`,
-      title: newAnn.title,
-      category: newAnn.category,
-      target: newAnn.target,
-      date: `Hari ini · ${new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB`,
-      author: authorName,
-      content: newAnn.content,
-      isPinned: newAnn.isPinned,
-      pushStatus: newAnn.sendPushAndroid,
-    };
-
+    let createdItem: AnnouncementItem | null = null;
     let pushCount = 0;
 
     try {
@@ -158,18 +147,28 @@ export default function AnnouncementsPage() {
         }),
       });
 
-      if (res.ok) {
-        const json = await res.json();
-        if (json?.data?.announcement) {
-          createdItem = json.data.announcement;
-          pushCount = json.data.notifications_sent || 0;
-        }
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => null);
+        throw new Error(errJson?.error?.message || `Gagal menghubungi server (${res.status})`);
+      }
+
+      const json = await res.json();
+      if (json?.data?.announcement) {
+        createdItem = json.data.announcement;
+        pushCount = json.data.notifications_sent || 0;
       }
     } catch (err) {
       console.error('Failed to create announcement via API:', err);
+      showToast(err instanceof Error ? `Gagal: ${err.message}` : 'Gagal mempublikasikan pengumuman ke server.');
+      return;
     }
 
-    const nextList = [createdItem, ...announcements.filter(a => a.id !== createdItem.id)];
+    if (!createdItem) {
+      showToast('Gagal: Respon pengumuman dari server tidak valid.');
+      return;
+    }
+
+    const nextList = [createdItem, ...announcements.filter(a => a.id !== createdItem!.id)];
     saveAnnouncementsState(nextList);
 
     // Push notification to Android Hub store

@@ -56,7 +56,7 @@ export default function SystemAdminLogin() {
             <div className={styles.logoMark} style={{ padding: '4px', background: 'linear-gradient(135deg, rgba(239,68,68,0.25), rgba(220,38,38,0.15))', borderColor: 'rgba(239,68,68,0.35)' }}>
               <img
                 src="/logo.png"
-                alt="Akselerasi Edu"
+                alt="School OS"
                 style={{ width: '48px', height: '48px', objectFit: 'contain' }}
               />
             </div>
@@ -64,7 +64,7 @@ export default function SystemAdminLogin() {
             {/* Brand heading */}
             <div className={styles.brandHeading}>
               <h1 className={styles.brandName} style={{ color: '#fca5a5' }}>Command Center</h1>
-              <p className={styles.brandTagline}>Akselerasi Edu Super Admin Portal</p>
+              <p className={styles.brandTagline}>School OS Super Admin Portal</p>
             </div>
 
             <div className={styles.featureList}>

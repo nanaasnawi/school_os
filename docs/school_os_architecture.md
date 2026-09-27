@@ -112,7 +112,6 @@ School OS/
 │   │       ├── store/           
 │   │       ├── sync/            
 │   │       └── main.rs          
-│   ├── hash-gen/                
 │   └── migrations/              
 │       ├── 0001_create_tenant_schema.sql - 0006_create_access_control_schema.sql
 │       ├── 20260708205700_create_idempotency_keys.sql & outbox_events

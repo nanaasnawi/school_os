@@ -58,6 +58,8 @@ if (Test-Path $ENV_FILE) {
         $fixed = $envContent -replace "localhost:$DAPODIK_PORT/school_os", "localhost:$SCHOOLOS_DB_PORT/school_os"
         Set-Content -Path $ENV_FILE -Value $fixed -NoNewline
         Write-OK "Port di .env sudah diperbaiki ke $SCHOOLOS_DB_PORT"
+    } elseif ($envContent -match "rlwy\.net") {
+        Write-OK "File .env backend terhubung ke Railway Cloud Database (Remote Mode - Aman dari Dapodik)"
     } else {
         Write-WARN ".env tidak mengandung pattern yang dikenal, periksa manual: $ENV_FILE"
     }
