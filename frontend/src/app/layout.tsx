@@ -24,11 +24,13 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: 'Platform Manajemen Sekolah',
+  title: 'School OS — Platform Manajemen Sekolah',
   description: 'Comprehensive school management platform for the modern era',
-  keywords: ['school management', 'education platform', 'School OS'],
+  keywords: ['school management', 'education platform', 'School OS', 'manajemen sekolah'],
   icons: {
-    icon: '/logos/tut_wuri_handayani.svg',
+    icon: [
+      { url: '/logos/tut_wuri_handayani.svg', type: 'image/svg+xml' },
+    ],
     shortcut: '/logos/tut_wuri_handayani.svg',
     apple: '/logos/tut_wuri_handayani.svg',
   },
