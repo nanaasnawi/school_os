@@ -6,6 +6,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import styles from './dashboard.module.css';
 import { getLiveDapodikAcademicYear } from './academic-years/page';
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
+  PieChart, Pie, Legend,
+} from 'recharts';
 
 interface DashboardMetrics {
   total_students: number;
@@ -401,41 +405,71 @@ export default function DashboardPage() {
             <span className={styles.cardBadge}>Total {metrics.total_students} Siswa</span>
           </div>
 
-          <div className={styles.jenjangList}>
-            {jenjangData.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
-                {isLoading ? 'Memuat data jenjang...' : 'Belum ada data sebaran jenjang'}
+          {/* ── Chart: Sebaran Jenjang (Horizontal Bar) ── */}
+          {jenjangData.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
+              {isLoading ? 'Memuat data jenjang...' : 'Belum ada data sebaran jenjang'}
+            </div>
+          ) : (
+            <div style={{ width: '100%' }}>
+              <ResponsiveContainer width="100%" height={jenjangData.length * 64 + 24}>
+                <BarChart
+                  layout="vertical"
+                  data={jenjangData.map((item, idx) => ({
+                    name: item.jenjang,
+                    siswa: item.student_count,
+                    persen: item.percentage,
+                    rombel: item.class_count,
+                    color: idx === 0 ? '#3b82f6' : idx === 1 ? '#10b981' : '#f59e0b',
+                  }))}
+                  margin={{ top: 4, right: 52, left: 8, bottom: 4 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" horizontal={false} />
+                  <XAxis type="number" hide />
+                  <YAxis
+                    type="category"
+                    dataKey="name"
+                    width={130}
+                    tick={{ fontSize: 11, fill: 'var(--text-secondary)', fontWeight: 600 }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <Tooltip
+                    cursor={{ fill: 'var(--bg-elevated)' }}
+                    content={({ active, payload }) => {
+                      if (!active || !payload?.length) return null;
+                      const d = payload[0]?.payload;
+                      return (
+                        <div style={{
+                          background: 'var(--bg-card)', border: '1px solid var(--border-light)',
+                          borderRadius: 8, padding: '8px 12px', fontSize: 11,
+                          boxShadow: 'var(--shadow-md)', color: 'var(--text-primary)'
+                        }}>
+                          <div style={{ fontWeight: 700, marginBottom: 4 }}>{d?.name}</div>
+                          <div>🎓 {d?.siswa} Siswa ({d?.persen}%)</div>
+                          <div>🏫 {d?.rombel} Rombel · T.A {activeAcademicYear.split(' ')[0]}</div>
+                        </div>
+                      );
+                    }}
+                  />
+                  <Bar dataKey="siswa" radius={[0, 6, 6, 0]}>
+                    {jenjangData.map((_, idx) => (
+                      <Cell key={idx} fill={idx === 0 ? '#3b82f6' : idx === 1 ? '#10b981' : '#f59e0b'} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginTop: '0.25rem', paddingLeft: 8, fontSize: '0.68rem', color: 'var(--text-muted)' }}>
+                {jenjangData.map((item, idx) => (
+                  <span key={idx} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: 2, background: idx === 0 ? '#3b82f6' : idx === 1 ? '#10b981' : '#f59e0b', display: 'inline-block' }} />
+                    {item.class_count} Rombel
+                  </span>
+                ))}
+                <span style={{ marginLeft: 'auto' }}>T.A {activeAcademicYear.split(' ')[0]}</span>
               </div>
-            ) : (
-              jenjangData.map((item, idx) => {
-                const fillClass = idx === 0 ? styles.fillPaketC : idx === 1 ? styles.fillPaketB : styles.fillPaketA;
-                return (
-                  <div key={idx} className={styles.jenjangItem}>
-                    <div className={styles.jenjangHeader}>
-                      <span className={styles.jenjangName}>
-                        <span>{idx === 0 ? '🔵' : idx === 1 ? '🟢' : '🟡'}</span>
-                        <span>{item.jenjang}</span>
-                      </span>
-                      <div className={styles.jenjangMeta}>
-                        <span className={styles.jenjangStudents}>{item.student_count} Siswa</span>
-                        <span className={styles.jenjangPercent}>({item.percentage}%)</span>
-                      </div>
-                    </div>
-                    <div className={styles.meterTrack}>
-                      <div
-                        className={`${styles.meterFill} ${fillClass}`}
-                        style={{ width: `${item.percentage}%` }}
-                      />
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.67rem', color: 'var(--text-muted)' }}>
-                      <span>{item.class_count} Rombel Berjalan</span>
-                      <span>T.A {activeAcademicYear.split(' ')[0]}</span>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
+            </div>
+          )}
 
           <div style={{ paddingTop: '0.4rem', borderTop: '1px solid var(--border-light)', marginTop: 'auto' }}>
             <Link href="/dashboard/classes" className={styles.linkMore}>
@@ -455,54 +489,111 @@ export default function DashboardPage() {
             <span className={styles.cardBadge}>Realitas Sekolah</span>
           </div>
 
-          <div className={styles.genderWidget}>
-            {/* Visual Dual-tone Ratio Bar */}
-            <div className={styles.genderDualBar} title={`Laki-laki: ${maleItem.count} (${maleItem.percentage}%), Perempuan: ${femaleItem.count} (${femaleItem.percentage}%)`}>
-              <div className={styles.barMale} style={{ width: `${maleItem.percentage}%` }} />
-              <div className={styles.barFemale} style={{ width: `${femaleItem.percentage}%` }} />
-            </div>
+          {/* ── Chart: Komposisi Gender (Pie / Donut) ── */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+            {genderData.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
+                {isLoading ? 'Memuat data gender...' : 'Belum ada data gender'}
+              </div>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                {/* Donut chart */}
+                <div style={{ flexShrink: 0, position: 'relative' }}>
+                  <ResponsiveContainer width={140} height={140}>
+                    <PieChart>
+                      <Pie
+                        data={[
+                          { name: 'Laki-laki', value: maleItem.count, color: '#3b82f6' },
+                          { name: 'Perempuan', value: femaleItem.count, color: '#ec4899' },
+                        ]}
+                        cx="50%" cy="50%"
+                        innerRadius={40} outerRadius={62}
+                        paddingAngle={3}
+                        dataKey="value"
+                        startAngle={90} endAngle={-270}
+                      >
+                        <Cell fill="#3b82f6" />
+                        <Cell fill="#ec4899" />
+                      </Pie>
+                      <Tooltip
+                        content={({ active, payload }) => {
+                          if (!active || !payload?.length) return null;
+                          const d = payload[0];
+                          const total = (maleItem.count || 0) + (femaleItem.count || 0);
+                          const pct = total ? ((Number(d.value) / total) * 100).toFixed(1) : '0';
+                          return (
+                            <div style={{
+                              background: 'var(--bg-card)', border: '1px solid var(--border-light)',
+                              borderRadius: 8, padding: '6px 10px', fontSize: 11,
+                              boxShadow: 'var(--shadow-md)', color: 'var(--text-primary)'
+                            }}>
+                              <b>{d.name}</b>: {d.value} ({pct}%)
+                            </div>
+                          );
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  {/* Center label */}
+                  <div style={{
+                    position: 'absolute', top: '50%', left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    textAlign: 'center', pointerEvents: 'none',
+                  }}>
+                    <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.1 }}>
+                      {(maleItem.count || 0) + (femaleItem.count || 0)}
+                    </div>
+                    <div style={{ fontSize: 9, color: 'var(--text-muted)', fontWeight: 600 }}>SISWA</div>
+                  </div>
+                </div>
 
-            {/* Gender Stats Grid */}
-            <div className={styles.genderStatsGrid}>
-              <div className={styles.genderCard}>
-                <div className={`${styles.genderAvatar} ${styles.avatarMale}`}>👦</div>
-                <div>
-                  <div className={styles.genderLabel}>LAKI-LAKI</div>
-                  <div className={styles.genderValue}>{maleItem.count}</div>
-                  <div className={`${styles.genderShare} ${styles.shareMale}`}>{maleItem.percentage}% Porsi</div>
+                {/* Legend side */}
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  {/* Male */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <span style={{ fontSize: 18 }}>👦</span>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, fontWeight: 700, color: 'var(--text-primary)' }}>
+                        <span>Laki-laki</span>
+                        <span style={{ color: '#3b82f6' }}>{maleItem.count} · {maleItem.percentage}%</span>
+                      </div>
+                      <div style={{ height: 5, borderRadius: 3, background: 'var(--border-light)', marginTop: 3 }}>
+                        <div style={{ height: '100%', width: `${maleItem.percentage}%`, background: '#3b82f6', borderRadius: 3, transition: 'width 0.6s ease' }} />
+                      </div>
+                    </div>
+                  </div>
+                  {/* Female */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <span style={{ fontSize: 18 }}>👧</span>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, fontWeight: 700, color: 'var(--text-primary)' }}>
+                        <span>Perempuan</span>
+                        <span style={{ color: '#ec4899' }}>{femaleItem.count} · {femaleItem.percentage}%</span>
+                      </div>
+                      <div style={{ height: 5, borderRadius: 3, background: 'var(--border-light)', marginTop: 3 }}>
+                        <div style={{ height: '100%', width: `${femaleItem.percentage}%`, background: '#ec4899', borderRadius: 3, transition: 'width 0.6s ease' }} />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Status */}
+                  <div style={{
+                    background: 'var(--bg-elevated)', border: '1px solid var(--border-light)',
+                    borderRadius: 7, padding: '0.4rem 0.6rem',
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    fontSize: '0.68rem', color: 'var(--text-secondary)'
+                  }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                      <span style={{ color: '#10b981', fontWeight: 800 }}>●</span>
+                      <span>{metrics.active_students} Aktif</span>
+                    </span>
+                    <span className="badge badge-info" style={{ fontSize: '0.6rem', padding: '0.1rem 0.35rem' }}>
+                      {metrics.transferred_students} Mutasi
+                    </span>
+                  </div>
                 </div>
               </div>
-
-              <div className={styles.genderCard}>
-                <div className={`${styles.genderAvatar} ${styles.avatarFemale}`}>👧</div>
-                <div>
-                  <div className={styles.genderLabel}>PEREMPUAN</div>
-                  <div className={styles.genderValue}>{femaleItem.count}</div>
-                  <div className={`${styles.genderShare} ${styles.shareFemale}`}>{femaleItem.percentage}% Porsi</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Status Highlight */}
-            <div style={{
-              background: 'var(--bg-elevated)',
-              border: '1px solid var(--border-light)',
-              borderRadius: '8px',
-              padding: '0.55rem 0.75rem',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              fontSize: '0.72rem',
-              color: 'var(--text-secondary)'
-            }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                <span style={{ color: '#10b981', fontWeight: 800 }}>●</span>
-                <span>{metrics.active_students} Siswa Aktif Terdaftar</span>
-              </span>
-              <span className="badge badge-info" style={{ fontSize: '0.62rem', padding: '0.1rem 0.4rem' }}>
-                {metrics.transferred_students} Mutasi
-              </span>
-            </div>
+            )}
           </div>
 
           <div style={{ paddingTop: '0.4rem', borderTop: '1px solid var(--border-light)', marginTop: 'auto' }}>
@@ -776,38 +867,69 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className={styles.rombelGrid}>
-            {rombelList.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
-                {isLoading ? 'Memuat rombel...' : 'Belum ada data rombel'}
-              </div>
-            ) : (
-              sortedRombel.map((rombel, idx) => {
-                const pct = Math.max(6, Math.round(((rombel.student_count || 0) / maxRombelCount) * 100));
-                const share = totalRombelSiswa ? ((rombel.student_count / totalRombelSiswa) * 100).toFixed(1) : '0.0';
-                const nm = (rombel.name || '').toUpperCase();
-                const variant = nm.includes('PAKET C') ? styles.rombelVarC : nm.includes('PAKET B') ? styles.rombelVarB : nm.includes('PAKET A') ? styles.rombelVarA : '';
-                const icon = nm.includes('PAKET C') ? '🎓' : nm.includes('PAKET B') ? '📘' : nm.includes('PAKET A') ? '📗' : '🏫';
-                return (
-                  <Link key={rombel.id} href="/dashboard/classes" className={`${styles.rombelItem} ${variant}`}>
-                    <div className={styles.rombelTopRow}>
-                      <span className={styles.rombelRank}>#{idx + 1}</span>
-                      <span>{icon}</span>
-                      <span className={styles.rombelName}>{rombel.name}</span>
-                      <span className={styles.rombelCount}>{rombel.student_count}<small> siswa</small></span>
-                    </div>
-                    <div className={styles.rombelTrack}>
-                      <div className={styles.rombelFill} style={{ width: `${pct}%` }} />
-                    </div>
-                    <div className={styles.rombelMetaRow}>
-                      <span>{share}% total</span>
-                      <span>{pct}% max</span>
-                    </div>
-                  </Link>
-                );
-              })
-            )}
-          </div>
+          {/* ── Chart: Distribusi Rombel (Vertical Bar) ── */}
+          {rombelList.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
+              {isLoading ? 'Memuat rombel...' : 'Belum ada data rombel'}
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={Math.min(sortedRombel.length * 28 + 80, 320)}>
+              <BarChart
+                data={sortedRombel.map((r) => {
+                  const nm = (r.name || '').toUpperCase();
+                  return {
+                    name: r.name,
+                    siswa: r.student_count || 0,
+                    color: nm.includes('PAKET C') ? '#6366f1' : nm.includes('PAKET B') ? '#3b82f6' : '#10b981',
+                  };
+                })}
+                margin={{ top: 4, right: 8, left: -24, bottom: 60 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" vertical={false} />
+                <XAxis
+                  dataKey="name"
+                  tick={{ fontSize: 9, fill: 'var(--text-muted)', fontWeight: 600 }}
+                  axisLine={false}
+                  tickLine={false}
+                  angle={-40}
+                  textAnchor="end"
+                  interval={0}
+                />
+                <YAxis
+                  tick={{ fontSize: 10, fill: 'var(--text-muted)' }}
+                  axisLine={false}
+                  tickLine={false}
+                  allowDecimals={false}
+                />
+                <Tooltip
+                  cursor={{ fill: 'var(--bg-elevated)' }}
+                  content={({ active, payload }) => {
+                    if (!active || !payload?.length) return null;
+                    const d = payload[0]?.payload;
+                    const share = totalRombelSiswa ? ((d.siswa / totalRombelSiswa) * 100).toFixed(1) : '0';
+                    return (
+                      <div style={{
+                        background: 'var(--bg-card)', border: '1px solid var(--border-light)',
+                        borderRadius: 8, padding: '8px 12px', fontSize: 11,
+                        boxShadow: 'var(--shadow-md)', color: 'var(--text-primary)'
+                      }}>
+                        <div style={{ fontWeight: 700, marginBottom: 3 }}>{d.name}</div>
+                        <div>🎓 {d.siswa} Siswa</div>
+                        <div>📊 {share}% dari total</div>
+                      </div>
+                    );
+                  }}
+                />
+                <Bar dataKey="siswa" radius={[4, 4, 0, 0]}>
+                  {sortedRombel.map((r, idx) => {
+                    const nm = (r.name || '').toUpperCase();
+                    const clr = nm.includes('PAKET C') ? '#6366f1' : nm.includes('PAKET B') ? '#3b82f6' : '#10b981';
+                    return <Cell key={idx} fill={clr} />;
+                  })}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          )}
 
           {rombelList.length > 0 && (
             <div className={styles.rombelInsight}>
