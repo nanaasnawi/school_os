@@ -2,17 +2,31 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { login as sdkLogin } from '@/lib/sdk';
 import { getApiUrl } from '@/lib/api';
-import { 
-  Server, 
-  RefreshCw, 
-  Activity, 
-  HardDrive, 
-  Lock, 
-  Radio, 
-  Clock 
+import { getTenantItem } from '@/lib/tenant-storage';
+import {
+  Server,
+  RefreshCw,
+  Activity,
+  HardDrive,
+  Lock,
+  Radio,
+  Clock,
+  Sun,
+  Moon,
+  ArrowLeft,
+  ShieldCheck,
+  Mail,
+  KeyRound,
+  Eye,
+  EyeOff,
+  CheckCircle2,
+  Smartphone,
+  Info
 } from 'lucide-react';
 import styles from './login.module.css';
 
@@ -30,9 +44,36 @@ export default function LoginPage() {
   const [countdown, setCountdown] = useState(15);
   const [checkFeedback, setCheckFeedback] = useState<string | null>(null);
   const [adminTriggerCount, setAdminTriggerCount] = useState(0);
+  const [isDark, setIsDark] = useState(false);
 
   const router = useRouter();
   const { login, isAuthenticated, isLoading } = useAuth();
+
+  /* ── Theme synchronization with Dashboard Settings ── */
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedTheme = localStorage.getItem('school_os_theme');
+      if (savedTheme === 'dark') {
+        setIsDark(true);
+        document.documentElement.setAttribute('data-theme', 'dark');
+      } else {
+        setIsDark(false);
+        document.documentElement.removeAttribute('data-theme');
+      }
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const next = !isDark;
+    setIsDark(next);
+    if (next) {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      localStorage.setItem('school_os_theme', 'dark');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+      localStorage.setItem('school_os_theme', 'light');
+    }
+  };
 
   const checkMaintenanceStatus = async (isManual = false) => {
     if (isManual) {
@@ -46,7 +87,9 @@ export default function LoginPage() {
         if (json.data && json.data.maintenance_mode) {
           setMaintenance({
             is_active: true,
-            message: json.data.maintenance_message || 'Sistem sedang dalam peningkatan performa server terjadwal. Silakan kembali dalam beberapa menit.'
+            message:
+              json.data.maintenance_message ||
+              'Sistem sedang dalam peningkatan performa server terjadwal. Silakan kembali dalam beberapa menit.',
           });
           if (isManual) {
             setCheckFeedback('Server masih dalam optimalisasi terjadwal.');
@@ -75,6 +118,21 @@ export default function LoginPage() {
 
   useEffect(() => {
     let isMounted = true;
+
+    // 1. Initial tenant storage check for custom school profile
+    if (typeof window !== 'undefined') {
+      const storedName = getTenantItem('dapodik_nama_sekolah');
+      const storedLogo = getTenantItem('school_logo_url');
+      if (storedName) {
+        setSchoolName(storedName);
+        document.title = `Masuk — ${storedName}`;
+      }
+      if (storedLogo) {
+        setSchoolLogoUrl(storedLogo);
+      }
+    }
+
+    // 2. Fetch server maintenance status
     fetch(getApiUrl('/api/v1/system/maintenance-status'))
       .then((res) => (res.ok ? res.json() : null))
       .then((json) => {
@@ -82,7 +140,9 @@ export default function LoginPage() {
         if (json.data && json.data.maintenance_mode) {
           setMaintenance({
             is_active: true,
-            message: json.data.maintenance_message || 'Sistem sedang dalam peningkatan performa server terjadwal. Silakan kembali dalam beberapa menit.'
+            message:
+              json.data.maintenance_message ||
+              'Sistem sedang dalam peningkatan performa server terjadwal. Silakan kembali dalam beberapa menit.',
           });
         } else {
           setMaintenance({ is_active: false, message: '' });
@@ -90,6 +150,7 @@ export default function LoginPage() {
       })
       .catch(() => {});
 
+    // 3. Fetch server school info
     fetch(getApiUrl('/api/v1/schools/info'))
       .then((res) => (res.ok ? res.json() : null))
       .then((json) => {
@@ -175,10 +236,14 @@ export default function LoginPage() {
         setError('Tidak dapat terhubung ke server. Pastikan server aplikasi sedang berjalan.');
       } else if (response.status === 401 || response.status === 400) {
         setError('Email atau kata sandi yang kamu masukkan salah.');
-      } else if (response.status === 503 || response.status === 423 || errObj?.message?.includes('Mode Pemeliharaan')) {
+      } else if (
+        response.status === 503 ||
+        response.status === 423 ||
+        errObj?.message?.includes('Mode Pemeliharaan')
+      ) {
         setMaintenance({
           is_active: true,
-          message: errObj?.message || 'Sistem sedang dalam peningkatan performa server terjadwal.'
+          message: errObj?.message || 'Sistem sedang dalam peningkatan performa server terjadwal.',
         });
       } else {
         setError('Terjadi kesalahan pada server (Status: ' + response.status + ').');
@@ -188,7 +253,7 @@ export default function LoginPage() {
       if (message.includes('Pemeliharaan') || message.includes('503')) {
         setMaintenance({
           is_active: true,
-          message: message || 'Mode pemeliharaan sedang aktif.'
+          message: message || 'Mode pemeliharaan sedang aktif.',
         });
       } else {
         setError(message || 'Gagal terhubung ke server.');
@@ -199,10 +264,21 @@ export default function LoginPage() {
   };
 
   const features = [
-    { icon: '⚙️', title: 'Manajemen Data Sekolah', desc: 'Kelola data siswa, guru, kelas, dan mata pelajaran secara terpusat' },
-    { icon: '📊', title: 'Analitik & Laporan', desc: 'Pantau kinerja akademik real-time dan ekspor laporan otomatis' },
-    { icon: '📱', title: 'Terhubung ke Aplikasi Mobile', desc: 'Sinkron langsung dengan app Android untuk siswa, guru, dan orang tua' },
-    { icon: '🔐', title: 'Keamanan Data', desc: 'Proteksi data terenkripsi dengan log aktivitas lengkap' },
+    {
+      icon: '🛡️',
+      title: 'Sinkronisasi Resmi Dapodik',
+      desc: 'Terhubung langsung dengan WebService Kemendikbud & e-Rapor Kurikulum Merdeka',
+    },
+    {
+      icon: '⚡',
+      title: 'Portal Akademik Cerdas',
+      desc: 'Kelola data siswa, guru, jadwal pelajaran, presensi QR, dan CBT secara terpadu',
+    },
+    {
+      icon: '🔒',
+      title: 'Keamanan Data Terenkripsi',
+      desc: 'Akses terproteksi dengan audit trail dan log aktivitas keamanan real-time',
+    },
   ];
 
   if (isLoading || isAuthenticated) {
@@ -219,15 +295,10 @@ export default function LoginPage() {
         <div className={styles.gridOverlay} />
 
         <div className={styles.maintenanceCard}>
-          {/* Top Ambient Glow Line */}
-          <div className={styles.cardTopLight} />
-
           {/* Futuristic Concentric Radar Rings & Core Icon */}
           <div className={styles.iconAuraWrapper}>
-            <div className={styles.iconRingOuter} />
-            <div className={styles.iconRingPulse} />
             <div className={styles.iconCore}>
-              <Server size={36} strokeWidth={1.8} />
+              <Server size={32} strokeWidth={2} />
             </div>
           </div>
 
@@ -240,11 +311,10 @@ export default function LoginPage() {
           </div>
 
           {/* Headings */}
-          <h1 className={styles.maintenanceTitle}>
-            Sistem Sedang Dalam Pemeliharaan
-          </h1>
+          <h1 className={styles.maintenanceTitle}>Sistem Sedang Dalam Pemeliharaan</h1>
           <p className={styles.maintenanceSubtitle}>
-            Peningkatan performa infrastruktur dan sinkronisasi data sedang berlangsung untuk memastikan stabilitas, keamanan, dan keandalan operasional seluruh civitas sekolah.
+            Peningkatan performa infrastruktur dan sinkronisasi data sedang berlangsung untuk
+            memastikan stabilitas, keamanan, dan keandalan operasional seluruh civitas sekolah.
           </p>
 
           {/* Telemetry Grid (3 Cards) */}
@@ -254,8 +324,19 @@ export default function LoginPage() {
                 <Activity size={12} />
                 <span>Status Server</span>
               </div>
-              <div className={styles.telemetryValue} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#fbbf24', display: 'inline-block' }} />
+              <div
+                className={styles.telemetryValue}
+                style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+              >
+                <span
+                  style={{
+                    width: '6px',
+                    height: '6px',
+                    borderRadius: '50%',
+                    background: '#fbbf24',
+                    display: 'inline-block',
+                  }}
+                />
                 Optimalisasi Berjalan
               </div>
             </div>
@@ -265,8 +346,8 @@ export default function LoginPage() {
                 <Lock size={12} />
                 <span>Keamanan Data</span>
               </div>
-              <div className={styles.telemetryValue} style={{ color: '#4ade80' }}>
-                Terenkripsi & Terlindungi
+              <div className={styles.telemetryValue} style={{ color: '#10b981' }}>
+                Terenkripsi &amp; Terlindungi
               </div>
             </div>
 
@@ -275,9 +356,7 @@ export default function LoginPage() {
                 <HardDrive size={12} />
                 <span>Infrastruktur</span>
               </div>
-              <div className={styles.telemetryValue}>
-                High-Availability Cloud
-              </div>
+              <div className={styles.telemetryValue}>High-Availability Cloud</div>
             </div>
           </div>
 
@@ -287,9 +366,7 @@ export default function LoginPage() {
               <Radio size={13} style={{ animation: 'pulse 1.5s infinite' }} />
               <span>Catatan Teknis Operasional</span>
             </div>
-            <div className={styles.messageText}>
-              &ldquo;{maintenance.message}&rdquo;
-            </div>
+            <div className={styles.messageText}>&ldquo;{maintenance.message}&rdquo;</div>
           </div>
 
           {/* Actions & Auto-Check Bar */}
@@ -300,35 +377,42 @@ export default function LoginPage() {
               disabled={checkingMaintenance}
               className={styles.checkButton}
             >
-              <RefreshCw 
-                size={16} 
-                style={{ 
+              <RefreshCw
+                size={16}
+                style={{
                   animation: checkingMaintenance ? 'spin 1s linear infinite' : 'none',
-                  transition: 'transform 0.2s ease'
-                }} 
+                  transition: 'transform 0.2s ease',
+                }}
               />
-              <span>{checkingMaintenance ? 'Memeriksa Status Terkini...' : 'Periksa Status Server Sekarang'}</span>
+              <span>
+                {checkingMaintenance
+                  ? 'Memeriksa Status Terkini...'
+                  : 'Periksa Status Server Sekarang'}
+              </span>
             </button>
 
             {checkFeedback && (
-              <div style={{
-                marginTop: '0.75rem',
-                fontSize: '0.8rem',
-                color: '#7dd3fc',
-                background: 'rgba(14, 165, 233, 0.1)',
-                border: '1px solid rgba(14, 165, 233, 0.25)',
-                borderRadius: '8px',
-                padding: '0.45rem 0.8rem',
-                display: 'inline-block',
-                animation: 'fadeIn 0.2s ease'
-              }}>
+              <div
+                style={{
+                  marginTop: '0.75rem',
+                  fontSize: '0.8rem',
+                  color: 'var(--accent, #0ea5e9)',
+                  background: 'var(--accent-light, #e0f2fe)',
+                  border: '1px solid var(--border-medium, #cbd5e1)',
+                  borderRadius: '8px',
+                  padding: '0.45rem 0.8rem',
+                  display: 'inline-block',
+                }}
+              >
                 ℹ️ {checkFeedback}
               </div>
             )}
 
             <div className={styles.autoTickerRow}>
               <Clock size={13} />
-              <span>Pemeriksaan otomatis dalam <strong>{countdown} detik</strong></span>
+              <span>
+                Pemeriksaan otomatis dalam <strong>{countdown} detik</strong>
+              </span>
             </div>
             <div className={styles.autoProgressBar}>
               <div
@@ -370,88 +454,120 @@ export default function LoginPage() {
       <div className={styles.bgBlob3} />
       <div className={styles.gridOverlay} />
 
-      <div className={styles.container}>
-        {/* LEFT BRAND PANEL */}
-        <div className={styles.brandPanel}>
-          <div className={styles.brandContent}>
+      {/* Floating Top Navigation & Theme Settings Toggle */}
+      <div className={styles.topActionsRow}>
+        <Link href="/" className={styles.backHomeLink}>
+          <ArrowLeft size={15} />
+          <span>Kembali ke Beranda</span>
+        </Link>
 
-            {/* Logo */}
-            <div className={styles.logoMark} style={{ padding: '4px', overflow: 'hidden' }}>
+        <button
+          type="button"
+          onClick={toggleTheme}
+          className={styles.themeToggleBtn}
+          title={isDark ? 'Mode Gelap Aktif (Ganti ke Mode Terang)' : 'Mode Terang Aktif (Ganti ke Mode Gelap)'}
+          aria-label="Toggle Theme"
+        >
+          {isDark ? <Sun size={18} /> : <Moon size={18} />}
+        </button>
+      </div>
+
+      <div className={styles.container}>
+        {/* ══════════════════════════════════════════════════════════
+            LEFT SHOWCASE & SECURITY BRAND PANEL
+            ══════════════════════════════════════════════════════════ */}
+        <div className={styles.brandPanel}>
+          {/* School Header */}
+          <div className={styles.brandHeader}>
+            <div className={styles.logoMark}>
               {schoolLogoUrl ? (
                 <img
                   src={schoolLogoUrl}
                   alt={schoolName}
-                  style={{ width: '48px', height: '48px', objectFit: 'contain', borderRadius: '12px' }}
+                  className={styles.schoolLogoImg}
                   onError={() => setSchoolLogoUrl('')}
                 />
               ) : (
                 <img
                   src="/logo.png"
-                  alt={schoolName || "School OS"}
-                  style={{ width: '48px', height: '48px', objectFit: 'contain' }}
+                  alt={schoolName || 'School OS'}
+                  className={styles.schoolLogoImg}
                 />
               )}
             </div>
-
-            {/* Brand heading */}
-            <div className={styles.brandHeading}>
-              <h1 className={styles.brandName}>{schoolName}</h1>
-              <p className={styles.brandTagline}>Portal Admin &amp; Staf Tata Usaha</p>
+            <div className={styles.brandTextGroup}>
+              <h1 className={styles.schoolTitle}>{schoolName}</h1>
+              <p className={styles.schoolSubtitle}>Portal Admin &amp; Staf Tata Usaha</p>
             </div>
+          </div>
 
-            {/* Feature cards */}
-            <div className={styles.featureList}>
-              {features.map((f, i) => (
-                <div key={i} className={styles.featureItem}>
-                  <div className={styles.featureIcon}>{f.icon}</div>
-                  <div>
-                    <div className={styles.featureTitle}>{f.title}</div>
-                    <div className={styles.featureDesc}>{f.desc}</div>
-                  </div>
+          {/* Center Security SVG Animation */}
+          <div className={styles.illustrationArea}>
+            <img
+              src="/images/security-animate.svg"
+              alt="Keamanan Terjamin School OS"
+              className={styles.securityIllustration}
+            />
+          </div>
+
+          {/* Bottom Security Trust Highlights */}
+          <div className={styles.featureList}>
+            {features.map((f, i) => (
+              <div key={i} className={styles.featureItem}>
+                <div className={styles.featureIcon}>{f.icon}</div>
+                <div>
+                  <div className={styles.featureTitle}>{f.title}</div>
+                  <div className={styles.featureDesc}>{f.desc}</div>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
+          </div>
 
-            {/* Status */}
-            <div className={styles.statusLine}>
-              <span className={styles.statusDot} />
-              <span>Aplikasi Mobile (Siswa &middot; Guru &middot; Wali) &mdash; Aktif &amp; Terhubung</span>
-            </div>
+          {/* Live Operational Status */}
+          <div className={styles.statusLine}>
+            <span className={styles.statusDot} />
+            <span>Server Operasional &amp; Terkoneksi Sinkronisasi Dapodik</span>
           </div>
         </div>
 
-        {/* RIGHT FORM PANEL */}
+        {/* ══════════════════════════════════════════════════════════
+            RIGHT FORM PANEL
+            ══════════════════════════════════════════════════════════ */}
         <div className={styles.formPanel}>
           <div className={styles.formCard}>
-
             {/* Header */}
             <div className={styles.formHeader}>
               <div className={styles.formBadge}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                </svg>
-                Akses Admin
+                <ShieldCheck size={14} />
+                <span>Portal Resmi Sekolah</span>
               </div>
-              <h2 className={styles.formTitle}>Selamat Datang</h2>
-              <p className={styles.formSub}>Masuk menggunakan akun administrator atau staf tata usaha yang terdaftar</p>
+              <h2 className={styles.formTitle}>Masuk ke Sistem</h2>
+              <p className={styles.formSub}>
+                Gunakan kredensial akun administrator atau staf tata usaha Anda untuk mengakses dashboard
+              </p>
             </div>
 
-            {error && <div className={styles.errorBanner}>{error}</div>}
+            {error && (
+              <div className={styles.errorBanner}>
+                <Info size={16} />
+                <span>{error}</span>
+              </div>
+            )}
 
             <form onSubmit={handleSubmit} className={styles.form}>
               <div className={styles.inputGroup}>
-                <label htmlFor="email" className={styles.label}>Email</label>
+                <label htmlFor="email" className={styles.label}>
+                  Email Akun
+                </label>
                 <div className={styles.inputWrapper}>
                   <span className={styles.inputIcon}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
-                    </svg>
+                    <Mail size={16} />
                   </span>
                   <input
                     id="email"
                     type="email"
                     required
-                    placeholder="nama@sekolah.id"
+                    placeholder="nama@sekolah.sch.id"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className={styles.formInput}
@@ -461,23 +577,23 @@ export default function LoginPage() {
               </div>
 
               <div className={styles.inputGroup}>
-                <label htmlFor="password" className={styles.label}>Kata Sandi</label>
+                <label htmlFor="password" className={styles.label}>
+                  Kata Sandi
+                </label>
                 <div className={styles.passwordWrapper}>
                   <span className={styles.inputIcon}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                    </svg>
+                    <KeyRound size={16} />
                   </span>
                   <input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
                     required
-                    placeholder="Masukkan kata sandi"
+                    placeholder="Masukkan kata sandi akun"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className={styles.formInput}
                     autoComplete="current-password"
-                    style={{ paddingLeft: '2.75rem' }}
+                    style={{ paddingRight: '2.8rem' }}
                   />
                   <button
                     type="button"
@@ -486,48 +602,51 @@ export default function LoginPage() {
                     tabIndex={-1}
                     aria-label={showPassword ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'}
                   >
-                    {showPassword ? (
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>
-                      </svg>
-                    ) : (
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
-                      </svg>
-                    )}
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
               </div>
 
               <button type="submit" disabled={loading} className={styles.submitBtn}>
                 {loading ? (
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" style={{ animation: 'loginSpin 0.7s linear infinite' }}>
-                      <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                    </svg>
-                    Memverifikasi...
-                  </span>
+                  <>
+                    <RefreshCw size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                    <span>Memverifikasi Akun...</span>
+                  </>
                 ) : (
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
-                    Masuk ke Dasbor
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
-                    </svg>
-                  </span>
+                  <>
+                    <span>Masuk ke Dashboard</span>
+                    <Lock size={15} />
+                  </>
                 )}
               </button>
             </form>
 
-            {/* Android notice */}
+            {/* Android Mobile Notice Card */}
             <div className={styles.androidNoticeBox}>
-              <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#e2e8ff', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style={{ color: '#818cf8', flexShrink: 0 }}>
-                  <path d="M17.6 9.48l1.84-3.18c.16-.31.04-.69-.26-.85a.637.637 0 0 0-.83.22l-1.88 3.24a11.463 11.463 0 0 0-8.94 0L5.65 5.67a.643.643 0 0 0-.87-.2c-.28.18-.37.54-.22.83L6.4 9.48A10.78 10.78 0 0 0 1 18h22a10.78 10.78 0 0 0-5.4-8.52zM7 15.25a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5zm10 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5z"/>
-                </svg>
-                Siswa, Guru, atau Orang Tua?
+              <div
+                style={{
+                  fontSize: '0.82rem',
+                  fontWeight: 700,
+                  color: 'var(--text-primary, #0f172a)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                }}
+              >
+                <Smartphone size={15} color="var(--accent, #0ea5e9)" />
+                <span>Siswa, Guru, atau Orang Tua?</span>
               </div>
-              <p style={{ fontSize: '0.75rem', color: 'rgba(165,180,252,0.5)', margin: 0, lineHeight: 1.55 }}>
-                Gunakan <strong style={{ color: 'rgba(165,180,252,0.75)' }}>Aplikasi Android School OS</strong> untuk akses pembelajaran, presensi, dan rapor.
+              <p
+                style={{
+                  fontSize: '0.75rem',
+                  color: 'var(--text-muted, #64748b)',
+                  margin: 0,
+                  lineHeight: 1.5,
+                }}
+              >
+                Gunakan <strong>Aplikasi Android School OS</strong> untuk jadwal, tugas, absensi, dan
+                e-rapor langsung dari smartphone.
               </p>
               <button
                 id="btn-info-android"
@@ -535,54 +654,124 @@ export default function LoginPage() {
                 onClick={() => setShowAndroidModal(true)}
                 className={styles.androidInfoBtn}
               >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-                </svg>
-                Info Aplikasi Mobile
+                <span>Pelajari Info Aplikasi Mobile →</span>
               </button>
+            </div>
+
+            {/* Footer Assistance & Secret Admin Access */}
+            <div className={styles.footerHelpText}>
+              <span>Butuh bantuan akses? Hubungi Admin Sekolah.</span>
+              <span
+                className={styles.versionBadge}
+                title=""
+                onClick={() => {
+                  const next = adminTriggerCount + 1;
+                  if (next >= 5) {
+                    router.push('/system-admin/login');
+                  } else {
+                    setAdminTriggerCount(next);
+                  }
+                }}
+              >
+                v2.4.0
+              </span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* MODAL ANDROID */}
+      {/* ══════════════════════════════════════════════════════════
+          MODAL ANDROID
+          ══════════════════════════════════════════════════════════ */}
       {showAndroidModal && (
         <div className={styles.modalBackdrop} onClick={() => setShowAndroidModal(false)}>
-          <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
-                <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="#818cf8">
-                    <path d="M17.6 9.48l1.84-3.18c.16-.31.04-.69-.26-.85a.637.637 0 0 0-.83.22l-1.88 3.24a11.463 11.463 0 0 0-8.94 0L5.65 5.67a.643.643 0 0 0-.87-.2c-.28.18-.37.54-.22.83L6.4 9.48A10.78 10.78 0 0 0 1 18h22a10.78 10.78 0 0 0-5.4-8.52zM7 15.25a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5zm10 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5z"/>
-                  </svg>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <div
+                  style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: 10,
+                    background: 'var(--accent-light, #e0f2fe)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--accent, #0ea5e9)',
+                  }}
+                >
+                  <Smartphone size={20} />
                 </div>
                 <div>
-                  <h2 className={styles.modalTitle}>Aplikasi Mobile School OS</h2>
-                  <p style={{ fontSize: '0.72rem', color: 'rgba(165,180,252,0.45)', margin: 0 }}>Panduan Akses Siswa, Guru, dan Orang Tua</p>
+                  <h3 className={styles.modalTitle}>Aplikasi Mobile School OS</h3>
+                  <p
+                    style={{
+                      fontSize: '0.75rem',
+                      color: 'var(--text-muted, #64748b)',
+                      margin: 0,
+                    }}
+                  >
+                    Panduan Akses Siswa, Guru, dan Orang Tua
+                  </p>
                 </div>
               </div>
-              <button id="btn-close-modal" className={styles.modalCloseBtn} onClick={() => setShowAndroidModal(false)}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                </svg>
+              <button
+                id="btn-close-modal"
+                className={styles.modalCloseBtn}
+                onClick={() => setShowAndroidModal(false)}
+              >
+                ✕
               </button>
             </div>
 
             <div className={styles.modalBody}>
               <div className={styles.androidCard}>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.7rem', fontWeight: 700, color: '#38bdf8', background: 'rgba(14,165,233,0.12)', border: '1px solid rgba(14,165,233,0.2)', padding: '0.2rem 0.5rem', borderRadius: 100, width: 'fit-content' }}>
-                  Aplikasi Android
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.35rem',
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    color: 'var(--accent, #0ea5e9)',
+                    background: 'var(--accent-light, #e0f2fe)',
+                    padding: '0.2rem 0.6rem',
+                    borderRadius: 100,
+                  }}
+                >
+                  Aplikasi Android Tersedia
                 </span>
-                <p style={{ fontSize: '0.78rem', color: 'rgba(165,180,252,0.5)', marginTop: 6, marginBottom: 0, lineHeight: 1.55 }}>
-                  Portal web ini khusus untuk <strong style={{ color: '#c7d2fe' }}>Administrator &amp; Staf Tata Usaha</strong>. Untuk Siswa, Guru, dan Orang Tua, silakan gunakan aplikasi di ponsel:
+                <p
+                  style={{
+                    fontSize: '0.8rem',
+                    color: 'var(--text-secondary, #374151)',
+                    marginTop: 8,
+                    marginBottom: 0,
+                    lineHeight: 1.55,
+                  }}
+                >
+                  Portal web ini khusus untuk{' '}
+                  <strong style={{ color: 'var(--text-primary, #0f172a)' }}>
+                    Administrator &amp; Staf Tata Usaha
+                  </strong>
+                  . Untuk Siswa, Guru, dan Orang Tua, silakan gunakan aplikasi di ponsel:
                 </p>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
                 {[
-                  { label: 'Siswa', desc: 'Jadwal pelajaran, tugas digital, absensi harian, dan nilai rapor.' },
-                  { label: 'Guru', desc: 'Presensi kelas, penilaian siswa, dan pembagian materi pembelajaran.' },
-                  { label: 'Orang Tua / Wali', desc: 'Pantau kehadiran anak dan perkembangan belajar secara langsung.' },
+                  {
+                    label: 'Siswa',
+                    desc: 'Jadwal pelajaran, tugas digital, absensi QR harian, dan nilai rapor.',
+                  },
+                  {
+                    label: 'Guru',
+                    desc: 'Presensi kelas, penilaian siswa Kurikulum Merdeka, dan modul belajar.',
+                  },
+                  {
+                    label: 'Orang Tua / Wali',
+                    desc: 'Pantau kehadiran anak dan perkembangan akademik langsung via notifikasi.',
+                  },
                 ].map((item, i) => (
                   <div key={i} className={styles.androidFeature}>
                     <strong>{item.label}</strong>
@@ -591,16 +780,35 @@ export default function LoginPage() {
                 ))}
               </div>
 
-              <div style={{ padding: '0.75rem', background: 'rgba(5,150,105,0.08)', borderRadius: 10, border: '1px solid rgba(5,150,105,0.2)', fontSize: '0.75rem', color: '#6ee7b7', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="20 6 9 17 4 12"/>
-                </svg>
-                Aplikasi Android resmi siap dipasang di ponsel. Hubungi pihak sekolah untuk panduan instalasi.
+              <div
+                style={{
+                  padding: '0.75rem',
+                  background: 'rgba(16, 185, 129, 0.08)',
+                  borderRadius: 10,
+                  border: '1px solid rgba(16, 185, 129, 0.2)',
+                  fontSize: '0.75rem',
+                  color: '#10b981',
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                }}
+              >
+                <CheckCircle2 size={16} />
+                <span>
+                  Aplikasi Android resmi siap dipasang di ponsel. Hubungi pihak sekolah untuk panduan
+                  instalasi.
+                </span>
               </div>
             </div>
 
             <div className={styles.modalFooter}>
-              <button id="btn-modal-tutup" className="btn btn-primary btn-sm" onClick={() => setShowAndroidModal(false)}>
+              <button
+                id="btn-modal-tutup"
+                className={styles.submitBtn}
+                style={{ width: 'auto', padding: '8px 20px', height: '38px', fontSize: '13px' }}
+                onClick={() => setShowAndroidModal(false)}
+              >
                 Mengerti &amp; Tutup
               </button>
             </div>
@@ -608,7 +816,7 @@ export default function LoginPage() {
         </div>
       )}
 
-      <style>{`@keyframes loginSpin { to { transform: rotate(360deg); } }`}</style>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }
