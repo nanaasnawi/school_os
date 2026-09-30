@@ -7,12 +7,8 @@ import { login as sdkLogin } from '@/lib/sdk';
 import { getApiUrl } from '@/lib/api';
 import { getTenantItem } from '@/lib/tenant-storage';
 import {
-  Server,
   RefreshCw,
-  Activity,
-  HardDrive,
   Lock,
-  Radio,
   Clock,
   ShieldCheck,
   Mail,
@@ -267,174 +263,107 @@ export default function LoginPage() {
   if (maintenance?.is_active) {
     return (
       <div className={styles.maintenanceRoot}>
-        <div className={styles.bgBlob1} />
-        <div className={styles.bgBlob2} />
-        <div className={styles.bgBlob3} />
-        <div className={styles.gridOverlay} />
+        {/* ── Left Panel: Illustration ── */}
+        <div className={styles.mntLeft}>
+          <img
+            src="/images/under-construction-animate.svg"
+            alt="Under Construction – School OS"
+            className={styles.mntIllustration}
+            draggable={false}
+          />
+        </div>
 
-        <div className={styles.maintenanceLayout}>
-          {/* LEFT — Animated Illustration */}
-          <div className={styles.maintenanceIllustrationPanel}>
-            <img
-              src="/images/under-construction-animate.svg"
-              alt="Under Construction – School OS Maintenance"
-              className={styles.maintenanceIllustration}
-              draggable={false}
+        {/* ── Divider ── */}
+        <div className={styles.mntDivider} />
+
+        {/* ── Right Panel: Status ── */}
+        <div className={styles.mntRight}>
+          {/* Live badge */}
+          <div className={styles.mntBadge}>
+            <span className={styles.mntBeacon} />
+            <span>Pemeliharaan Terjadwal</span>
+          </div>
+
+          {/* Title */}
+          <h1 className={styles.mntTitle}>
+            Sistem Sedang<br />Dalam Pemeliharaan
+          </h1>
+
+          <p className={styles.mntDesc}>
+            Peningkatan infrastruktur & sinkronisasi data sedang berlangsung
+            untuk memastikan stabilitas operasional seluruh civitas sekolah.
+          </p>
+
+          {/* Status rows — flat, no card */}
+          <div className={styles.mntStatusList}>
+            <div className={styles.mntStatusRow}>
+              <span className={styles.mntStatusDotWarn} />
+              <span className={styles.mntStatusLabel}>Status Server</span>
+              <span className={styles.mntStatusVal}>Optimalisasi Berjalan</span>
+            </div>
+            <div className={styles.mntStatusRow}>
+              <span className={styles.mntStatusDotGreen} />
+              <span className={styles.mntStatusLabel}>Keamanan Data</span>
+              <span className={styles.mntStatusVal} style={{ color: '#10b981' }}>Terenkripsi & Terjaga</span>
+            </div>
+            <div className={styles.mntStatusRow}>
+              <span className={styles.mntStatusDotBlue} />
+              <span className={styles.mntStatusLabel}>Infrastruktur</span>
+              <span className={styles.mntStatusVal}>High-Availability Cloud</span>
+            </div>
+          </div>
+
+          {/* Maintenance message */}
+          <p className={styles.mntMessage}>
+            &ldquo;{maintenance.message}&rdquo;
+          </p>
+
+          {/* CTA Button */}
+          <button
+            type="button"
+            onClick={() => checkMaintenanceStatus(true)}
+            disabled={checkingMaintenance}
+            className={styles.mntBtn}
+          >
+            <RefreshCw
+              size={15}
+              style={{ animation: checkingMaintenance ? 'spin 1s linear infinite' : 'none' }}
             />
-            <p className={styles.maintenanceIllustrationCaption}>
-              Kami sedang mempersiapkan pembaruan terbaik untuk Anda.
-            </p>
-          </div>
+            {checkingMaintenance ? 'Memeriksa...' : 'Periksa Status Server'}
+          </button>
 
-          {/* RIGHT — Status Card */}
-          <div className={styles.maintenanceCard}>
-            {/* Futuristic Concentric Radar Rings & Core Icon */}
-            <div className={styles.iconAuraWrapper}>
-              <div className={styles.iconCore}>
-                <Server size={32} strokeWidth={2} />
-              </div>
-            </div>
+          {checkFeedback && (
+            <p className={styles.mntFeedback}>{checkFeedback}</p>
+          )}
 
-            {/* Operational Live Status Pill */}
-            <div>
-              <div className={styles.badgeLive}>
-                <span className={styles.beaconDot} />
-                <span>Status Operasional: Pemeliharaan Terjadwal</span>
-              </div>
-            </div>
-
-            {/* Headings */}
-            <h1 className={styles.maintenanceTitle}>Sistem Sedang Dalam Pemeliharaan</h1>
-            <p className={styles.maintenanceSubtitle}>
-              Peningkatan performa infrastruktur dan sinkronisasi data sedang berlangsung untuk
-              memastikan stabilitas, keamanan, dan keandalan operasional seluruh civitas sekolah.
-            </p>
-
-            {/* Telemetry Grid (3 Cards) */}
-            <div className={styles.telemetryGrid}>
-              <div className={styles.telemetryCard}>
-                <div className={styles.telemetryHeader}>
-                  <Activity size={12} />
-                  <span>Status Server</span>
-                </div>
-                <div
-                  className={styles.telemetryValue}
-                  style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-                >
-                  <span
-                    style={{
-                      width: '6px',
-                      height: '6px',
-                      borderRadius: '50%',
-                      background: '#fbbf24',
-                      display: 'inline-block',
-                    }}
-                  />
-                  Optimalisasi Berjalan
-                </div>
-              </div>
-
-              <div className={styles.telemetryCard}>
-                <div className={styles.telemetryHeader}>
-                  <Lock size={12} />
-                  <span>Keamanan Data</span>
-                </div>
-                <div className={styles.telemetryValue} style={{ color: '#10b981' }}>
-                  Terenkripsi &amp; Terlindungi
-                </div>
-              </div>
-
-              <div className={styles.telemetryCard}>
-                <div className={styles.telemetryHeader}>
-                  <HardDrive size={12} />
-                  <span>Infrastruktur</span>
-                </div>
-                <div className={styles.telemetryValue}>High-Availability Cloud</div>
-              </div>
-            </div>
-
-            {/* Official Technical Operational Notice */}
-            <div className={styles.messageBox}>
-              <div className={styles.messageHeader}>
-                <Radio size={13} style={{ animation: 'pulse 1.5s infinite' }} />
-                <span>Catatan Teknis Operasional</span>
-              </div>
-              <div className={styles.messageText}>&ldquo;{maintenance.message}&rdquo;</div>
-            </div>
-
-            {/* Actions & Auto-Check Bar */}
-            <div>
-              <button
-                type="button"
-                onClick={() => checkMaintenanceStatus(true)}
-                disabled={checkingMaintenance}
-                className={styles.checkButton}
-              >
-                <RefreshCw
-                  size={16}
-                  style={{
-                    animation: checkingMaintenance ? 'spin 1s linear infinite' : 'none',
-                    transition: 'transform 0.2s ease',
-                  }}
-                />
-                <span>
-                  {checkingMaintenance
-                    ? 'Memeriksa Status Terkini...'
-                    : 'Periksa Status Server Sekarang'}
-                </span>
-              </button>
-
-              {checkFeedback && (
-                <div
-                  style={{
-                    marginTop: '0.75rem',
-                    fontSize: '0.8rem',
-                    color: 'var(--accent, #0ea5e9)',
-                    background: 'var(--accent-light, #e0f2fe)',
-                    border: '1px solid var(--border-medium, #cbd5e1)',
-                    borderRadius: '8px',
-                    padding: '0.45rem 0.8rem',
-                    display: 'inline-block',
-                  }}
-                >
-                  ℹ️ {checkFeedback}
-                </div>
-              )}
-
-              <div className={styles.autoTickerRow}>
-                <Clock size={13} />
-                <span>
-                  Pemeriksaan otomatis dalam <strong>{countdown} detik</strong>
-                </span>
-              </div>
-              <div className={styles.autoProgressBar}>
-                <div
-                  className={styles.autoProgressFill}
-                  style={{ width: `${Math.max(5, ((15 - countdown) / 15) * 100)}%` }}
-                />
-              </div>
-            </div>
-
-            {/* Footer Assistance & Zero-Leak Secret Admin Access */}
-            <div className={styles.footerHelpText}>
-              <span>Pertanyaan darurat terkait akses sekolah? Hubungi Administrator TI Sekolah.</span>
-              <span>•</span>
-              <span
-                className={styles.versionBadge}
-                title=""
-                onClick={() => {
-                  const next = adminTriggerCount + 1;
-                  if (next >= 5) {
-                    router.push('/system-admin/login');
-                  } else {
-                    setAdminTriggerCount(next);
-                  }
-                }}
-              >
-                v2.4.0
-              </span>
+          {/* Countdown */}
+          <div className={styles.mntCountdownRow}>
+            <Clock size={12} />
+            <span>Auto-check dalam <strong>{countdown}s</strong></span>
+            <div className={styles.mntCountdownBar}>
+              <div
+                className={styles.mntCountdownFill}
+                style={{ width: `${Math.max(3, ((15 - countdown) / 15) * 100)}%` }}
+              />
             </div>
           </div>
+
+          {/* Footer */}
+          <p className={styles.mntFooter}>
+            Butuh akses darurat?{' '}
+            <span>Hubungi Administrator TI Sekolah</span>
+            {' · '}
+            <span
+              className={styles.mntVersion}
+              onClick={() => {
+                const next = adminTriggerCount + 1;
+                if (next >= 5) router.push('/system-admin/login');
+                else setAdminTriggerCount(next);
+              }}
+            >
+              v2.4.0
+            </span>
+          </p>
         </div>
       </div>
     );
