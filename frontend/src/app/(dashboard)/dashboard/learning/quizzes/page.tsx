@@ -27,7 +27,7 @@ type StudentCbtScore = {
   timeSpent: string;
   correctAnswers: number;
   totalQuestions: number;
-  status: 'Lulus KKM' | 'Remedial';
+  status: 'Lulus KKM' | 'Remedial' | 'Sedang Mengerjakan';
 };
 
 type QuizChoiceItem = {
@@ -92,6 +92,8 @@ export default function QuizzesPage() {
 
   // Selected Quiz Analysis Modal
   const [analyzedQuiz, setAnalyzedQuiz] = useState<QuizItem | null>(null);
+  const [loadingAnalysis, setLoadingAnalysis] = useState(false);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
 
   // Bank Soal & Butir Soal Modal State
   const [viewQuestionsQuiz, setViewQuestionsQuiz] = useState<QuizItem | null>(null);
@@ -156,32 +158,14 @@ export default function QuizzesPage() {
             subject: String(q.subject_name || '-'),
             classRoom: String(q.class_name || '-'),
             teacherName: String(q.teacher_name || '-'),
-            duration: `${q.duration_minutes || 30} Menit`,
+            duration: `${q.duration_minutes || q.time_limit_minutes || 30} Menit`,
             totalQuestions: Number(q.questions_count) || 0,
             status: (q.status as QuizItem['status']) || 'PUBLISHED',
-            participants: 12,
+            participants: 0,
             maxParticipants: 28,
-            avgScore: 84,
+            avgScore: 0,
           }));
           setQuizzes(mapped);
-        }
-
-        if (studentRes?.data?.data) {
-          const list = studentRes.data.data;
-
-          const scores: StudentCbtScore[] = list.slice(0, 12).map((s: { nisn: string; full_name: string }, idx: number) => {
-            const sc = 75 + (idx % 6) * 5;
-            return {
-              nisn: s.nisn,
-              studentName: s.full_name,
-              score: sc,
-              timeSpent: `${25 + (idx % 15)} Menit`,
-              correctAnswers: Math.round((sc / 100) * 20),
-              totalQuestions: 20,
-              status: sc >= 75 ? 'Lulus KKM' : 'Remedial',
-            };
-          });
-          setCbtScores(scores);
         }
       } catch (err) {
         console.error('Error loading quizzes data:', err);
@@ -190,6 +174,57 @@ export default function QuizzesPage() {
 
     loadData();
   }, []);
+
+  const handleOpenAnalysisModal = async (q: QuizItem) => {
+    setAnalyzedQuiz(q);
+    setLoadingAnalysis(true);
+    setAnalysisError(null);
+    setCbtScores([]);
+    try {
+      const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
+      const res = await fetch(getApiUrl(`/api/v1/learning/quizzes/${q.id}/attempts`), {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+      if (res.ok) {
+        const json = await res.json();
+        const attempts = json.data || [];
+        const mapped: StudentCbtScore[] = attempts.map((a: Record<string, unknown>) => {
+          let timeSpentText = '-';
+          if (a.completed_at && a.started_at) {
+            const mins = Math.max(1, Math.round((new Date(String(a.completed_at)).getTime() - new Date(String(a.started_at)).getTime()) / 60000));
+            timeSpentText = `${mins} Menit`;
+          } else if (a.status === 'in_progress') {
+            timeSpentText = 'Sedang Mengerjakan';
+          }
+          const totalPts = Number(a.total_points) || 100;
+          const scoreVal = a.percentage != null 
+            ? Number(a.percentage) 
+            : (a.score != null ? Math.round((Number(a.score) * 100) / totalPts) : 0);
+          const isPassed = typeof a.passed === 'boolean' ? a.passed : scoreVal >= 75;
+          const answersArr = Array.isArray(a.answers) ? a.answers : [];
+          const correctCount = answersArr.filter((ans: Record<string, unknown>) => ans.is_correct || (Number(ans.points_earned) > 0)).length;
+          
+          return {
+            nisn: String(a.student_nisn || '-'),
+            studentName: String(a.student_name || 'Siswa'),
+            score: scoreVal,
+            timeSpent: timeSpentText,
+            correctAnswers: answersArr.length > 0 ? correctCount : (Number(a.score) || 0),
+            totalQuestions: answersArr.length > 0 ? answersArr.length : q.totalQuestions,
+            status: a.status === 'in_progress' ? 'Sedang Mengerjakan' : (isPassed ? 'Lulus KKM' : 'Remedial'),
+          };
+        });
+        setCbtScores(mapped);
+      } else {
+        setAnalysisError('Gagal memuat riwayat ujian siswa dari server');
+      }
+    } catch (err) {
+      console.error('Failed to load quiz attempts:', err);
+      setAnalysisError('Terjadi kesalahan jaringan saat memuat analisis');
+    } finally {
+      setLoadingAnalysis(false);
+    }
+  };
 
   const handleCreateQuiz = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -508,7 +543,7 @@ export default function QuizzesPage() {
                       >
                         📝 Butir Soal ({q.totalQuestions})
                       </button>
-                      <button className="btn btn-secondary btn-sm" onClick={() => setAnalyzedQuiz(q)}>
+                      <button className="btn btn-secondary btn-sm" onClick={() => handleOpenAnalysisModal(q)}>
                         📊 Analisis Nilai
                       </button>
                     </div>
@@ -1240,59 +1275,100 @@ export default function QuizzesPage() {
             </div>
 
             <div style={{ padding: '1.25rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.75rem' }}>
-                <div style={{ background: 'rgba(37, 99, 235, 0.10)', border: '1px solid rgba(37, 99, 235, 0.25)', padding: '0.75rem', borderRadius: '10px', textAlign: 'center' }}>
-                  <div style={{ fontSize: '0.72rem', color: 'var(--accent)', fontWeight: 700 }}>Total Peserta Ujian</div>
-                  <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#2563eb' }}>{analyzedQuiz.participants} Siswa</div>
-                </div>
+              {(() => {
+                const totalParticipants = cbtScores.length;
+                const completedScores = cbtScores.filter(s => s.status !== 'Sedang Mengerjakan');
+                const avgScore = completedScores.length > 0 
+                  ? Math.round(completedScores.reduce((acc, s) => acc + s.score, 0) / completedScores.length) 
+                  : 0;
+                const passedCount = cbtScores.filter(s => s.status === 'Lulus KKM').length;
+                const passRate = completedScores.length > 0 
+                  ? Math.round((passedCount / completedScores.length) * 100) 
+                  : 0;
 
-                <div style={{ background: 'rgba(22, 163, 74, 0.10)', border: '1px solid rgba(22, 163, 74, 0.25)', padding: '0.75rem', borderRadius: '10px', textAlign: 'center' }}>
-                  <div style={{ fontSize: '0.72rem', color: 'var(--success)', fontWeight: 700 }}>Nilai Rata-Rata Class</div>
-                  <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#16a34a' }}>{analyzedQuiz.avgScore > 0 ? analyzedQuiz.avgScore : 84.5}</div>
-                </div>
+                return (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.75rem' }}>
+                    <div style={{ background: 'rgba(37, 99, 235, 0.10)', border: '1px solid rgba(37, 99, 235, 0.25)', padding: '0.75rem', borderRadius: '10px', textAlign: 'center' }}>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--accent)', fontWeight: 700 }}>Total Peserta Ujian</div>
+                      <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#2563eb' }}>{totalParticipants} Siswa</div>
+                    </div>
 
-                <div style={{ background: '#fef3c7', border: '1px solid #fde68a', padding: '0.75rem', borderRadius: '10px', textAlign: 'center' }}>
-                  <div style={{ fontSize: '0.72rem', color: '#92400e', fontWeight: 700 }}>Kelulusan KKM</div>
-                  <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#d97706' }}>91.6% (Passed)</div>
-                </div>
-              </div>
+                    <div style={{ background: 'rgba(22, 163, 74, 0.10)', border: '1px solid rgba(22, 163, 74, 0.25)', padding: '0.75rem', borderRadius: '10px', textAlign: 'center' }}>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--success)', fontWeight: 700 }}>Nilai Rata-Rata Kelas</div>
+                      <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#16a34a' }}>
+                        {completedScores.length > 0 ? `${avgScore}` : '-'}
+                      </div>
+                    </div>
 
-              <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: '12px', overflow: 'hidden' }}>
-                <div style={{ padding: '0.75rem 1rem', background: 'var(--bg-elevated)', borderBottom: '1px solid var(--border-light)', fontWeight: 800, fontSize: '0.82rem', color: 'var(--text-primary)' }}>
-                  🏆 Daftar Nilai CBT Siswa
+                    <div style={{ background: '#fef3c7', border: '1px solid #fde68a', padding: '0.75rem', borderRadius: '10px', textAlign: 'center' }}>
+                      <div style={{ fontSize: '0.72rem', color: '#92400e', fontWeight: 700 }}>Kelulusan KKM</div>
+                      <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#d97706' }}>
+                        {completedScores.length > 0 ? `${passRate}% (${passedCount}/${completedScores.length})` : '-'}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {analysisError && (
+                <div style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c', padding: '0.75rem', borderRadius: '8px', fontSize: '0.8rem' }}>
+                  ⚠️ {analysisError}
                 </div>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem' }}>
-                  <thead>
-                    <tr style={{ background: 'var(--bg-elevated)', borderBottom: '1px solid var(--border-light)', textAlign: 'left' }}>
-                      <th style={{ padding: '0.6rem 0.875rem' }}>Nama Siswa (NISN)</th>
-                      <th style={{ padding: '0.6rem 0.875rem' }}>Durasi</th>
-                      <th style={{ padding: '0.6rem 0.875rem' }}>Jawaban Benar</th>
-                      <th style={{ padding: '0.6rem 0.875rem' }}>Skor CBT</th>
-                      <th style={{ padding: '0.6rem 0.875rem' }}>Status KKM</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {cbtScores.map((s, idx) => (
-                      <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                        <td style={{ padding: '0.6rem 0.875rem' }}>
-                          <strong>{s.studentName}</strong>
-                          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{s.nisn}</div>
-                        </td>
-                        <td style={{ padding: '0.6rem 0.875rem', color: 'var(--text-muted)' }}>⏱️ {s.timeSpent}</td>
-                        <td style={{ padding: '0.6rem 0.875rem', fontWeight: 700 }}>{s.correctAnswers} / {s.totalQuestions}</td>
-                        <td style={{ padding: '0.6rem 0.875rem' }}>
-                          <strong style={{ fontSize: '0.9rem', color: s.score >= 75 ? '#16a34a' : '#dc2626' }}>{s.score}</strong> / 100
-                        </td>
-                        <td style={{ padding: '0.6rem 0.875rem' }}>
-                          <span className={`badge ${s.status === 'Lulus KKM' ? 'badge-active' : 'badge-warning'}`}>
-                            {s.status}
-                          </span>
-                        </td>
+              )}
+
+              {loadingAnalysis ? (
+                <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-muted)' }}>
+                  <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>⏳</div>
+                  <div>Memuat data riwayat dan hasil ujian CBT siswa dari server...</div>
+                </div>
+              ) : cbtScores.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '2.5rem 1rem', background: '#f8fafc', borderRadius: '12px', border: '1px dashed #cbd5e1' }}>
+                  <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🧑‍🎓</div>
+                  <div style={{ fontWeight: 800, color: 'var(--text-primary)', fontSize: '0.95rem' }}>
+                    Belum Ada Siswa yang Mengerjakan Ujian CBT Ini
+                  </div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px', maxWidth: '420px', margin: '6px auto 0' }}>
+                    Siswa dapat mengakses dan mengerjakan kuis ini via aplikasi <strong>School OS Android</strong>. Hasil ujian dan nilai otomatis langsung tersinkronkan di halaman ini.
+                  </div>
+                </div>
+              ) : (
+                <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: '12px', overflow: 'hidden' }}>
+                  <div style={{ padding: '0.75rem 1rem', background: 'var(--bg-elevated)', borderBottom: '1px solid var(--border-light)', fontWeight: 800, fontSize: '0.82rem', color: 'var(--text-primary)' }}>
+                    🏆 Daftar Nilai CBT Siswa ({cbtScores.length} Siswa)
+                  </div>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem' }}>
+                    <thead>
+                      <tr style={{ background: 'var(--bg-elevated)', borderBottom: '1px solid var(--border-light)', textAlign: 'left' }}>
+                        <th style={{ padding: '0.6rem 0.875rem' }}>Nama Siswa (NISN)</th>
+                        <th style={{ padding: '0.6rem 0.875rem' }}>Durasi</th>
+                        <th style={{ padding: '0.6rem 0.875rem' }}>Jawaban Benar</th>
+                        <th style={{ padding: '0.6rem 0.875rem' }}>Skor CBT</th>
+                        <th style={{ padding: '0.6rem 0.875rem' }}>Status KKM</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {cbtScores.map((s, idx) => (
+                        <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                          <td style={{ padding: '0.6rem 0.875rem' }}>
+                            <strong>{s.studentName}</strong>
+                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{s.nisn}</div>
+                          </td>
+                          <td style={{ padding: '0.6rem 0.875rem', color: 'var(--text-muted)' }}>⏱️ {s.timeSpent}</td>
+                          <td style={{ padding: '0.6rem 0.875rem', fontWeight: 700 }}>{s.correctAnswers} / {s.totalQuestions}</td>
+                          <td style={{ padding: '0.6rem 0.875rem' }}>
+                            <strong style={{ fontSize: '0.9rem', color: s.score >= 75 ? '#16a34a' : '#dc2626' }}>{s.score}</strong> / 100
+                          </td>
+                          <td style={{ padding: '0.6rem 0.875rem' }}>
+                            <span className={`badge ${s.status === 'Lulus KKM' ? 'badge-active' : s.status === 'Sedang Mengerjakan' ? 'badge-info' : 'badge-warning'}`}>
+                              {s.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
 
             <div style={{ padding: '0.875rem 1.25rem', borderTop: '1px solid var(--border-light)', background: 'var(--bg-elevated)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
