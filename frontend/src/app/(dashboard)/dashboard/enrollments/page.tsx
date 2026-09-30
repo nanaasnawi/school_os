@@ -110,7 +110,7 @@ export default function EnrollmentsPage() {
 
   const exportToExcelFile = () => {
     if (!filtered || filtered.length === 0) {
-      showToast('⚠️ Tidak ada data pendaftaran kelas untuk diekspor!');
+      showToast('Tidak ada data pendaftaran kelas untuk diekspor!');
       return;
     }
     const exportData = filtered.map(e => ({
@@ -160,7 +160,7 @@ export default function EnrollmentsPage() {
         </div>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
           <button className="btn btn-secondary btn-sm" onClick={exportToExcelFile}>
-            📊 Ekspor Excel (.xlsx)
+            Ekspor Excel (.xlsx)
           </button>
           <button className="btn btn-primary btn-sm" onClick={handleOpenAdd}>
             + Pendaftaran Kelas Baru
@@ -168,107 +168,226 @@ export default function EnrollmentsPage() {
         </div>
       </div>
 
-      {/* Filter Bar */}
-      <div className={styles.tableHeaderArea} style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', background: 'var(--bg-card)', padding: '0.75rem 1rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-dim)' }}>
-        <div style={{ flex: 1, minWidth: '200px' }}>
-          <input
-            type="text"
-            placeholder="🔍 Cari NISN / Nama Siswa atau Rombel..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="input"
-          />
+      {/* Top Action Row (Enterprise Style - Screenshot Match) */}
+      <div className="tableActionRow">
+        <button className="tableActionBtn" onClick={handleOpenAdd}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+          <span>+ Plotting Rombel Siswa Baru</span>
+        </button>
+
+        <button className="tableActionBtn" onClick={exportToExcelFile}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
+          <span>Ekspor Excel (.xlsx)</span>
+        </button>
+
+        <div className="tableActionBtn" style={{ cursor: 'default' }}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+          </svg>
+          <span>Sinkron Dapodik Siswa</span>
         </div>
-
-        <select
-          value={classFilter}
-          onChange={e => setClassFilter(e.target.value)}
-          className="input"
-          style={{ width: '160px' }}
-        >
-          <option value="ALL">Semua Rombel</option>
-          {classesList.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
-        </select>
-
-        <select
-          value={statusFilter}
-          onChange={e => setStatusFilter(e.target.value)}
-          className="input"
-          style={{ width: '160px' }}
-        >
-          <option value="ALL">Semua Status</option>
-          <option value="ACTIVE">● Terdaftar Aktif</option>
-          <option value="INACTIVE">● Status Nonaktif</option>
-        </select>
       </div>
 
-      {/* Main Table */}
-      <div className={styles.tableCard}>
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th>ID Pendaftaran</th>
-              <th>NISN &amp; Nama Siswa</th>
-              <th>Target Kelas Rombel</th>
-              <th>Status Pendaftaran</th>
-              <th style={{ textAlign: 'right' }}>Aksi</th>
-            </tr>
-          </thead>
-          <tbody>
-            {paginated.length > 0 ? (
-              paginated.map(e => (
-                <tr key={e.id}>
-                  <td><code>REC-{e.id}</code></td>
-                  <td className={styles.studentName}>
-                    <strong>{e.student_name}</strong>
-                    <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>NISN: {e.nisn}</div>
-                  </td>
-                  <td><span className="badge badge-info">{e.class_name}</span></td>
-                  <td>
-                    <span className={`badge ${e.is_active ? 'badge-active' : 'badge-inactive'}`}>
-                      {e.is_active ? '● Terdaftar Aktif' : '● Nonaktif'}
-                    </span>
-                  </td>
-                  <td style={{ textAlign: 'right' }}>
-                    <div className={styles.actionsCell} style={{ justifyContent: 'flex-end', gap: '0.4rem' }}>
-                      <button
-                        className="btn btn-secondary btn-sm"
-                        onClick={() => setSelectedRecord(e)}
-                      >
-                        👁️ Lihat Rekord
-                      </button>
-                      <Link href={`/dashboard/enrollments/${e.id}`} className="btn btn-ghost btn-sm" style={{ fontSize: '0.72rem' }}>
-                        Detail →
-                      </Link>
-                    </div>
+      {/* Table Card (Screenshot Match) */}
+      <div className="tableCard">
+        {/* Table Toolbar */}
+        <div className="tableToolbar">
+          <div className="tableInfoText">
+            Showing <strong>{filtered.length === 0 ? 0 : (safePage - 1) * itemsPerPage + 1}</strong> to{' '}
+            <strong>{Math.min(safePage * itemsPerPage, filtered.length)}</strong> of{' '}
+            <strong>{filtered.length}</strong> entries
+            {filtered.length !== enrollments.length && (
+              <span> (filtered from <strong>{enrollments.length}</strong> total entries)</span>
+            )}
+          </div>
+
+          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+            <div className="tableSearchBox">
+              <input
+                type="text"
+                placeholder="Cari NISN, nama, rombel..."
+                value={search}
+                onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
+                className="tableSearchInput"
+              />
+              <svg className="tableSearchIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+            </div>
+
+            <select
+              value={classFilter}
+              onChange={(e) => { setClassFilter(e.target.value); setCurrentPage(1); }}
+              className="entriesSelect"
+              style={{ minWidth: '140px', height: '34px' }}
+            >
+              <option value="ALL">Semua Rombel</option>
+              {classesList.map((c) => (
+                <option key={c.id} value={c.name}>{c.name}</option>
+              ))}
+            </select>
+
+            <select
+              value={statusFilter}
+              onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
+              className="entriesSelect"
+              style={{ minWidth: '140px', height: '34px' }}
+            >
+              <option value="ALL">Semua Status</option>
+              <option value="ACTIVE">Terdaftar Aktif</option>
+              <option value="INACTIVE">Nonaktif</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="tableWrap">
+          <table className="table">
+            <thead>
+              <tr>
+                <th style={{ width: '40px', textAlign: 'center' }}>
+                  <input type="checkbox" className="tableCheckbox" aria-label="Select all" />
+                </th>
+                <th className="thSortable">
+                  <div className="thSortContent">
+                    <span>ID Pendaftaran</span>
+                    <span className="sortArrows">⇅</span>
+                  </div>
+                </th>
+                <th className="thSortable">
+                  <div className="thSortContent">
+                    <span>NISN &amp; Nama Siswa</span>
+                    <span className="sortArrows">⇅</span>
+                  </div>
+                </th>
+                <th className="thSortable">
+                  <div className="thSortContent">
+                    <span>Target Kelas Rombel</span>
+                    <span className="sortArrows">⇅</span>
+                  </div>
+                </th>
+                <th className="thSortable">
+                  <div className="thSortContent">
+                    <span>Status Pendaftaran</span>
+                    <span className="sortArrows">⇅</span>
+                  </div>
+                </th>
+                <th style={{ textAlign: 'right' }}>Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              {paginated.length === 0 ? (
+                <tr>
+                  <td colSpan={6} style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-muted)' }}>
+                    {isLoading ? 'Memuat data pendaftaran siswa...' : 'Tidak ada data pendaftaran siswa yang sesuai pencarian.'}
                   </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={5} style={{ textAlign: 'center', padding: '2.5rem 1rem', color: 'var(--text-muted)' }}>
-                  {isLoading ? 'Memuat data pendaftaran siswa...' : 'Tidak ada data pendaftaran siswa yang ditemukan.'}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+              ) : (
+                paginated.map((e) => (
+                  <tr key={e.id}>
+                    <td style={{ textAlign: 'center' }}>
+                      <input type="checkbox" className="tableCheckbox" aria-label={`Select ${e.student_name}`} />
+                    </td>
+                    <td><code>REC-{e.id}</code></td>
+                    <td>
+                      <div
+                        className="itemPrimaryTitle"
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => setSelectedRecord(e)}
+                      >
+                        <span>{e.student_name}</span>
+                        <svg className="externalLinkIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                          <polyline points="15 3 21 3 21 9" />
+                          <line x1="10" y1="14" x2="21" y2="3" />
+                        </svg>
+                      </div>
+                      <div className="itemSubtitleCheck">
+                        <span>✓ NISN: {e.nisn}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <span className="statusPill statusPillMuted">
+                        {e.class_name}
+                      </span>
+                    </td>
+                    <td>
+                      <span className={`statusPill ${e.is_active ? 'statusPillActive' : 'statusPillMuted'}`}>
+                        {e.is_active ? 'Active' : 'Nonaktif'}
+                      </span>
+                    </td>
+                    <td style={{ textAlign: 'right' }}>
+                      <div style={{ display: 'inline-flex', gap: '0.35rem', justifyContent: 'flex-end' }}>
+                        <button
+                          className="pageBtnNav"
+                          style={{ border: '1px solid #cbd5e1', padding: '0.28rem 0.6rem', fontSize: '0.78rem' }}
+                          onClick={() => setSelectedRecord(e)}
+                        >
+                          Lihat
+                        </button>
+                        <Link
+                          href={`/dashboard/enrollments/${e.id}`}
+                          className="pageBtnNav"
+                          style={{ border: '1px solid #cbd5e1', padding: '0.28rem 0.6rem', fontSize: '0.78rem' }}
+                        >
+                          Detail
+                        </Link>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
 
-                <div className={styles.pagination} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem' }}>
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Menampilkan {paginated.length} dari total {filtered.length} hasil</span>
-          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-            <button 
-              disabled={safePage <= 1} 
-              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-              className="btn btn-secondary btn-sm"
+        {/* Table Footer / Pagination */}
+        <div className="tableFooter">
+          <div className="entriesSelector">
+            <span>Show</span>
+            <select
+              value={itemsPerPage}
+              onChange={() => {}}
+              className="entriesSelect"
             >
-              Prev
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+            </select>
+            <span>entries</span>
+          </div>
+
+          <div className="paginationControls">
+            <button
+              className="pageBtnNav"
+              disabled={safePage <= 1}
+              onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+            >
+              Previous
             </button>
-            <span style={{ fontSize: '0.8rem', fontWeight: 700, margin: '0 0.5rem' }}>Halaman {safePage} dari {totalPages}</span>
-            <button 
-              disabled={safePage >= totalPages} 
-              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-              className="btn btn-secondary btn-sm"
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+              <button
+                key={pageNum}
+                className={`pageBtnNum ${pageNum === safePage ? 'pageBtnActive' : ''}`}
+                onClick={() => setCurrentPage(pageNum)}
+              >
+                {pageNum}
+              </button>
+            ))}
+            <button
+              className="pageBtnNav"
+              disabled={safePage >= totalPages}
+              onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
             >
               Next
             </button>
@@ -330,7 +449,7 @@ export default function EnrollmentsPage() {
 
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 700 }}>Status Pendaftaran:</span>
-                  <span className="badge badge-active">● Terdaftar Aktif (Dapodik Verified)</span>
+                  <span className="badge badge-active">Terdaftar Aktif (Dapodik Verified)</span>
                 </div>
               </div>
 

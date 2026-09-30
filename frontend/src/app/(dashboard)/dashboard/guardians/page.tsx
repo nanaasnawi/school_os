@@ -168,7 +168,7 @@ export default function GuardiansPage() {
   const exportToExcelFile = () => {
     const realOnly = filtered.filter(g => g.isRealData);
     if (!realOnly || realOnly.length === 0) {
-      showToast('⚠️ Belum ada data wali siswa asli yang diinput untuk diekspor!');
+      showToast('Belum ada data wali siswa asli yang diinput untuk diekspor!');
       return;
     }
     const exportData = realOnly.map(g => ({
@@ -216,7 +216,7 @@ export default function GuardiansPage() {
         </div>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
           <button className="btn btn-secondary btn-sm" onClick={exportToExcelFile}>
-            📊 Ekspor Excel (.xlsx)
+            Ekspor Excel (.xlsx)
           </button>
           <button className="btn btn-primary btn-sm" onClick={handleOpenAdd}>
             + Tambah Rekord Wali
@@ -240,14 +240,14 @@ export default function GuardiansPage() {
         }}>
           <div>
             <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-              ℹ️ Data Nama Orang Tua / Wali Belum Diisi dari Dapodik
+              Data Nama Orang Tua / Wali Belum Diisi dari Dapodik
             </div>
             <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>
               Database siswa belum terhubung dengan nama Orang Tua / Wali murid. Silakan isi data asli wali murid melalui tombol <strong>Input Nama Wali</strong>.
             </div>
           </div>
           <button className="btn btn-primary btn-sm" onClick={handleOpenAdd}>
-            ✏️ Input Data Asli Wali
+            Input Data Asli Wali
           </button>
         </div>
       )}
@@ -257,7 +257,7 @@ export default function GuardiansPage() {
         <div style={{ flex: 1, minWidth: '200px' }}>
           <input
             type="text"
-            placeholder="🔍 Cari Nama Wali, Siswa, atau NISN..."
+            placeholder="Cari Nama Wali, Siswa, atau NISN..."
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="input"
@@ -323,10 +323,10 @@ export default function GuardiansPage() {
                   <td>{g.phone}</td>
                   <td>
                     {g.phone && g.phone !== '-' && g.phone.replace(/[^0-9]/g, '').length >= 6 ? (
-                      <span className="badge badge-active">● Terdaftar (WA OK)</span>
+                      <span className="badge badge-active">Terdaftar (WA OK)</span>
                     ) : g.isRealData ? (
                       <span className="badge badge-warning" style={{ background: 'rgba(245, 158, 11, 0.12)', color: '#d97706', border: '1px solid rgba(245, 158, 11, 0.28)' }}>
-                        ⚠️ Belum Ada No. WA
+                        Belum Ada No. WA
                       </span>
                     ) : (
                       <span className="badge badge-inactive">Belum Ada Data</span>
@@ -335,7 +335,7 @@ export default function GuardiansPage() {
                   <td style={{ textAlign: 'right' }}>
                     <div className={styles.actionsCell} style={{ justifyContent: 'flex-end', gap: '0.4rem' }}>
                       <button className="btn btn-primary btn-sm" style={{ fontSize: '0.74rem' }} onClick={() => handleOpenEdit(g)}>
-                        ✏️ {g.isRealData ? 'Edit Data Wali' : 'Input Nama Wali'}
+                        {g.isRealData ? 'Edit Data Wali' : 'Input Nama Wali'}
                       </button>
                     </div>
                   </td>
@@ -479,7 +479,7 @@ export default function GuardiansPage() {
             border: '1px solid var(--border-light)',
           }} onClick={e => e.stopPropagation()}>
             <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid var(--border-light)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <h2 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)' }}>✏️ Input / Edit Nama Wali ({editGuardian.student_name})</h2>
+              <h2 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)' }}>Input / Edit Nama Wali ({editGuardian.student_name})</h2>
               <button style={{ border: 'none', background: 'none', fontSize: '1.4rem', cursor: 'pointer', color: 'var(--text-muted)' }} onClick={() => setEditGuardian(null)}>×</button>
             </div>
             <form onSubmit={handleSaveEdit}>

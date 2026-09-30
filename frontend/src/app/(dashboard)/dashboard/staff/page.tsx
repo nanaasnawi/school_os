@@ -221,7 +221,7 @@ export default function StaffPage() {
     }));
     const schoolName = typeof window !== 'undefined' ? (getTenantItem('dapodik_nama_sekolah') || 'Sekolah') : 'Sekolah';
     exportToExcel(exportData, `Data_Staf_Tendik_${schoolName.replace(/[^a-zA-Z0-9]/g, '_')}`, 'Data Staf');
-    showToast('📊 Berkas Excel (.xlsx) Data Staf & Tendik berhasil diunduh!');
+    showToast('Berkas Excel (.xlsx) Data Staf & Tendik berhasil diunduh!');
   };
 
   const filtered = staffList.filter(st => {
@@ -278,7 +278,7 @@ export default function StaffPage() {
         </div>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
           <button className="btn btn-secondary btn-sm" onClick={exportToExcelFile}>
-            📊 Ekspor Excel (.xlsx)
+            Ekspor Excel (.xlsx)
           </button>
           <button className="btn btn-primary btn-sm" onClick={handleOpenAdd}>
             + Tambah Staf Baru
@@ -291,7 +291,7 @@ export default function StaffPage() {
         <div style={{ flex: 1, minWidth: '200px' }}>
           <input
             type="text"
-            placeholder="🔍 Cari Nama Pegawai..."
+            placeholder="Cari Nama Pegawai..."
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="input"
@@ -395,7 +395,7 @@ export default function StaffPage() {
                 <td style={{ textAlign: 'right' }}>
                   <div className={styles.actionsCell} style={{ justifyContent: 'flex-end', gap: '0.4rem' }}>
                     <button className="btn btn-ghost btn-sm" onClick={() => handleOpenEdit(st)}>
-                      ✏️ Edit
+                      Edit
                     </button>
                   </div>
                 </td>
@@ -532,7 +532,7 @@ export default function StaffPage() {
             border: '1px solid var(--border-light)',
           }} onClick={e => e.stopPropagation()}>
             <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid var(--border-light)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <h2 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)' }}>✏️ Edit Data Pegawai ({editStaff.full_name})</h2>
+              <h2 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)' }}>Edit Data Pegawai ({editStaff.full_name})</h2>
               <button style={{ border: 'none', background: 'none', fontSize: '1.4rem', cursor: 'pointer', color: 'var(--text-muted)' }} onClick={() => setEditStaff(null)}>×</button>
             </div>
             <form onSubmit={handleSaveEdit}>

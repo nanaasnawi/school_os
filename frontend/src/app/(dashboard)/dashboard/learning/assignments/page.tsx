@@ -29,7 +29,7 @@ type SubmissionItem = {
   nisn: string;
   time: string;
   score: number;
-  status: 'Dinilai' | 'Menunggu Penilaian';
+  status: 'Dinilai' | 'Menunggu Penilaian' | 'Belum Mengumpulkan';
   attachmentName?: string;
   attachmentType?: 'PDF' | 'IMAGE' | 'TEXT';
   fileUrl?: string;
@@ -41,6 +41,7 @@ type SubmissionItem = {
 export default function AssignmentsPage() {
   const [selectedId, setSelectedId] = useState('');
   const [assignmentTab, setAssignmentTab] = useState<'questions' | 'submissions'>('questions');
+  const [submissionFilter, setSubmissionFilter] = useState<'all' | 'needs_grading' | 'graded' | 'unsubmitted'>('all');
   
   // TanStack Query Hooks
   const { data: assignmentsData = [], refetch: refetchAssignments } = useAssignments();
@@ -116,10 +117,12 @@ export default function AssignmentsPage() {
       const studentName = sub.student_name || student?.full_name || 'Peserta Didik';
       const nisn = sub.student_nisn || student?.nisn || '-';
 
-      let timeFormatted = 'Hari ini via Android App';
+      let timeFormatted = '-';
       if (sub.submitted_at) {
         const d = new Date(sub.submitted_at);
         timeFormatted = `${d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })} (${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')} WIB)`;
+      } else if (sub.status !== 'unsubmitted') {
+        timeFormatted = 'Hari ini via Android App';
       }
 
       const fileName = sub.file_url ? sub.file_url.split('/').pop() : null;
@@ -127,14 +130,23 @@ export default function AssignmentsPage() {
 
       const answersList: SubmissionAnswer[] = Array.isArray(sub.answers) ? sub.answers : [];
 
+      let itemStatus: 'Dinilai' | 'Menunggu Penilaian' | 'Belum Mengumpulkan' = 'Menunggu Penilaian';
+      if (sub.status === 'unsubmitted') {
+        itemStatus = 'Belum Mengumpulkan';
+      } else if (sub.status === 'Graded' || sub.status === 'graded' || (sub.score !== null && sub.score !== undefined)) {
+        itemStatus = 'Dinilai';
+      } else {
+        itemStatus = 'Menunggu Penilaian';
+      }
+
       return {
         id: sub.id,
         studentName,
         nisn,
         time: timeFormatted,
         score: sub.score !== null && sub.score !== undefined ? sub.score : 0,
-        status: sub.status === 'Graded' || sub.status === 'graded' || (sub.score !== null && sub.score !== undefined) ? 'Dinilai' : 'Menunggu Penilaian',
-        attachmentName: fileName || (answersList.length === 0 ? `Lembar_Jawaban_${studentName.replace(/\s+/g, '_')}.pdf` : undefined),
+        status: itemStatus,
+        attachmentName: fileName || (sub.status !== 'unsubmitted' && answersList.length === 0 ? `Lembar_Jawaban_${studentName.replace(/\s+/g, '_')}.pdf` : undefined),
         attachmentType: fileType || 'PDF',
         fileUrl: sub.file_url || undefined,
         studentAnswerText: sub.content || '',
@@ -143,6 +155,13 @@ export default function AssignmentsPage() {
       };
     });
   }, [submissionsData, studentsList]);
+
+  const filteredSubmissions = useMemo(() => {
+    if (submissionFilter === 'needs_grading') return submissions.filter(s => s.status === 'Menunggu Penilaian');
+    if (submissionFilter === 'graded') return submissions.filter(s => s.status === 'Dinilai');
+    if (submissionFilter === 'unsubmitted') return submissions.filter(s => s.status === 'Belum Mengumpulkan');
+    return submissions;
+  }, [submissions, submissionFilter]);
 
   const assignments = useMemo<AssignmentItem[]>(() => {
     return assignmentsData.map((a) => {
@@ -158,13 +177,13 @@ export default function AssignmentsPage() {
         subjectName: a.subject_name || '-',
         teacherName: a.teacher_name || '-',
         due: dueFormatted,
-        totalStudents: 28,
-        submittedCount: a.id === activeAssignmentId ? submissions.length : 0,
+        totalStudents: a.id === activeAssignmentId && submissions.length > 0 ? submissions.length : 28,
+        submittedCount: a.id === activeAssignmentId ? submissions.filter(s => s.status !== 'Belum Mengumpulkan').length : 0,
         assignmentType: a.assignment_type,
         questions: a.questions || [],
       };
     });
-  }, [assignmentsData, activeAssignmentId, submissions.length]);
+  }, [assignmentsData, activeAssignmentId, submissions]);
 
   useEffect(() => {
     async function loadMetadata() {
@@ -579,7 +598,7 @@ export default function AssignmentsPage() {
                       borderRadius: '10px',
                       fontSize: '0.7rem'
                     }}>
-                      {submissions.length}
+                      {submissions.filter(s => s.status !== 'Belum Mengumpulkan').length} / {submissions.length}
                     </span>
                   </button>
                 </div>
@@ -760,7 +779,61 @@ export default function AssignmentsPage() {
 
               {/* TAB 2: Lembar Jawaban & Koreksi Siswa */}
               {assignmentTab === 'submissions' && (
-                <div style={{ paddingTop: '0.5rem' }}>
+                <div style={{ paddingTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                  {/* KPI Chips & Filters */}
+                  {submissions.length > 0 && (
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      flexWrap: 'wrap',
+                      gap: '0.6rem',
+                      background: 'var(--bg-elevated)',
+                      padding: '0.75rem 1rem',
+                      borderRadius: '10px',
+                      border: '1px solid var(--border-light)',
+                    }}>
+                      <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                        <button
+                          type="button"
+                          onClick={() => setSubmissionFilter('all')}
+                          className={`btn btn-sm ${submissionFilter === 'all' ? 'btn-primary' : 'btn-ghost'}`}
+                          style={{ fontSize: '0.72rem', padding: '0.2rem 0.6rem' }}
+                        >
+                          Semua ({submissions.length})
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSubmissionFilter('needs_grading')}
+                          className={`btn btn-sm ${submissionFilter === 'needs_grading' ? 'btn-warning' : 'btn-ghost'}`}
+                          style={{ fontSize: '0.72rem', padding: '0.2rem 0.6rem' }}
+                        >
+                          ⏳ Perlu Nilai ({submissions.filter(s => s.status === 'Menunggu Penilaian').length})
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSubmissionFilter('graded')}
+                          className={`btn btn-sm ${submissionFilter === 'graded' ? 'btn-success' : 'btn-ghost'}`}
+                          style={{ fontSize: '0.72rem', padding: '0.2rem 0.6rem' }}
+                        >
+                          ✓ Dinilai ({submissions.filter(s => s.status === 'Dinilai').length})
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSubmissionFilter('unsubmitted')}
+                          className={`btn btn-sm ${submissionFilter === 'unsubmitted' ? 'btn-secondary' : 'btn-ghost'}`}
+                          style={{ fontSize: '0.72rem', padding: '0.2rem 0.6rem' }}
+                        >
+                          ❌ Belum Kumpul ({submissions.filter(s => s.status === 'Belum Mengumpulkan').length})
+                        </button>
+                      </div>
+
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                        Pengumpulan: <strong>{submissions.filter(s => s.status !== 'Belum Mengumpulkan').length}</strong> dari <strong>{submissions.length}</strong> siswa rombel
+                      </div>
+                    </div>
+                  )}
+
                   <table className={styles.submissionTable}>
                     <thead>
                       <tr>
@@ -772,9 +845,9 @@ export default function AssignmentsPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {submissions.length > 0 ? (
-                        submissions.map((sub) => (
-                        <tr key={sub.id}>
+                      {filteredSubmissions.length > 0 ? (
+                        filteredSubmissions.map((sub) => (
+                        <tr key={sub.id || sub.studentName} style={sub.status === 'Belum Mengumpulkan' ? { opacity: 0.8 } : undefined}>
                           <td>
                             <strong>{sub.studentName}</strong>
                             <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>NISN: {sub.nisn}</div>
@@ -806,19 +879,23 @@ export default function AssignmentsPage() {
                             </div>
                           </td>
                           <td>
-                            <span className={`badge ${sub.status === 'Dinilai' ? 'badge-active' : 'badge-warning'}`}>
+                            <span className={`badge ${sub.status === 'Dinilai' ? 'badge-active' : sub.status === 'Belum Mengumpulkan' ? 'badge-neutral' : 'badge-warning'}`} style={sub.status === 'Belum Mengumpulkan' ? { background: '#f1f5f9', color: '#64748b', border: '1px solid #cbd5e1' } : undefined}>
                               {sub.status}
                             </span>
                           </td>
-                          <td><strong>{sub.score > 0 ? sub.score : '-'}</strong> / {assignmentDetail?.max_score || 100}</td>
+                          <td><strong>{sub.status === 'Belum Mengumpulkan' ? '—' : (sub.score > 0 ? sub.score : '-')}</strong> / {assignmentDetail?.max_score || 100}</td>
                           <td style={{ textAlign: 'right' }}>
-                            <button
-                              className="btn btn-secondary btn-sm"
-                              style={{ fontSize: '0.72rem', padding: '0.25rem 0.6rem' }}
-                              onClick={() => handleOpenGradingModal(sub)}
-                            >
-                              👁️ Periksa &amp; Koreksi
-                            </button>
+                            {sub.status === 'Belum Mengumpulkan' ? (
+                              <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>Belum mengumpulkan</span>
+                            ) : (
+                              <button
+                                className="btn btn-secondary btn-sm"
+                                style={{ fontSize: '0.72rem', padding: '0.25rem 0.6rem' }}
+                                onClick={() => handleOpenGradingModal(sub)}
+                              >
+                                👁️ Periksa &amp; Koreksi
+                              </button>
+                            )}
                           </td>
                         </tr>
                       ))
@@ -827,10 +904,10 @@ export default function AssignmentsPage() {
                           <td colSpan={5} style={{ textAlign: 'center', padding: '3.5rem 1.5rem', color: 'var(--text-muted)' }}>
                             <div style={{ fontSize: '2.5rem', marginBottom: '0.6rem' }}>📭</div>
                             <div style={{ fontWeight: 800, fontSize: '1.05rem', color: 'var(--text-primary)' }}>
-                              Belum Ada Siswa Mengumpulkan Berkas Jawaban
+                              {submissionFilter !== 'all' ? 'Tidak Ada Siswa Pada Filter Ini' : 'Belum Ada Siswa Mengumpulkan Berkas Jawaban'}
                             </div>
                             <div style={{ fontSize: '0.84rem', marginTop: '0.35rem', maxWidth: '420px', margin: '0.35rem auto 0 auto' }}>
-                              Tugas ini telah disinkronkan ke server. Siswa rombel {selected.className} dapat mengerjakan butir soal pilihan ganda &amp; esai, atau mengunggah lembar PR melalui aplikasi <strong>School OS Android</strong>.
+                              {submissionFilter !== 'all' ? 'Coba ganti filter di atas untuk melihat siswa lainnya.' : `Tugas ini telah disinkronkan ke server. Siswa rombel ${selected.className} dapat mengerjakan butir soal pilihan ganda & esai, atau mengunggah lembar PR melalui aplikasi School OS Android.`}
                             </div>
                           </td>
                         </tr>

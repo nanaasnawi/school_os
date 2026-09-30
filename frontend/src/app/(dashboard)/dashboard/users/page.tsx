@@ -2,6 +2,7 @@
 import { getTenantItem, setTenantItem, removeTenantItem } from '@/lib/tenant-storage';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import styles from './users.module.css';
 import { exportToExcel } from '@/lib/exportExcel';
 
@@ -217,7 +218,23 @@ export default function UsersPage() {
   });
 
   const [currentPage, setCurrentPage] = React.useState(1);
-  const itemsPerPage = 10;
+  const [itemsPerPage, setItemsPerPage] = React.useState(10);
+  const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === paginated.length && paginated.length > 0) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(paginated.map(u => u.id)));
+    }
+  };
+
+  const toggleSelectOne = (id: string) => {
+    const next = new Set(selectedIds);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setSelectedIds(next);
+  };
   
   React.useEffect(() => { 
     setCurrentPage(1); 
@@ -240,195 +257,251 @@ export default function UsersPage() {
       {/* Header & Breadcrumb */}
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <h1 className={styles.title} style={{ margin: 0, fontSize: '1.3rem', fontWeight: 800 }}>Akun &amp; Kredensial Pengguna</h1>
-          <p className={styles.subtitle}>Direktori username login, password, hak akses RBAC, dan integrasi Android Mobile App di {schoolName}</p>
-        </div>
-
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <button className="btn btn-secondary btn-sm" onClick={exportToExcelFile}>
-            📊 Ekspor Excel Kredensial (.xlsx)
-          </button>
-          <button className="btn btn-primary btn-sm" onClick={() => setShowAddModal(true)}>
-            + Buat Akun Baru
-          </button>
+          <h1 className={styles.title} style={{ margin: 0, fontSize: '1.4rem', fontWeight: 800 }}>Akun &amp; Kredensial Pengguna</h1>
+          <p className={styles.subtitle}>Direktori username login, kata sandi, hak akses peran (RBAC), dan integrasi Mobile App di {schoolName}</p>
         </div>
       </div>
 
-      {/* Guidance Card for Working Passwords */}
-      <div style={{
-        background: 'var(--bg-card)',
-        border: '1px solid var(--border-light)',
-        borderRadius: '16px',
-        padding: '1.1rem 1.25rem',
-        marginBottom: '1.25rem',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        flexWrap: 'wrap',
-        gap: '0.75rem'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <span style={{ fontSize: '1.6rem' }}>🔑</span>
-          <div>
-            <div style={{ fontSize: '0.92rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-              Manajemen Kredensial Pengguna Terenkripsi
-            </div>
-            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-              Semua kata sandi dienkripsi dengan standar keamanan tinggi di database. Anda dapat menggunakan tombol Reset Password jika pengguna melupakan aksesnya.
+      {/* Top Action Pills (Reference Design System) */}
+      <div className="tableActionRow">
+        <button type="button" className="tableActionBtn" onClick={() => setShowAddModal(true)}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+          <span>Buat Akun Baru</span>
+        </button>
+
+        <Link href="/dashboard/students/qr-scan" className="tableActionBtn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          <span>Pusat Kartu Akses QR</span>
+        </Link>
+
+        <button type="button" className="tableActionBtn" onClick={exportToExcelFile}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span>Ekspor Excel (.xlsx)</span>
+        </button>
+      </div>
+
+      {/* Main Table Card (Screenshot Reference Design) */}
+      <div className="tableCard">
+        {/* Top Toolbar */}
+        <div className="tableToolbar">
+          <div className="tableInfoText">
+            Showing <strong>{filtered.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}</strong> to <strong>{Math.min(currentPage * itemsPerPage, filtered.length)}</strong> of <strong>{filtered.length}</strong> entries {filtered.length !== users.length ? `(filtered from ${users.length} total entries)` : ''}
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
+            <select
+              value={activeTab}
+              onChange={e => { setActiveTab(e.target.value); setCurrentPage(1); }}
+              className="entriesSelect"
+            >
+              <option value="ALL">Semua Peran ({users.length})</option>
+              <option value="student">Siswa ({users.filter(u => u.role === 'student').length})</option>
+              <option value="teacher">Guru ({users.filter(u => u.role === 'teacher').length})</option>
+              <option value="parent">Wali Murid ({users.filter(u => u.role === 'parent').length})</option>
+              <option value="admin">Admin ({users.filter(u => u.role === 'admin').length})</option>
+            </select>
+
+            <select
+              value={statusFilter}
+              onChange={e => { setStatusFilter(e.target.value); setCurrentPage(1); }}
+              className="entriesSelect"
+            >
+              <option value="ALL">Semua Status</option>
+              <option value="ACTIVE">Active</option>
+              <option value="LOCKED">Locked</option>
+            </select>
+
+            <div className="tableSearchBox">
+              <input
+                type="text"
+                placeholder="Search..."
+                value={search}
+                onChange={e => { setSearch(e.target.value); setCurrentPage(1); }}
+                className="tableSearchInput"
+              />
+              <svg className="tableSearchIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Role Tabs Bar */}
-      <div className={styles.roleTabs}>
-        {[
-          { key: 'ALL', label: `Semua Akun (${users.length})` },
-          { key: 'student', label: `🎓 Siswa (${users.filter(u => u.role === 'student').length})` },
-          { key: 'teacher', label: `🏫 Guru (${users.filter(u => u.role === 'teacher').length})` },
-          { key: 'parent', label: `👨‍👩‍👧 Orang Tua / Wali (${users.filter(u => u.role === 'parent').length})` },
-          { key: 'admin', label: `⚙️ Admin &amp; Staf (${users.filter(u => u.role === 'admin').length})` },
-        ].map(t => (
-          <button
-            key={t.key}
-            className={`${styles.roleTabBtn} ${activeTab === t.key ? styles.roleTabActive : ''}`}
-            onClick={() => setActiveTab(t.key)}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Filter & Search Bar */}
-      <div className={styles.tableHeaderArea} style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', background: 'var(--bg-card)', padding: '0.75rem 1rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-dim)' }}>
-        <div style={{ flex: 1, minWidth: '200px' }}>
-          <input
-            type="text"
-            placeholder="🔍 Cari NISN / Username / Nama Pengguna..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="input"
-          />
-        </div>
-
-        <select
-          value={statusFilter}
-          onChange={e => setStatusFilter(e.target.value)}
-          className="input"
-          style={{ width: '160px' }}
-        >
-          <option value="ALL">Semua Status</option>
-          <option value="ACTIVE">● Status Aktif</option>
-          <option value="LOCKED">🔒 Status Terkunci</option>
-        </select>
-      </div>
-
-      {/* Main Table */}
-      <div className={styles.tableCard}>
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th>Username Login (Android/Web)</th>
-              <th>Password Aktif</th>
-              <th>Peran / Hak Akses</th>
-              <th>Entitas Profil Terhubung</th>
-              <th>Terakhir Login</th>
-              <th>Status Akun</th>
-              <th style={{ textAlign: 'right' }}>Aksi Kredensial</th>
-            </tr>
-          </thead>
-          <tbody>
-            {paginated.length === 0 ? (
+        {/* Data Table */}
+        <div className="tableWrap">
+          <table className="table">
+            <thead>
               <tr>
-                <td colSpan={7} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
-                  Tidak ada data akun pengguna ditemukan.
-                </td>
+                <th style={{ width: '44px', textAlign: 'center' }}>
+                  <input
+                    type="checkbox"
+                    checked={paginated.length > 0 && selectedIds.size === paginated.length}
+                    onChange={toggleSelectAll}
+                    className="tableCheckbox"
+                    aria-label="Pilih semua pengguna"
+                  />
+                </th>
+                <th>Username Login</th>
+                <th>Password Kredensial</th>
+                <th>Peran / Hak Akses</th>
+                <th>Entitas Profil Terhubung</th>
+                <th>Terakhir Login</th>
+                <th>Status</th>
+                <th style={{ textAlign: 'right', paddingRight: '1rem' }}>Aksi Kredensial</th>
               </tr>
-            ) : (
-              paginated.map(u => {
-                const currentPass = userPasswords[u.id] || u.defaultPassword || '123456';
-                return (
-                  <tr key={u.id}>
-                    <td className={styles.userEmail}>
-                      <code style={{ fontSize: '0.85rem', color: '#2563eb', fontWeight: 800 }}>{u.username}</code>
-                      {u.email && u.email !== u.username && (
-                        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                          {u.email}
+            </thead>
+            <tbody>
+              {isLoading ? (
+                <tr>
+                  <td colSpan={8} style={{ textAlign: 'center', padding: '2.5rem 1rem', color: '#64748b' }}>
+                    <div className="spinner" style={{ margin: '0 auto 0.75rem auto' }} />
+                    <span>Memuat data akun pengguna...</span>
+                  </td>
+                </tr>
+              ) : paginated.length === 0 ? (
+                <tr>
+                  <td colSpan={8} style={{ textAlign: 'center', padding: '3rem 1rem', color: '#64748b' }}>
+                    <div style={{ fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.25rem' }}>Tidak Ada Akun Ditemukan</div>
+                    <div style={{ fontSize: '0.82rem' }}>Coba sesuaikan kata kunci pencarian atau filter peran.</div>
+                  </td>
+                </tr>
+              ) : (
+                paginated.map(u => {
+                  const isChecked = selectedIds.has(u.id);
+                  const currentPass = userPasswords[u.id] || u.defaultPassword || '123456';
+                  return (
+                    <tr key={u.id}>
+                      <td style={{ textAlign: 'center' }}>
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => toggleSelectOne(u.id)}
+                          className="tableCheckbox"
+                          aria-label={`Pilih ${u.username}`}
+                        />
+                      </td>
+
+                      <td>
+                        <div>
+                          <span className="itemPrimaryTitle">
+                            <code>{u.username}</code>
+                          </span>
+                          <div className="itemSubtitleCheck">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                            <span>{u.email ? u.email : 'Mobile Access ID'}</span>
+                          </div>
                         </div>
-                      )}
-                    </td>
-                    <td>
-                      <span style={{ fontFamily: 'monospace', fontSize: '0.8rem', background: 'var(--bg-elevated)', border: '1px solid var(--border-light)', padding: '3px 8px', borderRadius: '6px', fontWeight: 800, color: 'var(--text-primary)' }}>
-                        {currentPass}
-                      </span>
-                    </td>
-                    <td>
-                      <span className={`badge ${
-                        u.role === 'admin' ? 'badge-info' :
-                        u.role === 'teacher' ? 'badge-active' :
-                        u.role === 'student' ? 'badge-info' : 'badge-warning'
-                      }`}>
-                        {u.roleLabel}
-                      </span>
-                    </td>
-                    <td><strong>{u.connectedEntity}</strong></td>
-                    <td style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>{u.lastLogin}</td>
-                    <td>
-                      <span className={`badge ${u.status === 'ACTIVE' ? 'badge-active' : 'badge-danger'}`}>
-                        {u.status === 'ACTIVE' ? '● Aktif' : '🔒 Terkunci'}
-                      </span>
-                    </td>
-                    <td style={{ textAlign: 'right' }}>
-                      <div className={styles.actionsCell} style={{ justifyContent: 'flex-end', gap: '0.4rem' }}>
-                        <button
-                          type="button"
-                          className="btn btn-secondary btn-sm"
-                          style={{ cursor: 'pointer' }}
-                          onClick={() => handleOpenResetPassword(u)}
-                        >
-                          🔑 Reset Pass
-                        </button>
-                        <button
-                          type="button"
-                          className={`btn btn-sm ${u.status === 'ACTIVE' ? 'btn-ghost' : 'btn-primary'}`}
-                          style={{ cursor: 'pointer' }}
-                          onClick={() => toggleUserLock(u.id)}
-                        >
-                          {u.status === 'ACTIVE' ? '🔒 Kunci' : '🔓 Buka Akses'}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
+                      </td>
 
-        {filtered.length > itemsPerPage && (
-          <div className={styles.pagination} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem' }}>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Menampilkan {paginated.length} dari total {filtered.length} hasil</span>
-            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-              <button 
-                disabled={currentPage === 1} 
-                onClick={() => setCurrentPage(prev => prev - 1)}
-                className="btn btn-secondary btn-sm"
-              >
-                Prev
-              </button>
-              <span style={{ fontSize: '0.8rem', fontWeight: 700, margin: '0 0.5rem' }}>Halaman {currentPage} dari {totalPages}</span>
-              <button 
-                disabled={currentPage === totalPages} 
-                onClick={() => setCurrentPage(prev => prev + 1)}
-                className="btn btn-secondary btn-sm"
-              >
-                Next
-              </button>
-            </div>
+                      <td>
+                        <span style={{ fontFamily: 'monospace', fontSize: '0.8rem', background: 'var(--bg-elevated)', border: '1px solid var(--border-light)', padding: '3px 8px', borderRadius: '6px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                          {currentPass}
+                        </span>
+                      </td>
+
+                      <td>
+                        <span style={{ fontWeight: 700, color: u.role === 'admin' ? '#d97706' : u.role === 'teacher' ? '#2563eb' : '#059669', fontSize: '0.8rem' }}>
+                          {u.roleLabel}
+                        </span>
+                      </td>
+
+                      <td>
+                        <strong style={{ color: 'var(--text-primary)' }}>{u.connectedEntity}</strong>
+                      </td>
+
+                      <td>
+                        <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{u.lastLogin}</span>
+                      </td>
+
+                      <td>
+                        <span className={`statusPill ${u.status === 'ACTIVE' ? 'statusPillActive' : 'statusPillDanger'}`}>
+                          {u.status === 'ACTIVE' ? 'Active' : 'Locked'}
+                        </span>
+                      </td>
+
+                      <td style={{ textAlign: 'right' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', justifyContent: 'flex-end' }}>
+                          <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            style={{ padding: '0.28rem 0.6rem', fontSize: '0.76rem', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}
+                            onClick={() => handleOpenResetPassword(u)}
+                            title="Reset Kata Sandi"
+                          >
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                            Reset
+                          </button>
+
+                          <button
+                            type="button"
+                            className={`btn btn-sm ${u.status === 'ACTIVE' ? 'btn-ghost' : 'btn-primary'}`}
+                            style={{ padding: '0.28rem 0.6rem', fontSize: '0.76rem', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}
+                            onClick={() => toggleUserLock(u.id)}
+                            title={u.status === 'ACTIVE' ? 'Kunci Akun' : 'Buka Kunci Akun'}
+                          >
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                            {u.status === 'ACTIVE' ? 'Kunci' : 'Buka'}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Bottom Pagination Controls */}
+        <div className="tableFooter">
+          <div className="entriesSelector">
+            <span>Show</span>
+            <select
+              value={itemsPerPage}
+              onChange={e => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+              className="entriesSelect"
+            >
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+            <span>entries</span>
           </div>
-        )}
-      </div>
 
+          <div className="paginationControls">
+            <button
+              type="button"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              className="pageBtnNav"
+            >
+              Previous
+            </button>
+
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              const p = i + 1;
+              return (
+                <button
+                  type="button"
+                  key={p}
+                  onClick={() => setCurrentPage(p)}
+                  className={`pageBtnNum ${currentPage === p ? 'pageBtnActive' : ''}`}
+                >
+                  {p}
+                </button>
+              );
+            })}
+            {totalPages > 5 && <span style={{ color: '#94a3b8', padding: '0 4px' }}>...</span>}
+
+            <button
+              type="button"
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              className="pageBtnNav"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      </div>
       {/* ── Modal In-Page: Buat Akun Baru ── */}
       {showAddModal && (
         <div style={{

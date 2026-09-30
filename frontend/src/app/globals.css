@@ -647,3 +647,389 @@ code, pre {
   background: var(--bg-elevated, #f8fafc) !important;
 }
 
+/* ══════════════════════════════════════════════════════
+   ENTERPRISE DATA TABLE SYSTEM (SaaS Reference Design)
+══════════════════════════════════════════════════════ */
+
+/* Top Action Buttons (Above Table Card) */
+.tableActionRow {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-bottom: 0.85rem;
+  flex-wrap: wrap;
+}
+
+.tableActionBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #475569;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.18s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.tableActionBtn:hover {
+  background: #334155;
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.tableActionBtn svg {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
+
+/* Master Table Card Container */
+.tableCard,
+.masterTableCard {
+  background: var(--bg-card, #ffffff);
+  border: 1px solid var(--border-light, #e2e8f0);
+  border-radius: 14px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03);
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  overflow: hidden;
+  transition: box-shadow 0.2s ease;
+}
+
+/* Top Toolbar: Showing Entries Info (Left) + Search Box (Right) */
+.tableToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding-bottom: 0.25rem;
+}
+
+.tableInfoText {
+  font-size: 0.84rem;
+  color: #64748b;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.tableInfoText strong {
+  color: #1e293b;
+  font-weight: 700;
+}
+
+.tableSearchBox {
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+  min-width: 240px;
+}
+
+.tableSearchInput {
+  width: 100%;
+  padding: 0.45rem 2.2rem 0.45rem 0.85rem;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: var(--bg-surface, #ffffff);
+  color: var(--text-primary, #0f172a);
+  font-size: 0.84rem;
+  transition: all 0.18s ease;
+  outline: none;
+}
+
+.tableSearchInput:focus {
+  border-color: #0284c7;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+}
+
+.tableSearchIcon {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 15px;
+  height: 15px;
+  color: #64748b;
+  pointer-events: none;
+}
+
+/* Table Wrap & Thead */
+.tableWrap {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid #f1f5f9;
+  border-radius: 10px;
+}
+
+.table,
+table.dataTable {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.85rem;
+  font-family: inherit;
+}
+
+.table thead th,
+table.dataTable thead th {
+  background: #f8fafc;
+  color: #334155;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid #e2e8f0;
+  border-top: none;
+  white-space: nowrap;
+  vertical-align: middle;
+  transition: background 0.15s ease;
+  letter-spacing: 0.01em;
+}
+
+[data-theme="dark"] .table thead th,
+[data-theme="dark"] table.dataTable thead th {
+  background: #18181b;
+  color: #e4e4e7;
+  border-bottom-color: #27272a;
+}
+
+.thSortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.thSortable:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.thSortContent {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 0.5rem;
+}
+
+.sortArrows {
+  display: inline-flex;
+  align-items: center;
+  color: #94a3b8;
+  font-size: 0.75rem;
+  line-height: 1;
+  transition: color 0.15s ease;
+}
+
+.thSortable:hover .sortArrows {
+  color: #0284c7;
+}
+
+/* Table Checkbox */
+.tableCheckbox {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1.5px solid #cbd5e1;
+  cursor: pointer;
+  accent-color: #0284c7;
+  vertical-align: middle;
+}
+
+/* Table Body Rows */
+.table tbody tr,
+table.dataTable tbody tr {
+  background: var(--bg-card, #ffffff);
+  border-bottom: 1px solid #f1f5f9;
+  transition: background 0.15s ease;
+}
+
+[data-theme="dark"] .table tbody tr,
+[data-theme="dark"] table.dataTable tbody tr {
+  border-bottom-color: #1e1e24;
+}
+
+.table tbody tr:hover,
+table.dataTable tbody tr:hover {
+  background: #f8fafc;
+}
+
+[data-theme="dark"] .table tbody tr:hover,
+[data-theme="dark"] table.dataTable tbody tr:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.table tbody td,
+table.dataTable tbody td {
+  padding: 0.95rem 1rem;
+  color: #334155;
+  vertical-align: middle;
+}
+
+[data-theme="dark"] .table tbody td,
+[data-theme="dark"] table.dataTable tbody td {
+  color: #d4d4d8;
+}
+
+/* Primary Title Column */
+.itemPrimaryTitle {
+  font-weight: 700;
+  color: #1e293b;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.itemPrimaryTitle:hover {
+  color: #0284c7;
+}
+
+.externalLinkIcon {
+  width: 13px;
+  height: 13px;
+  color: #94a3b8;
+}
+
+.itemSubtitleCheck {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.74rem;
+  color: #16a34a;
+  font-weight: 600;
+  margin-top: 0.2rem;
+}
+
+/* Status Pill Badge (Screenshot Active Pill) */
+.statusPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.22rem 0.85rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.statusPillActive {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+[data-theme="dark"] .statusPillActive {
+  background: rgba(22, 163, 74, 0.2);
+  color: #4ade80;
+}
+
+.statusPillWarning {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.statusPillDanger {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.statusPillMuted {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+/* Table Footer / Pagination (Bottom Row) */
+.tableFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding-top: 0.5rem;
+}
+
+.entriesSelector {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.84rem;
+  color: #64748b;
+}
+
+.entriesSelect {
+  padding: 0.28rem 0.6rem;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  background: var(--bg-surface, #ffffff);
+  color: #334155;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+}
+
+.paginationControls {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.pageBtnNav {
+  background: transparent;
+  border: none;
+  color: #64748b;
+  font-size: 0.84rem;
+  font-weight: 600;
+  padding: 0.35rem 0.65rem;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+}
+
+.pageBtnNav:hover:not(:disabled) {
+  color: #0284c7;
+  background: #f1f5f9;
+}
+
+.pageBtnNav:disabled {
+  color: #cbd5e1;
+  cursor: not-allowed;
+}
+
+.pageBtnNum {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: none;
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  background: transparent;
+  color: #64748b;
+}
+
+.pageBtnNum:hover:not(.pageBtnActive) {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.pageBtnNum.pageBtnActive {
+  background: #0284c7;
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.35);
+}
+
+

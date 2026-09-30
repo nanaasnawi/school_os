@@ -109,7 +109,7 @@ export default function ActivityLogsPage() {
 
   const exportAuditCsv = () => {
     if (!filtered || filtered.length === 0) {
-      showToast('⚠️ Belum ada transaksi log audit untuk diekspor!');
+      showToast('Belum ada transaksi log audit untuk diekspor!');
       return;
     }
     const headers = 'Event ID,Timestamp,Platform,Actor / User,Operation,Detail Transaksi,IP Address,Device Info,Status\n';
@@ -120,7 +120,7 @@ export default function ActivityLogsPage() {
     a.href = url;
     a.download = `Audit_Trail_Log_${schoolName.replace(/[^a-zA-Z0-9]/g, '_')}.csv`;
     a.click();
-    showToast('📥 Berkas CSV Audit Trail Log berhasil diunduh!');
+    showToast('Berkas CSV Audit Trail Log berhasil diunduh!');
   };
 
   const filtered = logs.filter((l) => {
@@ -169,7 +169,7 @@ export default function ActivityLogsPage() {
         <div style={{ flex: 1, minWidth: '220px' }}>
           <input
             type="text"
-            placeholder="🔍 Cari event ID, aktor, transaksi, atau IP..."
+            placeholder="Cari event ID, aktor, transaksi, atau IP..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="input"
@@ -183,10 +183,10 @@ export default function ActivityLogsPage() {
           style={{ width: '210px' }}
         >
           <option value="ALL">🌐 Semua Platform ({logs.length} Events)</option>
-          <option value="LOCAL_BRIDGE">💻 Local Bridge Agent &amp; Dapodik</option>
-          <option value="ANDROID_MOBILE">📱 Android Mobile Student App</option>
-          <option value="WEB_PORTAL">🖥️ Web Admin &amp; Teacher Portal</option>
-          <option value="RUST_API">⚡ Rust API Server Core</option>
+          <option value="LOCAL_BRIDGE">Local Bridge Agent &amp; Dapodik</option>
+          <option value="ANDROID_MOBILE">Android Mobile Student App</option>
+          <option value="WEB_PORTAL">Web Admin &amp; Teacher Portal</option>
+          <option value="RUST_API">Rust API Server Core</option>
         </select>
       </div>
 
@@ -198,7 +198,7 @@ export default function ActivityLogsPage() {
             padding: '3.5rem 1.5rem',
             textAlign: 'center'
           }}>
-            <div style={{ fontSize: '3rem', marginBottom: '0.75rem' }}>📜</div>
+            <div style={{ fontSize: '3rem', marginBottom: '0.75rem' }}></div>
             <h3 style={{ fontSize: '1.15rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
               Belum Ada Jejak Transaksi Audit Log
             </h3>
@@ -207,10 +207,10 @@ export default function ActivityLogsPage() {
             </p>
             <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
               <Link href="/dashboard/dapodik" className="btn btn-primary btn-sm">
-                🔄 Cek Integrasi Dapodik Hub
+                Cek Integrasi Dapodik Hub
               </Link>
               <Link href="/dashboard/announcements" className="btn btn-secondary btn-sm">
-                📢 Kirim Broadcast Pengumuman
+                Kirim Broadcast Pengumuman
               </Link>
             </div>
           </div>
@@ -236,10 +236,10 @@ export default function ActivityLogsPage() {
                   </td>
                   <td>
                     <span className={`badge ${l.platform === 'LOCAL_BRIDGE' ? 'badge-info' : l.platform === 'ANDROID_MOBILE' ? 'badge-active' : l.platform === 'WEB_PORTAL' ? 'badge-purple' : 'badge-warning'}`} style={{ fontWeight: 800 }}>
-                      {l.platform === 'LOCAL_BRIDGE' && '💻 Local Bridge'}
-                      {l.platform === 'ANDROID_MOBILE' && '📱 Android Mobile'}
-                      {l.platform === 'WEB_PORTAL' && '🖥️ Web Portal'}
-                      {l.platform === 'RUST_API' && '⚡ Rust Core'}
+                      {l.platform === 'LOCAL_BRIDGE' && 'Local Bridge'}
+                      {l.platform === 'ANDROID_MOBILE' && 'Android Mobile'}
+                      {l.platform === 'WEB_PORTAL' && 'Web Portal'}
+                      {l.platform === 'RUST_API' && 'Rust Core'}
                     </span>
                   </td>
                   <td style={{ fontWeight: 800, color: '#2563eb' }}>{l.actor}</td>
@@ -263,7 +263,7 @@ export default function ActivityLogsPage() {
                       style={{ fontSize: '0.72rem', padding: '0.25rem 0.55rem' }}
                       onClick={() => setInspectedLog(l)}
                     >
-                      🔍 Inspect JSON
+                      Inspect JSON
                     </button>
                   </td>
                 </tr>
@@ -351,7 +351,7 @@ export default function ActivityLogsPage() {
 
               <div>
                 <div style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '0.4rem' }}>
-                  💻 Full Raw Audit Event Payload (JSON):
+                  Full Raw Audit Event Payload (JSON):
                 </div>
                 <pre style={{
                   background: '#0f172a',

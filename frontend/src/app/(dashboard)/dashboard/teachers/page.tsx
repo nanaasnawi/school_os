@@ -273,13 +273,29 @@ export default function TeachersPage() {
     });
   }, [filtered, sortField, sortOrder]);
 
-  // --- Client-Side Pagination ---
+  // --- Client-Side Pagination & Selection ---
   const [currentPage, setCurrentPage] = React.useState(1);
-  const itemsPerPage = 10;
-  
+  const [itemsPerPage, setItemsPerPage] = React.useState(10);
+  const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
+
   React.useEffect(() => { 
     setCurrentPage(1); 
-  }, [filtered.length, sortField, sortOrder]);
+  }, [filtered.length, sortField, sortOrder, itemsPerPage]);
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === paginated.length && paginated.length > 0) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(paginated.map(t => t.id)));
+    }
+  };
+
+  const toggleSelectOne = (id: string) => {
+    const next = new Set(selectedIds);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setSelectedIds(next);
+  };
 
   const totalPages = Math.ceil(sorted.length / itemsPerPage) || 1;
   const paginated = sorted.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
@@ -299,190 +315,298 @@ export default function TeachersPage() {
       {/* Header & Breadcrumbs */}
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <h1 className={styles.title} style={{ margin: 0, fontSize: '1.3rem', fontWeight: 800 }}>Data Guru</h1>
-          <p className={styles.subtitle}>Direktori data guru pengampu &amp; pengajar terdaftar{schoolName ? ` di ${schoolName}` : ''}</p>
-        </div>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <button className="btn btn-secondary btn-sm" onClick={exportToExcelFile}>
-            📊 Ekspor Excel (.xlsx)
-          </button>
-          <button className="btn btn-primary btn-sm" onClick={handleOpenAdd}>
-            + Tambah Guru Baru
-          </button>
+          <h1 className={styles.title} style={{ margin: 0, fontSize: '1.4rem', fontWeight: 800 }}>Direktori Guru &amp; Tenaga Pendidik</h1>
+          <p className={styles.subtitle}>Direktori guru pengampu terdaftar terintegrasi Dapodik GTK{schoolName ? ` di ${schoolName}` : ''}</p>
         </div>
       </div>
 
-      {/* Filter Bar */}
-      <div className={styles.tableHeaderArea} style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', background: 'var(--bg-card)', padding: '0.75rem 1rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-dim)' }}>
-        <div style={{ flex: 1, minWidth: '200px' }}>
-          <input
-            type="text"
-            placeholder="🔍 Cari NIP atau Nama Guru..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="input"
-          />
-        </div>
+      {/* Top Action Pills (Reference Design System) */}
+      <div className="tableActionRow">
+        <button type="button" className="tableActionBtn" onClick={handleOpenAdd}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+          <span>Tambah Guru Baru</span>
+        </button>
 
-        <select
-          value={subjectFilter}
-          onChange={e => setSubjectFilter(e.target.value)}
-          className="input"
-          style={{ width: '190px' }}
-        >
-          <option value="ALL">Semua Mapel</option>
-          {subjectsList.map((s: any) => (
-            <option key={s.id || s.code} value={s.name}>{s.name}</option>
-          ))}
-        </select>
+        <Link href="/dashboard/students/qr-scan" className="tableActionBtn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          <span>Pusat Kartu Akses QR</span>
+        </Link>
 
-        <select
-          value={statusFilter}
-          onChange={e => setStatusFilter(e.target.value)}
-          className="input"
-          style={{ width: '150px' }}
-        >
-          <option value="ALL">Semua Status</option>
-          <option value="ACTIVE">● Status Aktif</option>
-          <option value="INACTIVE">● Status Nonaktif</option>
-        </select>
+        <button type="button" className="tableActionBtn" onClick={exportToExcelFile}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span>Ekspor Data Excel (.xlsx)</span>
+        </button>
+
+        <Link href="/dashboard/dapodik" className="tableActionBtn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          <span>Tarik Data Dapodik GTK</span>
+        </Link>
       </div>
 
-      {/* Main Table / Empty State */}
-      <div className={styles.tableCard}>
-        {isLoading ? (
-          <div style={{ padding: '2.5rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-            Memuat data guru...
+      {/* Main Table Card (Screenshot Reference Design) */}
+      <div className="tableCard">
+        {/* Top Toolbar */}
+        <div className="tableToolbar">
+          <div className="tableInfoText">
+            Showing <strong>{filtered.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}</strong> to <strong>{Math.min(currentPage * itemsPerPage, filtered.length)}</strong> of <strong>{filtered.length}</strong> entries {filtered.length !== teachers.length ? `(filtered from ${teachers.length} total entries)` : ''}
           </div>
-        ) : filtered.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '3.5rem 1rem' }}>
-            <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>👨‍🏫</div>
-            <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)' }}>Belum Ada Data Guru Terdaftar</h3>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '4px', maxWidth: '480px', margin: '8px auto 18px', lineHeight: 1.5 }}>
-              Data GTK/Guru belum ditarik dari Dapodik lokal atau belum ditambahkan ke sistem. Silakan lakukan **Tarik Data** di Dapodik Hub.
-            </p>
-            <Link href="/dashboard/dapodik" className="btn btn-primary btn-sm" style={{ padding: '0.5rem 1rem' }}>
-              📥 Buka Dapodik Hub &amp; Tarik Data
-            </Link>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
+            <select
+              value={subjectFilter}
+              onChange={e => { setSubjectFilter(e.target.value); setCurrentPage(1); }}
+              className="entriesSelect"
+            >
+              <option value="ALL">Semua Mata Pelajaran</option>
+              {subjectsList.map((s: any) => (
+                <option key={s.id || s.code} value={s.name}>{s.name}</option>
+              ))}
+            </select>
+
+            <select
+              value={statusFilter}
+              onChange={e => { setStatusFilter(e.target.value); setCurrentPage(1); }}
+              className="entriesSelect"
+            >
+              <option value="ALL">Semua Status</option>
+              <option value="ACTIVE">Active</option>
+              <option value="INACTIVE">Inactive</option>
+            </select>
+
+            <div className="tableSearchBox">
+              <input
+                type="text"
+                placeholder="Search..."
+                value={search}
+                onChange={e => { setSearch(e.target.value); setCurrentPage(1); }}
+                className="tableSearchInput"
+              />
+              <svg className="tableSearchIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            </div>
           </div>
-        ) : (
-          <table className={styles.table}>
+        </div>
+
+        {/* Data Table */}
+        <div className="tableWrap">
+          <table className="table">
             <thead>
               <tr>
-                <th className={styles.thCell}>
-                  <div className={styles.thContent}>
-                    <span className={styles.thTitle}>Nama Lengkap</span>
-                    <div className={styles.sortBtnGroup}>
-                      <button type="button" className={`${styles.sortBtn} ${sortField === 'full_name' && sortOrder === 'asc' ? styles.sortBtnActive : ''}`} onClick={() => handleSetSort('full_name', 'asc')} title="Nama A → Z">▲</button>
-                      <button type="button" className={`${styles.sortBtn} ${sortField === 'full_name' && sortOrder === 'desc' ? styles.sortBtnActive : ''}`} onClick={() => handleSetSort('full_name', 'desc')} title="Nama Z → A">▼</button>
-                    </div>
+                <th style={{ width: '44px', textAlign: 'center' }}>
+                  <input
+                    type="checkbox"
+                    checked={paginated.length > 0 && selectedIds.size === paginated.length}
+                    onChange={toggleSelectAll}
+                    className="tableCheckbox"
+                    aria-label="Pilih semua guru"
+                  />
+                </th>
+
+                <th
+                  className="thSortable"
+                  onClick={() => handleSetSort('full_name', sortField === 'full_name' && sortOrder === 'asc' ? 'desc' : 'asc')}
+                >
+                  <div className="thSortContent">
+                    <span>Nama Lengkap Guru</span>
+                    <span className="sortArrows">{sortField === 'full_name' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}</span>
                   </div>
                 </th>
-                <th className={styles.thCell}>
-                  <div className={styles.thContent}>
-                    <span className={styles.thTitle}>NUPTK</span>
-                    <div className={styles.sortBtnGroup}>
-                      <button type="button" className={`${styles.sortBtn} ${sortField === 'nuptk' && sortOrder === 'asc' ? styles.sortBtnActive : ''}`} onClick={() => handleSetSort('nuptk', 'asc')} title="NUPTK A → Z">▲</button>
-                      <button type="button" className={`${styles.sortBtn} ${sortField === 'nuptk' && sortOrder === 'desc' ? styles.sortBtnActive : ''}`} onClick={() => handleSetSort('nuptk', 'desc')} title="NUPTK Z → A">▼</button>
-                    </div>
+
+                <th
+                  className="thSortable"
+                  onClick={() => handleSetSort('nuptk', sortField === 'nuptk' && sortOrder === 'asc' ? 'desc' : 'asc')}
+                >
+                  <div className="thSortContent">
+                    <span>NUPTK / NIP</span>
+                    <span className="sortArrows">{sortField === 'nuptk' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}</span>
                   </div>
                 </th>
-                <th className={styles.thCell}>
-                  <div className={styles.thContent}>
-                    <span className={styles.thTitle}>L/P</span>
-                    <div className={styles.sortBtnGroup}>
-                      <button type="button" className={`${styles.sortBtn} ${sortField === 'jk' && sortOrder === 'asc' ? styles.sortBtnActive : ''}`} onClick={() => handleSetSort('jk', 'asc')} title="L/P A → Z">▲</button>
-                      <button type="button" className={`${styles.sortBtn} ${sortField === 'jk' && sortOrder === 'desc' ? styles.sortBtnActive : ''}`} onClick={() => handleSetSort('jk', 'desc')} title="L/P Z → A">▼</button>
-                    </div>
+
+                <th
+                  className="thSortable"
+                  onClick={() => handleSetSort('jk', sortField === 'jk' && sortOrder === 'asc' ? 'desc' : 'asc')}
+                >
+                  <div className="thSortContent">
+                    <span>L/P</span>
+                    <span className="sortArrows">{sortField === 'jk' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}</span>
                   </div>
                 </th>
-                <th className={styles.thCell}>
-                  <div className={styles.thContent}>
-                    <span className={styles.thTitle}>Tempat Lahir</span>
-                    <div className={styles.sortBtnGroup}>
-                      <button type="button" className={`${styles.sortBtn} ${sortField === 'tempat_lahir' && sortOrder === 'asc' ? styles.sortBtnActive : ''}`} onClick={() => handleSetSort('tempat_lahir', 'asc')} title="Tempat lahir A → Z">▲</button>
-                      <button type="button" className={`${styles.sortBtn} ${sortField === 'tempat_lahir' && sortOrder === 'desc' ? styles.sortBtnActive : ''}`} onClick={() => handleSetSort('tempat_lahir', 'desc')} title="Tempat lahir Z → A">▼</button>
-                    </div>
+
+                <th
+                  className="thSortable"
+                  onClick={() => handleSetSort('jenis_ptk', sortField === 'jenis_ptk' && sortOrder === 'asc' ? 'desc' : 'asc')}
+                >
+                  <div className="thSortContent">
+                    <span>Jenis PTK / Mapel</span>
+                    <span className="sortArrows">{sortField === 'jenis_ptk' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}</span>
                   </div>
                 </th>
-                <th className={styles.thCell}>
-                  <div className={styles.thContent}>
-                    <span className={styles.thTitle}>Tanggal Lahir</span>
-                    <div className={styles.sortBtnGroup}>
-                      <button type="button" className={`${styles.sortBtn} ${sortField === 'tanggal_lahir' && sortOrder === 'asc' ? styles.sortBtnActive : ''}`} onClick={() => handleSetSort('tanggal_lahir', 'asc')} title="Tanggal lahir A → Z">▲</button>
-                      <button type="button" className={`${styles.sortBtn} ${sortField === 'tanggal_lahir' && sortOrder === 'desc' ? styles.sortBtnActive : ''}`} onClick={() => handleSetSort('tanggal_lahir', 'desc')} title="Tanggal lahir Z → A">▼</button>
-                    </div>
+
+                <th
+                  className="thSortable"
+                  onClick={() => handleSetSort('status_kepegawaian', sortField === 'status_kepegawaian' && sortOrder === 'asc' ? 'desc' : 'asc')}
+                >
+                  <div className="thSortContent">
+                    <span>Kepegawaian</span>
+                    <span className="sortArrows">{sortField === 'status_kepegawaian' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}</span>
                   </div>
                 </th>
-                <th className={styles.thCell}>
-                  <div className={styles.thContent}>
-                    <span className={styles.thTitle}>Status Kepegawaian</span>
-                    <div className={styles.sortBtnGroup}>
-                      <button type="button" className={`${styles.sortBtn} ${sortField === 'status_kepegawaian' && sortOrder === 'asc' ? styles.sortBtnActive : ''}`} onClick={() => handleSetSort('status_kepegawaian', 'asc')} title="Status A → Z">▲</button>
-                      <button type="button" className={`${styles.sortBtn} ${sortField === 'status_kepegawaian' && sortOrder === 'desc' ? styles.sortBtnActive : ''}`} onClick={() => handleSetSort('status_kepegawaian', 'desc')} title="Status Z → A">▼</button>
-                    </div>
-                  </div>
-                </th>
-                <th className={styles.thCell}>
-                  <div className={styles.thContent}>
-                    <span className={styles.thTitle}>Jenis PTK</span>
-                    <div className={styles.sortBtnGroup}>
-                      <button type="button" className={`${styles.sortBtn} ${sortField === 'jenis_ptk' && sortOrder === 'asc' ? styles.sortBtnActive : ''}`} onClick={() => handleSetSort('jenis_ptk', 'asc')} title="Jenis PTK A → Z">▲</button>
-                      <button type="button" className={`${styles.sortBtn} ${sortField === 'jenis_ptk' && sortOrder === 'desc' ? styles.sortBtnActive : ''}`} onClick={() => handleSetSort('jenis_ptk', 'desc')} title="Jenis PTK Z → A">▼</button>
-                    </div>
-                  </div>
-                </th>
-                <th style={{ textAlign: 'right' }}><span className={styles.thTitle}>Aksi</span></th>
+
+                <th>Status</th>
+                <th style={{ textAlign: 'right', paddingRight: '1rem' }}>Aksi</th>
               </tr>
             </thead>
             <tbody>
-            {paginated.map(t => (
-              <tr key={t.id}>
-                <td className={styles.teacherName}>{t.full_name}</td>
-                <td className={styles.nip}><code>{t.nuptk}</code></td>
-                <td>{t.jk}</td>
-                <td>{t.tempat_lahir}</td>
-                <td>{t.tanggal_lahir}</td>
-                <td>{t.status_kepegawaian}</td>
-                <td><span className="badge badge-info">{t.jenis_ptk || t.subject}</span></td>
-                <td style={{ textAlign: 'right' }}>
-                  <div className={styles.actionsCell} style={{ justifyContent: 'flex-end', gap: '0.4rem' }}>
-                    <Link href={`/dashboard/teachers/${t.id}`} className="btn btn-secondary btn-sm">
-                      Profil
-                    </Link>
-                    <button className="btn btn-ghost btn-sm" onClick={() => handleOpenEdit(t)}>
-                      ✏️ Edit
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        )}
+              {isLoading ? (
+                <tr>
+                  <td colSpan={8} style={{ textAlign: 'center', padding: '2.5rem 1rem', color: '#64748b' }}>
+                    <div className="spinner" style={{ margin: '0 auto 0.75rem auto' }} />
+                    <span>Memuat data guru dari sistem...</span>
+                  </td>
+                </tr>
+              ) : paginated.length === 0 ? (
+                <tr>
+                  <td colSpan={8} style={{ textAlign: 'center', padding: '3rem 1rem', color: '#64748b' }}>
+                    <div style={{ fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.25rem' }}>Tidak Ada Data Guru Ditemukan</div>
+                    <div style={{ fontSize: '0.82rem' }}>Coba ubah kata kunci pencarian atau tarik data melalui Dapodik Hub.</div>
+                  </td>
+                </tr>
+              ) : (
+                paginated.map((t) => {
+                  const isChecked = selectedIds.has(t.id);
+                  return (
+                    <tr key={t.id}>
+                      <td style={{ textAlign: 'center' }}>
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => toggleSelectOne(t.id)}
+                          className="tableCheckbox"
+                          aria-label={`Pilih ${t.full_name}`}
+                        />
+                      </td>
 
-                <div className={styles.pagination} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem' }}>
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Menampilkan {paginated.length} dari total {filtered.length} hasil</span>
-          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-            <button 
-              disabled={currentPage === 1} 
-              onClick={() => setCurrentPage(prev => prev - 1)}
-              className="btn btn-secondary btn-sm"
+                      <td>
+                        <div>
+                          <Link href={`/dashboard/teachers/${t.id}`} className="itemPrimaryTitle" title="Lihat Profil Guru">
+                            <span>{t.full_name}</span>
+                            <svg className="externalLinkIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                          </Link>
+                          <div className="itemSubtitleCheck">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                            <span>Pendidik Terdaftar</span>
+                          </div>
+                        </div>
+                      </td>
+
+                      <td>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                          <code style={{ fontSize: '0.82rem', color: '#0284c7', fontWeight: 700 }}>{t.nuptk || t.nip || '—'}</code>
+                          <span style={{ fontSize: '0.72rem', color: '#64748b' }}>{t.nip ? `NIP: ${t.nip}` : 'Non-PNS'}</span>
+                        </div>
+                      </td>
+
+                      <td>
+                        <span style={{ fontWeight: 600 }}>{t.jk === 'L' ? 'L' : t.jk === 'P' ? 'P' : (t.jk || '—')}</span>
+                      </td>
+
+                      <td>
+                        <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{t.jenis_ptk || t.subject || 'Guru Mapel'}</span>
+                      </td>
+
+                      <td>
+                        <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>{t.status_kepegawaian || 'PNS / Yayasan'}</span>
+                      </td>
+
+                      <td>
+                        <span className={`statusPill ${t.is_active !== false ? 'statusPillActive' : 'statusPillMuted'}`}>
+                          {t.is_active !== false ? 'Active' : 'Inactive'}
+                        </span>
+                      </td>
+
+                      <td style={{ textAlign: 'right' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', justifyContent: 'flex-end' }}>
+                          <Link
+                            href={`/dashboard/teachers/${t.id}`}
+                            className="btn btn-secondary btn-sm"
+                            style={{ padding: '0.28rem 0.6rem', fontSize: '0.76rem', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}
+                            title="Buka Profil"
+                          >
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                            Profil
+                          </Link>
+                          <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            style={{ padding: '0.28rem 0.6rem', fontSize: '0.76rem', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}
+                            onClick={() => handleOpenEdit(t)}
+                            title="Edit Guru"
+                          >
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                            Edit
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Bottom Pagination Controls */}
+        <div className="tableFooter">
+          <div className="entriesSelector">
+            <span>Show</span>
+            <select
+              value={itemsPerPage}
+              onChange={e => setItemsPerPage(Number(e.target.value))}
+              className="entriesSelect"
             >
-              Prev
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+            <span>entries</span>
+          </div>
+
+          <div className="paginationControls">
+            <button
+              type="button"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              className="pageBtnNav"
+            >
+              Previous
             </button>
-            <span style={{ fontSize: '0.8rem', fontWeight: 700, margin: '0 0.5rem' }}>Halaman {currentPage} dari {totalPages}</span>
-            <button 
-              disabled={currentPage === totalPages} 
-              onClick={() => setCurrentPage(prev => prev + 1)}
-              className="btn btn-secondary btn-sm"
+
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              const p = i + 1;
+              return (
+                <button
+                  type="button"
+                  key={p}
+                  onClick={() => setCurrentPage(p)}
+                  className={`pageBtnNum ${currentPage === p ? 'pageBtnActive' : ''}`}
+                >
+                  {p}
+                </button>
+              );
+            })}
+            {totalPages > 5 && <span style={{ color: '#94a3b8', padding: '0 4px' }}>...</span>}
+
+            <button
+              type="button"
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              className="pageBtnNav"
             >
               Next
             </button>
           </div>
         </div>
       </div>
-
       {/* ── Modal In-Page: Tambah Guru Baru ── */}
       {showAddModal && (
         <div style={{

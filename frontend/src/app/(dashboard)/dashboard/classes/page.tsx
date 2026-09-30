@@ -326,7 +326,7 @@ export default function ClassesPage() {
         </div>
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
           <button className="btn btn-secondary btn-sm" onClick={exportToExcelFile}>
-            📊 Ekspor Excel (.xlsx)
+            Ekspor Excel (.xlsx)
           </button>
           <button className="btn btn-primary btn-sm" onClick={handleOpenAdd}>
             + Tambah Kelas Baru
@@ -443,11 +443,11 @@ export default function ClassesPage() {
 
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '0.75rem', borderTop: '1px solid var(--border-light)', marginTop: 'auto' }}>
                 <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--accent)' }}>
-                  👥 {c.student_count} Siswa
+                  {c.student_count} Siswa
                 </span>
                 <div style={{ display: 'flex', gap: '0.35rem' }}>
                   <button className="btn btn-ghost btn-sm" onClick={() => handleOpenEdit(c)}>
-                    ✏️ Edit
+                    Edit
                   </button>
                   <Link href={`/dashboard/classes/${c.id}`} className="btn btn-secondary btn-sm">
                     Lihat →
@@ -459,84 +459,157 @@ export default function ClassesPage() {
         </div>
       )}
 
-      {/* View Mode: TABLE */}
+      {/* View Mode: TABLE (Enterprise Style - Screenshot Match) */}
       {!isLoading && viewMode === 'table' && filtered.length > 0 && (
-        <div className={styles.tableCard}>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>Nama Rombel / Kelas</th>
-                <th>Tingkat</th>
-                <th>Wali Kelas</th>
-                <th>Ruangan</th>
-                <th>Jumlah Siswa</th>
-                <th style={{ textAlign: 'right' }}>Aksi</th>
-              </tr>
-            </thead>
-            <tbody>
-              {paginated.map(c => (
-                <tr key={c.id}>
-                  <td>
-                    <strong style={{ fontSize: '0.9rem', color: 'var(--text-primary)' }}>{c.name}</strong>
-                  </td>
-                  <td>
-                    <span className={`badge ${getBadgeStyle(c.category)}`}>
-                      {c.grade_level}
-                    </span>
-                  </td>
-                  <td>{c.homeroom_teacher}</td>
-                  <td>{c.room}</td>
-                  <td>
-                    <strong style={{ color: 'var(--accent)' }}>{c.student_count} Siswa</strong>
-                  </td>
-                  <td style={{ textAlign: 'right' }}>
-                    <div style={{ display: 'inline-flex', gap: '0.35rem' }}>
-                      <button className="btn btn-ghost btn-sm" onClick={() => handleOpenEdit(c)}>
-                        ✏️ Edit
-                      </button>
-                      <Link href={`/dashboard/classes/${c.id}`} className="btn btn-secondary btn-sm">
-                        Lihat →
-                      </Link>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+        <div className="tableCard">
+          {/* Table Toolbar */}
+          <div className="tableToolbar">
+            <div className="tableInfoText">
+              Showing <strong>{(safePage - 1) * itemsPerPage + 1}</strong> to{' '}
+              <strong>{Math.min(safePage * itemsPerPage, filtered.length)}</strong> of{' '}
+              <strong>{filtered.length}</strong> entries
+              {filtered.length !== classesList.length && (
+                <span> (filtered from <strong>{classesList.length}</strong> total entries)</span>
+              )}
+            </div>
+          </div>
 
-      {/* Pagination Controls */}
-      {!isLoading && totalPages > 1 && (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 1rem', background: 'var(--bg-surface)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-md)', flexWrap: 'wrap', gap: '0.5rem' }}>
-          <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-            Menampilkan <strong>{paginated.length}</strong> dari {filtered.length} total kelas
-          </span>
-          <div style={{ display: 'flex', gap: '0.3rem' }}>
-            <button
-              className="btn btn-secondary btn-sm"
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-            >
-              ← Sebelumnya
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map(num => (
-              <button
-                key={num}
-                className={`btn btn-sm ${currentPage === num ? 'btn-primary' : 'btn-ghost'}`}
-                onClick={() => setCurrentPage(num)}
-                style={{ minWidth: '32px' }}
+          <div className="tableWrap">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th style={{ width: '40px', textAlign: 'center' }}>
+                    <input type="checkbox" className="tableCheckbox" aria-label="Pilih semua rombel" />
+                  </th>
+                  <th className="thSortable">
+                    <div className="thSortContent">
+                      <span>Nama Rombel / Kelas</span>
+                      <span className="sortArrows">⇅</span>
+                    </div>
+                  </th>
+                  <th className="thSortable">
+                    <div className="thSortContent">
+                      <span>Tingkat / Program</span>
+                      <span className="sortArrows">⇅</span>
+                    </div>
+                  </th>
+                  <th className="thSortable">
+                    <div className="thSortContent">
+                      <span>Wali Kelas</span>
+                      <span className="sortArrows">⇅</span>
+                    </div>
+                  </th>
+                  <th className="thSortable">
+                    <div className="thSortContent">
+                      <span>Ruangan</span>
+                      <span className="sortArrows">⇅</span>
+                    </div>
+                  </th>
+                  <th className="thSortable">
+                    <div className="thSortContent">
+                      <span>Jumlah Siswa</span>
+                      <span className="sortArrows">⇅</span>
+                    </div>
+                  </th>
+                  <th style={{ textAlign: 'right' }}>Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {paginated.map((c) => (
+                  <tr key={c.id}>
+                    <td style={{ textAlign: 'center' }}>
+                      <input type="checkbox" className="tableCheckbox" aria-label={`Pilih ${c.name}`} />
+                    </td>
+                    <td>
+                      <Link href={`/dashboard/classes/${c.id}`} className="itemPrimaryTitle">
+                        <span>{c.name}</span>
+                        <svg className="externalLinkIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                          <polyline points="15 3 21 3 21 9" />
+                          <line x1="10" y1="14" x2="21" y2="3" />
+                        </svg>
+                      </Link>
+                      <div className="itemSubtitleCheck">
+                        <span>✓ Rombel Aktif</span>
+                      </div>
+                    </td>
+                    <td>
+                      <span className="statusPill statusPillMuted">
+                        {c.grade_level}
+                      </span>
+                    </td>
+                    <td>{c.homeroom_teacher}</td>
+                    <td>{c.room}</td>
+                    <td>
+                      <span className="statusPill statusPillActive">
+                        {c.student_count} Siswa
+                      </span>
+                    </td>
+                    <td style={{ textAlign: 'right' }}>
+                      <div style={{ display: 'inline-flex', gap: '0.35rem' }}>
+                        <button
+                          className="pageBtnNav"
+                          style={{ border: '1px solid #cbd5e1', padding: '0.28rem 0.6rem', fontSize: '0.78rem' }}
+                          onClick={() => handleOpenEdit(c)}
+                        >
+                          Edit
+                        </button>
+                        <Link
+                          href={`/dashboard/classes/${c.id}`}
+                          className="pageBtnNav"
+                          style={{ border: '1px solid #cbd5e1', padding: '0.28rem 0.6rem', fontSize: '0.78rem' }}
+                        >
+                          Lihat
+                        </Link>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Table Footer */}
+          <div className="tableFooter">
+            <div className="entriesSelector">
+              <span>Show</span>
+              <select
+                value={itemsPerPage}
+                onChange={() => {}}
+                className="entriesSelect"
               >
-                {num}
+                <option value={10}>10</option>
+                <option value={24}>24</option>
+                <option value={50}>50</option>
+              </select>
+              <span>entries</span>
+            </div>
+
+            <div className="paginationControls">
+              <button
+                className="pageBtnNav"
+                disabled={safePage <= 1}
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              >
+                Previous
               </button>
-            ))}
-            <button
-              className="btn btn-secondary btn-sm"
-              disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-            >
-              Berikutnya →
-            </button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((num) => (
+                <button
+                  key={num}
+                  className={`pageBtnNum ${safePage === num ? 'pageBtnActive' : ''}`}
+                  onClick={() => setCurrentPage(num)}
+                >
+                  {num}
+                </button>
+              ))}
+              <button
+                className="pageBtnNav"
+                disabled={safePage >= totalPages}
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              >
+                Next
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -614,7 +687,7 @@ export default function ClassesPage() {
         <div className="globalModalOverlay" onClick={() => setEditClass(null)}>
           <div className="globalModalCard" onClick={e => e.stopPropagation()}>
             <div className="globalModalHeader">
-              <h2 className="globalModalTitle">✏️ Edit Data Kelas ({editClass.name})</h2>
+              <h2 className="globalModalTitle">Edit Data Kelas ({editClass.name})</h2>
               <button className="globalModalClose" onClick={() => setEditClass(null)}>×</button>
             </div>
             <form onSubmit={handleSaveEdit}>

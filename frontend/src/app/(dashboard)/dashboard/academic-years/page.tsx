@@ -105,7 +105,7 @@ export default function AcademicYearsPage() {
 
   const handleSyncDapodikCalendar = () => {
     const live = getLiveDapodikAcademicYear();
-    showToast(`🔄 Kalender Akademik berhasil disinkronkan dengan Server Dapodik: ${live.name}!`);
+    showToast(`Kalender Akademik berhasil disinkronkan dengan Server Dapodik: ${live.name}!`);
   };
 
   return (
@@ -129,7 +129,7 @@ export default function AcademicYearsPage() {
         </div>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
           <button className="btn btn-secondary btn-sm" onClick={handleSyncDapodikCalendar}>
-            🔄 Sync Dapodik Live
+            Sync Dapodik Live
           </button>
           <Link href="/dashboard/academic-years/new" className="btn btn-primary btn-sm">
             + Periode Baru
@@ -140,7 +140,7 @@ export default function AcademicYearsPage() {
       {/* Sync Status Info Card */}
       <div style={{ background: 'var(--accent-dim)', border: '1px solid var(--border-subtle)', borderRadius: '14px', padding: '0.85rem 1.1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <span style={{ fontSize: '1.3rem' }}>⚡</span>
+          <span style={{ fontSize: '1.3rem' }}></span>
           <div style={{ fontSize: '0.8rem', color: 'var(--accent)' }}>
             <strong>Status Real-Time Dapodik:</strong> Periode aktif saat ini ditentukan otomatis dari server Dapodik berdasarkan tanggal kalender berjalan: <strong>{getLiveDapodikAcademicYear().name}</strong>.
           </div>
@@ -150,39 +150,102 @@ export default function AcademicYearsPage() {
         </span>
       </div>
 
-      <div className={styles.tableCard}>
-        {loading ? (
-          <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-            Memuat periode...
+      {/* Top Action Row (Enterprise Style - Screenshot Match) */}
+      <div className="tableActionRow">
+        <Link href="/dashboard/academic-years/new" className="tableActionBtn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+          <span>+ Periode Baru</span>
+        </Link>
+
+        <button className="tableActionBtn" onClick={handleSyncDapodikCalendar}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+            <path d="M3 3v5h5" />
+            <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+            <path d="M16 16h5v5" />
+          </svg>
+          <span>Sync Dapodik Live</span>
+        </button>
+      </div>
+
+      {/* Table Card (Screenshot Match) */}
+      <div className="tableCard">
+        {/* Table Toolbar */}
+        <div className="tableToolbar">
+          <div className="tableInfoText">
+            Showing <strong>1</strong> to <strong>{years.length}</strong> of <strong>{years.length}</strong> entries
           </div>
-        ) : (
-          <table className={styles.table}>
+        </div>
+
+        <div className="tableWrap">
+          <table className="table">
             <thead>
               <tr>
-                <th>Nama Periode Academic</th>
-                <th>Tanggal Mulai</th>
-                <th>Tanggal Selesai</th>
-                <th>Status Semester</th>
+                <th style={{ width: '40px', textAlign: 'center' }}>
+                  <input type="checkbox" className="tableCheckbox" aria-label="Select all" />
+                </th>
+                <th className="thSortable">
+                  <div className="thSortContent">
+                    <span>Nama Periode Akademik</span>
+                    <span className="sortArrows">⇅</span>
+                  </div>
+                </th>
+                <th className="thSortable">
+                  <div className="thSortContent">
+                    <span>Tanggal Mulai</span>
+                    <span className="sortArrows">⇅</span>
+                  </div>
+                </th>
+                <th className="thSortable">
+                  <div className="thSortContent">
+                    <span>Tanggal Selesai</span>
+                    <span className="sortArrows">⇅</span>
+                  </div>
+                </th>
+                <th className="thSortable">
+                  <div className="thSortContent">
+                    <span>Status Semester</span>
+                    <span className="sortArrows">⇅</span>
+                  </div>
+                </th>
                 <th style={{ textAlign: 'right' }}>Aksi</th>
               </tr>
             </thead>
             <tbody>
-              {years.map(y => (
+              {years.map((y) => (
                 <tr key={y.id}>
-                  <td className={styles.yearName} style={{ fontWeight: 800 }}>{y.name}</td>
+                  <td style={{ textAlign: 'center' }}>
+                    <input type="checkbox" className="tableCheckbox" aria-label={`Select ${y.name}`} />
+                  </td>
+                  <td>
+                    <Link href={`/dashboard/academic-years/${y.id}`} className="itemPrimaryTitle">
+                      <span>{y.name}</span>
+                      <svg className="externalLinkIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                        <polyline points="15 3 21 3 21 9" />
+                        <line x1="10" y1="14" x2="21" y2="3" />
+                      </svg>
+                    </Link>
+                    <div className="itemSubtitleCheck">
+                      <span>✓ Dapodik Synced</span>
+                    </div>
+                  </td>
                   <td><code>{y.start_date}</code></td>
                   <td><code>{y.end_date}</code></td>
                   <td>
-                    <span className={`badge ${y.is_active ? 'badge-active' : 'badge-inactive'}`} style={{ fontWeight: 800 }}>
-                      {y.is_active ? '● Aktif Berjalan (Dapodik Live)' : 'Arsip'}
+                    <span className={`statusPill ${y.is_active ? 'statusPillActive' : 'statusPillMuted'}`}>
+                      {y.is_active ? 'Active' : 'Arsip'}
                     </span>
                   </td>
                   <td style={{ textAlign: 'right' }}>
-                    <div className={styles.actionsCell} style={{ justifyContent: 'flex-end' }}>
-                      <Link href={`/dashboard/academic-years/${y.id}`} className="btn btn-secondary btn-sm">
+                    <div style={{ display: 'inline-flex', gap: '0.35rem' }}>
+                      <Link href={`/dashboard/academic-years/${y.id}`} className="pageBtnNav" style={{ border: '1px solid #cbd5e1', padding: '0.28rem 0.6rem', fontSize: '0.78rem' }}>
                         Kelola
                       </Link>
-                      <Link href={`/dashboard/academic-years/${y.id}/edit`} className="btn btn-ghost btn-sm">
+                      <Link href={`/dashboard/academic-years/${y.id}/edit`} className="pageBtnNav" style={{ border: '1px solid #cbd5e1', padding: '0.28rem 0.6rem', fontSize: '0.78rem' }}>
                         Edit
                       </Link>
                     </div>
@@ -191,11 +254,24 @@ export default function AcademicYearsPage() {
               ))}
             </tbody>
           </table>
-        )}
+        </div>
 
-        <div className={styles.pagination}>
-          <span>Menampilkan {years.length} periode akademik</span>
-          <span>Halaman 1 dari 1</span>
+        {/* Table Footer */}
+        <div className="tableFooter">
+          <div className="entriesSelector">
+            <span>Show</span>
+            <select className="entriesSelect" defaultValue={10}>
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+            </select>
+            <span>entries</span>
+          </div>
+
+          <div className="paginationControls">
+            <button className="pageBtnNav" disabled>Previous</button>
+            <button className="pageBtnNum pageBtnActive">1</button>
+            <button className="pageBtnNav" disabled>Next</button>
+          </div>
         </div>
       </div>
     </div>
