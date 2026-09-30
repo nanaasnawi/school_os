@@ -21,3 +21,25 @@ export function useAssignments() {
     staleTime: 1000 * 60 * 3, // 3 minutes
   });
 }
+
+async function fetchAssignmentById(id: string): Promise<LearningAssignment | null> {
+  if (!id) return null;
+  const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
+  const res = await fetch(getApiUrl(`/api/v1/learning/assignments/${id}`), {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!res.ok) {
+    throw new Error('Gagal memuat rincian tugas');
+  }
+  const json = await res.json();
+  return json?.data || null;
+}
+
+export function useAssignment(id: string) {
+  return useQuery({
+    queryKey: ['learning-assignment', id],
+    queryFn: () => fetchAssignmentById(id),
+    enabled: !!id,
+    staleTime: 1000 * 60 * 3,
+  });
+}

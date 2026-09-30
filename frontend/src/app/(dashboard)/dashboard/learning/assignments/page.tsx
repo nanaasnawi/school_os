@@ -5,7 +5,7 @@ import Link from 'next/link';
 import styles from './assignments.module.css';
 import { listTeachers, listStudents, listClasses } from '@/lib/sdk/sdk.gen';
 import { getApiUrl } from '@/lib/api';
-import { useAssignments, useAssignmentSubmissions, AssignmentQuestion, SubmissionAnswer } from '@/features/assignment';
+import { useAssignments, useAssignment, useAssignmentSubmissions, AssignmentQuestion, SubmissionAnswer } from '@/features/assignment';
 import { useSubjects } from '@/features/material';
 
 type AssignmentItem = {
@@ -18,6 +18,8 @@ type AssignmentItem = {
   totalStudents: number;
   submittedCount: number;
   assignmentType?: string;
+  instructions?: string;
+  description?: string;
   questions?: AssignmentQuestion[];
 };
 
@@ -38,12 +40,14 @@ type SubmissionItem = {
 
 export default function AssignmentsPage() {
   const [selectedId, setSelectedId] = useState('');
+  const [assignmentTab, setAssignmentTab] = useState<'questions' | 'submissions'>('questions');
   
   // TanStack Query Hooks
   const { data: assignmentsData = [], refetch: refetchAssignments } = useAssignments();
   const { data: subjectsList = [] } = useSubjects();
 
   const activeAssignmentId = selectedId || (assignmentsData.length > 0 ? assignmentsData[0].id : '');
+  const { data: assignmentDetail, isLoading: isLoadingDetail } = useAssignment(activeAssignmentId);
   const { data: submissionsData = [], refetch: refetchSubmissions } = useAssignmentSubmissions(activeAssignmentId);
 
   // Teachers, Classes, Students
@@ -474,91 +478,367 @@ export default function AssignmentsPage() {
         </div>
 
         {/* Submissions Detail */}
+        {/* Assignment Workspace Detail Pane */}
         <div className={styles.card}>
           {selected ? (
             <>
-              <div style={{ borderBottom: '1px solid var(--border-dim)', paddingBottom: '0.75rem' }}>
-                <span className="badge badge-info">{selected.className} · {selected.subjectName}</span>
-                <h2 className={styles.cardTitle} style={{ marginTop: '0.25rem' }}>{selected.title}</h2>
-                <p className={styles.itemSub}>Guru Pengampu: <strong>{selected.teacherName}</strong> · Terkumpul: <strong>{submissions.length} Siswa</strong></p>
+              {/* Header Overview */}
+              <div style={{ borderBottom: '1px solid var(--border-dim)', paddingBottom: '0.85rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  <div>
+                    <span className="badge badge-info" style={{ fontSize: '0.72rem', fontWeight: 700 }}>
+                      {selected.className} · {selected.subjectName}
+                    </span>
+                    <h2 className={styles.cardTitle} style={{ marginTop: '0.35rem', fontSize: '1.25rem' }}>{selected.title}</h2>
+                    <p className={styles.itemSub} style={{ marginTop: '0.2rem' }}>
+                      Guru Pengampu: <strong>{selected.teacherName}</strong> · Tenggat: <strong>{selected.due}</strong>
+                    </p>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                    <span style={{
+                      background: 'rgba(37, 99, 235, 0.08)',
+                      border: '1px solid rgba(37, 99, 235, 0.25)',
+                      color: '#2563eb',
+                      padding: '0.35rem 0.75rem',
+                      borderRadius: '8px',
+                      fontSize: '0.75rem',
+                      fontWeight: 800
+                    }}>
+                      Nilai Maks: {assignmentDetail?.max_score || 100} Poin
+                    </span>
+                    <span style={{
+                      background: 'rgba(22, 163, 74, 0.08)',
+                      border: '1px solid rgba(22, 163, 74, 0.25)',
+                      color: '#16a34a',
+                      padding: '0.35rem 0.75rem',
+                      borderRadius: '8px',
+                      fontSize: '0.75rem',
+                      fontWeight: 800
+                    }}>
+                      📥 {submissions.length} Terkumpul
+                    </span>
+                  </div>
+                </div>
+
+                {/* Tab Navigation */}
+                <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem', borderBottom: '2px solid var(--border-dim)', paddingBottom: '2px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setAssignmentTab('questions')}
+                    style={{
+                      padding: '0.5rem 1rem',
+                      borderRadius: '8px 8px 0 0',
+                      border: 'none',
+                      background: assignmentTab === 'questions' ? 'var(--accent)' : 'transparent',
+                      color: assignmentTab === 'questions' ? '#fff' : 'var(--text-muted)',
+                      fontWeight: 800,
+                      fontSize: '0.8rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.4rem',
+                      transition: 'all 0.2s ease',
+                    }}
+                  >
+                    <span>📋 Butir Soal &amp; Petunjuk Tugas</span>
+                    <span style={{
+                      background: assignmentTab === 'questions' ? 'rgba(255,255,255,0.25)' : 'var(--bg-elevated)',
+                      color: assignmentTab === 'questions' ? '#fff' : 'var(--text-muted)',
+                      padding: '1px 6px',
+                      borderRadius: '10px',
+                      fontSize: '0.7rem'
+                    }}>
+                      {(assignmentDetail?.questions?.length || selected.questions?.length || 0)} Butir
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setAssignmentTab('submissions')}
+                    style={{
+                      padding: '0.5rem 1rem',
+                      borderRadius: '8px 8px 0 0',
+                      border: 'none',
+                      background: assignmentTab === 'submissions' ? 'var(--accent)' : 'transparent',
+                      color: assignmentTab === 'submissions' ? '#fff' : 'var(--text-muted)',
+                      fontWeight: 800,
+                      fontSize: '0.8rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.4rem',
+                      transition: 'all 0.2s ease',
+                    }}
+                  >
+                    <span>📥 Lembar Jawaban &amp; Koreksi Siswa</span>
+                    <span style={{
+                      background: assignmentTab === 'submissions' ? 'rgba(255,255,255,0.25)' : 'var(--bg-elevated)',
+                      color: assignmentTab === 'submissions' ? '#fff' : 'var(--text-muted)',
+                      padding: '1px 6px',
+                      borderRadius: '10px',
+                      fontSize: '0.7rem'
+                    }}>
+                      {submissions.length}
+                    </span>
+                  </button>
+                </div>
               </div>
 
-              <table className={styles.submissionTable}>
-                <thead>
-                  <tr>
-                    <th>Nama Siswa (NISN)</th>
-                    <th>Waktu &amp; Media (Android)</th>
-                    <th>Status Koreksi</th>
-                    <th>Nilai Akhir</th>
-                    <th style={{ textAlign: 'right' }}>Aksi Guru</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {submissions.length > 0 ? (
-                    submissions.map((sub) => (
-                    <tr key={sub.id}>
-                      <td>
-                        <strong>{sub.studentName}</strong>
-                        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>NISN: {sub.nisn}</div>
-                      </td>
-                      <td>
-                        <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{sub.time}</div>
-                        <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', marginTop: '3px' }}>
-                          {sub.answers.length > 0 && (
-                            <span style={{ fontSize: '0.68rem', background: '#dbeafe', color: '#1e40af', padding: '1px 6px', borderRadius: '4px', fontWeight: 600 }}>
-                              📝 {sub.answers.length} Soal PG/Essay
-                            </span>
-                          )}
-                          {sub.attachmentName && (
-                            <button
-                              type="button"
-                              style={{ background: 'none', border: 'none', padding: 0, color: '#2563eb', fontWeight: 700, fontSize: '0.72rem', cursor: 'pointer', textAlign: 'left' }}
-                              onClick={() => setActiveFilePreview({
-                                fileName: sub.attachmentName!,
-                                studentName: sub.studentName,
-                                nisn: sub.nisn,
-                                fileType: (sub.attachmentType as 'PDF' | 'IMAGE') || 'PDF',
-                                subjectName: selected.subjectName,
-                                fileUrl: sub.fileUrl,
-                              })}
-                            >
-                              📎 {sub.attachmentName}
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                      <td>
-                        <span className={`badge ${sub.status === 'Dinilai' ? 'badge-active' : 'badge-warning'}`}>
-                          {sub.status}
-                        </span>
-                      </td>
-                      <td><strong>{sub.score > 0 ? sub.score : '-'}</strong> / 100</td>
-                      <td style={{ textAlign: 'right' }}>
-                        <button
-                          className="btn btn-secondary btn-sm"
-                          style={{ fontSize: '0.72rem', padding: '0.25rem 0.6rem' }}
-                          onClick={() => handleOpenGradingModal(sub)}
-                        >
-                          👁️ Periksa &amp; Koreksi
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                  ) : (
-                    <tr>
-                      <td colSpan={5} style={{ textAlign: 'center', padding: '3.5rem 1.5rem', color: 'var(--text-muted)' }}>
-                        <div style={{ fontSize: '2.5rem', marginBottom: '0.6rem' }}>📭</div>
-                        <div style={{ fontWeight: 800, fontSize: '1.05rem', color: 'var(--text-primary)' }}>
-                          Belum Ada Siswa Mengumpulkan Berkas Jawaban
-                        </div>
-                        <div style={{ fontSize: '0.84rem', marginTop: '0.35rem', maxWidth: '420px', margin: '0.35rem auto 0 auto' }}>
-                          Tugas ini telah disinkronkan ke server. Siswa rombel {selected.className} dapat mengerjakan soal pilihan ganda, essay, atau mengunggah lembar PR melalui aplikasi <strong>School OS Android</strong>.
-                        </div>
-                      </td>
-                    </tr>
+              {/* TAB 1: Butir Soal & Petunjuk Tugas */}
+              {assignmentTab === 'questions' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', paddingTop: '0.5rem' }}>
+                  {/* Instructions Block */}
+                  {(assignmentDetail?.instructions || selected.instructions || assignmentDetail?.description) && (
+                    <div style={{
+                      background: 'rgba(37, 99, 235, 0.05)',
+                      border: '1px solid rgba(37, 99, 235, 0.2)',
+                      borderRadius: '12px',
+                      padding: '1rem',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '0.35rem'
+                    }}>
+                      <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#1e40af', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <span>📖</span> Petunjuk Pengerjaan Tugas:
+                      </div>
+                      <div style={{ fontSize: '0.84rem', color: 'var(--text-primary)', whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
+                        {assignmentDetail?.instructions || selected.instructions || assignmentDetail?.description}
+                      </div>
+                    </div>
                   )}
-                </tbody>
-              </table>
+
+                  {isLoadingDetail ? (
+                    <div style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-muted)' }}>
+                      Memuat butir soal tugas...
+                    </div>
+                  ) : (assignmentDetail?.questions && assignmentDetail.questions.length > 0) ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                      <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span>Daftar Butir Soal yang Telah Diterbitkan untuk Siswa:</span>
+                        <span>Total {assignmentDetail.questions.length} Butir Soal</span>
+                      </div>
+
+                      {assignmentDetail.questions.map((q, idx) => {
+                        const isMC = q.question_type === 'MULTIPLE_CHOICE';
+                        return (
+                          <div
+                            key={q.id || idx}
+                            style={{
+                              background: 'var(--bg-elevated)',
+                              border: '1px solid var(--border-dim)',
+                              borderRadius: '12px',
+                              padding: '1rem',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '0.75rem'
+                            }}
+                          >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.4rem' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <span style={{
+                                  background: '#0f172a',
+                                  color: '#fff',
+                                  fontWeight: 800,
+                                  fontSize: '0.72rem',
+                                  borderRadius: '6px',
+                                  padding: '0.2rem 0.55rem'
+                                }}>
+                                  Soal #{idx + 1}
+                                </span>
+                                <span style={{
+                                  background: isMC ? 'rgba(37, 99, 235, 0.1)' : 'rgba(217, 119, 6, 0.1)',
+                                  color: isMC ? '#2563eb' : '#d97706',
+                                  border: `1px solid ${isMC ? 'rgba(37, 99, 235, 0.25)' : 'rgba(217, 119, 6, 0.25)'}`,
+                                  fontSize: '0.72rem',
+                                  fontWeight: 800,
+                                  borderRadius: '6px',
+                                  padding: '0.2rem 0.5rem'
+                                }}>
+                                  {isMC ? '🔘 Pilihan Ganda (PG)' : '📝 Esai / Uraian Terstruktur'}
+                                </span>
+                              </div>
+
+                              <span style={{
+                                background: '#f1f5f9',
+                                color: '#334155',
+                                fontWeight: 800,
+                                fontSize: '0.75rem',
+                                padding: '0.2rem 0.6rem',
+                                borderRadius: '6px'
+                              }}>
+                                ⭐ Bobot: {q.points || 10} Poin
+                              </span>
+                            </div>
+
+                            <div style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.5 }}>
+                              {q.question_text}
+                            </div>
+
+                            {/* Multiple Choice Options with Answer Key Indicator */}
+                            {isMC && q.choices && q.choices.length > 0 && (
+                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '0.5rem', marginTop: '0.25rem' }}>
+                                {q.choices.map((c, cIdx) => {
+                                  const letter = String.fromCharCode(65 + cIdx);
+                                  const isCorrect = c.is_correct === true;
+                                  return (
+                                    <div
+                                      key={cIdx}
+                                      style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.5rem',
+                                        padding: '0.5rem 0.75rem',
+                                        borderRadius: '8px',
+                                        border: isCorrect ? '1.5px solid #16a34a' : '1px solid var(--border-dim)',
+                                        background: isCorrect ? '#f0fdf4' : 'var(--bg-surface)',
+                                        fontSize: '0.8rem',
+                                      }}
+                                    >
+                                      <span style={{
+                                        width: '24px',
+                                        height: '24px',
+                                        borderRadius: '50%',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        background: isCorrect ? '#16a34a' : 'var(--border-dim)',
+                                        color: isCorrect ? '#fff' : 'var(--text-muted)',
+                                        fontWeight: 800,
+                                        fontSize: '0.72rem',
+                                        flexShrink: 0
+                                      }}>
+                                        {letter}
+                                      </span>
+                                      <span style={{ flex: 1, color: isCorrect ? '#15803d' : 'var(--text-primary)', fontWeight: isCorrect ? 700 : 500 }}>
+                                        {c.choice_text}
+                                      </span>
+                                      {isCorrect && (
+                                        <span style={{ fontSize: '0.68rem', background: '#dcfce7', color: '#16a34a', padding: '1px 6px', borderRadius: '4px', fontWeight: 800 }}>
+                                          ✓ Kunci Benar
+                                        </span>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+
+                            {!isMC && (
+                              <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px', padding: '0.6rem 0.85rem', fontSize: '0.78rem', color: '#92400e' }}>
+                                💡 Siswa menjawab pertanyaan uraian ini melalui form teks di aplikasi Android. Jawaban siswa dapat Anda periksa dan beri nilai pada tab <strong>Lembar Jawaban &amp; Koreksi</strong>.
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    /* Pure Homework / PR without questions */
+                    <div style={{
+                      textAlign: 'center',
+                      padding: '2.5rem 1.5rem',
+                      background: 'var(--bg-elevated)',
+                      borderRadius: '14px',
+                      border: '1px dashed var(--border-dim)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: '0.5rem'
+                    }}>
+                      <div style={{ fontSize: '2.5rem' }}>📄</div>
+                      <div style={{ fontWeight: 800, fontSize: '1rem', color: 'var(--text-primary)' }}>
+                        Tugas Berkas PR / Lembar Kerja Fisik
+                      </div>
+                      <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--text-muted)', maxWidth: '460px', lineHeight: 1.5 }}>
+                        Tugas ini tidak menggunakan butir soal online mandiri. Siswa mengerjakan sesuai petunjuk di atas, lalu mengunggah foto lembar buku tugas atau berkas PDF melalui aplikasi <strong>School OS Android</strong>.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* TAB 2: Lembar Jawaban & Koreksi Siswa */}
+              {assignmentTab === 'submissions' && (
+                <div style={{ paddingTop: '0.5rem' }}>
+                  <table className={styles.submissionTable}>
+                    <thead>
+                      <tr>
+                        <th>Nama Siswa (NISN)</th>
+                        <th>Waktu &amp; Media (Android)</th>
+                        <th>Status Koreksi</th>
+                        <th>Nilai Akhir</th>
+                        <th style={{ textAlign: 'right' }}>Aksi Guru</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {submissions.length > 0 ? (
+                        submissions.map((sub) => (
+                        <tr key={sub.id}>
+                          <td>
+                            <strong>{sub.studentName}</strong>
+                            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>NISN: {sub.nisn}</div>
+                          </td>
+                          <td>
+                            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{sub.time}</div>
+                            <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', marginTop: '3px' }}>
+                              {sub.answers.length > 0 && (
+                                <span style={{ fontSize: '0.68rem', background: '#dbeafe', color: '#1e40af', padding: '1px 6px', borderRadius: '4px', fontWeight: 600 }}>
+                                  📝 {sub.answers.length} Soal PG/Essay
+                                </span>
+                              )}
+                              {sub.attachmentName && (
+                                <button
+                                  type="button"
+                                  style={{ background: 'none', border: 'none', padding: 0, color: '#2563eb', fontWeight: 700, fontSize: '0.72rem', cursor: 'pointer', textAlign: 'left' }}
+                                  onClick={() => setActiveFilePreview({
+                                    fileName: sub.attachmentName!,
+                                    studentName: sub.studentName,
+                                    nisn: sub.nisn,
+                                    fileType: (sub.attachmentType as 'PDF' | 'IMAGE') || 'PDF',
+                                    subjectName: selected.subjectName,
+                                    fileUrl: sub.fileUrl,
+                                  })}
+                                >
+                                  📎 {sub.attachmentName}
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                          <td>
+                            <span className={`badge ${sub.status === 'Dinilai' ? 'badge-active' : 'badge-warning'}`}>
+                              {sub.status}
+                            </span>
+                          </td>
+                          <td><strong>{sub.score > 0 ? sub.score : '-'}</strong> / {assignmentDetail?.max_score || 100}</td>
+                          <td style={{ textAlign: 'right' }}>
+                            <button
+                              className="btn btn-secondary btn-sm"
+                              style={{ fontSize: '0.72rem', padding: '0.25rem 0.6rem' }}
+                              onClick={() => handleOpenGradingModal(sub)}
+                            >
+                              👁️ Periksa &amp; Koreksi
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                      ) : (
+                        <tr>
+                          <td colSpan={5} style={{ textAlign: 'center', padding: '3.5rem 1.5rem', color: 'var(--text-muted)' }}>
+                            <div style={{ fontSize: '2.5rem', marginBottom: '0.6rem' }}>📭</div>
+                            <div style={{ fontWeight: 800, fontSize: '1.05rem', color: 'var(--text-primary)' }}>
+                              Belum Ada Siswa Mengumpulkan Berkas Jawaban
+                            </div>
+                            <div style={{ fontSize: '0.84rem', marginTop: '0.35rem', maxWidth: '420px', margin: '0.35rem auto 0 auto' }}>
+                              Tugas ini telah disinkronkan ke server. Siswa rombel {selected.className} dapat mengerjakan butir soal pilihan ganda &amp; esai, atau mengunggah lembar PR melalui aplikasi <strong>School OS Android</strong>.
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </>
           ) : (
             <div style={{ padding: '3rem 1rem', textAlign: 'center', color: 'var(--text-muted)' }}>

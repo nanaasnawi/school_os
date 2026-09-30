@@ -35,7 +35,10 @@ export default function CreateQuizPage() {
   const [teacherName, setTeacherName] = useState('');
   const [passingScore, setPassingScore] = useState<number>(75);
   const [durationMinutes, setDurationMinutes] = useState<number>(45);
-  const [examDate, setExamDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [startDate, setStartDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
+  const [startTime, setStartTime] = useState<string>('07:30');
+  const [endDate, setEndDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
+  const [endTime, setEndTime] = useState<string>('12:00');
   const [description, setDescription] = useState('');
 
   // Questions Builder State
@@ -214,6 +217,19 @@ export default function CreateQuizPage() {
     const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
 
     try {
+      let startAtIso: string | undefined = undefined;
+      let endAtIso: string | undefined = undefined;
+      try {
+        if (startDate && startTime) {
+          startAtIso = new Date(`${startDate}T${startTime}:00`).toISOString();
+        }
+        if (endDate && endTime) {
+          endAtIso = new Date(`${endDate}T${endTime}:00`).toISOString();
+        }
+      } catch (err) {
+        console.warn('Failed to parse exam schedule dates:', err);
+      }
+
       // 1. Create Quiz Header
       const payload = {
         title: title.trim(),
@@ -221,6 +237,8 @@ export default function CreateQuizPage() {
         duration_minutes: Number(durationMinutes) || 45,
         passing_score: Number(passingScore) || 75,
         class_id: classRoom,
+        start_at: startAtIso,
+        end_at: endAtIso,
       };
 
       const res = await fetch(getApiUrl('/api/v1/learning/quizzes'), {
@@ -486,16 +504,78 @@ export default function CreateQuizPage() {
               </div>
             </div>
 
-            <div>
-              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, marginBottom: '0.35rem' }}>
-                Tanggal Pelaksanaan Ujian
-              </label>
-              <input
-                type="date"
-                value={examDate}
-                onChange={e => setExamDate(e.target.value)}
-                className="input"
-              />
+            {/* Exam Schedule (Start & End) */}
+            <div style={{
+              background: 'rgba(37, 99, 235, 0.04)',
+              border: '1px solid rgba(37, 99, 235, 0.18)',
+              borderRadius: '12px',
+              padding: '0.85rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.65rem'
+            }}>
+              <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#1e40af', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <span>📅</span>
+                <span>Jadwal Akses &amp; Waktu Ujian CBT</span>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '0.5rem' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, marginBottom: '0.2rem' }}>
+                    Tanggal Mulai Ujian *
+                  </label>
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={e => setStartDate(e.target.value)}
+                    className="input"
+                    style={{ fontSize: '0.8rem' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, marginBottom: '0.2rem' }}>
+                    Jam Mulai *
+                  </label>
+                  <input
+                    type="time"
+                    value={startTime}
+                    onChange={e => setStartTime(e.target.value)}
+                    className="input"
+                    style={{ fontSize: '0.8rem' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '0.5rem' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, marginBottom: '0.2rem' }}>
+                    Batas Tanggal Selesai *
+                  </label>
+                  <input
+                    type="date"
+                    value={endDate}
+                    onChange={e => setEndDate(e.target.value)}
+                    className="input"
+                    style={{ fontSize: '0.8rem' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, marginBottom: '0.2rem' }}>
+                    Jam Berakhir *
+                  </label>
+                  <input
+                    type="time"
+                    value={endTime}
+                    onChange={e => setEndTime(e.target.value)}
+                    className="input"
+                    style={{ fontSize: '0.8rem' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                ℹ️ Siswa di aplikasi Android hanya dapat memulai ujian dalam rentang tanggal dan jam yang ditentukan di atas.
+              </div>
             </div>
 
             <div>
