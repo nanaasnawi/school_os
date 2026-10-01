@@ -198,7 +198,7 @@ const NAV_SECTIONS = [
       { label: 'Siswa', path: '/dashboard/students', icon: 'students' },
       { label: 'Kartu QR Login', path: '/dashboard/students/qr-scan', icon: 'qr' },
       { label: 'Guru', path: '/dashboard/teachers', icon: 'teachers' },
-
+      { label: 'Portal Guru (Workstation)', path: '/dashboard/teacher', icon: 'teachers' },
       { label: 'Tenaga Kependidikan', path: '/dashboard/staff', icon: 'staff' },
       { label: 'Mata Pelajaran', path: '/dashboard/learning', icon: 'learning' },
     ],
@@ -242,6 +242,47 @@ const NAV_SECTIONS = [
       { label: 'Pengguna', path: '/dashboard/users', icon: 'users' },
       { label: 'Pengaturan', path: '/dashboard/settings', icon: 'settings' },
       { label: 'Log Aktivitas', path: '/dashboard/activity-logs', icon: 'log' },
+    ],
+  },
+];
+
+/* ── Dedicated Teacher Workstation Menu Sections ── */
+const TEACHER_NAV_SECTIONS = [
+  {
+    label: 'Teacher Workstation',
+    items: [
+      { label: 'Action Center', path: '/dashboard/teacher', icon: 'dashboard' },
+      { label: 'Kelas Saya', path: '/dashboard/teacher/classes', icon: 'classes' },
+    ],
+  },
+  {
+    label: 'Pembelajaran',
+    items: [
+      { label: 'Materi & Buku', path: '/dashboard/learning/materials', icon: 'materials' },
+      { label: 'Tugas Siswa', path: '/dashboard/learning/assignments', icon: 'assignments' },
+      { label: 'Koreksi Massal', path: '/dashboard/teacher/grading', icon: 'gradebook' },
+      { label: 'Kuis & CBT', path: '/dashboard/learning/quizzes', icon: 'quizzes' },
+    ],
+  },
+  {
+    label: 'Penilaian & Analitik',
+    items: [
+      { label: 'Buku Nilai', path: '/dashboard/grading/gradebook', icon: 'gradebook' },
+      { label: 'Teacher Analytics', path: '/dashboard/teacher/analytics', icon: 'analytics' },
+      { label: 'Tanya Guru', path: '/dashboard/teacher/inquiry', icon: 'announcement' },
+    ],
+  },
+  {
+    label: 'Komunikasi',
+    items: [
+      { label: 'Pengumuman', path: '/dashboard/announcements', icon: 'announcement' },
+      { label: 'Notifikasi', path: '/dashboard/notifications', icon: 'bell' },
+    ],
+  },
+  {
+    label: 'Navigasi Sistem',
+    items: [
+      { label: 'Portal Administrator', path: '/dashboard', icon: 'dashboard' },
     ],
   },
 ];
@@ -510,11 +551,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const isItemActive = (itemPath: string) => {
     if (pathname === itemPath) return true;
-    if (itemPath === '/dashboard') return false;
+    if (itemPath === '/dashboard' || itemPath === '/dashboard/teacher') return false;
 
     if (pathname.startsWith(itemPath + '/')) {
       // Check if there is a more specific menu item registered that matches current pathname
-      const hasMoreSpecificMatch = NAV_SECTIONS.some(sec =>
+      const allSections = [...NAV_SECTIONS, ...TEACHER_NAV_SECTIONS];
+      const hasMoreSpecificMatch = allSections.some(sec =>
         sec.items.some(it => it.path !== itemPath && it.path.startsWith(itemPath + '/') && (pathname === it.path || pathname.startsWith(it.path + '/')))
       );
       return !hasMoreSpecificMatch;
@@ -524,6 +566,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   /* ── Breadcrumb label ── */
   const getBreadcrumbLabel = () => {
+    if (pathname === '/dashboard/teacher')           return 'Teacher Workstation (Action Center)';
+    if (pathname.includes('/teacher/classes'))      return 'Kelas Saya';
+    if (pathname.includes('/teacher/grading'))      return 'Koreksi Massal Siswa';
+    if (pathname.includes('/teacher/analytics'))    return 'Teacher Analytics';
+    if (pathname.includes('/teacher/inquiry'))      return 'Tanya Guru & Diskusi';
     if (pathname.includes('/students/qr-scan'))     return 'Scan QR Presensi Siswa';
     if (pathname.includes('/students/new'))         return 'Tambah Siswa Baru';
     if (pathname.includes('/students'))             return 'Manajemen Siswa';
@@ -556,6 +603,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return null;
   }
 
+  const isTeacherRole = user?.role?.toLowerCase().includes('guru') || user?.role?.toLowerCase().includes('teacher');
+  const isTeacherWorkstation = pathname.startsWith('/dashboard/teacher') || isTeacherRole;
+  const activeNavSections = isTeacherWorkstation ? TEACHER_NAV_SECTIONS : NAV_SECTIONS;
+
   return (
     <div className={`${styles.layout} ${collapsed ? styles.collapsed : ''}`}>
       {/* ═══════════════════════
@@ -564,7 +615,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <aside className={styles.sidebar}>
         {/* Brand */}
         <div className={styles.sidebarHeader}>
-          <Link href="/dashboard" className={styles.logo}>
+          <Link href={isTeacherWorkstation ? '/dashboard/teacher' : '/dashboard'} className={styles.logo}>
             <div className={styles.logoIcon}>
               {schoolLogoUrl ? (
                 <img
@@ -601,14 +652,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <span className={styles.logoName} title={selectedSchool || (typeof window !== 'undefined' ? getTenantItem('dapodik_nama_sekolah') : '') || 'School OS'}>
                 {selectedSchool || (typeof window !== 'undefined' ? getTenantItem('dapodik_nama_sekolah') : '') || 'School OS'}
               </span>
-              <span className={styles.logoBadge}>Sistem Manajemen Sekolah</span>
+              <span className={styles.logoBadge}>
+                {isTeacherWorkstation ? 'Teacher Workstation' : 'Sistem Manajemen Sekolah'}
+              </span>
             </div>
           </Link>
         </div>
 
         {/* Navigation */}
         <nav className={styles.nav}>
-          {NAV_SECTIONS.map((sec, secIdx) => (
+          {activeNavSections.map((sec, secIdx) => (
             <div key={secIdx} className={styles.navSection}>
               {sec.label && <span className={styles.sectionLabel}>{sec.label}</span>}
               {sec.items.map((item, itemIdx) => {

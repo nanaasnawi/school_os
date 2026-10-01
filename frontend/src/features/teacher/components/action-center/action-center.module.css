@@ -1,0 +1,275 @@
+.actionCenterGrid {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .actionCenterGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.leftCol, .rightCol {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Card Container */
+.widgetCard {
+  background: var(--bg-surface, #ffffff);
+  border: 1px solid var(--border-light, #e2e8f0);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.04);
+}
+
+.widgetHeader {
+  padding: 1.15rem 1.35rem;
+  border-bottom: 1px solid var(--border-light, #f1f5f9);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.widgetHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.widgetTitle {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text-primary, #0f172a);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.badgeCount {
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 99px;
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.badgeCountNeutral {
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 99px;
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.widgetSub {
+  font-size: 0.8rem;
+  color: var(--text-secondary, #64748b);
+  margin: 0.2rem 0 0 0;
+}
+
+/* At-Risk List */
+.riskList {
+  display: flex;
+  flex-direction: column;
+}
+
+.riskItem {
+  padding: 1.15rem 1.35rem;
+  border-bottom: 1px solid var(--border-light, #f8fafc);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  transition: background 0.15s ease;
+}
+
+.riskItem:last-child {
+  border-bottom: none;
+}
+
+.riskItem:hover {
+  background: var(--bg-hover, #f8fafc);
+}
+
+.riskItemLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.riskItemMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.studentName {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary, #0f172a);
+}
+
+.classBadge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.riskCategoryPill {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.riskHigh {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.riskMedium {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.riskItemTitle {
+  font-size: 0.86rem;
+  color: var(--text-secondary, #334155);
+  font-weight: 600;
+  margin: 0;
+}
+
+.riskItemDesc {
+  font-size: 0.78rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.actionBtnSmall {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.45rem 0.85rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  border: 1px solid #0284c7;
+  background: #f0f9ff;
+  color: #0284c7;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.actionBtnSmall:hover {
+  background: #0284c7;
+  color: #ffffff;
+}
+
+/* Empty State */
+.emptyState {
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-secondary, #64748b);
+}
+
+.emptyStateTitle {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+/* Schedule List */
+.scheduleList {
+  display: flex;
+  flex-direction: column;
+}
+
+.scheduleItem {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border-light, #f1f5f9);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.scheduleItem:last-child {
+  border-bottom: none;
+}
+
+.scheduleTimeBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.4rem 0.65rem;
+  min-width: 65px;
+  text-align: center;
+}
+
+.scheduleTime {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.scheduleTimeSub {
+  font-size: 0.68rem;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.scheduleDetail {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.scheduleSubject {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.scheduleRoom {
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
+.scheduleStatusBadge {
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 99px;
+}
+
+.badgeLive {
+  background: #dcfce7;
+  color: #15803d;
+  box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.15);
+}
+
+.badgeUpcoming {
+  background: #f1f5f9;
+  color: #475569;
+}
