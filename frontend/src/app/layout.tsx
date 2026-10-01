@@ -19,7 +19,6 @@ const plusJakarta = Plus_Jakarta_Sans({
 const outfit = Outfit({
   variable: '--font-outfit',
   subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700', '800', '900'],
   display: 'swap',
 });
 

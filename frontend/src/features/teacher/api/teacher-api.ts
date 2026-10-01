@@ -4,6 +4,7 @@ import type {
   TeacherClassSummary,
   TodayScheduleItem,
   TeacherWorkstationStats,
+  ClassStudentDto,
 } from '../types';
 
 function getAuthHeaders(): HeadersInit {
@@ -152,5 +153,30 @@ export async function fetchWorkstationStats(): Promise<TeacherWorkstationStats> 
       unread_inquiries_count: 0,
       average_class_reading_progress: 0,
     };
+  }
+}
+
+/**
+ * Fetch students enrolled in a specific class
+ */
+export async function fetchClassStudents(classId: string): Promise<ClassStudentDto[]> {
+  try {
+    const res = await fetch(getApiUrl(`/api/v1/classes/${classId}/students`), {
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok) {
+      // Fallback to query parameter endpoint
+      const fallbackRes = await fetch(getApiUrl(`/api/v1/classes/students?class_id=${classId}`), {
+        headers: getAuthHeaders(),
+      });
+      if (!fallbackRes.ok) return [];
+      const fallbackJson = await fallbackRes.json();
+      return fallbackJson?.data || [];
+    }
+    const json = await res.json();
+    return json?.data || [];
+  } catch (err) {
+    console.error(`Failed to fetch students for class ${classId}:`, err);
+    return [];
   }
 }

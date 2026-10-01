@@ -9,3 +9,5 @@ export * from './shared/TeacherMetricGrid';
 export * from './mass-grader/MassGraderWorkspace';
 export * from './mass-grader/StudentSubmissionsSidebar';
 export * from './mass-grader/DigitalWorksheetViewer';
+
+export * from './classes/TeacherClassesView';

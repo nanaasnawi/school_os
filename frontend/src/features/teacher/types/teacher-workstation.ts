@@ -49,3 +49,23 @@ export interface TeacherWorkstationStats {
   unread_inquiries_count: number;
   average_class_reading_progress: number; // 0 - 100 percentage
 }
+
+export interface ClassStudentDto {
+  id: string;
+  full_name: string;
+  nisn: string;
+  gender?: string | null;
+  status: string;
+  no_hp?: string | null;
+  email?: string | null;
+  class_id: string;
+  class_name: string;
+}
+
+export interface ClassStudentStats {
+  total: number;
+  activeCount: number;
+  maleCount: number;
+  femaleCount: number;
+  hasPhoneCount: number;
+}

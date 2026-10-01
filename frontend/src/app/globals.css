@@ -781,11 +781,11 @@ table.dataTable {
 
 .table thead th,
 table.dataTable thead th {
-  background: #f8fafc;
+  background: #eaedf1;
   color: #334155;
-  font-size: 0.82rem;
+  font-size: 0.875rem;
   font-weight: 700;
-  padding: 0.85rem 1rem;
+  padding: 1rem 1.25rem;
   border-bottom: 1px solid #e2e8f0;
   border-top: none;
   white-space: nowrap;
@@ -868,8 +868,8 @@ table.dataTable tbody tr:hover {
 
 .table tbody td,
 table.dataTable tbody td {
-  padding: 0.95rem 1rem;
-  color: #334155;
+  padding: 1.1rem 1.25rem;
+  color: #1e293b;
   vertical-align: middle;
 }
 
