@@ -369,8 +369,10 @@ export function TeacherInquiryView() {
 
             <div className={styles.chatBody}>
               {isLoadingDetail ? (
-                <div style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>
-                  Memuat riwayat percakapan...
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', padding: '1rem' }}>
+                  <div className="skeleton" style={{ width: '60%', height: '52px', borderRadius: '14px', alignSelf: 'flex-start' }} />
+                  <div className="skeleton" style={{ width: '70%', height: '64px', borderRadius: '14px', alignSelf: 'flex-end' }} />
+                  <div className="skeleton" style={{ width: '50%', height: '48px', borderRadius: '14px', alignSelf: 'flex-start' }} />
                 </div>
               ) : (
                 activeDetail.messages.map((msg) => {

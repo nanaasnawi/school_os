@@ -1,0 +1,699 @@
+/* ══════════════════════════════════════════════════════════════════
+   TEACHER WORKSTATION SHIMMER / SKELETON STYLES
+   High-Fidelity Skeleton Matching the Actual Layout Ergonomics
+   ══════════════════════════════════════════════════════════════════ */
+
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(226, 232, 240, 0.7) 0%,
+    rgba(241, 245, 249, 1) 50%,
+    rgba(226, 232, 240, 0.7) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmerSweep 1.6s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+[data-theme="dark"] .shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(39, 39, 42, 0.6) 0%,
+    rgba(63, 63, 70, 0.85) 50%,
+    rgba(39, 39, 42, 0.6) 100%
+  );
+  background-size: 200% 100%;
+}
+
+@keyframes shimmerSweep {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* ── Page Container ── */
+.pageContainer {
+  padding: 1.5rem 2rem 3.5rem;
+  max-width: 1680px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 768px) {
+  .pageContainer {
+    padding: 1rem 1rem 2.5rem;
+    gap: 1.25rem;
+  }
+}
+
+/* ── 1. Header Card Skeleton ── */
+.headerCard {
+  background: var(--bg-surface, #ffffff);
+  border: 1px solid var(--border-light, #e2e8f0);
+  border-radius: 16px;
+  padding: 1.5rem 1.75rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="dark"] .headerCard {
+  background: #18181b;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.avatarSkeleton {
+  width: 54px;
+  height: 54px;
+  border-radius: 14px;
+  flex-shrink: 0;
+}
+
+.headerTextGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.badgeSkeleton {
+  width: 120px;
+  height: 18px;
+  border-radius: 6px;
+}
+
+.titleSkeleton {
+  width: 240px;
+  height: 28px;
+  border-radius: 6px;
+}
+
+.subtitleSkeleton {
+  width: 180px;
+  height: 16px;
+  border-radius: 4px;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.btnSkeleton {
+  width: 125px;
+  height: 38px;
+  border-radius: 9px;
+}
+
+.btnSkeletonPrimary {
+  width: 145px;
+  height: 38px;
+  border-radius: 9px;
+}
+
+/* ── 2. Metric Grid Skeleton ── */
+.metricGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.35rem;
+}
+
+@media (max-width: 1200px) {
+  .metricGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .metricGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.metricCard {
+  background: var(--bg-card, #ffffff);
+  border: 1px solid var(--border-light, #e2e8f0);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  min-height: 142px;
+}
+
+[data-theme="dark"] .metricCard {
+  background: #18181b;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.metricCardBody {
+  padding: 1.15rem 1.25rem 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  flex: 1;
+}
+
+.metricCardTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.metricTitleSkeleton {
+  width: 110px;
+  height: 14px;
+  border-radius: 4px;
+}
+
+.metricIconSkeleton {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+}
+
+.metricValueSkeleton {
+  width: 85px;
+  height: 36px;
+  border-radius: 6px;
+  margin-top: 0.2rem;
+}
+
+.metricSubtitleSkeleton {
+  width: 130px;
+  height: 14px;
+  border-radius: 4px;
+}
+
+.metricFooterSkeleton {
+  width: 100%;
+  height: 32px;
+  border-radius: 0;
+  border-top: 1px solid var(--border-light, #f1f5f9);
+}
+
+/* ── 3. Main Grid Skeleton ── */
+.actionCenterGrid {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .actionCenterGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.leftCol, .rightCol {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.widgetCard {
+  background: var(--bg-surface, #ffffff);
+  border: 1px solid var(--border-light, #e2e8f0);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="dark"] .widgetCard {
+  background: #18181b;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.widgetHeader {
+  padding: 1.15rem 1.35rem;
+  border-bottom: 1px solid var(--border-light, #f1f5f9);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+[data-theme="dark"] .widgetHeader {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.widgetTitleSkeleton {
+  width: 160px;
+  height: 20px;
+  border-radius: 6px;
+}
+
+.widgetBadgeSkeleton {
+  width: 75px;
+  height: 22px;
+  border-radius: 12px;
+}
+
+.widgetBody {
+  padding: 1.25rem 1.35rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Risk Item Skeleton */
+.riskItemSkeleton {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.85rem 1rem;
+  background: var(--bg-hover, #f8fafc);
+  border: 1px solid var(--border-light, #e2e8f0);
+  border-radius: 12px;
+}
+
+[data-theme="dark"] .riskItemSkeleton {
+  background: #1f1f23;
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+.riskIconSkeleton {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.riskContentSkeleton {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.riskNameSkeleton {
+  width: 140px;
+  height: 16px;
+  border-radius: 4px;
+}
+
+.riskDescSkeleton {
+  width: 220px;
+  height: 12px;
+  border-radius: 4px;
+}
+
+.riskBtnSkeleton {
+  width: 90px;
+  height: 32px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+/* Grading Item Skeleton */
+.gradingItemSkeleton {
+  padding: 1rem 1.15rem;
+  background: var(--bg-hover, #f8fafc);
+  border: 1px solid var(--border-light, #e2e8f0);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+[data-theme="dark"] .gradingItemSkeleton {
+  background: #1f1f23;
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+.gradingItemTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.gradingTitleSkeleton {
+  width: 200px;
+  height: 16px;
+  border-radius: 4px;
+}
+
+.gradingTagSkeleton {
+  width: 70px;
+  height: 20px;
+  border-radius: 6px;
+}
+
+.gradingBarSkeleton {
+  width: 100%;
+  height: 8px;
+  border-radius: 4px;
+}
+
+.gradingItemBottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.gradingCountSkeleton {
+  width: 110px;
+  height: 14px;
+  border-radius: 4px;
+}
+
+.gradingBtnSkeleton {
+  width: 95px;
+  height: 30px;
+  border-radius: 7px;
+}
+
+/* Schedule Item Skeleton */
+.scheduleDropdownSkeleton {
+  width: 100%;
+  height: 40px;
+  border-radius: 10px;
+  margin-bottom: 0.5rem;
+}
+
+.scheduleItemSkeleton {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.85rem 1rem;
+  background: var(--bg-hover, #f8fafc);
+  border: 1px solid var(--border-light, #e2e8f0);
+  border-radius: 12px;
+}
+
+[data-theme="dark"] .scheduleItemSkeleton {
+  background: #1f1f23;
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+.scheduleTimeSkeleton {
+  width: 70px;
+  height: 28px;
+  border-radius: 7px;
+  flex-shrink: 0;
+}
+
+.scheduleInfoSkeleton {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.scheduleSubjectSkeleton {
+  width: 130px;
+  height: 15px;
+  border-radius: 4px;
+}
+
+.scheduleRoomSkeleton {
+  width: 90px;
+  height: 12px;
+  border-radius: 4px;
+}
+
+.scheduleBtnSkeleton {
+  width: 80px;
+  height: 30px;
+  border-radius: 7px;
+  flex-shrink: 0;
+}
+
+/* ── Class Cards Skeleton (For TeacherClassesView) ── */
+.classCardsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.35rem;
+}
+
+@media (max-width: 1100px) {
+  .classCardsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 650px) {
+  .classCardsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.classCardSkeleton {
+  background: var(--bg-card, #ffffff);
+  border: 1px solid var(--border-light, #e2e8f0);
+  border-radius: 16px;
+  padding: 1.35rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="dark"] .classCardSkeleton {
+  background: #18181b;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.classCardTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.classBadgeSkeleton {
+  width: 100px;
+  height: 22px;
+  border-radius: 6px;
+}
+
+.classIconSkeleton {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+}
+
+.classNameSkeleton {
+  width: 150px;
+  height: 24px;
+  border-radius: 6px;
+}
+
+.classStatsSkeleton {
+  display: flex;
+  gap: 1.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border-light, #f1f5f9);
+}
+
+[data-theme="dark"] .classStatsSkeleton {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.classStatItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.classStatLabel {
+  width: 60px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+.classStatValue {
+  width: 40px;
+  height: 18px;
+  border-radius: 4px;
+}
+
+/* ── Split Workstation Layout Skeleton ── */
+.splitLayout {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 1.25rem;
+  min-height: 600px;
+  align-items: start;
+}
+
+@media (max-width: 1024px) {
+  .splitLayout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.graderSidebarSkeleton {
+  background: var(--bg-card, #ffffff);
+  border: 1px solid var(--border-light, #e2e8f0);
+  border-radius: 16px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+[data-theme="dark"] .graderSidebarSkeleton {
+  background: #18181b;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.graderSidebarHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.graderSidebarTitle {
+  width: 140px;
+  height: 20px;
+  border-radius: 6px;
+}
+
+.graderSidebarCount {
+  width: 40px;
+  height: 20px;
+  border-radius: 10px;
+}
+
+.graderSearchInput {
+  width: 100%;
+  height: 38px;
+  border-radius: 10px;
+}
+
+.graderFilterPills {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.graderFilterPill {
+  width: 65px;
+  height: 28px;
+  border-radius: 8px;
+}
+
+.graderStudentList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.graderStudentCard {
+  padding: 0.85rem;
+  background: var(--bg-hover, #f8fafc);
+  border: 1px solid var(--border-light, #e2e8f0);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+[data-theme="dark"] .graderStudentCard {
+  background: #1f1f23;
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+.graderStudentName {
+  width: 130px;
+  height: 16px;
+  border-radius: 4px;
+}
+
+.graderStudentMeta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.graderStudentClass {
+  width: 70px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+.graderStudentBadge {
+  width: 50px;
+  height: 16px;
+  border-radius: 4px;
+}
+
+.graderViewerSkeleton {
+  background: var(--bg-card, #ffffff);
+  border: 1px solid var(--border-light, #e2e8f0);
+  border-radius: 16px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  min-height: 550px;
+}
+
+[data-theme="dark"] .graderViewerSkeleton {
+  background: #18181b;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.graderViewerHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-light, #f1f5f9);
+}
+
+.graderViewerTitle {
+  width: 280px;
+  height: 24px;
+  border-radius: 6px;
+}
+
+.graderViewerMeta {
+  width: 180px;
+  height: 14px;
+  border-radius: 4px;
+}
+
+.graderViewerBody {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.graderQuestionBox {
+  width: 100%;
+  height: 140px;
+  border-radius: 12px;
+}
+
+.graderAnswerBox {
+  width: 100%;
+  height: 180px;
+  border-radius: 12px;
+}
+
+.graderRubricBox {
+  width: 100%;
+  height: 110px;
+  border-radius: 12px;
+}

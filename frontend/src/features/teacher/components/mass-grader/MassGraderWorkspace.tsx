@@ -6,6 +6,7 @@ import styles from './mass-grader.module.css';
 import { useMassGrader } from '../../hooks';
 import { StudentSubmissionsSidebar } from './StudentSubmissionsSidebar';
 import { DigitalWorksheetViewer } from './DigitalWorksheetViewer';
+import { MassGraderSkeleton } from '../shared';
 
 export function MassGraderWorkspace() {
   const searchParams = useSearchParams();
@@ -105,10 +106,7 @@ export function MassGraderWorkspace() {
 
       {/* ── Main Split Workstation ── */}
       {isLoading ? (
-        <div style={{ padding: '4rem 2rem', textAlign: 'center', color: '#64748b' }}>
-          <div className="spinner" style={{ margin: '0 auto 1rem', width: '32px', height: '32px' }} />
-          <span style={{ fontWeight: 600 }}>Memuat Lembar Koreksi Siswa...</span>
-        </div>
+        <MassGraderSkeleton />
       ) : (
         <div className={styles.splitLayout}>
           {/* Left Column: Submissions Sidebar */}

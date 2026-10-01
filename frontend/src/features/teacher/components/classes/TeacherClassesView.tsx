@@ -5,6 +5,7 @@ import styles from './TeacherClassesView.module.css';
 import { useTeacherClasses } from '../../hooks';
 import type { ClassStudentDto } from '../../types';
 import { DataTable, StatusBadge, Column } from '@/shared/ui/data-table';
+import { ClassCardsSkeleton } from '../shared';
 
 export function TeacherClassesView() {
   const {
@@ -228,9 +229,7 @@ export function TeacherClassesView() {
 
       {/* ── Class Switcher Cards ── */}
       {isLoadingClasses ? (
-        <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>
-          Memuat daftar rombongan belajar...
-        </div>
+        <ClassCardsSkeleton />
       ) : (
         <div className={styles.classesGrid}>
           {classes.map((cls) => {

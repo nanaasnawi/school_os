@@ -3,8 +3,7 @@
 import React from 'react';
 import styles from './action-center.module.css';
 import { useTeacherActionCenter } from '../../hooks';
-import { TeacherWorkspaceHeader } from '../shared/TeacherWorkspaceHeader';
-import { TeacherMetricGrid } from '../shared/TeacherMetricGrid';
+import { TeacherWorkspaceHeader, TeacherMetricGrid, ActionCenterSkeleton } from '../shared';
 import { AtRiskStudentsWidget } from './AtRiskStudentsWidget';
 import { PendingGradingWidget } from './PendingGradingWidget';
 import { TodayScheduleWidget } from './TodayScheduleWidget';
@@ -34,12 +33,7 @@ export function ActionCenterView() {
   const currentDateText = now.toLocaleDateString('id-ID', options);
 
   if (isLoading) {
-    return (
-      <div style={{ padding: '3rem 2rem', textAlign: 'center', color: '#64748b' }}>
-        <div className="spinner" style={{ margin: '0 auto 1rem', width: '32px', height: '32px' }} />
-        <span style={{ fontWeight: 600 }}>Memuat Teacher Workstation...</span>
-      </div>
-    );
+    return <ActionCenterSkeleton />;
   }
 
   return (
