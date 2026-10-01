@@ -11,3 +11,4 @@ export * from './mass-grader/StudentSubmissionsSidebar';
 export * from './mass-grader/DigitalWorksheetViewer';
 
 export * from './classes/TeacherClassesView';
+export * from './analytics/TeacherAnalyticsView';
