@@ -12,3 +12,4 @@ export * from './mass-grader/DigitalWorksheetViewer';
 
 export * from './classes/TeacherClassesView';
 export * from './analytics/TeacherAnalyticsView';
+export * from './inquiry/TeacherInquiryView';

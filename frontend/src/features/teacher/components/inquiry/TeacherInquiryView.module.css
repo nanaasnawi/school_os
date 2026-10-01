@@ -1,0 +1,600 @@
+/* ══════════════════════════════════════════════════════════════════
+   TEACHER INQUIRY & CONSULTATION VIEW STYLES
+   Phase 5: Student Inquiries, Screenshot-Fidelity Table, Chat Drawer
+   ══════════════════════════════════════════════════════════════════ */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding-bottom: 3.5rem;
+}
+
+/* ── Top Header ── */
+.headerWrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.titleSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.badgeHeader {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #059669;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  padding: 0.2rem 0.65rem;
+  border-radius: 6px;
+  width: fit-content;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+[data-theme="dark"] .badgeHeader {
+  background: rgba(5, 150, 105, 0.15);
+  border-color: rgba(52, 211, 153, 0.3);
+  color: #34d399;
+}
+
+.title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+[data-theme="dark"] .title {
+  color: #f8fafc;
+}
+
+.subtitle {
+  font-size: 0.9rem;
+  color: #64748b;
+  margin: 0;
+}
+
+[data-theme="dark"] .subtitle {
+  color: #94a3b8;
+}
+
+.actionsGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.btnAction {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+}
+
+.btnAction:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+  color: #0f172a;
+}
+
+[data-theme="dark"] .btnAction {
+  background: #18181b;
+  border-color: #3f3f46;
+  color: #e4e4e7;
+}
+
+[data-theme="dark"] .btnAction:hover {
+  background: #27272a;
+  border-color: #52525b;
+}
+
+.btnPrimary {
+  background: #0284c7;
+  border-color: #0284c7;
+  color: #ffffff;
+}
+
+.btnPrimary:hover {
+  background: #0369a1;
+  border-color: #0369a1;
+  color: #ffffff;
+}
+
+/* ── Metric Summary Cards ── */
+.metricsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 1.25rem;
+}
+
+.metricCard {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 1.25rem 1.4rem;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+[data-theme="dark"] .metricCard {
+  background: #18181b;
+  border-color: #27272a;
+}
+
+.metricIconBox {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.iconTeal {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.iconAmber {
+  background: #fff7ed;
+  color: #ea580c;
+}
+
+.iconBlue {
+  background: #e0f2fe;
+  color: #0284c7;
+}
+
+.iconGray {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+[data-theme="dark"] .iconTeal {
+  background: rgba(5, 150, 105, 0.2);
+  color: #34d399;
+}
+
+[data-theme="dark"] .iconAmber {
+  background: rgba(234, 88, 12, 0.2);
+  color: #fb923c;
+}
+
+[data-theme="dark"] .iconBlue {
+  background: rgba(2, 132, 199, 0.2);
+  color: #38bdf8;
+}
+
+[data-theme="dark"] .iconGray {
+  background: #27272a;
+  color: #a1a1aa;
+}
+
+.metricInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.metricLabel {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+[data-theme="dark"] .metricLabel {
+  color: #a1a1aa;
+}
+
+.metricValue {
+  font-size: 1.55rem;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.2;
+}
+
+[data-theme="dark"] .metricValue {
+  color: #f8fafc;
+}
+
+.metricSubtitle {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+/* ── Filter Bar ── */
+.filterBar {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+[data-theme="dark"] .filterBar {
+  background: #18181b;
+  border-color: #27272a;
+}
+
+.filterGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.filterItem {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: #475569;
+  font-weight: 600;
+}
+
+[data-theme="dark"] .filterItem {
+  color: #a1a1aa;
+}
+
+.filterSelect {
+  padding: 0.4rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #1e293b;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-width: 140px;
+}
+
+.filterSelect:focus {
+  border-color: #009ef7;
+}
+
+[data-theme="dark"] .filterSelect {
+  background: #27272a;
+  border-color: #3f3f46;
+  color: #f4f4f5;
+}
+
+.statusPills {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: #f1f5f9;
+  padding: 0.25rem;
+  border-radius: 8px;
+}
+
+[data-theme="dark"] .statusPills {
+  background: #27272a;
+}
+
+.statusPillBtn {
+  border: none;
+  background: transparent;
+  padding: 0.35rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.statusPillBtnActive {
+  background: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] .statusPillBtnActive {
+  background: #3f3f46;
+  color: #ffffff;
+}
+
+/* ── Table Cell Styles ── */
+.studentCell {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.studentAvatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #ecfdf5;
+  color: #059669;
+  font-weight: 800;
+  font-size: 0.82rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid #a7f3d0;
+}
+
+[data-theme="dark"] .studentAvatar {
+  background: rgba(5, 150, 105, 0.2);
+  color: #34d399;
+  border-color: rgba(52, 211, 153, 0.3);
+}
+
+.studentName {
+  font-weight: 700;
+  color: #0f172a;
+  font-size: 0.9rem;
+}
+
+[data-theme="dark"] .studentName {
+  color: #f8fafc;
+}
+
+.subjectBadge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: #eff6ff;
+  color: #1d4ed8;
+  padding: 0.2rem 0.55rem;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+[data-theme="dark"] .subjectBadge {
+  background: rgba(29, 78, 216, 0.2);
+  color: #60a5fa;
+}
+
+.referenceBadge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: #f1f5f9;
+  color: #475569;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  margin-right: 0.35rem;
+  text-transform: uppercase;
+}
+
+[data-theme="dark"] .referenceBadge {
+  background: #27272a;
+  color: #a1a1aa;
+}
+
+.messageSnippet {
+  max-width: 280px;
+  font-size: 0.86rem;
+  color: #334155;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+[data-theme="dark"] .messageSnippet {
+  color: #cbd5e1;
+}
+
+/* ── Interactive Chat Modal / Drawer ── */
+.modalBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 1rem;
+}
+
+.chatCard {
+  background: #ffffff;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 680px;
+  height: 85vh;
+  max-height: 720px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+}
+
+[data-theme="dark"] .chatCard {
+  background: #18181b;
+  border-color: #27272a;
+}
+
+.chatHeader {
+  padding: 1.1rem 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f8fafc;
+}
+
+[data-theme="dark"] .chatHeader {
+  background: #27272a;
+  border-bottom-color: #3f3f46;
+}
+
+.chatTitle {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+}
+
+[data-theme="dark"] .chatTitle {
+  color: #f8fafc;
+}
+
+.chatBody {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  background: #fdfdfd;
+}
+
+[data-theme="dark"] .chatBody {
+  background: #18181b;
+}
+
+.chatBubble {
+  max-width: 80%;
+  padding: 0.85rem 1.15rem;
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.bubbleStudent {
+  align-self: flex-start;
+  background: #f1f5f9;
+  color: #0f172a;
+  border-bottom-left-radius: 4px;
+}
+
+[data-theme="dark"] .bubbleStudent {
+  background: #27272a;
+  color: #f8fafc;
+}
+
+.bubbleTeacher {
+  align-self: flex-end;
+  background: #0284c7;
+  color: #ffffff;
+  border-bottom-right-radius: 4px;
+}
+
+.bubbleSender {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  opacity: 0.85;
+}
+
+.bubbleTime {
+  font-size: 0.7rem;
+  align-self: flex-end;
+  opacity: 0.75;
+}
+
+.chatInputArea {
+  padding: 1.15rem 1.5rem;
+  background: #ffffff;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+[data-theme="dark"] .chatInputArea {
+  background: #18181b;
+  border-top-color: #27272a;
+}
+
+.presetChips {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+}
+
+.presetBtn {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  padding: 0.25rem 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.presetBtn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+[data-theme="dark"] .presetBtn {
+  background: #27272a;
+  border-color: #3f3f46;
+  color: #cbd5e1;
+}
+
+.chatInputBox {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-end;
+}
+
+.chatTextarea {
+  flex: 1;
+  min-height: 48px;
+  max-height: 120px;
+  padding: 0.65rem 0.85rem;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  font-size: 0.88rem;
+  color: #0f172a;
+  outline: none;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.chatTextarea:focus {
+  border-color: #009ef7;
+}
+
+[data-theme="dark"] .chatTextarea {
+  background: #27272a;
+  border-color: #3f3f46;
+  color: #f8fafc;
+}
