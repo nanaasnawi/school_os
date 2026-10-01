@@ -7,6 +7,7 @@ import { listTeachers, listStudents, listClasses } from '@/lib/sdk/sdk.gen';
 import { getApiUrl } from '@/lib/api';
 import { useAssignments, useAssignment, useAssignmentSubmissions, AssignmentQuestion, SubmissionAnswer } from '@/features/assignment';
 import { useSubjects } from '@/features/material';
+import { getTenantItem } from '@/lib/tenant-storage';
 
 type AssignmentItem = {
   id: string;
@@ -43,6 +44,22 @@ export default function AssignmentsPage() {
   const [assignmentTab, setAssignmentTab] = useState<'questions' | 'submissions'>('questions');
   const [submissionFilter, setSubmissionFilter] = useState<'all' | 'needs_grading' | 'graded' | 'unsubmitted'>('all');
   
+  // Tenant School Settings (Nama & Logo resmi sekolah)
+  const [schoolName, setSchoolName] = useState(() => (typeof window !== 'undefined' ? getTenantItem('dapodik_nama_sekolah') || getTenantItem('school_name') || 'PKBM AS-SALAFIYAH' : 'PKBM AS-SALAFIYAH'));
+  const [schoolLogo, setSchoolLogo] = useState(() => (typeof window !== 'undefined' ? getTenantItem('school_logo_url') || getTenantItem('school_logo') || '' : ''));
+  const [schoolNpsn, setSchoolNpsn] = useState(() => (typeof window !== 'undefined' ? getTenantItem('dapodik_npsn') || '' : ''));
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const sn = getTenantItem('dapodik_nama_sekolah') || getTenantItem('school_name');
+      if (sn) setSchoolName(sn);
+      const sl = getTenantItem('school_logo_url') || getTenantItem('school_logo');
+      if (sl) setSchoolLogo(sl);
+      const snpsn = getTenantItem('dapodik_npsn');
+      if (snpsn) setSchoolNpsn(snpsn);
+    }
+  }, []);
+
   // TanStack Query Hooks
   const { data: assignmentsData = [], refetch: refetchAssignments } = useAssignments();
   const { data: subjectsList = [] } = useSubjects();
@@ -101,6 +118,13 @@ export default function AssignmentsPage() {
     fileType: 'PDF' | 'IMAGE';
     subjectName: string;
     fileUrl?: string;
+    studentAnswerText?: string;
+    answers?: SubmissionAnswer[];
+    assignmentTitle?: string;
+    className?: string;
+    submittedAt?: string;
+    score?: number;
+    instructions?: string;
   } | null>(null);
 
   // Toast
@@ -117,21 +141,23 @@ export default function AssignmentsPage() {
       const studentName = sub.student_name || student?.full_name || 'Peserta Didik';
       const nisn = sub.student_nisn || student?.nisn || '-';
 
+      const isUnsubmitted = sub.status === 'unsubmitted';
+
       let timeFormatted = '-';
-      if (sub.submitted_at) {
+      if (!isUnsubmitted && sub.submitted_at) {
         const d = new Date(sub.submitted_at);
         timeFormatted = `${d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })} (${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')} WIB)`;
-      } else if (sub.status !== 'unsubmitted') {
+      } else if (!isUnsubmitted) {
         timeFormatted = 'Hari ini via Android App';
       }
 
       const fileName = sub.file_url ? sub.file_url.split('/').pop() : null;
-      const fileType = fileName && (fileName.toLowerCase().endsWith('.png') || fileName.toLowerCase().endsWith('.jpg') || fileName.toLowerCase().endsWith('.jpeg')) ? 'IMAGE' : (fileName ? 'PDF' : undefined);
+      const fileType = fileName && (fileName.toLowerCase().endsWith('.png') || fileName.toLowerCase().endsWith('.jpg') || fileName.toLowerCase().endsWith('.jpeg') || fileName.toLowerCase().endsWith('.webp')) ? 'IMAGE' : (fileName ? 'PDF' : undefined);
 
       const answersList: SubmissionAnswer[] = Array.isArray(sub.answers) ? sub.answers : [];
 
       let itemStatus: 'Dinilai' | 'Menunggu Penilaian' | 'Belum Mengumpulkan' = 'Menunggu Penilaian';
-      if (sub.status === 'unsubmitted') {
+      if (isUnsubmitted) {
         itemStatus = 'Belum Mengumpulkan';
       } else if (sub.status === 'Graded' || sub.status === 'graded' || (sub.score !== null && sub.score !== undefined)) {
         itemStatus = 'Dinilai';
@@ -146,7 +172,7 @@ export default function AssignmentsPage() {
         time: timeFormatted,
         score: sub.score !== null && sub.score !== undefined ? sub.score : 0,
         status: itemStatus,
-        attachmentName: fileName || (sub.status !== 'unsubmitted' && answersList.length === 0 ? `Lembar_Jawaban_${studentName.replace(/\s+/g, '_')}.pdf` : undefined),
+        attachmentName: fileName || (!isUnsubmitted ? `Lembar_Jawaban_${studentName.replace(/\s+/g, '_')}.pdf` : undefined),
         attachmentType: fileType || 'PDF',
         fileUrl: sub.file_url || undefined,
         studentAnswerText: sub.content || '',
@@ -770,7 +796,7 @@ export default function AssignmentsPage() {
                         Tugas Berkas PR / Lembar Kerja Fisik
                       </div>
                       <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--text-muted)', maxWidth: '460px', lineHeight: 1.5 }}>
-                        Tugas ini tidak menggunakan butir soal online mandiri. Siswa mengerjakan sesuai petunjuk di atas, lalu mengunggah foto lembar buku tugas atau berkas PDF melalui aplikasi <strong>School OS Android</strong>.
+                        Tugas ini tidak menggunakan butir soal online mandiri. Siswa mengerjakan sesuai petunjuk di atas, lalu mengunggah foto lembar buku tugas atau berkas PDF melalui aplikasi mobile siswa.
                       </p>
                     </div>
                   )}
@@ -871,6 +897,13 @@ export default function AssignmentsPage() {
                                     fileType: (sub.attachmentType as 'PDF' | 'IMAGE') || 'PDF',
                                     subjectName: selected.subjectName,
                                     fileUrl: sub.fileUrl,
+                                    studentAnswerText: sub.studentAnswerText,
+                                    answers: sub.answers,
+                                    assignmentTitle: selected.title,
+                                    className: selected.className,
+                                    submittedAt: sub.time,
+                                    score: sub.score,
+                                    instructions: selected.instructions,
                                   })}
                                 >
                                   📎 {sub.attachmentName}
@@ -907,7 +940,7 @@ export default function AssignmentsPage() {
                               {submissionFilter !== 'all' ? 'Tidak Ada Siswa Pada Filter Ini' : 'Belum Ada Siswa Mengumpulkan Berkas Jawaban'}
                             </div>
                             <div style={{ fontSize: '0.84rem', marginTop: '0.35rem', maxWidth: '420px', margin: '0.35rem auto 0 auto' }}>
-                              {submissionFilter !== 'all' ? 'Coba ganti filter di atas untuk melihat siswa lainnya.' : `Tugas ini telah disinkronkan ke server. Siswa rombel ${selected.className} dapat mengerjakan butir soal pilihan ganda & esai, atau mengunggah lembar PR melalui aplikasi School OS Android.`}
+                              {submissionFilter !== 'all' ? 'Coba ganti filter di atas untuk melihat siswa lainnya.' : `Tugas ini telah disinkronkan ke server. Siswa rombel ${selected.className} dapat mengerjakan butir soal pilihan ganda & esai, atau mengunggah lembar PR melalui aplikasi mobile siswa.`}
                             </div>
                           </td>
                         </tr>
@@ -1398,6 +1431,13 @@ export default function AssignmentsPage() {
                           fileType: (gradingSub.attachmentType as 'PDF' | 'IMAGE') || 'PDF',
                           subjectName: selected.subjectName,
                           fileUrl: gradingSub.fileUrl,
+                          studentAnswerText: gradingSub.studentAnswerText,
+                          answers: gradingSub.answers,
+                          assignmentTitle: selected.title,
+                          className: selected.className,
+                          submittedAt: gradingSub.time,
+                          score: gradingSub.score,
+                          instructions: selected.instructions,
                         })}
                       >
                         📥 Buka Berkas &amp; Pratinjau
@@ -1471,7 +1511,7 @@ export default function AssignmentsPage() {
             background: 'var(--bg-card)',
             borderRadius: '18px',
             boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
-            maxWidth: '680px',
+            maxWidth: '740px',
             width: '100%',
             overflow: 'hidden',
             border: '1px solid var(--border-light)',
@@ -1481,75 +1521,185 @@ export default function AssignmentsPage() {
           }} onClick={e => e.stopPropagation()}>
             <div style={{ padding: '1rem 1.25rem', background: '#0f172a', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <span style={{ fontSize: '1.5rem' }}>{activeFilePreview.fileType === 'PDF' ? '📄' : '🖼️'}</span>
+                <span style={{ fontSize: '1.5rem' }}>{activeFilePreview.fileType === 'IMAGE' ? '🖼️' : '📄'}</span>
                 <div>
-                  <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: '#38bdf8' }}>{activeFilePreview.fileName}</h3>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                    Siswa: <strong>{activeFilePreview.studentName}</strong> (NISN: {activeFilePreview.nisn}) · {activeFilePreview.subjectName}
+                  <h3 style={{ margin: 0, fontSize: '0.98rem', fontWeight: 800, color: '#38bdf8' }}>{activeFilePreview.fileName}</h3>
+                  <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                    Siswa: <strong style={{ color: '#ffffff' }}>{activeFilePreview.studentName}</strong> (NISN: {activeFilePreview.nisn}) · {activeFilePreview.subjectName}
                   </div>
                 </div>
               </div>
-              <button style={{ border: 'none', background: 'none', fontSize: '1.6rem', cursor: 'pointer', color: 'var(--text-muted)' }} onClick={() => setActiveFilePreview(null)}>×</button>
+              <button style={{ border: 'none', background: 'none', fontSize: '1.6rem', cursor: 'pointer', color: '#94a3b8' }} onClick={() => setActiveFilePreview(null)}>×</button>
             </div>
 
             {/* REAL RENDERED DOCUMENT PREVIEW CANVAS */}
             <div style={{ padding: '1.5rem', overflowY: 'auto', background: 'var(--bg-elevated)', display: 'flex', justifyContent: 'center' }}>
               <div style={{
-                background: 'var(--bg-card)',
+                background: '#ffffff',
                 width: '100%',
-                maxWidth: '560px',
+                maxWidth: '640px',
                 minHeight: '480px',
                 borderRadius: '8px',
-                boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
+                boxShadow: '0 10px 25px rgba(0,0,0,0.12)',
                 padding: '2rem',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '1.25rem',
-                fontFamily: 'serif',
-                color: 'var(--text-primary)',
+                color: '#0f172a',
               }}>
-                <div style={{ borderBottom: '3px double #0f172a', paddingBottom: '0.75rem', textAlign: 'center' }}>
-                  <div style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
-                    LEMBAR JAWABAN TUGAS SISWA
-                  </div>
-                  <div style={{ fontSize: '1.1rem', fontWeight: 900, color: '#0f172a', marginTop: '2px' }}>
-                    SCHOOL OS DIGITAL WORKSHEET
-                  </div>
-                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                    Terintegrasi dengan Android Mobile App Siswa &amp; Portal Guru
+                {/* Official School Kop Surat Header */}
+                <div style={{ borderBottom: '3px double #0f172a', paddingBottom: '0.85rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  {schoolLogo ? (
+                    <img
+                      src={schoolLogo}
+                      alt={schoolName}
+                      style={{ width: '56px', height: '56px', objectFit: 'contain', flexShrink: 0 }}
+                    />
+                  ) : (
+                    <div style={{ width: '56px', height: '56px', borderRadius: '8px', background: '#f1f5f9', border: '1px solid #cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.8rem', flexShrink: 0 }}>
+                      🏫
+                    </div>
+                  )}
+                  <div style={{ flex: 1, textAlign: 'center' }}>
+                    <div style={{ fontSize: '1.15rem', fontWeight: 900, color: '#0f172a', letterSpacing: '0.5px', textTransform: 'uppercase', lineHeight: 1.2 }}>
+                      {schoolName}
+                    </div>
+                    {schoolNpsn && (
+                      <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>
+                        NPSN: {schoolNpsn}
+                      </div>
+                    )}
+                    <div style={{ fontSize: '0.78rem', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase', color: '#1e293b', marginTop: '3px' }}>
+                      LEMBAR JAWABAN TUGAS SISWA
+                    </div>
+                    <div style={{ fontSize: '0.68rem', color: '#64748b' }}>
+                      Dokumen Portofolio Asesmen Digital Resmi • Aplikasi Mobile Siswa &amp; Portal Guru
+                    </div>
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '0.75rem', background: 'var(--bg-elevated)', padding: '0.75rem', borderRadius: '6px' }}>
-                  <div>Nama Siswa: <strong>{activeFilePreview.studentName}</strong></div>
-                  <div>NISN: <strong>{activeFilePreview.nisn}</strong></div>
+                {/* Student & Task Metadata */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem', fontSize: '0.78rem', background: '#f8fafc', padding: '0.85rem', borderRadius: '8px', border: '1px solid #e2e8f0', color: '#1e293b' }}>
+                  <div>Nama Siswa: <strong style={{ color: '#0f172a' }}>{activeFilePreview.studentName}</strong></div>
+                  <div>NISN: <strong style={{ fontFamily: 'monospace' }}>{activeFilePreview.nisn}</strong></div>
                   <div>Mata Pelajaran: <strong>{activeFilePreview.subjectName}</strong></div>
-                  <div>Status Dokumen: <strong style={{ color: '#16a34a' }}>Tervalidasi Digital</strong></div>
+                  <div>Rombel / Kelas: <strong>{activeFilePreview.className || selected.className}</strong></div>
+                  <div style={{ gridColumn: 'span 2' }}>Judul Tugas: <strong>{activeFilePreview.assignmentTitle || selected.title}</strong></div>
+                  <div>Waktu Kumpul: <strong>{activeFilePreview.submittedAt || '-'}</strong></div>
+                  <div>Status Dokumen: <strong style={{ color: '#16a34a' }}>✓ Tervalidasi Digital</strong></div>
                 </div>
 
-                <div style={{ border: '1px dashed var(--border-light)', borderRadius: '8px', padding: '1rem', background: '#f8fafc' }}>
-                  <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#334155', marginBottom: '0.5rem' }}>
-                    HASIL PENGERJAAN LEMBAR KERJA / PR:
+                {/* Instructions */}
+                {activeFilePreview.instructions && (
+                  <div style={{ fontSize: '0.78rem', color: '#475569', fontStyle: 'italic', background: '#fffbeb', border: '1px solid #fef3c7', padding: '0.6rem 0.85rem', borderRadius: '6px' }}>
+                    <strong>Instruksi Guru:</strong> &ldquo;{activeFilePreview.instructions}&rdquo;
                   </div>
-                  <div style={{ fontSize: '0.8rem', color: '#475569', lineHeight: 1.6, fontFamily: 'monospace' }}>
-                    {activeFilePreview.fileUrl ? (
-                      <div>
-                        <div>Tautan Berkas Terlampir:</div>
-                        <a href={activeFilePreview.fileUrl} target="_blank" rel="noreferrer" style={{ color: '#2563eb', textDecoration: 'underline', wordBreak: 'break-all' }}>
-                          {activeFilePreview.fileUrl}
-                        </a>
+                )}
+
+                {/* 1. Structured Questions & Answers (if any) */}
+                {activeFilePreview.answers && activeFilePreview.answers.length > 0 && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      Hasil Pengerjaan Butir Soal ({activeFilePreview.answers.length} Butir):
+                    </div>
+                    {activeFilePreview.answers.map((ans, idx) => {
+                      const q = (assignmentDetail?.questions || selected?.questions || []).find(qItem => qItem.id === ans.question_id);
+                      return (
+                        <div key={ans.question_id || idx} style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '0.75rem 1rem', background: '#ffffff', fontSize: '0.8rem' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
+                            <span style={{ fontWeight: 700, color: '#0f172a' }}>
+                              {idx + 1}. {ans.question_text || q?.question_text || `Pertanyaan #${idx + 1}`}
+                            </span>
+                            <span style={{ fontSize: '0.72rem', background: '#f1f5f9', padding: '2px 6px', borderRadius: '4px', color: '#475569', flexShrink: 0 }}>
+                              {ans.points_earned !== undefined ? `${ans.points_earned} / ${ans.max_points || q?.points || 10} Poin` : `${q?.points || 10} Poin`}
+                            </span>
+                          </div>
+
+                          {ans.chosen_choice_text ? (
+                            <div style={{ marginTop: '0.4rem', padding: '0.4rem 0.6rem', background: ans.is_correct ? '#ecfdf5' : '#fef2f2', border: `1px solid ${ans.is_correct ? '#a7f3d0' : '#fecaca'}`, borderRadius: '6px', fontSize: '0.78rem' }}>
+                              <strong>Pilihan Siswa:</strong> {ans.chosen_choice_text} {ans.is_correct !== undefined && (ans.is_correct ? '✅ (Benar)' : '❌ (Kurang Tepat)')}
+                            </div>
+                          ) : ans.text_answer ? (
+                            <div style={{ marginTop: '0.4rem', padding: '0.5rem 0.75rem', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '0.78rem', whiteSpace: 'pre-wrap', lineHeight: 1.5, color: '#1e293b' }}>
+                              <strong>Jawaban Esai Siswa:</strong>
+                              <div style={{ marginTop: '0.2rem' }}>{ans.text_answer}</div>
+                            </div>
+                          ) : (
+                            <div style={{ marginTop: '0.3rem', fontSize: '0.75rem', color: '#94a3b8', fontStyle: 'italic' }}>
+                              (Tidak ada jawaban tersimpan)
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* 2. Written Answer / Student Submission Text */}
+                {activeFilePreview.studentAnswerText && (
+                  <div style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '1rem', background: '#f8fafc' }}>
+                    <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#334155', marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      Laporan / Catatan Pengerjaan Siswa:
+                    </div>
+                    <div style={{ fontSize: '0.84rem', color: '#1e293b', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+                      {activeFilePreview.studentAnswerText}
+                    </div>
+                  </div>
+                )}
+
+                {/* 3. Attached File (Image or PDF) */}
+                {activeFilePreview.fileUrl && (
+                  <div style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '1rem', background: '#ffffff', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#334155', textTransform: 'uppercase' }}>
+                        Berkas Lampiran Lembar Kerja:
+                      </div>
+                      <a
+                        href={activeFilePreview.fileUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="btn btn-secondary btn-sm"
+                        style={{ fontSize: '0.72rem', padding: '0.2rem 0.6rem', textDecoration: 'none' }}
+                      >
+                        🔗 Buka Berkas Asli
+                      </a>
+                    </div>
+
+                    {activeFilePreview.fileType === 'IMAGE' || activeFilePreview.fileUrl.match(/\.(png|jpg|jpeg|webp)$/i) ? (
+                      <div style={{ textAlign: 'center', background: '#0f172a', borderRadius: '6px', padding: '0.5rem' }}>
+                        <img
+                          src={activeFilePreview.fileUrl}
+                          alt={activeFilePreview.fileName}
+                          style={{ maxWidth: '100%', maxHeight: '420px', objectFit: 'contain', borderRadius: '4px' }}
+                        />
                       </div>
                     ) : (
-                      <div>
-                        1. Analisis Praktik: Pengukuran Besaran Pokok dan Turunan<br/>
-                        2. Menggunakan jangka sorong dengan ketelitian 0.05 mm<br/>
-                        3. Skala utama menunjukkan 24 mm, skala nonius berhimpit pada garis ke-7<br/>
-                        4. Hasil ukur = 24 mm + (7 x 0.05 mm) = 24.35 mm<br/>
-                        5. Kesimpulan: Objek telah terukur sesuai standar laboratorium fisika.
+                      <div style={{ width: '100%', minHeight: '380px', border: '1px solid #e2e8f0', borderRadius: '6px', overflow: 'hidden', background: '#f8fafc' }}>
+                        <iframe
+                          src={activeFilePreview.fileUrl}
+                          title={activeFilePreview.fileName}
+                          style={{ width: '100%', height: '380px', border: 'none' }}
+                        />
                       </div>
                     )}
                   </div>
-                </div>
+                )}
+
+                {/* 4. Digital Confirmation (When student submitted without extra file or question answers) */}
+                {!activeFilePreview.fileUrl && (!activeFilePreview.answers || activeFilePreview.answers.length === 0) && !activeFilePreview.studentAnswerText && (
+                  <div style={{ border: '1px dashed #cbd5e1', borderRadius: '8px', padding: '1.25rem', background: '#f8fafc', textAlign: 'center' }}>
+                    <div style={{ fontSize: '1.8rem', marginBottom: '0.5rem' }}>📋</div>
+                    <div style={{ fontWeight: 800, fontSize: '0.9rem', color: '#1e293b' }}>
+                      Lembar Pengumpulan Digital Tervalidasi
+                    </div>
+                    <div style={{ fontSize: '0.8rem', color: '#475569', marginTop: '0.25rem', maxWidth: '460px', margin: '0.25rem auto 0 auto', lineHeight: 1.5 }}>
+                      Peserta didik <strong>{activeFilePreview.studentName}</strong> (NISN: {activeFilePreview.nisn}) telah mengonfirmasi penyelesaian tugas <strong>{activeFilePreview.assignmentTitle || selected.title}</strong> untuk mata pelajaran <strong>{activeFilePreview.subjectName}</strong> pada rombel <strong>{activeFilePreview.className || selected.className}</strong> melalui aplikasi mobile siswa.
+                    </div>
+                    <div style={{ marginTop: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.4rem 0.8rem', background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '20px', fontSize: '0.74rem', color: '#065f46', fontWeight: 600 }}>
+                      <span>✓</span> Status: Diserahkan ({activeFilePreview.submittedAt || 'Tervalidasi Digital'})
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
