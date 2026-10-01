@@ -1,3 +1,25 @@
+.pageContainer {
+  padding: 1.5rem 2rem 3.5rem;
+  max-width: 1680px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 768px) {
+  .pageContainer {
+    padding: 1rem 1rem 2.5rem;
+    gap: 1.25rem;
+  }
+}
+
 .actionCenterGrid {
   display: grid;
   grid-template-columns: 1.6fr 1fr;

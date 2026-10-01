@@ -43,7 +43,7 @@ export function ActionCenterView() {
   }
 
   return (
-    <div style={{ paddingBottom: '2.5rem' }}>
+    <div className={styles.pageContainer}>
       {/* 1. Header with Profile and Quick Launch Actions */}
       <TeacherWorkspaceHeader
         profile={profile}
