@@ -1,0 +1,689 @@
+/* ══════════════════════════════════════════════════════════════════
+   TEACHER MASS GRADER WORKSTATION STYLES
+   Split-screen Ergonomics, Digital Worksheet, High Readability
+   ══════════════════════════════════════════════════════════════════ */
+
+.workspace {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding-bottom: 3rem;
+}
+
+/* ── Top Header & Progress ── */
+.topHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  background: var(--bg-card, #ffffff);
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 16px;
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.topHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.backBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #64748b;
+  text-decoration: none;
+  padding: 0.5rem 0.85rem;
+  border-radius: 10px;
+  background: #f1f5f9;
+  transition: all 0.2s;
+}
+
+.backBtn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.assignmentTitleGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.assignmentTitle {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.assignmentMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.8rem;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.selectAssignment {
+  padding: 0.5rem 0.85rem;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #1e293b;
+  outline: none;
+  cursor: pointer;
+}
+
+.selectAssignment:focus {
+  border-color: #0284c7;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+}
+
+.progressGroup {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.progressText {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.progressCount {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.progressPercent {
+  font-size: 0.78rem;
+  color: #0284c7;
+  font-weight: 700;
+}
+
+.progressBarTrack {
+  width: 120px;
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progressBarFill {
+  height: 100%;
+  background: linear-gradient(90deg, #0284c7, #38bdf8);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+/* ── Split Layout ── */
+.splitLayout {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 1.25rem;
+  min-height: 650px;
+  align-items: start;
+}
+
+@media (max-width: 1024px) {
+  .splitLayout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Left Sidebar (Submissions List) ── */
+.sidebar {
+  background: var(--bg-card, #ffffff);
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 16px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-height: 800px;
+  position: sticky;
+  top: 1rem;
+}
+
+.sidebarHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.searchBox {
+  position: relative;
+  width: 100%;
+}
+
+.searchBox input {
+  width: 100%;
+  padding: 0.55rem 0.85rem 0.55rem 2.2rem;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  font-size: 0.85rem;
+  outline: none;
+  background: #f8fafc;
+}
+
+.searchBox input:focus {
+  background: #ffffff;
+  border-color: #0284c7;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.filterTabs {
+  display: flex;
+  gap: 0.35rem;
+  background: #f1f5f9;
+  padding: 0.25rem;
+  border-radius: 10px;
+}
+
+.filterTab {
+  flex: 1;
+  text-align: center;
+  padding: 0.35rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.filterTabActive {
+  background: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.studentList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  overflow-y: auto;
+  max-height: 600px;
+  padding-right: 0.25rem;
+}
+
+.studentItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 0.85rem;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  background: #f8fafc;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+}
+
+.studentItem:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.studentItemActive {
+  background: #f0f9ff !important;
+  border-color: #0284c7 !important;
+  box-shadow: 0 2px 4px rgba(2, 132, 199, 0.12);
+}
+
+.studentItemLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.studentAvatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #e0f2fe;
+  color: #0284c7;
+  font-weight: 800;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.studentMeta {
+  display: flex;
+  flex-direction: column;
+}
+
+.studentName {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.studentNisn {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.studentItemRight {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.statusGradedBadge {
+  background: #dcfce7;
+  color: #15803d;
+  font-weight: 800;
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+}
+
+.statusPendingBadge {
+  background: #fff7ed;
+  color: #ea580c;
+  font-weight: 700;
+  font-size: 0.72rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+}
+
+/* ── Right Worksheet Panel ── */
+.worksheetCard {
+  background: var(--bg-card, #ffffff);
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+}
+
+.worksheetHeader {
+  padding: 1.25rem 1.5rem;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.studentHeaderInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.studentHeaderAvatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #0284c7, #38bdf8);
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 1.15rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.studentHeaderTitle {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+}
+
+.studentHeaderSub {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin-top: 0.15rem;
+}
+
+.navControls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.navBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.8rem;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.navBtn:hover:not(:disabled) {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+.navBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.worksheetBody {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* ── Question & Answer Cards ── */
+.questionCard {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.25rem;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.questionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.questionNumberBadge {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #0284c7;
+  background: #e0f2fe;
+  padding: 0.2rem 0.6rem;
+  border-radius: 6px;
+}
+
+.questionTypeBadge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #64748b;
+  background: #f1f5f9;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+}
+
+.questionPrompt {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1e293b;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.answerBlock {
+  background: #f8fafc;
+  border-left: 3px solid #0284c7;
+  border-radius: 0 8px 8px 0;
+  padding: 1rem;
+}
+
+.answerLabel {
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+  margin-bottom: 0.4rem;
+}
+
+.answerText {
+  font-size: 0.92rem;
+  color: #0f172a;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.questionScoreRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding-top: 0.5rem;
+  border-top: 1px dashed #e2e8f0;
+}
+
+.pointInputGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #475569;
+}
+
+.pointInput {
+  width: 60px;
+  padding: 0.35rem 0.5rem;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  text-align: center;
+  font-weight: 800;
+  font-size: 0.9rem;
+  color: #0f172a;
+}
+
+.pointInput:focus {
+  border-color: #0284c7;
+  outline: none;
+}
+
+/* ── Sticky Grading Bottom Bar ── */
+.gradingBar {
+  background: #ffffff;
+  border-top: 2px solid #e2e8f0;
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.03);
+}
+
+.gradingBarTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.scoreGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.scoreInputWrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.totalScoreInput {
+  width: 80px;
+  font-size: 1.4rem;
+  font-weight: 800;
+  text-align: center;
+  padding: 0.4rem 0.5rem;
+  border-radius: 10px;
+  border: 2px solid #0284c7;
+  color: #0f172a;
+  outline: none;
+}
+
+.maxScoreLabel {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.presetsList {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.presetBtn {
+  padding: 0.35rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.presetBtn:hover {
+  background: #0284c7;
+  color: #ffffff;
+  border-color: #0284c7;
+}
+
+.feedbackInput {
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  font-size: 0.85rem;
+  color: #0f172a;
+  resize: vertical;
+  min-height: 60px;
+  outline: none;
+}
+
+.feedbackInput:focus {
+  border-color: #0284c7;
+}
+
+.actionRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.keyboardHint {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.kbd {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  padding: 0.15rem 0.35rem;
+  font-size: 0.7rem;
+  font-family: inherit;
+  font-weight: 700;
+  color: #334155;
+}
+
+.actionButtons {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.btnSaveOnly {
+  padding: 0.65rem 1.15rem;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btnSaveOnly:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+}
+
+.btnSaveAndNext {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.4rem;
+  border-radius: 10px;
+  border: none;
+  background: #0284c7;
+  font-weight: 800;
+  font-size: 0.92rem;
+  color: #ffffff;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.25);
+  transition: all 0.2s;
+}
+
+.btnSaveAndNext:hover {
+  background: #0369a1;
+  box-shadow: 0 4px 10px rgba(2, 132, 199, 0.35);
+}
+
+.successNotice {
+  background: #dcfce7;
+  border: 1px solid #86efac;
+  color: #166534;
+  padding: 0.6rem 1rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  animation: fadeIn 0.25s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}

@@ -59,7 +59,7 @@ export function PendingGradingWidget({ tasks }: PendingGradingWidgetProps) {
 
               <div>
                 <Link
-                  href={`/dashboard/learning/assignments?id=${task.assignment_id}`}
+                  href={`/dashboard/teacher/grading?assignment_id=${task.assignment_id}`}
                   className={styles.actionBtnSmall}
                   title="Buka Lembar Kerja dan Koreksi Massal"
                 >

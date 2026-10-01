@@ -491,17 +491,17 @@ Task dianggap **DONE** hanya jika semua ini terpenuhi:
 - `[x]` **Role-Aware Navigation**: Integrasi sub-menu Teacher Workstation di [`layout.tsx`](file:///c:/Users/USER/Documents/School%20Os/frontend/src/app/%28dashboard%29/layout.tsx)
 
 ### F.2 Sprint 2 — Teacher Action Center (Dashboard Utama)
-- `[ ]` **API & Hooks**: Implementasi `action-center-api.ts` & `use-teacher-action-center.ts` (mengonsumsi real data `/api/v1/classes`, `/assignments`, `/progress`)
-- `[ ]` **At-Risk Students Widget**: Deteksi & filter siswa tertinggal (belum baca materi, menunggak tugas, nilai < KKM)
-- `[ ]` **Pending Grading Widget**: List tugas esai menunggu penilaian guru dengan tombol shortcut langsung ke Mass Grader
-- `[ ]` **Today Schedule & Active CBT Widget**: Jadwal mengajar hari ini & status kuis aktif
-- `[ ]` **Action Center View**: Integrasi seluruh sub-komponen ke dalam `<TeacherActionCenterView />`
+- `[x]` **API & Hooks**: Implementasi `action-center-api.ts` & `use-teacher-action-center.ts` (mengonsumsi real data `/api/v1/classes`, `/assignments`, `/progress`)
+- `[x]` **At-Risk Students Widget**: Deteksi & filter siswa tertinggal (belum baca materi, menunggak tugas, nilai < KKM)
+- `[x]` **Pending Grading Widget**: List tugas esai menunggu penilaian guru dengan tombol shortcut langsung ke Mass Grader
+- `[x]` **Today Schedule & Active CBT Widget**: Jadwal mengajar hari ini & status kuis aktif
+- `[x]` **Action Center View**: Integrasi seluruh sub-komponen ke dalam `<TeacherActionCenterView />`
 
 ### F.3 Sprint 3 — Mass Essay Grader Workstation (Fast Grader)
-- `[ ]` **Grader State Hook**: `use-mass-grader.ts` (manajemen navigasi siswa, draft nilai per soal esai, auto-save, shortcut keyboard)
-- `[ ]` **Split-Screen Workspace**: Layout 2 panel (`StudentSubmissionSidebar` + `DigitalWorksheetViewer` + `EssayScoreFeedbackPanel`)
-- `[ ]` **Digital Worksheet PKBM As-Salafiyah**: Render resmi lembar jawaban siswa lengkap dengan nomor soal, kunci/opsi, dan jawaban teks esai
-- `[ ]` **Instant Score & Feedback Action**: Post grading ke `/api/v1/learning/assignments/{id}/submissions/{subId}/grade`
+- `[x]` **Grader State Hook**: `use-mass-grader.ts` (manajemen navigasi siswa, draft nilai per soal esai, auto-save, shortcut keyboard)
+- `[x]` **Split-Screen Workspace**: Layout 2 panel (`StudentSubmissionSidebar` + `DigitalWorksheetViewer` + `EssayScoreFeedbackPanel`)
+- `[x]` **Digital Worksheet PKBM As-Salafiyah**: Render resmi lembar jawaban siswa lengkap dengan nomor soal, kunci/opsi, dan jawaban teks esai
+- `[x]` **Instant Score & Feedback Action**: Post grading ke `/api/v1/learning/assignments/{id}/submissions/{subId}/grade`
 
 ### F.4 Sprint 4 — Teacher Analytics (Reading Progress & Action Center)
 - `[ ]` **Reading Progress Analytics Hook**: `use-reading-analytics.ts` (agregasi halaman terbaca dari tabel `reading_progress`)
