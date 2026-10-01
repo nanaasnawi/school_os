@@ -130,7 +130,7 @@ export default function ActivityLogsPage() {
   });
 
   const [currentPage, setCurrentPage] = React.useState(1);
-  const itemsPerPage = 10;
+  const [itemsPerPage, setItemsPerPage] = React.useState(10);
   
   const totalPages = Math.ceil(filtered.length / itemsPerPage) || 1;
   const safePage = Math.min(currentPage, totalPages);
@@ -150,150 +150,244 @@ export default function ActivityLogsPage() {
       {/* Header */}
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <h1 className={styles.title} style={{ margin: 0, fontSize: '1.3rem', fontWeight: 800 }}>
-            Log Aktivitas &amp; Security Audit Trail (Multi-Platform Real-Time)
+          <h1 className={styles.title} style={{ margin: 0, fontSize: '1.4rem', fontWeight: 800 }}>
+            Log Aktivitas &amp; Security Audit Trail
           </h1>
           <p className={styles.subtitle}>
-            Jejak Audit Immutable Seluruh Transaksi Local Bridge Agent, Android Mobile App, Web Portal, dan Rust API Core di {schoolName}
+            Jejak audit immutable seluruh transaksi Local Bridge Agent, Android Mobile App, Web Portal, dan Rust API Core di {schoolName}
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <button className="btn btn-primary btn-sm" onClick={exportAuditCsv} disabled={filtered.length === 0}>
-            📥 Ekspor Audit Trail CSV
-          </button>
-        </div>
       </div>
 
-      {/* Multi-Platform Filter Toolbar Bar */}
-      <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', background: 'var(--bg-card)', padding: '0.85rem 1rem', borderRadius: '14px', border: '1px solid var(--border-dim)' }}>
-        <div style={{ flex: 1, minWidth: '220px' }}>
-          <input
-            type="text"
-            placeholder="Cari event ID, aktor, transaksi, atau IP..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="input"
-          />
-        </div>
+      {/* Top Action Pills (Reference Design System) */}
+      <div className="tableActionRow">
+        <button type="button" className="tableActionBtn" onClick={exportAuditCsv} disabled={filtered.length === 0}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span>Ekspor Audit Trail CSV</span>
+        </button>
 
-        <select
-          value={platformFilter}
-          onChange={(e) => setPlatformFilter(e.target.value)}
-          className="input"
-          style={{ width: '210px' }}
-        >
-          <option value="ALL">🌐 Semua Platform ({logs.length} Events)</option>
-          <option value="LOCAL_BRIDGE">Local Bridge Agent &amp; Dapodik</option>
-          <option value="ANDROID_MOBILE">Android Mobile Student App</option>
-          <option value="WEB_PORTAL">Web Admin &amp; Teacher Portal</option>
-          <option value="RUST_API">Rust API Server Core</option>
-        </select>
+        <Link href="/dashboard/dapodik" className="tableActionBtn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          <span>Cek Integrasi Dapodik Hub</span>
+        </Link>
+
+        <Link href="/dashboard/announcements" className="tableActionBtn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3zm-8.27 4a2 2 0 0 1-3.46 0"/></svg>
+          <span>Kirim Broadcast Pengumuman</span>
+        </Link>
       </div>
 
-      {/* Audit Log Main Table / Empty State */}
-      <div className={styles.tableCard} style={{ border: '1px solid var(--border-light)', borderRadius: '16px', overflow: 'hidden' }}>
+      {/* Audit Log Main Table Card */}
+      <div className="tableCard">
+        {/* Table Toolbar */}
+        <div className="tableToolbar">
+          <div className="tableInfoText">
+            Showing <strong>{filtered.length > 0 ? (safePage - 1) * itemsPerPage + 1 : 0}</strong> to <strong>{Math.min(safePage * itemsPerPage, filtered.length)}</strong> of <strong>{filtered.length}</strong> entries {filtered.length !== logs.length ? `(filtered from ${logs.length} total entries)` : ''}
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
+            <select
+              value={platformFilter}
+              onChange={(e) => { setPlatformFilter(e.target.value); setCurrentPage(1); }}
+              className="entriesSelect"
+            >
+              <option value="ALL">Semua Platform ({logs.length} Events)</option>
+              <option value="LOCAL_BRIDGE">Local Bridge Agent</option>
+              <option value="ANDROID_MOBILE">Android Mobile App</option>
+              <option value="WEB_PORTAL">Web Admin &amp; Portal</option>
+              <option value="RUST_API">Rust API Server</option>
+            </select>
+
+            <div className="tableSearchBox">
+              <input
+                type="text"
+                placeholder="Cari event ID, aktor, IP..."
+                value={search}
+                onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
+                className="tableSearchInput"
+              />
+              <svg className="tableSearchIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
         {paginated.length === 0 ? (
           <div style={{
             background: 'var(--bg-card)',
             padding: '3.5rem 1.5rem',
             textAlign: 'center'
           }}>
-            <div style={{ fontSize: '3rem', marginBottom: '0.75rem' }}></div>
             <h3 style={{ fontSize: '1.15rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
               Belum Ada Jejak Transaksi Audit Log
             </h3>
             <p style={{ fontSize: '0.84rem', color: 'var(--text-muted)', maxWidth: '540px', margin: '8px auto 20px', lineHeight: 1.5 }}>
               Seluruh riwayat transaksi keamanan, sinkronisasi Dapodik, autentikasi Rust API, dan aktivitas mobile app di <strong>{schoolName}</strong> akan tercatat secara otomatis di sini saat transaksi berlangsung.
             </p>
-            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
-              <Link href="/dashboard/dapodik" className="btn btn-primary btn-sm">
-                Cek Integrasi Dapodik Hub
-              </Link>
-              <Link href="/dashboard/announcements" className="btn btn-secondary btn-sm">
-                Kirim Broadcast Pengumuman
-              </Link>
-            </div>
           </div>
         ) : (
-          <table className={styles.table} style={{ fontSize: '0.82rem' }}>
-            <thead>
-              <tr style={{ background: 'var(--bg-elevated)', borderBottom: '2px solid var(--border-light)' }}>
-                <th>Timestamp &amp; Event ID</th>
-                <th>Platform Sumber</th>
-                <th>Aktor / Pengguna</th>
-                <th>Tipe Operasi</th>
-                <th>Detail Transaksi</th>
-                <th>IP &amp; Device Info</th>
-                <th style={{ textAlign: 'right' }}>Payload JSON</th>
-              </tr>
-            </thead>
-            <tbody>
-              {paginated.map((l) => (
-                <tr key={l.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                  <td>
-                    <div style={{ fontWeight: 800, color: 'var(--text-primary)' }}>{l.timestamp}</div>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{l.eventId}</div>
-                  </td>
-                  <td>
-                    <span className={`badge ${l.platform === 'LOCAL_BRIDGE' ? 'badge-info' : l.platform === 'ANDROID_MOBILE' ? 'badge-active' : l.platform === 'WEB_PORTAL' ? 'badge-purple' : 'badge-warning'}`} style={{ fontWeight: 800 }}>
-                      {l.platform === 'LOCAL_BRIDGE' && 'Local Bridge'}
-                      {l.platform === 'ANDROID_MOBILE' && 'Android Mobile'}
-                      {l.platform === 'WEB_PORTAL' && 'Web Portal'}
-                      {l.platform === 'RUST_API' && 'Rust Core'}
-                    </span>
-                  </td>
-                  <td style={{ fontWeight: 800, color: '#2563eb' }}>{l.actor}</td>
-                  <td>
-                    <span className="badge badge-info" style={{ fontWeight: 800, fontSize: '0.7rem' }}>
-                      {l.action}
-                    </span>
-                  </td>
-                  <td style={{ color: 'var(--text-muted)', fontWeight: 500, fontSize: '0.78rem', maxWidth: '280px', lineHeight: 1.4 }}>
-                    {l.detail}
-                  </td>
-                  <td>
-                    <code style={{ fontSize: '0.72rem', background: 'var(--bg-elevated)', padding: '0.2rem 0.4rem', borderRadius: '4px', fontFamily: 'monospace', color: 'var(--text-primary)', display: 'block' }}>
-                      {l.ip}
-                    </code>
-                    <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: '2px' }}>{l.deviceInfo}</div>
-                  </td>
-                  <td style={{ textAlign: 'right' }}>
-                    <button
-                      className="btn btn-secondary btn-sm"
-                      style={{ fontSize: '0.72rem', padding: '0.25rem 0.55rem' }}
-                      onClick={() => setInspectedLog(l)}
-                    >
-                      Inspect JSON
-                    </button>
-                  </td>
+          <div className="tableWrap">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th className="thSortable">
+                    <div className="thSortContent">
+                      <span>Timestamp &amp; Event ID</span>
+                      <span className="sortArrows">⇅</span>
+                    </div>
+                  </th>
+                  <th className="thSortable">
+                    <div className="thSortContent">
+                      <span>Platform Sumber</span>
+                      <span className="sortArrows">⇅</span>
+                    </div>
+                  </th>
+                  <th className="thSortable">
+                    <div className="thSortContent">
+                      <span>Aktor / Pengguna</span>
+                      <span className="sortArrows">⇅</span>
+                    </div>
+                  </th>
+                  <th className="thSortable">
+                    <div className="thSortContent">
+                      <span>Tipe Operasi</span>
+                      <span className="sortArrows">⇅</span>
+                    </div>
+                  </th>
+                  <th className="thSortable">
+                    <div className="thSortContent">
+                      <span>Detail Transaksi</span>
+                      <span className="sortArrows">⇅</span>
+                    </div>
+                  </th>
+                  <th className="thSortable">
+                    <div className="thSortContent">
+                      <span>IP &amp; Device Info</span>
+                      <span className="sortArrows">⇅</span>
+                    </div>
+                  </th>
+                  <th style={{ textAlign: 'right' }}>Payload JSON</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-
-        {filtered.length > itemsPerPage && (
-          <div className={styles.pagination} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem', padding: '0.75rem 1rem' }}>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Menampilkan {paginated.length} dari total {filtered.length} hasil</span>
-            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-              <button 
-                disabled={currentPage === 1} 
-                onClick={() => setCurrentPage(prev => prev - 1)}
-                className="btn btn-secondary btn-sm"
-              >
-                Prev
-              </button>
-              <span style={{ fontSize: '0.8rem', fontWeight: 700, margin: '0 0.5rem' }}>Halaman {currentPage} dari {totalPages}</span>
-              <button 
-                disabled={currentPage === totalPages} 
-                onClick={() => setCurrentPage(prev => prev + 1)}
-                className="btn btn-secondary btn-sm"
-              >
-                Next
-              </button>
-            </div>
+              </thead>
+              <tbody>
+                {paginated.map((l) => (
+                  <tr key={l.id}>
+                    <td>
+                      <div className="itemPrimaryTitle">
+                        <span>{l.timestamp}</span>
+                      </div>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{l.eventId}</div>
+                    </td>
+                    <td>
+                      <span className={`statusPill ${l.platform === 'LOCAL_BRIDGE' ? 'statusPillMuted' : l.platform === 'ANDROID_MOBILE' ? 'statusPillActive' : 'statusPillActive'}`}>
+                        {l.platform === 'LOCAL_BRIDGE' && 'Local Bridge'}
+                        {l.platform === 'ANDROID_MOBILE' && 'Android Mobile'}
+                        {l.platform === 'WEB_PORTAL' && 'Web Portal'}
+                        {l.platform === 'RUST_API' && 'Rust Core'}
+                      </span>
+                    </td>
+                    <td>
+                      <strong style={{ color: '#2563eb' }}>{l.actor}</strong>
+                    </td>
+                    <td>
+                      <span className="statusPill statusPillMuted">
+                        {l.action}
+                      </span>
+                    </td>
+                    <td style={{ color: 'var(--text-muted)', fontSize: '0.82rem', maxWidth: '280px', lineHeight: 1.4 }}>
+                      {l.detail}
+                    </td>
+                    <td>
+                      <code style={{ fontSize: '0.74rem', background: 'var(--bg-elevated)', padding: '0.2rem 0.4rem', borderRadius: '4px', fontFamily: 'monospace', color: 'var(--text-primary)', display: 'inline-block' }}>
+                        {l.ip}
+                      </code>
+                      <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '2px' }}>{l.deviceInfo}</div>
+                    </td>
+                    <td style={{ textAlign: 'right' }}>
+                      <button
+                        className="tableActionBtn"
+                        style={{ fontSize: '0.75rem', padding: '0.3rem 0.65rem', display: 'inline-flex' }}
+                        onClick={() => setInspectedLog(l)}
+                      >
+                        Inspect JSON
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
+
+        {/* Table Footer */}
+        <div className="tableFooter">
+          <div className="entriesControl">
+            <span className="entriesLabel">Show</span>
+            <select
+              value={itemsPerPage}
+              onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+              className="entriesSelect"
+            >
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+            <span className="entriesLabel">entries</span>
+          </div>
+
+          <div className="paginationControls">
+            <button
+              onClick={() => setCurrentPage(1)}
+              disabled={safePage === 1}
+              className="pageBtn"
+              title="First Page"
+            >
+              «
+            </button>
+            <button
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              disabled={safePage === 1}
+              className="pageBtn"
+              title="Previous Page"
+            >
+              ‹
+            </button>
+
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter(p => p === 1 || p === totalPages || Math.abs(p - safePage) <= 1)
+              .map((p, idx, arr) => (
+                <div key={p} style={{ display: 'inline-flex', alignItems: 'center' }}>
+                  {idx > 0 && arr[idx - 1] !== p - 1 && <span className="pageDots">…</span>}
+                  <button
+                    onClick={() => setCurrentPage(p)}
+                    className={`pageBtn ${p === safePage ? 'pageBtnActive' : ''}`}
+                  >
+                    {p}
+                  </button>
+                </div>
+              ))}
+
+            <button
+              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              disabled={safePage === totalPages}
+              className="pageBtn"
+              title="Next Page"
+            >
+              ›
+            </button>
+            <button
+              onClick={() => setCurrentPage(totalPages)}
+              disabled={safePage === totalPages}
+              className="pageBtn"
+              title="Last Page"
+            >
+              »
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* ── MODAL JSON PAYLOAD INSPECTOR ── */}

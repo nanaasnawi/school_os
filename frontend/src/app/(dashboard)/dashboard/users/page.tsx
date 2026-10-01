@@ -329,15 +329,6 @@ export default function UsersPage() {
           <table className="table">
             <thead>
               <tr>
-                <th style={{ width: '44px', textAlign: 'center' }}>
-                  <input
-                    type="checkbox"
-                    checked={paginated.length > 0 && selectedIds.size === paginated.length}
-                    onChange={toggleSelectAll}
-                    className="tableCheckbox"
-                    aria-label="Pilih semua pengguna"
-                  />
-                </th>
                 <th>Username Login</th>
                 <th>Password Kredensial</th>
                 <th>Peran / Hak Akses</th>
@@ -368,16 +359,6 @@ export default function UsersPage() {
                   const currentPass = userPasswords[u.id] || u.defaultPassword || '123456';
                   return (
                     <tr key={u.id}>
-                      <td style={{ textAlign: 'center' }}>
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={() => toggleSelectOne(u.id)}
-                          className="tableCheckbox"
-                          aria-label={`Pilih ${u.username}`}
-                        />
-                      </td>
-
                       <td>
                         <div>
                           <span className="itemPrimaryTitle">

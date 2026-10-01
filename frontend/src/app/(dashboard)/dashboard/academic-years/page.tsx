@@ -184,9 +184,6 @@ export default function AcademicYearsPage() {
           <table className="table">
             <thead>
               <tr>
-                <th style={{ width: '40px', textAlign: 'center' }}>
-                  <input type="checkbox" className="tableCheckbox" aria-label="Select all" />
-                </th>
                 <th className="thSortable">
                   <div className="thSortContent">
                     <span>Nama Periode Akademik</span>
@@ -217,9 +214,6 @@ export default function AcademicYearsPage() {
             <tbody>
               {years.map((y) => (
                 <tr key={y.id}>
-                  <td style={{ textAlign: 'center' }}>
-                    <input type="checkbox" className="tableCheckbox" aria-label={`Select ${y.name}`} />
-                  </td>
                   <td>
                     <Link href={`/dashboard/academic-years/${y.id}`} className="itemPrimaryTitle">
                       <span>{y.name}</span>

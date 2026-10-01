@@ -712,9 +712,6 @@ export default function QuizzesPage() {
                 <table className="table">
                   <thead>
                     <tr>
-                      <th style={{ width: '40px', textAlign: 'center' }}>
-                        <input type="checkbox" className="tableCheckbox" aria-label="Select all" />
-                      </th>
                       <th className="thSortable">
                         <div className="thSortContent">
                           <span>Judul Kuis / Ujian CBT</span>
@@ -757,9 +754,6 @@ export default function QuizzesPage() {
                   <tbody>
                     {paginated.map((q) => (
                       <tr key={q.id}>
-                        <td style={{ textAlign: 'center' }}>
-                          <input type="checkbox" className="tableCheckbox" aria-label={`Select ${q.title}`} />
-                        </td>
                         <td>
                           <div
                             className="itemPrimaryTitle"

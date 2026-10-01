@@ -391,16 +391,6 @@ export default function TeachersPage() {
           <table className="table">
             <thead>
               <tr>
-                <th style={{ width: '44px', textAlign: 'center' }}>
-                  <input
-                    type="checkbox"
-                    checked={paginated.length > 0 && selectedIds.size === paginated.length}
-                    onChange={toggleSelectAll}
-                    className="tableCheckbox"
-                    aria-label="Pilih semua guru"
-                  />
-                </th>
-
                 <th
                   className="thSortable"
                   onClick={() => handleSetSort('full_name', sortField === 'full_name' && sortOrder === 'asc' ? 'desc' : 'asc')}
@@ -475,16 +465,6 @@ export default function TeachersPage() {
                   const isChecked = selectedIds.has(t.id);
                   return (
                     <tr key={t.id}>
-                      <td style={{ textAlign: 'center' }}>
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={() => toggleSelectOne(t.id)}
-                          className="tableCheckbox"
-                          aria-label={`Pilih ${t.full_name}`}
-                        />
-                      </td>
-
                       <td>
                         <div>
                           <Link href={`/dashboard/teachers/${t.id}`} className="itemPrimaryTitle" title="Lihat Profil Guru">

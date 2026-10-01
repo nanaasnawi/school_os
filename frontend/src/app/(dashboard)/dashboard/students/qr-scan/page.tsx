@@ -859,83 +859,69 @@ export default function QrScanPage() {
         </div>
       </div>
 
-      {/* Controls: Role Tabs, Search, Class Filter, Status Filter */}
-      <div className={styles.controlsCard}>
-        <div className={styles.tabsRow}>
-          <div className={styles.roleTabs}>
-            <button
-              onClick={() => setActiveTab('ALL')}
-              className={`${styles.tabBtn} ${activeTab === 'ALL' ? styles.tabBtnActive : ''}`}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-              <span>Semua Akun</span>
-              <span className={styles.tabCount}>{users.length}</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('SISWA')}
-              className={`${styles.tabBtn} ${activeTab === 'SISWA' ? styles.tabBtnActive : ''}`}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
-              <span>Siswa</span>
-              <span className={styles.tabCount}>
-                {users.filter((u) => u.role.toLowerCase().includes('siswa') && !u.role.toLowerCase().includes('wali')).length}
-              </span>
-            </button>
-            <button
-              onClick={() => setActiveTab('GURU')}
-              className={`${styles.tabBtn} ${activeTab === 'GURU' ? styles.tabBtnActive : ''}`}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-              <span>Guru &amp; Tendik</span>
-              <span className={styles.tabCount}>
-                {users.filter((u) => u.role.toLowerCase().includes('guru') || u.role.toLowerCase().includes('tendik') || u.role.toLowerCase().includes('kepala')).length}
-              </span>
-            </button>
-            <button
-              onClick={() => setActiveTab('WALI')}
-              className={`${styles.tabBtn} ${activeTab === 'WALI' ? styles.tabBtnActive : ''}`}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-              <span>Wali Murid</span>
-              <span className={styles.tabCount}>
-                {users.filter((u) => u.role.toLowerCase().includes('wali') || u.role.toLowerCase().includes('orang tua') || u.role.toLowerCase().includes('parent')).length}
-              </span>
-            </button>
-          </div>
-
-          <div className={styles.counterBadge}>
-            Menampilkan <strong>{filteredUsers.length}</strong> dari <strong>{users.length}</strong> pengguna
-          </div>
+      {/* Role Tabs Row */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.85rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+        <div className={styles.roleTabs}>
+          <button
+            onClick={() => { setActiveTab('ALL'); setCurrentPage(1); }}
+            className={`${styles.tabBtn} ${activeTab === 'ALL' ? styles.tabBtnActive : ''}`}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <span>Semua Akun</span>
+            <span className={styles.tabCount}>{users.length}</span>
+          </button>
+          <button
+            onClick={() => { setActiveTab('SISWA'); setCurrentPage(1); }}
+            className={`${styles.tabBtn} ${activeTab === 'SISWA' ? styles.tabBtnActive : ''}`}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+            <span>Siswa</span>
+            <span className={styles.tabCount}>
+              {users.filter((u) => u.role.toLowerCase().includes('siswa') && !u.role.toLowerCase().includes('wali')).length}
+            </span>
+          </button>
+          <button
+            onClick={() => { setActiveTab('GURU'); setCurrentPage(1); }}
+            className={`${styles.tabBtn} ${activeTab === 'GURU' ? styles.tabBtnActive : ''}`}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+            <span>Guru &amp; Tendik</span>
+            <span className={styles.tabCount}>
+              {users.filter((u) => u.role.toLowerCase().includes('guru') || u.role.toLowerCase().includes('tendik') || u.role.toLowerCase().includes('kepala')).length}
+            </span>
+          </button>
+          <button
+            onClick={() => { setActiveTab('WALI'); setCurrentPage(1); }}
+            className={`${styles.tabBtn} ${activeTab === 'WALI' ? styles.tabBtnActive : ''}`}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <span>Wali Murid</span>
+            <span className={styles.tabCount}>
+              {users.filter((u) => u.role.toLowerCase().includes('wali') || u.role.toLowerCase().includes('orang tua') || u.role.toLowerCase().includes('parent')).length}
+            </span>
+          </button>
         </div>
+      </div>
 
-        <div className={styles.filtersRow}>
-          <div className={styles.searchBox}>
-            <svg className={styles.searchIcon} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input
-              type="text"
-              placeholder="Cari nama, NISN, NIP, email..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className={styles.searchInput}
-            />
-            {search && (
-              <button
-                type="button"
-                onClick={() => setSearch('')}
-                className={styles.clearSearchBtn}
-                title="Hapus pencarian"
-              >
-                ✕
-              </button>
+      {/* Main Table Card (Screenshot Reference Design) */}
+      <div className="tableCard">
+        {/* Table Toolbar */}
+        <div className="tableToolbar">
+          <div className="tableInfoText">
+            Showing <strong>{filteredUsers.length === 0 ? 0 : (safePage - 1) * itemsPerPage + 1}</strong> to{' '}
+            <strong>{Math.min(safePage * itemsPerPage, filteredUsers.length)}</strong> of{' '}
+            <strong>{filteredUsers.length}</strong> entries
+            {filteredUsers.length !== users.length && (
+              <span> (filtered from <strong>{users.length}</strong> total entries)</span>
             )}
           </div>
 
-          <div className={styles.selectGroup}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
             {availableClasses.length > 0 && (
               <select
                 value={classFilter}
-                onChange={(e) => setClassFilter(e.target.value)}
-                className={styles.customSelect}
+                onChange={(e) => { setClassFilter(e.target.value); setCurrentPage(1); }}
+                className="entriesSelect"
               >
                 <option value="ALL">Semua Rombel/Kelas</option>
                 {availableClasses.map((c) => (
@@ -948,19 +934,33 @@ export default function QrScanPage() {
 
             <select
               value={tokenStatusFilter}
-              onChange={(e) => setTokenStatusFilter(e.target.value as any)}
-              className={styles.customSelect}
+              onChange={(e) => { setTokenStatusFilter(e.target.value as any); setCurrentPage(1); }}
+              className="entriesSelect"
             >
               <option value="ALL">Semua Status QR</option>
               <option value="ACTIVE">● Memiliki QR Aktif</option>
               <option value="NONE">○ Belum Memiliki QR</option>
             </select>
+
+            <div className="tableSearchBox">
+              <input
+                type="text"
+                placeholder="Cari nama, NISN, NIP, email..."
+                value={search}
+                onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
+                className="tableSearchInput"
+              />
+              <svg className="tableSearchIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+            </div>
           </div>
         </div>
 
-        {/* Bulk Selection Ribbon */}
+        {/* Bulk Selection Ribbon if accounts selected */}
         {selectedIds.size > 0 && (
-          <div className={styles.bulkRibbon}>
+          <div className={styles.bulkRibbon} style={{ margin: '0.5rem 1rem 0.75rem', borderRadius: '10px' }}>
             <div className={styles.bulkInfo}>
               <span className={styles.bulkBadgeCount}>✓ {selectedIds.size}</span>
               <span>akun terpilih untuk tindakan massal</span>
@@ -980,21 +980,6 @@ export default function QrScanPage() {
             </div>
           </div>
         )}
-      </div>
-
-      {/* Main Table Container (Screenshot Match) */}
-      <div className="tableCard">
-        {/* Table Toolbar */}
-        <div className="tableToolbar">
-          <div className="tableInfoText">
-            Showing <strong>{filteredUsers.length === 0 ? 0 : (safePage - 1) * itemsPerPage + 1}</strong> to{' '}
-            <strong>{Math.min(safePage * itemsPerPage, filteredUsers.length)}</strong> of{' '}
-            <strong>{filteredUsers.length}</strong> entries
-            {filteredUsers.length !== users.length && (
-              <span> (filtered from <strong>{users.length}</strong> total entries)</span>
-            )}
-          </div>
-        </div>
 
         <div className="tableWrap">
           <table className="table">

@@ -255,9 +255,6 @@ export default function EnrollmentsPage() {
           <table className="table">
             <thead>
               <tr>
-                <th style={{ width: '40px', textAlign: 'center' }}>
-                  <input type="checkbox" className="tableCheckbox" aria-label="Select all" />
-                </th>
                 <th className="thSortable">
                   <div className="thSortContent">
                     <span>ID Pendaftaran</span>
@@ -288,16 +285,13 @@ export default function EnrollmentsPage() {
             <tbody>
               {paginated.length === 0 ? (
                 <tr>
-                  <td colSpan={6} style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-muted)' }}>
+                  <td colSpan={5} style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-muted)' }}>
                     {isLoading ? 'Memuat data pendaftaran siswa...' : 'Tidak ada data pendaftaran siswa yang sesuai pencarian.'}
                   </td>
                 </tr>
               ) : (
                 paginated.map((e) => (
                   <tr key={e.id}>
-                    <td style={{ textAlign: 'center' }}>
-                      <input type="checkbox" className="tableCheckbox" aria-label={`Select ${e.student_name}`} />
-                    </td>
                     <td><code>REC-{e.id}</code></td>
                     <td>
                       <div

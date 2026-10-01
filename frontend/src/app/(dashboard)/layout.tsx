@@ -731,23 +731,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
           {/* Right controls */}
           <div className={styles.topbarRight}>
-            {/* School badge */}
-            <div className={styles.schoolSelector} style={{ cursor: 'default' }} title={selectedSchool}>
-              {schoolLogoUrl ? (
-                <img
-                  key={schoolLogoUrl}
-                  src={schoolLogoUrl}
-                  alt="Logo"
-                  referrerPolicy="no-referrer"
-                  style={{ display: 'block', width: '18px', height: '18px', objectFit: 'contain', borderRadius: '50%', flexShrink: 0 }}
-                  onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
-                />
-              ) : (
-                <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" width="13" height="13"><path d="M10 2L18 7V9H2V7L10 2Z"/><rect x="4" y="9" width="3" height="7"/><rect x="8.5" y="9" width="3" height="7"/><rect x="13" y="9" width="3" height="7"/><path d="M2 16h16"/></svg>
-              )}
-              <span>{selectedSchool || (typeof window !== 'undefined' ? getTenantItem('dapodik_nama_sekolah') : '') || 'School OS'}</span>
-            </div>
-
             {/* Theme toggle */}
             <button className={styles.themeToggle} onClick={toggleTheme} title={isDark ? 'Mode Gelap Aktif (Klik untuk Mode Terang)' : 'Mode Terang Aktif (Klik untuk Mode Gelap)'}>
               {isDark ? <MoonIcon /> : <SunIcon />}

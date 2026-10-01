@@ -402,16 +402,6 @@ export default function StudentsPage() {
           <table className="table">
             <thead>
               <tr>
-                <th style={{ width: '44px', textAlign: 'center' }}>
-                  <input
-                    type="checkbox"
-                    checked={paginated.length > 0 && selectedIds.size === paginated.length}
-                    onChange={toggleSelectAll}
-                    className="tableCheckbox"
-                    aria-label="Pilih semua siswa di halaman ini"
-                  />
-                </th>
-
                 {/* NISN */}
                 <th
                   className="thSortable"
@@ -491,16 +481,6 @@ export default function StudentsPage() {
                   const isChecked = selectedIds.has(s.id);
                   return (
                     <tr key={s.id} style={{ opacity: s.status === 'MUTASI_OUT' ? 0.75 : 1 }}>
-                      <td style={{ textAlign: 'center' }}>
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={() => toggleSelectOne(s.id)}
-                          className="tableCheckbox"
-                          aria-label={`Pilih ${s.full_name}`}
-                        />
-                      </td>
-
                       <td>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
                           <code style={{ fontSize: '0.82rem', color: '#0284c7', fontWeight: 700 }}>{s.nisn}</code>

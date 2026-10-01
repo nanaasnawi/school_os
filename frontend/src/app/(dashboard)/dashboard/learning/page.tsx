@@ -42,7 +42,7 @@ const INITIAL_MATERIALS: MaterialItem[] = [];
 
 export default function LearningPage() {
   return (
-    <Suspense fallback={<div style={{ padding: '2rem', textAlign: 'center' }}>Memuat Portal Modul &amp; Silabus...</div>}>
+    <Suspense fallback={<div style={{ padding: '2rem', textAlign: 'center' }}>Memuat Portal Modul & Silabus...</div>}>
       <LearningPageContent />
     </Suspense>
   );
@@ -125,18 +125,81 @@ function LearningPageContent() {
 
         if (materialsRes?.data && Array.isArray(materialsRes.data)) {
           const mapped: MaterialItem[] = materialsRes.data.map((m: Record<string, unknown>) => {
-            const descParts = String(m.description || '').split(' • ');
+            const desc = String(m.description || '');
+            const title = String(m.title || '');
+            const hasBullet = desc.includes(' • ');
+            const descParts = hasBullet ? desc.split(' • ') : [];
+
+            // Detect format cleanly
+            const externalUrl = m.external_url ? String(m.external_url) : '';
+            const storageKey = m.storage_key ? String(m.storage_key) : '';
+            const rawType = String(m.material_type || '').toLowerCase();
+            const isVideo = rawType === 'video' || externalUrl.includes('youtube.com') || externalUrl.includes('youtu.be');
+            const isPdf = rawType === 'pdf' || rawType === 'document' || externalUrl.toLowerCase().endsWith('.pdf') || externalUrl.includes('static-sc.cloudapp') || Boolean(storageKey);
+            const contentType: 'PDF' | 'VIDEO' | 'TEXT' = isVideo ? 'VIDEO' : isPdf ? 'PDF' : 'TEXT';
+
+            // Clean subject name (never let it be a 200-char paragraph)
+            let subjectName = String(m.subject_name || (hasBullet ? descParts[0] : ''));
+            if (!subjectName || subjectName.length > 35) {
+              const textLower = `${title} ${desc}`.toLowerCase();
+              if (textLower.includes('bahasa indonesia')) subjectName = 'Bahasa Indonesia';
+              else if (textLower.includes('bahasa inggris')) subjectName = 'Bahasa Inggris';
+              else if (textLower.includes('matematika')) subjectName = 'Matematika';
+              else if (textLower.includes('agama islam') || textLower.includes('pai')) subjectName = 'Pendidikan Agama Islam';
+              else if (textLower.includes('ipas') || textLower.includes('ipa')) subjectName = 'IPAS';
+              else if (textLower.includes('ips')) subjectName = 'IPS';
+              else if (textLower.includes('ppkn') || textLower.includes('pancasila')) subjectName = 'Pendidikan Pancasila';
+              else if (textLower.includes('pjok') || textLower.includes('jasmani')) subjectName = 'PJOK';
+              else if (textLower.includes('seni')) subjectName = 'Seni Budaya';
+              else subjectName = 'Pelajaran Umum';
+            }
+
+            // Clean class name
+            let className = String(m.class_name || (hasBullet && descParts.length > 1 ? descParts[1] : ''));
+            if (!className || className.length > 25) {
+              const textLower = `${title} ${desc}`.toLowerCase();
+              const classMatch = textLower.match(/kelas\s+([0-9ivx]+)/i);
+              if (classMatch) {
+                className = `Kelas ${classMatch[1].toUpperCase()}`;
+              } else if (textLower.includes('paket a')) {
+                className = 'Paket A';
+              } else if (textLower.includes('paket b')) {
+                className = 'Paket B';
+              } else if (textLower.includes('paket c')) {
+                className = 'Paket C';
+              } else {
+                className = 'Semua Rombel';
+              }
+            }
+
+            // Clean teacher / author name
+            let teacherName = String(m.teacher_name || (hasBullet && descParts.length > 2 ? descParts[2] : ''));
+            if (!teacherName || teacherName.toLowerCase() === 'guru pengampu' || teacherName.length > 40) {
+              const authorMatch = desc.match(/oleh\s+([^.]+)/i);
+              if (authorMatch && authorMatch[1].trim().length < 40) {
+                teacherName = authorMatch[1].trim();
+              } else {
+                teacherName = 'Tim Guru Terpadu';
+              }
+            }
+
+            // Clean description
+            let cleanDesc = hasBullet && descParts.length > 3 ? descParts.slice(3).join(' • ') : desc;
+            if (cleanDesc.length > 160) {
+              cleanDesc = cleanDesc.slice(0, 155) + '...';
+            }
+
             return {
               id: String(m.id),
-              className: descParts[1] || 'Semua Rombel',
-              subjectName: descParts[0] || 'Pelajaran Umum',
-              teacherName: descParts[2] || 'Guru Pengampu',
-              chapterTitle: String(m.title || ''),
-              contentType: (String(m.material_type || 'PDF').toUpperCase()) as 'PDF' | 'VIDEO' | 'TEXT',
-              description: descParts.slice(3).join(' • ') || String(m.description || 'Modul pembelajaran digital'),
+              className,
+              subjectName,
+              teacherName,
+              chapterTitle: title,
+              contentType,
+              description: cleanDesc || 'Modul & materi pembelajaran digital siswa.',
               topics: 'Pembelajaran Rombel',
-              youtubeUrl: m.external_url ? String(m.external_url) : undefined,
-              pdfFileName: m.storage_key ? String(m.storage_key) : undefined,
+              youtubeUrl: isVideo ? externalUrl : undefined,
+              pdfFileName: isPdf ? (storageKey || (externalUrl ? externalUrl.split('/').pop()?.split('?')[0] : 'Buku_Kurikulum.pdf')) : undefined,
               imagePreviewUrl: '',
               publishedAt: m.created_at ? new Date(String(m.created_at)).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Hari ini',
               androidSynced: true,
@@ -318,8 +381,8 @@ startxref
       {/* Header & Breadcrumb */}
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <h1 className={styles.title} style={{ margin: 0, fontSize: '1.3rem', fontWeight: 800 }}>Manajemen Modul &amp; Silabus Guru</h1>
-          <p className={styles.subtitle}>Portal penginputan materi oleh guru &amp; pemantauan kurikulum digital sekolah</p>
+          <h1 className={styles.title} style={{ margin: 0, fontSize: '1.4rem', fontWeight: 800 }}>Manajemen Modul & Silabus Guru</h1>
+          <p className={styles.subtitle}>Portal penginputan materi oleh guru & pemantauan kurikulum digital sekolah</p>
         </div>
 
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
@@ -331,7 +394,7 @@ startxref
             if (selectedSubjectFilter !== 'ALL') setNewMaterial(prev => ({ ...prev, subjectName: selectedSubjectFilter }));
             setShowAddModal(true);
           }}>
-            + Buat &amp; Upload Materi Baru
+            + Buat & Upload Materi Baru
           </button>
         </div>
       </div>
@@ -391,7 +454,7 @@ startxref
               style={{ fontSize: '0.75rem', padding: '0.25rem 0.65rem' }}
               onClick={() => setViewRole('admin')}
             >
-              ⚙️ Admin &amp; Kepsek (Pantau Materi Rombel)
+              ⚙️ Admin & Kepsek (Pantau Materi Rombel)
             </button>
           </div>
         </div>
@@ -430,51 +493,95 @@ startxref
       {filteredMaterials.length > 0 ? (
         <div className={styles.gridThree}>
           {filteredMaterials.map(m => (
-            <div key={m.id} className={styles.card} style={{ borderLeft: '4px solid #2563eb' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span className={styles.cardBadge}>{m.className} · {m.subjectName}</span>
+            <div key={m.id} className={styles.card}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+                <span className={styles.cardBadge} title={`${m.className} · ${m.subjectName}`}>
+                  {m.className} · {m.subjectName}
+                </span>
                 <span className={`badge ${m.contentType === 'PDF' ? 'badge-info' : m.contentType === 'VIDEO' ? 'badge-warning' : 'badge-active'}`}>
-                  {m.contentType === 'VIDEO' ? '🎥 YouTube' : m.contentType === 'PDF' ? '📄 PDF' : '📝 Teks &amp; Gambar'}
+                  {m.contentType === 'VIDEO' ? '🎥 Video' : m.contentType === 'PDF' ? '📄 Buku / PDF' : '📝 Modul Ajar'}
                 </span>
               </div>
 
               {m.imagePreviewUrl && (
-                <div style={{ width: '100%', height: '120px', borderRadius: '8px', overflow: 'hidden', marginTop: '0.5rem' }}>
+                <div style={{ width: '100%', height: '120px', borderRadius: '8px', overflow: 'hidden', marginTop: '0.25rem' }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={m.imagePreviewUrl} alt="Illustration" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 </div>
               )}
 
-              <div>
-                <h2 className={styles.cardTitle} style={{ fontSize: '0.95rem', lineHeight: 1.35, marginTop: '0.2rem' }}>{m.chapterTitle}</h2>
-                <p className={styles.cardSub} style={{ marginTop: '0.25rem' }}>Guru Pengampu: <strong>{m.teacherName}</strong></p>
-                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.4rem', lineHeight: 1.4 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+                <h2 className={styles.cardTitle} title={m.chapterTitle}>
+                  {m.chapterTitle}
+                </h2>
+                
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  <span>Guru: <strong style={{ color: 'var(--text-primary)' }}>{m.teacherName}</strong></span>
+                </div>
+
+                <p style={{
+                  fontSize: '0.8rem',
+                  color: 'var(--text-muted)',
+                  lineHeight: 1.45,
+                  margin: 0,
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  lineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden'
+                }}>
                   {m.description}
                 </p>
 
                 {m.youtubeUrl && (
-                  <div style={{ marginTop: '0.4rem', fontSize: '0.72rem', color: '#dc2626', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                    <span>▶️ YouTube Link:</span>
-                    <span style={{ fontFamily: 'monospace', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '180px' }}>{m.youtubeUrl}</span>
+                  <div style={{
+                    marginTop: '0.2rem',
+                    padding: '0.35rem 0.65rem',
+                    background: 'rgba(239, 68, 68, 0.08)',
+                    border: '1px solid rgba(239, 68, 68, 0.2)',
+                    borderRadius: '8px',
+                    fontSize: '0.74rem',
+                    color: '#dc2626',
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.4rem'
+                  }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                    <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>Tonton Video YouTube</span>
                   </div>
                 )}
 
                 {m.pdfFileName && (
-                  <div style={{ marginTop: '0.4rem', fontSize: '0.72rem', color: '#2563eb', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                    <span>📄 File PDF:</span>
-                    <span style={{ fontFamily: 'monospace' }}>{m.pdfFileName}</span>
+                  <div style={{
+                    marginTop: '0.2rem',
+                    padding: '0.35rem 0.65rem',
+                    background: 'rgba(37, 99, 235, 0.08)',
+                    border: '1px solid rgba(37, 99, 235, 0.2)',
+                    borderRadius: '8px',
+                    fontSize: '0.74rem',
+                    color: '#2563eb',
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.4rem'
+                  }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                    <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>Berkas Modul PDF ({m.pdfFileName})</span>
                   </div>
                 )}
               </div>
 
-              <div className={styles.cardFooter} style={{ paddingTop: '0.6rem', borderTop: '1px solid var(--border-dim)' }}>
-                <span style={{ fontSize: '0.72rem', color: '#16a34a', fontWeight: 700 }}>
-                  📱 Android App Synced ✓
+              <div className={styles.cardFooter}>
+                <span style={{ fontSize: '0.74rem', color: '#16a34a', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                  <span>Tersinkron Mobile App</span>
                 </span>
 
                 <button
                   className="btn btn-ghost btn-sm"
-                  style={{ fontSize: '0.72rem', color: '#2563eb' }}
+                  style={{ fontSize: '0.76rem', color: '#2563eb', fontWeight: 700 }}
                   onClick={() => setPreviewMaterial(m)}
                 >
                   Pratinjau Modul →
@@ -517,7 +624,7 @@ startxref
               setShowAddModal(true);
             }}
           >
-            + Upload &amp; Publish Materi Pertama
+            + Upload & Publish Materi Pertama
           </button>
         </div>
       )}

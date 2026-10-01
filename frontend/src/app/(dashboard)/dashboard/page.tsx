@@ -265,10 +265,6 @@ export default function DashboardPage() {
       {/* ── Sub-Bar: Live Clock, Status Badges & Refresh Trigger ── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-          <span className="badge badge-info" style={{ fontWeight: 800, padding: '0.35rem 0.75rem', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M10 21v-4h4v4"/></svg>
-            {schoolName || 'Nama Sekolah'}
-          </span>
           <span className="badge badge-purple" style={{ fontWeight: 800, padding: '0.35rem 0.65rem', fontSize: '0.8rem' }}>
             NPSN: {schoolNpsn || '-'}
           </span>

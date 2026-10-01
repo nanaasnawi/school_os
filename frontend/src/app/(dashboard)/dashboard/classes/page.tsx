@@ -478,9 +478,6 @@ export default function ClassesPage() {
             <table className="table">
               <thead>
                 <tr>
-                  <th style={{ width: '40px', textAlign: 'center' }}>
-                    <input type="checkbox" className="tableCheckbox" aria-label="Pilih semua rombel" />
-                  </th>
                   <th className="thSortable">
                     <div className="thSortContent">
                       <span>Nama Rombel / Kelas</span>
@@ -517,9 +514,6 @@ export default function ClassesPage() {
               <tbody>
                 {paginated.map((c) => (
                   <tr key={c.id}>
-                    <td style={{ textAlign: 'center' }}>
-                      <input type="checkbox" className="tableCheckbox" aria-label={`Pilih ${c.name}`} />
-                    </td>
                     <td>
                       <Link href={`/dashboard/classes/${c.id}`} className="itemPrimaryTitle">
                         <span>{c.name}</span>
