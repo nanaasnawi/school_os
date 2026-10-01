@@ -10,7 +10,7 @@ export interface GraderSubmissionItem {
   student_name: string;
   student_nisn?: string | null;
   class_name?: string | null;
-  status: 'submitted' | 'graded' | 'late' | 'resubmitted';
+  status: 'submitted' | 'graded' | 'late' | 'resubmitted' | 'unsubmitted';
   score?: number | null;
   max_score: number;
   submitted_at: string;

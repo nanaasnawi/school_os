@@ -10,8 +10,14 @@ interface StudentSubmissionsSidebarProps {
   onSelect: (index: number) => void;
   searchQuery: string;
   onSearchChange: (q: string) => void;
-  filterStatus: 'ALL' | 'PENDING' | 'GRADED';
-  onFilterChange: (status: 'ALL' | 'PENDING' | 'GRADED') => void;
+  filterStatus: 'ALL' | 'PENDING' | 'UNSUBMITTED' | 'GRADED';
+  onFilterChange: (status: 'ALL' | 'PENDING' | 'UNSUBMITTED' | 'GRADED') => void;
+  stats?: {
+    total: number;
+    graded: number;
+    pending: number;
+    unsubmitted: number;
+  };
 }
 
 export function StudentSubmissionsSidebar({
@@ -22,6 +28,7 @@ export function StudentSubmissionsSidebar({
   onSearchChange,
   filterStatus,
   onFilterChange,
+  stats,
 }: StudentSubmissionsSidebarProps) {
   return (
     <aside className={styles.sidebar}>
@@ -48,22 +55,33 @@ export function StudentSubmissionsSidebar({
             type="button"
             className={`${styles.filterTab} ${filterStatus === 'ALL' ? styles.filterTabActive : ''}`}
             onClick={() => onFilterChange('ALL')}
+            title="Tampilkan semua siswa"
           >
-            Semua
+            Semua {stats ? `(${stats.total})` : ''}
           </button>
           <button
             type="button"
             className={`${styles.filterTab} ${filterStatus === 'PENDING' ? styles.filterTabActive : ''}`}
             onClick={() => onFilterChange('PENDING')}
+            title="Siswa yang sudah mengumpulkan dan belum dinilai"
           >
-            Belum Dinilai
+            Perlu Nilai {stats ? `(${stats.pending})` : ''}
+          </button>
+          <button
+            type="button"
+            className={`${styles.filterTab} ${filterStatus === 'UNSUBMITTED' ? styles.filterTabActive : ''}`}
+            onClick={() => onFilterChange('UNSUBMITTED')}
+            title="Siswa yang belum mengumpulkan tugas"
+          >
+            Belum Kumpul {stats ? `(${stats.unsubmitted})` : ''}
           </button>
           <button
             type="button"
             className={`${styles.filterTab} ${filterStatus === 'GRADED' ? styles.filterTabActive : ''}`}
             onClick={() => onFilterChange('GRADED')}
+            title="Siswa yang sudah selesai dinilai"
           >
-            Selesai
+            Selesai {stats ? `(${stats.graded})` : ''}
           </button>
         </div>
       </div>
@@ -72,13 +90,14 @@ export function StudentSubmissionsSidebar({
       <div className={styles.studentList}>
         {submissions.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '2rem 1rem', color: '#94a3b8', fontSize: '0.85rem' }}>
-            Tidak ada pengumpulan yang sesuai filter.
+            Tidak ada peserta didik di kategori ini.
           </div>
         ) : (
           submissions.map((item, idx) => {
             const isActive = idx === activeIndex;
             const initial = item.student_name.trim().charAt(0).toUpperCase() || 'S';
-            const isGraded = item.status === 'graded' && item.score !== null;
+            const isGraded = item.status === 'graded' && item.score !== null && item.score !== undefined;
+            const isSubmitted = item.status === 'submitted' || item.status === 'late' || item.status === 'resubmitted';
 
             return (
               <button
@@ -97,9 +116,17 @@ export function StudentSubmissionsSidebar({
 
                 <div className={styles.studentItemRight}>
                   {isGraded ? (
-                    <span className={styles.statusGradedBadge}>{item.score}</span>
+                    <span className={styles.statusGradedBadge} title="Nilai Akhir (Skala 100)">
+                      {item.score}
+                    </span>
+                  ) : isSubmitted ? (
+                    <span className={styles.statusPendingBadge} title="Sudah mengumpulkan, perlu dinilai guru">
+                      Perlu Dinilai
+                    </span>
                   ) : (
-                    <span className={styles.statusPendingBadge}>Belum</span>
+                    <span className={styles.statusUnsubmittedBadge} title="Belum mengumpulkan tugas via aplikasi">
+                      Belum Kumpul
+                    </span>
                   )}
                 </div>
               </button>

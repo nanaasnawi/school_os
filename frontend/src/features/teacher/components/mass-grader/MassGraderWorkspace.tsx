@@ -88,7 +88,9 @@ export function MassGraderWorkspace() {
             <span className={styles.progressCount}>
               {stats.graded} / {stats.total} Dinilai
             </span>
-            <span className={styles.progressPercent}>{stats.percent}% Selesai</span>
+            <span className={styles.progressPercent}>
+              {stats.percent}% Selesai {stats.pending > 0 ? `• ${stats.pending} Perlu Dinilai` : ''}
+            </span>
           </div>
           <div className={styles.progressBarTrack}>
             <div className={styles.progressBarFill} style={{ width: `${stats.percent}%` }} />
@@ -123,6 +125,7 @@ export function MassGraderWorkspace() {
             onSearchChange={setSearchQuery}
             filterStatus={filterStatus}
             onFilterChange={setFilterStatus}
+            stats={stats}
           />
 
           {/* Right Column: Digital Worksheet & Grading Actions */}

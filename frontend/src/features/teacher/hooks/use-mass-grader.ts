@@ -22,7 +22,7 @@ export function useMassGrader(initialAssignmentId?: string) {
 
   // Filters
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [filterStatus, setFilterStatus] = useState<'ALL' | 'PENDING' | 'GRADED'>('ALL');
+  const [filterStatus, setFilterStatus] = useState<'ALL' | 'PENDING' | 'UNSUBMITTED' | 'GRADED'>('ALL');
 
   // Active grading form draft
   const [score, setScore] = useState<number | ''>('');
@@ -89,7 +89,8 @@ export function useMassGrader(initialAssignmentId?: string) {
   const filteredSubmissions = useMemo(() => {
     return submissions.filter((s) => {
       // Status filter
-      if (filterStatus === 'PENDING' && s.status === 'graded') return false;
+      if (filterStatus === 'PENDING' && s.status !== 'submitted') return false;
+      if (filterStatus === 'UNSUBMITTED' && s.status !== 'unsubmitted') return false;
       if (filterStatus === 'GRADED' && s.status !== 'graded') return false;
 
       // Search query
@@ -103,14 +104,11 @@ export function useMassGrader(initialAssignmentId?: string) {
     });
   }, [submissions, filterStatus, searchQuery]);
 
-  const activeSubmission = filteredSubmissions[activeSubmissionIndex] || null;
+  const activeSubmission = filteredSubmissions[Math.min(activeSubmissionIndex, Math.max(0, filteredSubmissions.length - 1))] || null;
 
   // Initialize draft inputs when active submission changes
   useEffect(() => {
     if (activeSubmission) {
-      setScore(activeSubmission.score ?? '');
-      setFeedback(activeSubmission.feedback || '');
-
       const initialQScore: Record<string, number> = {};
       const initialQFeedback: Record<string, string> = {};
 
@@ -123,6 +121,29 @@ export function useMassGrader(initialAssignmentId?: string) {
 
       setQuestionScores(initialQScore);
       setQuestionFeedbacks(initialQFeedback);
+
+      // Determine score on scale 0-100
+      const totalMax = activeSubmission.answers?.reduce((acc, a) => acc + (a.max_points || 10), 0) || 100;
+      const totalEarned = Object.values(initialQScore).reduce((a, b) => a + b, 0);
+
+      if (activeSubmission.score !== null && activeSubmission.score !== undefined) {
+        // If raw points were stored instead of scale 100 (e.g. 28 out of 30)
+        if (totalMax > 0 && totalMax < 100 && activeSubmission.score <= totalMax) {
+          setScore(Math.round((activeSubmission.score / totalMax) * 100));
+        } else {
+          setScore(activeSubmission.score);
+        }
+      } else if (activeSubmission.answers && activeSubmission.answers.length > 0) {
+        if (totalMax > 0 && totalMax !== 100) {
+          setScore(Math.round((totalEarned / totalMax) * 100));
+        } else {
+          setScore(totalEarned);
+        }
+      } else {
+        setScore('');
+      }
+
+      setFeedback(activeSubmission.feedback || '');
     }
   }, [activeSubmission]);
 
@@ -141,16 +162,28 @@ export function useMassGrader(initialAssignmentId?: string) {
     setScore(preset);
   }, []);
 
-  // Update question score and auto calculate total
-  const handleUpdateQuestionScore = useCallback((questionId: string, val: number) => {
-    setQuestionScores((prev) => {
-      const next = { ...prev, [questionId]: val };
-      // Auto calculate total if questions exist
-      const totalPoints = Object.values(next).reduce((acc, curr) => acc + curr, 0);
-      setScore(Math.min(100, Math.max(0, totalPoints)));
-      return next;
-    });
-  }, []);
+  // Update question score and auto calculate total scaled to 100
+  const handleUpdateQuestionScore = useCallback(
+    (questionId: string, val: number) => {
+      setQuestionScores((prev) => {
+        const next = { ...prev, [questionId]: val };
+        const totalEarned = Object.values(next).reduce((acc, curr) => acc + curr, 0);
+        const totalMax =
+          activeSubmission?.answers?.reduce((acc, a) => acc + (a.max_points || 10), 0) ||
+          assignment?.questions?.reduce((acc, q) => acc + (q.points || 10), 0) ||
+          100;
+
+        if (totalMax > 0 && totalMax !== 100) {
+          const scaledScore = Math.round((totalEarned / totalMax) * 100);
+          setScore(Math.min(100, Math.max(0, scaledScore)));
+        } else {
+          setScore(Math.min(100, Math.max(0, totalEarned)));
+        }
+        return next;
+      });
+    },
+    [activeSubmission, assignment]
+  );
 
   // Update question feedback
   const handleUpdateQuestionFeedback = useCallback((questionId: string, text: string) => {
@@ -231,9 +264,10 @@ export function useMassGrader(initialAssignmentId?: string) {
   const stats = useMemo(() => {
     const total = submissions.length;
     const graded = submissions.filter((s) => s.status === 'graded').length;
-    const pending = total - graded;
+    const pending = submissions.filter((s) => s.status === 'submitted' || s.status === 'late' || s.status === 'resubmitted').length;
+    const unsubmitted = submissions.filter((s) => s.status === 'unsubmitted').length;
     const percent = total > 0 ? Math.round((graded / total) * 100) : 0;
-    return { total, graded, pending, percent };
+    return { total, graded, pending, unsubmitted, percent };
   }, [submissions]);
 
   return {

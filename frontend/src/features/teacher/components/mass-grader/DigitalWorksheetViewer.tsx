@@ -112,7 +112,24 @@ export function DigitalWorksheetViewer({
       {/* ── Worksheet Body ── */}
       <div className={styles.worksheetBody}>
         {/* If questions exist, render each question & answer */}
-        {answers.length > 0 ? (
+        {submission.status === 'unsubmitted' ? (
+          <div className={styles.unsubmittedContainer}>
+            <div className={styles.unsubmittedIcon}>
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+            </div>
+            <h3 className={styles.unsubmittedTitle}>Belum Mengumpulkan Tugas</h3>
+            <p className={styles.unsubmittedDesc}>
+              Peserta didik <strong>{submission.student_name}</strong> belum mengirimkan lembar jawaban tugas ini via aplikasi mobile School OS.
+            </p>
+            <div className={styles.unsubmittedNote}>
+              Anda dapat memberikan nilai manual di bawah ini (jika tugas dikumpulkan secara offline/fisik) atau melanjutkan ke siswa berikutnya.
+            </div>
+          </div>
+        ) : answers.length > 0 ? (
           answers.map((ans, idx) => {
             const currentPoints = questionScores[ans.question_id] ?? (ans.points_earned || 0);
             const currentNote = questionFeedbacks[ans.question_id] ?? (ans.teacher_notes || '');
@@ -226,7 +243,14 @@ export function DigitalWorksheetViewer({
         <div className={styles.gradingBarTop}>
           <div className={styles.scoreGroup}>
             <div className={styles.scoreInputWrapper}>
-              <span style={{ fontSize: '0.9rem', fontWeight: 800, color: '#334155' }}>Nilai Akhir:</span>
+              <div className={styles.scoreLabelGroup}>
+                <span className={styles.scoreMainLabel}>Nilai Akhir:</span>
+                {answers.length > 0 && (
+                  <span className={styles.scoreSubLabel}>
+                    Poin: {answers.reduce((acc, a) => acc + (questionScores[a.question_id] ?? (a.points_earned || 0)), 0)} / {answers.reduce((acc, a) => acc + (a.max_points || 0), 0)}
+                  </span>
+                )}
+              </div>
               <input
                 type="number"
                 min={0}
