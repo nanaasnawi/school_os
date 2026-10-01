@@ -1,7 +1,7 @@
 'use client';
 import { getTenantItem, setTenantItem, removeTenantItem } from '@/lib/tenant-storage';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
@@ -279,12 +279,6 @@ const TEACHER_NAV_SECTIONS = [
       { label: 'Notifikasi', path: '/dashboard/notifications', icon: 'bell' },
     ],
   },
-  {
-    label: 'Navigasi Sistem',
-    items: [
-      { label: 'Portal Administrator', path: '/dashboard', icon: 'dashboard' },
-    ],
-  },
 ];
 
 /* ── Theme Toggle Icons ── */
@@ -454,11 +448,41 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const router = useRouter();
   const { user, logout, isAuthenticated, isLoading } = useAuth();
 
+  const isTeacherRole = Boolean(
+    user?.role?.toLowerCase().includes('guru') ||
+    user?.role?.toLowerCase().includes('teacher')
+  );
+
+  // List of path prefixes strictly reserved for Administrator & Tata Usaha (Non-Teachers)
+  const isForbiddenForTeacher = useCallback((path: string) => {
+    if (path === '/dashboard') return true;
+    const adminPrefixes = [
+      '/dashboard/academic-years',
+      '/dashboard/classes',
+      '/dashboard/students',
+      '/dashboard/teachers',
+      '/dashboard/staff',
+      '/dashboard/subjects',
+      '/dashboard/enrollments',
+      '/dashboard/guardians',
+      '/dashboard/reports',
+      '/dashboard/dapodik',
+      '/dashboard/users',
+      '/dashboard/settings',
+      '/dashboard/activity-logs',
+    ];
+    return adminPrefixes.some(prefix => path === prefix || path.startsWith(prefix + '/'));
+  }, []);
+
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       router.replace('/login');
+    } else if (!isLoading && isAuthenticated && isTeacherRole) {
+      if (isForbiddenForTeacher(pathname)) {
+        router.replace('/dashboard/teacher');
+      }
     }
-  }, [isAuthenticated, isLoading, router]);
+  }, [isAuthenticated, isLoading, isTeacherRole, pathname, isForbiddenForTeacher, router]);
 
   /* ── Dynamic Tab Title & Favicon Update Engine (Head Lock) ── */
   useEffect(() => {
@@ -603,7 +627,34 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return null;
   }
 
-  const isTeacherRole = user?.role?.toLowerCase().includes('guru') || user?.role?.toLowerCase().includes('teacher');
+  if (isTeacherRole && isForbiddenForTeacher(pathname)) {
+    return (
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '100vh',
+        background: '#0f172a',
+        color: '#f8fafc',
+        fontFamily: 'inherit',
+      }}>
+        <div style={{
+          width: '36px',
+          height: '36px',
+          border: '3px solid rgba(56, 189, 248, 0.2)',
+          borderTopColor: '#38bdf8',
+          borderRadius: '50%',
+          animation: 'spin 0.8s linear infinite',
+          marginBottom: '1rem',
+        }} />
+        <p style={{ fontSize: '0.9rem', color: '#94a3b8' }}>
+          Mengarahkan ke Teacher Workstation...
+        </p>
+      </div>
+    );
+  }
+
   const isTeacherWorkstation = pathname.startsWith('/dashboard/teacher') || isTeacherRole;
   const activeNavSections = isTeacherWorkstation ? TEACHER_NAV_SECTIONS : NAV_SECTIONS;
 
@@ -751,10 +802,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   </h1>
                   <span className={styles.greetingSub}>Dashboard ringkasan — pantau kinerja sekolah hari ini</span>
                 </>
+              ) : pathname === '/dashboard/teacher' ? (
+                <>
+                  <h1 className={styles.greetingTitle} title={`Selamat datang, ${user?.full_name || user?.email || 'Bapak/Ibu Guru'}`}>
+                    Selamat datang, {user?.full_name || user?.email || 'Bapak/Ibu Guru'} 👨‍🏫
+                  </h1>
+                  <span className={styles.greetingSub}>Teacher Workstation — pusat kelola aktivitas mengajar &amp; penilaian</span>
+                </>
               ) : (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8125rem', fontWeight: 500, color: 'var(--text-muted)' }}>
-                  <Link href="/dashboard" style={{ color: 'inherit', transition: 'color 0.15s' }} onMouseOver={e => (e.currentTarget.style.color = 'var(--accent)')} onMouseOut={e => (e.currentTarget.style.color = 'var(--text-muted)')}>
-                    Beranda
+                  <Link
+                    href={isTeacherWorkstation ? '/dashboard/teacher' : '/dashboard'}
+                    style={{ color: 'inherit', transition: 'color 0.15s' }}
+                    onMouseOver={e => (e.currentTarget.style.color = 'var(--accent)')}
+                    onMouseOut={e => (e.currentTarget.style.color = 'var(--text-muted)')}
+                  >
+                    {isTeacherWorkstation ? 'Workstation' : 'Beranda'}
                   </Link>
                   <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" width="12" height="12"><path d="M6 12l4-4-4-4"/></svg>
                   <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{getBreadcrumbLabel()}</span>

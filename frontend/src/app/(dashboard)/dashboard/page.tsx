@@ -4,6 +4,8 @@ import { getApiUrl } from '@/lib/api';
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 import styles from './dashboard.module.css';
 import { getLiveDapodikAcademicYear } from './academic-years/page';
 import {
@@ -86,6 +88,20 @@ interface ActivityItem {
 }
 
 export default function DashboardPage() {
+  const { user, isLoading: authLoading } = useAuth();
+  const router = useRouter();
+
+  const isTeacher = Boolean(
+    user?.role?.toLowerCase().includes('guru') ||
+    user?.role?.toLowerCase().includes('teacher')
+  );
+
+  useEffect(() => {
+    if (!authLoading && isTeacher) {
+      router.replace('/dashboard/teacher');
+    }
+  }, [authLoading, isTeacher, router]);
+
   // Live Real-Time Date & Clock State
   const [currentDateTime, setCurrentDateTime] = useState<string>('');
 
@@ -125,6 +141,7 @@ export default function DashboardPage() {
 
   // Fetch real data from server API
   const fetchDashboardData = useCallback(async () => {
+    if (isTeacher) return;
     setIsLoading(true);
     try {
       const token =
@@ -164,7 +181,7 @@ export default function DashboardPage() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [isTeacher]);
 
   useEffect(() => {
     fetchDashboardData();
@@ -259,6 +276,10 @@ export default function DashboardPage() {
   const minRombel = sortedRombel.length ? sortedRombel[sortedRombel.length - 1] : undefined;
   const maxRombelCount = Math.max(...rombelList.map((r) => r.student_count || 0), 1);
   const rombelKecil = sortedRombel.filter((r) => (r.student_count || 0) < 12).length;
+
+  if (authLoading || isTeacher) {
+    return null;
+  }
 
   return (
     <div className={styles.page}>

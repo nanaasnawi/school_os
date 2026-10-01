@@ -189,20 +189,30 @@ export default function LoginPage() {
       const { data, error: apiErr, response } = await sdkLogin({ body: { email, password } });
       if (!apiErr && data?.data?.access_token) {
         const token = data.data.access_token;
+        let userRole = 'Administrator';
         try {
           const payloadBase64 = token.split('.')[1];
           const payload = JSON.parse(atob(payloadBase64));
           const responseData = data?.data as Record<string, unknown> | undefined;
+          userRole = (responseData?.role as string) || payload.role || 'Administrator';
           login(token, {
             id: payload.sub || '1',
             email: payload.email || email,
             full_name: (responseData?.name as string) || payload.full_name || '',
-            role: (responseData?.role as string) || payload.role || 'Administrator',
+            role: userRole,
           });
         } catch {
           login(token, { id: '1', email, role: 'Administrator' });
         }
-        router.push('/dashboard');
+
+        const roleLower = userRole.toLowerCase();
+        if (roleLower.includes('guru') || roleLower.includes('teacher')) {
+          router.push('/dashboard/teacher');
+        } else if (roleLower.includes('wali') || roleLower.includes('guardian') || roleLower.includes('parent')) {
+          router.push('/parent');
+        } else {
+          router.push('/dashboard');
+        }
         return;
       }
       const errObj = apiErr as { message?: string } | undefined;
@@ -402,7 +412,7 @@ export default function LoginPage() {
             </div>
             <div className={styles.brandTextGroup}>
               <h1 className={styles.schoolTitle}>{schoolName}</h1>
-              <p className={styles.schoolSubtitle}>Portal Admin &amp; Staf Tata Usaha</p>
+              <p className={styles.schoolSubtitle}>Portal Layanan &amp; Akademik Terpadu</p>
             </div>
           </div>
 
@@ -448,7 +458,7 @@ export default function LoginPage() {
               </div>
               <h2 className={styles.formTitle}>Masuk ke Sistem</h2>
               <p className={styles.formSub}>
-                Gunakan kredensial akun administrator atau staf tata usaha Anda untuk mengakses dashboard
+                Gunakan kredensial akun terdaftar Anda untuk mengakses portal sekolah
               </p>
             </div>
 
