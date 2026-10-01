@@ -256,8 +256,12 @@ export function TeacherClassesView() {
                 className={`${styles.classCard} ${isSelected ? styles.classCardActive : ''}`}
               >
                 <div className={styles.classCardHeader}>
-                  <span className={styles.classLevelBadge}>
-                    {cls.grade_level_name || 'Rombel'}
+                  <span
+                    className={`${styles.classLevelBadge} ${
+                      cls.subject_name?.includes('Wali Kelas') ? styles.homeroomBadge : ''
+                    }`}
+                  >
+                    {cls.subject_name || cls.grade_level_name || 'Rombel'}
                   </span>
                   {isSelected && (
                     <span className={styles.activeIndicator}>
@@ -271,6 +275,9 @@ export function TeacherClassesView() {
 
                 <div>
                   <h3 className={styles.className}>{cls.name}</h3>
+                  {cls.grade_level_name && (
+                    <div className={styles.classSubinfo}>{cls.grade_level_name}</div>
+                  )}
                 </div>
 
                 <div className={styles.classFooter}>

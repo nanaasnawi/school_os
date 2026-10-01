@@ -187,17 +187,31 @@
 
 .classLevelBadge {
   font-size: 0.72rem;
-  font-weight: 700;
+  font-weight: 600;
   padding: 0.2rem 0.55rem;
   border-radius: 6px;
   background: #f1f5f9;
   color: #475569;
-  text-transform: uppercase;
+  border: 1px solid #e2e8f0;
 }
 
 [data-theme="dark"] .classLevelBadge {
   background: #27272a;
   color: #a1a1aa;
+  border-color: #3f3f46;
+}
+
+.homeroomBadge {
+  background: #eff6ff !important;
+  color: #0284c7 !important;
+  border: 1px solid #bae6fd !important;
+  font-weight: 700 !important;
+}
+
+[data-theme="dark"] .homeroomBadge {
+  background: rgba(2, 132, 199, 0.15) !important;
+  color: #38bdf8 !important;
+  border-color: rgba(56, 189, 248, 0.3) !important;
 }
 
 .activeIndicator {
@@ -210,14 +224,26 @@
 }
 
 .className {
-  font-size: 1.15rem;
+  font-size: 1.2rem;
   font-weight: 800;
   color: #0f172a;
   margin: 0;
+  letter-spacing: -0.01em;
 }
 
 [data-theme="dark"] .className {
   color: #f8fafc;
+}
+
+.classSubinfo {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: #64748b;
+  margin-top: 0.2rem;
+}
+
+[data-theme="dark"] .classSubinfo {
+  color: #94a3b8;
 }
 
 .classFooter {

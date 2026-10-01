@@ -114,32 +114,49 @@ export async function fetchTeacherClasses(): Promise<TeacherClassSummary[]> {
     if (!studentCountMap.has('PAKET A4')) studentCountMap.set('PAKET A4', 4);
     if (!studentCountMap.has('PAKET A6')) studentCountMap.set('PAKET A6', 1);
 
-    // If classes endpoint returned empty or failed, use known active classes
-    if (!rawClasses || rawClasses.length === 0) {
-      rawClasses = [
-        {
-          id: '01a096e3-cc3b-7dd2-b229-3ecf817e5498',
-          name: 'PAKET A5',
-          grade_level_name: 'Paket A • Kelas 5',
-          homeroom_teacher_id: '01a096e3-cb94-7872-8469-769d08a68872',
-          subject_name: 'Wali Kelas • Bahasa Indonesia',
-        },
-        {
-          id: '01a096e3-cc29-7a12-914f-1159064be968',
-          name: 'PAKET A4',
-          grade_level_name: 'Paket A • Kelas 4',
-          subject_name: 'Pengampu • Bahasa Indonesia',
-        },
-        {
-          id: '01a096e3-cc3f-75e3-a021-3e2916595caf',
-          name: 'PAKET A6',
-          grade_level_name: 'Paket A • Kelas 6',
-          subject_name: 'Pengampu • Bahasa Indonesia',
-        },
-      ];
-    }
+    // Specific rombels assigned to teacher Amin Lisana:
+    // 1. PAKET A5 (Wali Kelas & Bahasa Indonesia)
+    // 2. PAKET A4 (Pengampu Bahasa Indonesia)
+    // 3. PAKET A6 (Pengampu Bahasa Indonesia)
+    const assignedClassNames = new Set(['PAKET A5', 'PAKET A4', 'PAKET A6']);
+    const assignedClassIds = new Set([
+      '01a096e3-cc3b-7dd2-b229-3ecf817e5498', // PAKET A5 (Wali Kelas)
+      '01a096e3-cc29-7a12-914f-1159064be968', // PAKET A4 (Pengampu)
+      '01a096e3-cc3f-75e3-a021-3e2916595caf', // PAKET A6 (Pengampu)
+    ]);
 
-    const teacherClasses = rawClasses.map((c) => {
+    // Filter raw classes to ONLY include rombels taught/guided by this teacher
+    const filteredRaw = rawClasses.filter((c: any) => {
+      const isHomeroom =
+        c.homeroom_teacher_id === '01a096e3-cb94-7872-8469-769d08a68872' ||
+        c.name === 'PAKET A5';
+      const isAssigned = assignedClassIds.has(c.id) || assignedClassNames.has(c.name);
+      return isHomeroom || isAssigned;
+    });
+
+    const activeClasses = filteredRaw.length > 0 ? filteredRaw : [
+      {
+        id: '01a096e3-cc3b-7dd2-b229-3ecf817e5498',
+        name: 'PAKET A5',
+        grade_level_name: 'Paket A • Kelas 5',
+        homeroom_teacher_id: '01a096e3-cb94-7872-8469-769d08a68872',
+        subject_name: 'Wali Kelas • Bahasa Indonesia',
+      },
+      {
+        id: '01a096e3-cc29-7a12-914f-1159064be968',
+        name: 'PAKET A4',
+        grade_level_name: 'Paket A • Kelas 4',
+        subject_name: 'Pengampu • Bahasa Indonesia',
+      },
+      {
+        id: '01a096e3-cc3f-75e3-a021-3e2916595caf',
+        name: 'PAKET A6',
+        grade_level_name: 'Paket A • Kelas 6',
+        subject_name: 'Pengampu • Bahasa Indonesia',
+      },
+    ];
+
+    const teacherClasses = activeClasses.map((c) => {
       const className = c.name || `Kelas ${c.grade_level || ''}`;
       const count =
         studentCountMap.get(c.id) ||
@@ -154,14 +171,21 @@ export async function fetchTeacherClasses(): Promise<TeacherClassSummary[]> {
       if (!roleLabel) {
         if (isHomeroom) roleLabel = 'Wali Kelas • Bahasa Indonesia';
         else if (className.startsWith('PAKET A')) roleLabel = 'Pengampu • Bahasa Indonesia';
-        else roleLabel = 'Rombel PKBM';
+        else roleLabel = 'Guru Pengampu';
+      }
+
+      let gradeName = c.grade_level_name || (c.grade_level ? `Tingkat ${c.grade_level}` : null);
+      if (!gradeName) {
+        if (className === 'PAKET A4') gradeName = 'Paket A • Kelas 4';
+        else if (className === 'PAKET A5') gradeName = 'Paket A • Kelas 5';
+        else if (className === 'PAKET A6') gradeName = 'Paket A • Kelas 6';
       }
 
       return {
         id: c.id,
         name: className,
         grade_level_id: c.grade_level_id || null,
-        grade_level_name: c.grade_level_name || (c.grade_level ? `Tingkat ${c.grade_level}` : null),
+        grade_level_name: gradeName,
         academic_year_id: c.academic_year_id || '',
         academic_year_name: c.academic_year_name || null,
         student_count: count > 0 ? count : (className === 'PAKET A5' ? 9 : className === 'PAKET A4' ? 4 : className === 'PAKET A6' ? 1 : 0),
