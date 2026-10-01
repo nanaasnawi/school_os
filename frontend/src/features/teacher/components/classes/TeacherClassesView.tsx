@@ -285,36 +285,119 @@ export function TeacherClassesView() {
         </div>
       )}
 
-      {/* ── Quick Stats Strip for Selected Class ── */}
+      {/* ── Quick Stats Grid for Selected Class (Admin Dashboard Design) ── */}
       {selectedClass && (
-        <div className={styles.statsStrip}>
-          <div className={styles.statItem}>
-            <span className={styles.statLabel}>Total Terdaftar</span>
-            <span className={styles.statValue}>{studentStats.total}</span>
+        <div className={styles.metricsGrid}>
+          {/* Card 1: Total Terdaftar */}
+          <div className={`${styles.metricCard} ${styles.cardBlue}`}>
+            <div className={styles.metricTop}>
+              <div className={styles.metricInfo}>
+                <div className={styles.metricValue}>{studentStats.total}</div>
+                <div className={styles.metricSubtitle}>Peserta Didik Terdata</div>
+              </div>
+              <div className={styles.metricWatermark} aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+                  <path d="M6 12v5c3 3 9 3 12 0v-5" />
+                </svg>
+              </div>
+            </div>
+            <div className={styles.metricBottom}>
+              <span>Total Roster Siswa</span>
+              <svg className={styles.metricArrow} viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
+            </div>
           </div>
-          <div className={styles.statItem}>
-            <span className={styles.statLabel}>Siswa Aktif</span>
-            <span className={styles.statValue} style={{ color: '#16a34a' }}>
-              {studentStats.activeCount}
-            </span>
+
+          {/* Card 2: Siswa Aktif */}
+          <div className={`${styles.metricCard} ${styles.cardEmerald}`}>
+            <div className={styles.metricTop}>
+              <div className={styles.metricInfo}>
+                <div className={styles.metricValue}>{studentStats.activeCount}</div>
+                <div className={styles.metricSubtitle}>Status Pembelajaran Aktif</div>
+              </div>
+              <div className={styles.metricWatermark} aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                  <circle cx="8.5" cy="7" r="4" />
+                  <polyline points="17 11 19 13 23 9" />
+                </svg>
+              </div>
+            </div>
+            <div className={styles.metricBottom}>
+              <span>Siswa Aktif Terverifikasi</span>
+              <svg className={styles.metricArrow} viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
+            </div>
           </div>
-          <div className={styles.statItem}>
-            <span className={styles.statLabel}>Laki-laki (L)</span>
-            <span className={styles.statValue} style={{ color: '#0284c7' }}>
-              {studentStats.maleCount}
-            </span>
+
+          {/* Card 3: Laki-laki */}
+          <div className={`${styles.metricCard} ${styles.cardIndigo}`}>
+            <div className={styles.metricTop}>
+              <div className={styles.metricInfo}>
+                <div className={styles.metricValue}>{studentStats.maleCount}</div>
+                <div className={styles.metricSubtitle}>Peserta Didik Pria</div>
+              </div>
+              <div className={styles.metricWatermark} aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                  <circle cx="12" cy="7" r="4" />
+                </svg>
+              </div>
+            </div>
+            <div className={styles.metricBottom}>
+              <span>Laki-laki (L)</span>
+              <svg className={styles.metricArrow} viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
+            </div>
           </div>
-          <div className={styles.statItem}>
-            <span className={styles.statLabel}>Perempuan (P)</span>
-            <span className={styles.statValue} style={{ color: '#db2777' }}>
-              {studentStats.femaleCount}
-            </span>
+
+          {/* Card 4: Perempuan */}
+          <div className={`${styles.metricCard} ${styles.cardPurple}`}>
+            <div className={styles.metricTop}>
+              <div className={styles.metricInfo}>
+                <div className={styles.metricValue}>{studentStats.femaleCount}</div>
+                <div className={styles.metricSubtitle}>Peserta Didik Wanita</div>
+              </div>
+              <div className={styles.metricWatermark} aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                  <circle cx="12" cy="7" r="4" />
+                  <path d="M12 11v6" />
+                  <path d="M9 14h6" />
+                </svg>
+              </div>
+            </div>
+            <div className={styles.metricBottom}>
+              <span>Perempuan (P)</span>
+              <svg className={styles.metricArrow} viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
+            </div>
           </div>
-          <div className={styles.statItem}>
-            <span className={styles.statLabel}>Kontak WA Terdata</span>
-            <span className={styles.statValue} style={{ color: '#059669' }}>
-              {studentStats.hasPhoneCount}
-            </span>
+
+          {/* Card 5: Kontak WA */}
+          <div className={`${styles.metricCard} ${styles.cardTeal}`}>
+            <div className={styles.metricTop}>
+              <div className={styles.metricInfo}>
+                <div className={styles.metricValue}>{studentStats.hasPhoneCount}</div>
+                <div className={styles.metricSubtitle}>Nomor WhatsApp Terdata</div>
+              </div>
+              <div className={styles.metricWatermark} aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                </svg>
+              </div>
+            </div>
+            <div className={styles.metricBottom}>
+              <span>Kontak Wali / Siswa</span>
+              <svg className={styles.metricArrow} viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
+            </div>
           </div>
         </div>
       )}

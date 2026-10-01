@@ -127,68 +127,168 @@
   border-color: #94a3b8;
 }
 
-/* Metric Box */
+/* ── Metric Grid & Cards (Exact Admin Dashboard Design) ── */
 .metricGrid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 1.15rem;
+  gap: 1.25rem;
   margin-bottom: 1.5rem;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1200px) {
   .metricGrid {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 600px) {
   .metricGrid {
     grid-template-columns: 1fr;
   }
 }
 
 .metricCard {
-  background: var(--bg-surface, #ffffff);
+  background: var(--bg-card, #ffffff);
   border: 1px solid var(--border-light, #e2e8f0);
-  border-radius: 14px;
-  padding: 1.25rem 1.35rem;
+  border-radius: 16px;
   display: flex;
-  align-items: center;
-  gap: 1.15rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  flex-direction: column;
+  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.04), 0 2px 6px -1px rgba(0, 0, 0, 0.02);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+  text-decoration: none;
+}
+
+[data-theme="dark"] .metricCard {
+  background: #18181b;
+  border-color: #27272a;
 }
 
 .metricCard:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 10px 25px -4px rgba(0, 0, 0, 0.08), 0 4px 10px -2px rgba(0, 0, 0, 0.03);
+  transform: translateY(-3px);
+  border-color: var(--border-medium, #cbd5e1);
 }
 
-.metricIconWrap {
-  width: 46px;
-  height: 46px;
-  border-radius: 12px;
+[data-theme="dark"] .metricCard:hover {
+  border-color: #3f3f46;
+}
+
+.metricTop {
+  padding: 1.25rem 1.35rem 1.15rem;
   display: flex;
   align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
+  justify-content: space-between;
+  gap: 1rem;
+  position: relative;
+  flex: 1;
 }
 
-.metricContent {
+.metricInfo {
   display: flex;
   flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+  z-index: 1;
 }
 
 .metricValue {
-  font-size: 1.55rem;
-  font-weight: 900;
-  color: var(--text-primary, #0f172a);
-  line-height: 1.15;
+  font-size: 2.25rem;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
 }
 
-.metricLabel {
-  font-size: 0.8rem;
-  color: var(--text-secondary, #64748b);
+.metricSubtitle {
+  font-size: 0.82rem;
   font-weight: 600;
-  margin-top: 0.15rem;
+  letter-spacing: 0.01em;
 }
+
+.metricWatermark {
+  position: absolute;
+  right: 1.25rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 68px;
+  height: 68px;
+  color: #94a3b8;
+  opacity: 0.18;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.metricCard:hover .metricWatermark {
+  transform: translateY(-50%) scale(1.08);
+  opacity: 0.26;
+}
+
+.metricWatermark svg {
+  width: 100%;
+  height: 100%;
+}
+
+.metricBottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.25rem;
+  color: #ffffff;
+  font-size: 0.84rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  transition: background-color 0.2s ease, filter 0.2s ease;
+}
+
+.metricArrow {
+  width: 18px;
+  height: 18px;
+  transition: transform 0.2s ease;
+  fill: currentColor;
+}
+
+.metricCard:hover .metricArrow {
+  transform: translateX(4px);
+}
+
+/* ── Thematic Card Colors (Admin Dashboard Philosophy) ── */
+.cardBlue .metricValue { color: #0284c7; }
+.cardBlue .metricSubtitle { color: #0284c7; }
+.cardBlue .metricBottom { background: #0284c7; }
+.cardBlue:hover .metricBottom { background: #0369a1; }
+
+.cardOrange .metricValue { color: #ea580c; }
+.cardOrange .metricSubtitle { color: #ea580c; }
+.cardOrange .metricBottom { background: #ea580c; }
+.cardOrange:hover .metricBottom { background: #c2410c; }
+
+.cardEmerald .metricValue { color: #059669; }
+.cardEmerald .metricSubtitle { color: #059669; }
+.cardEmerald .metricBottom { background: #059669; }
+.cardEmerald:hover .metricBottom { background: #047857; }
+
+.cardPurple .metricValue { color: #7c3aed; }
+.cardPurple .metricSubtitle { color: #7c3aed; }
+.cardPurple .metricBottom { background: #7c3aed; }
+.cardPurple:hover .metricBottom { background: #6d28d9; }
+
+.cardIndigo .metricValue { color: #2563eb; }
+.cardIndigo .metricSubtitle { color: #2563eb; }
+.cardIndigo .metricBottom { background: #2563eb; }
+.cardIndigo:hover .metricBottom { background: #1d4ed8; }
+
+.cardAmber .metricValue { color: #d97706; }
+.cardAmber .metricSubtitle { color: #d97706; }
+.cardAmber .metricBottom { background: #d97706; }
+.cardAmber:hover .metricBottom { background: #b45309; }
+
+.cardTeal .metricValue { color: #0d9488; }
+.cardTeal .metricSubtitle { color: #0d9488; }
+.cardTeal .metricBottom { background: #0d9488; }
+.cardTeal:hover .metricBottom { background: #0f766e; }
+

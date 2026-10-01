@@ -191,63 +191,91 @@ export function TeacherInquiryView() {
         </div>
       </div>
 
-      {/* ── Metric Summary Cards ── */}
+      {/* ── Metric Summary Cards (Admin Dashboard Design) ── */}
       <div className={styles.metricsGrid}>
-        <div className={styles.metricCard}>
-          <div className={`${styles.metricIconBox} ${styles.iconTeal}`}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-            </svg>
+        {/* Card 1: Total Percakapan */}
+        <div className={`${styles.metricCard} ${styles.cardIndigo}`}>
+          <div className={styles.metricTop}>
+            <div className={styles.metricInfo}>
+              <div className={styles.metricValue}>{metrics.total_inquiries}</div>
+              <div className={styles.metricSubtitle}>Thread Konsultasi Masuk</div>
+            </div>
+            <div className={styles.metricWatermark} aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+              </svg>
+            </div>
           </div>
-          <div className={styles.metricInfo}>
-            <span className={styles.metricLabel}>Total Percakapan</span>
-            <span className={styles.metricValue}>{metrics.total_inquiries}</span>
-            <span className={styles.metricSubtitle}>Thread masuk</span>
+          <div className={styles.metricBottom}>
+            <span>Total Percakapan Siswa</span>
+            <svg className={styles.metricArrow} viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
           </div>
         </div>
 
-        <div className={styles.metricCard}>
-          <div className={`${styles.metricIconBox} ${styles.iconAmber}`}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10" />
-              <polyline points="12 6 12 12 14 14" />
-            </svg>
+        {/* Card 2: Menunggu Balasan */}
+        <div className={`${styles.metricCard} ${styles.cardOrange}`}>
+          <div className={styles.metricTop}>
+            <div className={styles.metricInfo}>
+              <div className={styles.metricValue}>{metrics.open_inquiries}</div>
+              <div className={styles.metricSubtitle}>Perlu Ditanggapi Guru</div>
+            </div>
+            <div className={styles.metricWatermark} aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 14 14" />
+              </svg>
+            </div>
           </div>
-          <div className={styles.metricInfo}>
-            <span className={styles.metricLabel}>Menunggu Balasan</span>
-            <span className={styles.metricValue} style={{ color: '#ea580c' }}>
-              {metrics.open_inquiries}
-            </span>
-            <span className={styles.metricSubtitle}>Perlu ditanggapi</span>
+          <div className={styles.metricBottom}>
+            <span>Menunggu Balasan</span>
+            <svg className={styles.metricArrow} viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
           </div>
         </div>
 
-        <div className={styles.metricCard}>
-          <div className={`${styles.metricIconBox} ${styles.iconBlue}`}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
+        {/* Card 3: Sudah Terjawab */}
+        <div className={`${styles.metricCard} ${styles.cardBlue}`}>
+          <div className={styles.metricTop}>
+            <div className={styles.metricInfo}>
+              <div className={styles.metricValue}>{metrics.answered_inquiries}</div>
+              <div className={styles.metricSubtitle}>Telah Direspons Guru</div>
+            </div>
+            <div className={styles.metricWatermark} aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </div>
           </div>
-          <div className={styles.metricInfo}>
-            <span className={styles.metricLabel}>Sudah Terjawab</span>
-            <span className={styles.metricValue} style={{ color: '#0284c7' }}>
-              {metrics.answered_inquiries}
-            </span>
-            <span className={styles.metricSubtitle}>Telah direspons</span>
+          <div className={styles.metricBottom}>
+            <span>Sudah Terjawab</span>
+            <svg className={styles.metricArrow} viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
           </div>
         </div>
 
-        <div className={styles.metricCard}>
-          <div className={`${styles.metricIconBox} ${styles.iconGray}`}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="9 11 12 14 22 4" />
-              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
-            </svg>
+        {/* Card 4: Selesai / Ditutup */}
+        <div className={`${styles.metricCard} ${styles.cardEmerald}`}>
+          <div className={styles.metricTop}>
+            <div className={styles.metricInfo}>
+              <div className={styles.metricValue}>{metrics.resolved_inquiries}</div>
+              <div className={styles.metricSubtitle}>Konsultasi Selesai / Tuntas</div>
+            </div>
+            <div className={styles.metricWatermark} aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="9 11 12 14 22 4" />
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+              </svg>
+            </div>
           </div>
-          <div className={styles.metricInfo}>
-            <span className={styles.metricLabel}>Selesai / Ditutup</span>
-            <span className={styles.metricValue}>{metrics.resolved_inquiries}</span>
-            <span className={styles.metricSubtitle}>Konsultasi tuntas</span>
+          <div className={styles.metricBottom}>
+            <span>Selesai &amp; Ditutup</span>
+            <svg className={styles.metricArrow} viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
           </div>
         </div>
       </div>

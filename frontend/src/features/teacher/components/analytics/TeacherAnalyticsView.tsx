@@ -232,65 +232,95 @@ export function TeacherAnalyticsView() {
       </div>
 
       {/* ── KPI Metric Summary Cards ── */}
+      {/* ── KPI Metric Summary Cards (Admin Dashboard Design) ── */}
       <div className={styles.metricsGrid}>
-        <div className={styles.metricCard}>
-          <div className={`${styles.metricIconBox} ${styles.iconPurple}`}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-            </svg>
+        {/* Card 1: Total Materi */}
+        <div className={`${styles.metricCard} ${styles.cardPurple}`}>
+          <div className={styles.metricTop}>
+            <div className={styles.metricInfo}>
+              <div className={styles.metricValue}>{metrics.total_materials}</div>
+              <div className={styles.metricSubtitle}>Materi &amp; Modul Terbit</div>
+            </div>
+            <div className={styles.metricWatermark} aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+              </svg>
+            </div>
           </div>
-          <div className={styles.metricInfo}>
-            <span className={styles.metricLabel}>Total Materi / Buku</span>
-            <span className={styles.metricValue}>{metrics.total_materials}</span>
-            <span className={styles.metricSubtitle}>Materi aktif terbit</span>
+          <div className={styles.metricBottom}>
+            <span>Total Modul Bacaan</span>
+            <svg className={styles.metricArrow} viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
           </div>
         </div>
 
-        <div className={styles.metricCard}>
-          <div className={`${styles.metricIconBox} ${styles.iconBlue}`}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-              <circle cx="9" cy="7" r="4" />
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-            </svg>
+        {/* Card 2: Pembaca Terdata */}
+        <div className={`${styles.metricCard} ${styles.cardBlue}`}>
+          <div className={styles.metricTop}>
+            <div className={styles.metricInfo}>
+              <div className={styles.metricValue}>{metrics.total_readers}</div>
+              <div className={styles.metricSubtitle}>Siswa Aktif Membaca</div>
+            </div>
+            <div className={styles.metricWatermark} aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+              </svg>
+            </div>
           </div>
-          <div className={styles.metricInfo}>
-            <span className={styles.metricLabel}>Pembaca Terdata</span>
-            <span className={styles.metricValue}>{metrics.total_readers}</span>
-            <span className={styles.metricSubtitle}>Siswa aktif membaca</span>
+          <div className={styles.metricBottom}>
+            <span>Peserta Didik Terdata</span>
+            <svg className={styles.metricArrow} viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
           </div>
         </div>
 
-        <div className={styles.metricCard}>
-          <div className={`${styles.metricIconBox} ${styles.iconGreen}`}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
+        {/* Card 3: Ketercapaian Baca */}
+        <div className={`${styles.metricCard} ${styles.cardEmerald}`}>
+          <div className={styles.metricTop}>
+            <div className={styles.metricInfo}>
+              <div className={styles.metricValue}>{metrics.overall_completion_rate}%</div>
+              <div className={styles.metricSubtitle}>{metrics.completed_readers} Siswa Tuntas Membaca</div>
+            </div>
+            <div className={styles.metricWatermark} aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                <polyline points="22 4 12 14.01 9 11.01" />
+              </svg>
+            </div>
           </div>
-          <div className={styles.metricInfo}>
-            <span className={styles.metricLabel}>Ketercapaian Baca</span>
-            <span className={styles.metricValue} style={{ color: '#16a34a' }}>
-              {metrics.overall_completion_rate}%
-            </span>
-            <span className={styles.metricSubtitle}>{metrics.completed_readers} tuntas dibaca</span>
+          <div className={styles.metricBottom}>
+            <span>Tingkat Ketercapaian</span>
+            <svg className={styles.metricArrow} viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
           </div>
         </div>
 
-        <div className={styles.metricCard}>
-          <div className={`${styles.metricIconBox} ${styles.iconAmber}`}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10" />
-              <polyline points="12 6 12 12 14 14" />
-            </svg>
+        {/* Card 4: Total Halaman Dibaca */}
+        <div className={`${styles.metricCard} ${styles.cardAmber}`}>
+          <div className={styles.metricTop}>
+            <div className={styles.metricInfo}>
+              <div className={styles.metricValue}>{metrics.total_pages_read}</div>
+              <div className={styles.metricSubtitle}>Halaman Digital Kumulatif</div>
+            </div>
+            <div className={styles.metricWatermark} aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 16 14" />
+              </svg>
+            </div>
           </div>
-          <div className={styles.metricInfo}>
-            <span className={styles.metricLabel}>Total Halaman Dibaca</span>
-            <span className={styles.metricValue} style={{ color: '#d97706' }}>
-              {metrics.total_pages_read}
-            </span>
-            <span className={styles.metricSubtitle}>Halaman kumulatif</span>
+          <div className={styles.metricBottom}>
+            <span>Total Lembar Dibaca</span>
+            <svg className={styles.metricArrow} viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
           </div>
         </div>
       </div>
