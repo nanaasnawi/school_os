@@ -70,26 +70,12 @@ export function TeacherClassesView() {
         key: 'full_name',
         header: 'Nama Peserta Didik',
         sortable: true,
-        render: (item) => {
-          const initials = item.full_name
-            ? item.full_name
-                .split(' ')
-                .slice(0, 2)
-                .map((n) => n[0])
-                .join('')
-                .toUpperCase()
-            : 'S';
-
-          return (
-            <div className={styles.studentCell}>
-              <div className={styles.studentAvatar}>{initials}</div>
-              <div className={styles.studentDetails}>
-                <span className={styles.studentName}>{item.full_name}</span>
-                {item.email && <span className={styles.studentEmail}>{item.email}</span>}
-              </div>
-            </div>
-          );
-        },
+        render: (item) => (
+          <div className={styles.studentDetails}>
+            <span className={styles.studentName}>{item.full_name}</span>
+            {item.email && <span className={styles.studentEmail}>{item.email}</span>}
+          </div>
+        ),
       },
       {
         key: 'gender',
@@ -187,7 +173,7 @@ export function TeacherClassesView() {
               <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
               <path d="M16 3.13a4 4 0 0 1 0 7.75" />
             </svg>
-            Teacher Workstation • Phase 3
+            Teacher Workstation
           </div>
           <h1 className={styles.title}>Kelas Saya &amp; Roster Siswa</h1>
           <p className={styles.subtitle}>
@@ -442,9 +428,6 @@ export function TeacherClassesView() {
 
             <div className={styles.modalBody}>
               <div className={styles.modalProfileHead}>
-                <div className={styles.modalAvatarLarge}>
-                  {activeStudentModal.full_name ? activeStudentModal.full_name[0].toUpperCase() : 'S'}
-                </div>
                 <div>
                   <h4 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: '#0f172a' }}>
                     {activeStudentModal.full_name}

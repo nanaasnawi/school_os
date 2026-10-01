@@ -45,30 +45,16 @@ export function TeacherInquiryView() {
     () => [
       {
         key: 'student_name',
-        header: 'Peserta Didik',
+        header: 'Nama Peserta Didik',
         sortable: true,
-        render: (item) => {
-          const initials = item.student_name
-            ? item.student_name
-                .split(' ')
-                .slice(0, 2)
-                .map((n) => n[0])
-                .join('')
-                .toUpperCase()
-            : 'S';
-
-          return (
-            <div className={styles.studentCell}>
-              <div className={styles.studentAvatar}>{initials}</div>
-              <div>
-                <span className={styles.studentName}>{item.student_name}</span>
-                <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                  {item.student_class}
-                </div>
-              </div>
+        render: (item) => (
+          <div>
+            <span className={styles.studentName}>{item.student_name}</span>
+            <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
+              {item.student_class}
             </div>
-          );
-        },
+          </div>
+        ),
       },
       {
         key: 'subject_name',
@@ -166,7 +152,7 @@ export function TeacherInquiryView() {
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
             </svg>
-            Teacher Workstation • Phase 5
+            Teacher Workstation
           </div>
           <h1 className={styles.title}>Tanya Guru &amp; Konsultasi Siswa</h1>
           <p className={styles.subtitle}>

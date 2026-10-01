@@ -95,7 +95,6 @@ export function StudentSubmissionsSidebar({
         ) : (
           submissions.map((item, idx) => {
             const isActive = idx === activeIndex;
-            const initial = item.student_name.trim().charAt(0).toUpperCase() || 'S';
             const isGraded = item.status === 'graded' && item.score !== null && item.score !== undefined;
             const isSubmitted = item.status === 'submitted' || item.status === 'late' || item.status === 'resubmitted';
 
@@ -107,7 +106,6 @@ export function StudentSubmissionsSidebar({
                 onClick={() => onSelect(idx)}
               >
                 <div className={styles.studentItemLeft}>
-                  <div className={styles.studentAvatar}>{initial}</div>
                   <div className={styles.studentMeta}>
                     <span className={styles.studentName}>{item.student_name}</span>
                     <span className={styles.studentNisn}>NISN: {item.student_nisn || '-'}</span>

@@ -70,23 +70,9 @@ export function TeacherAnalyticsView() {
         key: 'student_name',
         header: 'Nama Peserta Didik',
         sortable: true,
-        render: (item) => {
-          const initials = item.student_name
-            ? item.student_name
-                .split(' ')
-                .slice(0, 2)
-                .map((n) => n[0])
-                .join('')
-                .toUpperCase()
-            : 'S';
-
-          return (
-            <div className={styles.studentCell}>
-              <div className={styles.studentAvatar}>{initials}</div>
-              <span className={styles.studentName}>{item.student_name}</span>
-            </div>
-          );
-        },
+        render: (item) => (
+          <span className={styles.studentName}>{item.student_name}</span>
+        ),
       },
       {
         key: 'class_name',
@@ -192,7 +178,7 @@ export function TeacherAnalyticsView() {
               <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
               <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
             </svg>
-            Teacher Workstation • Phase 4
+            Teacher Workstation
           </div>
           <h1 className={styles.title}>Teacher Analytics &amp; Reading Progress</h1>
           <p className={styles.subtitle}>
@@ -415,18 +401,13 @@ export function TeacherAnalyticsView() {
             </div>
 
             <div className={styles.modalBody}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <div className={styles.studentAvatar} style={{ width: '48px', height: '48px', fontSize: '1.1rem' }}>
-                  {activeModalRow.student_name ? activeModalRow.student_name[0].toUpperCase() : 'S'}
-                </div>
-                <div>
-                  <h4 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: '#0f172a' }}>
-                    {activeModalRow.student_name}
-                  </h4>
-                  <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.3rem', alignItems: 'center' }}>
-                    <span className={styles.nisnBadge}>NISN: {activeModalRow.nisn || '-'}</span>
-                    <span className={styles.classBadge}>{activeModalRow.class_name}</span>
-                  </div>
+              <div>
+                <h4 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: '#0f172a' }}>
+                  {activeModalRow.student_name}
+                </h4>
+                <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.3rem', alignItems: 'center' }}>
+                  <span className={styles.nisnBadge}>NISN: {activeModalRow.nisn || '-'}</span>
+                  <span className={styles.classBadge}>{activeModalRow.class_name}</span>
                 </div>
               </div>
 

@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import styles from './mass-grader.module.css';
 import { useMassGrader } from '../../hooks';
@@ -49,10 +48,6 @@ export function MassGraderWorkspace() {
       {/* ── Top Header with Assignment Switcher & Progress ── */}
       <div className={styles.topHeader}>
         <div className={styles.topHeaderLeft}>
-          <Link href="/dashboard/teacher" className={styles.backBtn}>
-            &larr; Action Center
-          </Link>
-
           <div className={styles.assignmentTitleGroup}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
               <select
