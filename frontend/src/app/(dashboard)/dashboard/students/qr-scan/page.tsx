@@ -570,9 +570,12 @@ export default function QrScanPage() {
 
   // Batch Generation & Bulk ZIP Download
   const handleBulkDownloadZip = async () => {
-    const targetUsers = filteredUsers.filter((u) => selectedIds.has(u.id));
+    const targetUsers = selectedIds.size > 0
+      ? filteredUsers.filter((u) => selectedIds.has(u.id))
+      : filteredUsers;
+
     if (targetUsers.length === 0) {
-      showToast('Pilih setidaknya 1 pengguna untuk diunduh secara kolektif.');
+      showToast('Tidak ada pengguna yang tersedia untuk diunduh.');
       return;
     }
 
@@ -727,7 +730,7 @@ export default function QrScanPage() {
             title="Cetak kartu dalam format lembar A4 siap gunting"
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-            <span>Cetak Lembar Kartu (PDF)</span>
+            <span>Cetak Lembar Kartu {selectedIds.size > 0 ? `(${selectedIds.size} Terpilih)` : '(PDF)'}</span>
           </button>
           <button
             onClick={handleBulkDownloadZip}
@@ -743,167 +746,14 @@ export default function QrScanPage() {
             ) : (
               <>
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                <span>Unduh Kolektif ({selectedIds.size > 0 ? selectedIds.size : filteredUsers.length}) ZIP</span>
+                <span>Unduh Kolektif {selectedIds.size > 0 ? `(${selectedIds.size} Terpilih)` : 'ZIP'}</span>
               </>
             )}
           </button>
         </div>
       </div>
 
-      {/* Quick Statistics Bento Grid (Screenshot 1 Pattern) */}
-      <div className={styles.statsGrid}>
-        <div
-          onClick={() => setActiveTab('ALL')}
-          className={`${styles.statCard} ${styles.statCardTotal} ${activeTab === 'ALL' ? styles.statCardActive : ''}`}
-        >
-          <div className={styles.statBody}>
-            <div className={styles.statInfo}>
-              <div className={styles.statVal}>{users.length}</div>
-              <div className={styles.statSubtitle}>Semua Akun Terdaftar</div>
-            </div>
-            <div className={styles.statWatermark} aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="2" y="2" width="20" height="8" rx="2" ry="2" />
-                <rect x="2" y="14" width="20" height="8" rx="2" ry="2" />
-                <line x1="6" y1="6" x2="6.01" y2="6" />
-                <line x1="6" y1="18" x2="6.01" y2="18" />
-              </svg>
-            </div>
-          </div>
-          <div className={styles.statBottom}>
-            <span>Semua Akun Pengguna</span>
-            <svg className={styles.statArrow} viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
-            </svg>
-          </div>
-        </div>
-
-        <div
-          onClick={() => setActiveTab('SISWA')}
-          className={`${styles.statCard} ${styles.statCardStudent} ${activeTab === 'SISWA' ? styles.statCardActive : ''}`}
-        >
-          <div className={styles.statBody}>
-            <div className={styles.statInfo}>
-              <div className={styles.statVal}>
-                {users.filter((u) => u.role.toLowerCase().includes('siswa') && !u.role.toLowerCase().includes('wali')).length}
-              </div>
-              <div className={styles.statSubtitle}>Presensi &amp; Akses CBT</div>
-            </div>
-            <div className={styles.statWatermark} aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
-                <path d="M6 12v5c3 3 9 3 12 0v-5" />
-              </svg>
-            </div>
-          </div>
-          <div className={styles.statBottom}>
-            <span>Kartu Peserta Didik</span>
-            <svg className={styles.statArrow} viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
-            </svg>
-          </div>
-        </div>
-
-        <div
-          onClick={() => setActiveTab('GURU')}
-          className={`${styles.statCard} ${styles.statCardTeacher} ${activeTab === 'GURU' ? styles.statCardActive : ''}`}
-        >
-          <div className={styles.statBody}>
-            <div className={styles.statInfo}>
-              <div className={styles.statVal}>
-                {users.filter((u) => u.role.toLowerCase().includes('guru') || u.role.toLowerCase().includes('tendik') || u.role.toLowerCase().includes('kepala')).length}
-              </div>
-              <div className={styles.statSubtitle}>Jurnal &amp; Presensi GTK</div>
-            </div>
-            <div className={styles.statWatermark} aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-              </svg>
-            </div>
-          </div>
-          <div className={styles.statBottom}>
-            <span>Kartu Guru &amp; Tendik</span>
-            <svg className={styles.statArrow} viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
-            </svg>
-          </div>
-        </div>
-
-        <div
-          onClick={() => setActiveTab('WALI')}
-          className={`${styles.statCard} ${styles.statCardParent} ${activeTab === 'WALI' ? styles.statCardActive : ''}`}
-        >
-          <div className={styles.statBody}>
-            <div className={styles.statInfo}>
-              <div className={styles.statVal}>
-                {users.filter((u) => u.role.toLowerCase().includes('wali') || u.role.toLowerCase().includes('orang tua') || u.role.toLowerCase().includes('parent')).length}
-              </div>
-              <div className={styles.statSubtitle}>Monitoring Nilai &amp; Absensi</div>
-            </div>
-            <div className={styles.statWatermark} aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                <circle cx="9" cy="7" r="4" />
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-              </svg>
-            </div>
-          </div>
-          <div className={styles.statBottom}>
-            <span>Kartu Wali Murid</span>
-            <svg className={styles.statArrow} viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
-            </svg>
-          </div>
-        </div>
-      </div>
-
-      {/* Role Tabs Row */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.85rem', flexWrap: 'wrap', gap: '0.75rem' }}>
-        <div className={styles.roleTabs}>
-          <button
-            onClick={() => { setActiveTab('ALL'); setCurrentPage(1); }}
-            className={`${styles.tabBtn} ${activeTab === 'ALL' ? styles.tabBtnActive : ''}`}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-            <span>Semua Akun</span>
-            <span className={styles.tabCount}>{users.length}</span>
-          </button>
-          <button
-            onClick={() => { setActiveTab('SISWA'); setCurrentPage(1); }}
-            className={`${styles.tabBtn} ${activeTab === 'SISWA' ? styles.tabBtnActive : ''}`}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
-            <span>Siswa</span>
-            <span className={styles.tabCount}>
-              {users.filter((u) => u.role.toLowerCase().includes('siswa') && !u.role.toLowerCase().includes('wali')).length}
-            </span>
-          </button>
-          <button
-            onClick={() => { setActiveTab('GURU'); setCurrentPage(1); }}
-            className={`${styles.tabBtn} ${activeTab === 'GURU' ? styles.tabBtnActive : ''}`}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-            <span>Guru &amp; Tendik</span>
-            <span className={styles.tabCount}>
-              {users.filter((u) => u.role.toLowerCase().includes('guru') || u.role.toLowerCase().includes('tendik') || u.role.toLowerCase().includes('kepala')).length}
-            </span>
-          </button>
-          <button
-            onClick={() => { setActiveTab('WALI'); setCurrentPage(1); }}
-            className={`${styles.tabBtn} ${activeTab === 'WALI' ? styles.tabBtnActive : ''}`}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-            <span>Wali Murid</span>
-            <span className={styles.tabCount}>
-              {users.filter((u) => u.role.toLowerCase().includes('wali') || u.role.toLowerCase().includes('orang tua') || u.role.toLowerCase().includes('parent')).length}
-            </span>
-          </button>
-        </div>
-      </div>
-
-      {/* Main Table Card (Screenshot Reference Design) */}
+      {/* Main Table Card (Clean Workstation Design, No Redundant Cards) */}
       <div className="tableCard">
         {/* Table Toolbar */}
         <div className="tableToolbar">
@@ -917,6 +767,25 @@ export default function QrScanPage() {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
+            <select
+              value={activeTab}
+              onChange={(e) => { setActiveTab(e.target.value as any); setCurrentPage(1); }}
+              className="entriesSelect"
+              style={{ fontWeight: 600 }}
+              title="Filter Kategori Akun"
+            >
+              <option value="ALL">Semua Akun ({users.length})</option>
+              <option value="SISWA">
+                Peserta Didik ({users.filter((u) => u.role.toLowerCase().includes('siswa') && !u.role.toLowerCase().includes('wali')).length})
+              </option>
+              <option value="GURU">
+                Guru &amp; Tendik ({users.filter((u) => u.role.toLowerCase().includes('guru') || u.role.toLowerCase().includes('tendik') || u.role.toLowerCase().includes('kepala')).length})
+              </option>
+              <option value="WALI">
+                Wali Murid ({users.filter((u) => u.role.toLowerCase().includes('wali') || u.role.toLowerCase().includes('orang tua') || u.role.toLowerCase().includes('parent')).length})
+              </option>
+            </select>
+
             {availableClasses.length > 0 && (
               <select
                 value={classFilter}
@@ -966,16 +835,12 @@ export default function QrScanPage() {
               <span>akun terpilih untuk tindakan massal</span>
             </div>
             <div className={styles.bulkActions}>
-              <button onClick={handleBulkDownloadZip} disabled={isGenerating} className={styles.bulkBtnPrimary}>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px', verticalAlign: 'text-bottom' }}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                Unduh Semua Terpilih (ZIP)
-              </button>
-              <button onClick={handleOpenPrintSheet} disabled={isGenerating} className={styles.bulkBtnSecondary}>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px', verticalAlign: 'text-bottom' }}><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-                Cetak Lembar Terpilih
-              </button>
-              <button onClick={() => setSelectedIds(new Set())} className={styles.bulkBtnGhost}>
-                Batal Pilih
+              <button
+                onClick={() => setSelectedIds(new Set())}
+                className={styles.bulkBtnGhost}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+              >
+                ✕ Batalkan Pilihan
               </button>
             </div>
           </div>

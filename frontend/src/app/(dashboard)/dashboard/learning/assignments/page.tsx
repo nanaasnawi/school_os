@@ -125,6 +125,7 @@ export default function AssignmentsPage() {
     submittedAt?: string;
     score?: number;
     instructions?: string;
+    questions?: AssignmentQuestion[];
   } | null>(null);
 
   // Toast
@@ -904,6 +905,9 @@ export default function AssignmentsPage() {
                                     submittedAt: sub.time,
                                     score: sub.score,
                                     instructions: selected.instructions,
+                                    questions: (assignmentDetail?.questions && assignmentDetail.questions.length > 0)
+                                      ? assignmentDetail.questions
+                                      : (selected?.questions || []),
                                   })}
                                 >
                                   📎 {sub.attachmentName}
@@ -1438,6 +1442,9 @@ export default function AssignmentsPage() {
                           submittedAt: gradingSub.time,
                           score: gradingSub.score,
                           instructions: selected.instructions,
+                          questions: (assignmentDetail?.questions && assignmentDetail.questions.length > 0)
+                            ? assignmentDetail.questions
+                            : (selected?.questions || []),
                         })}
                       >
                         📥 Buka Berkas &amp; Pratinjau
@@ -1596,47 +1603,119 @@ export default function AssignmentsPage() {
                   </div>
                 )}
 
-                {/* 1. Structured Questions & Answers (if any) */}
-                {activeFilePreview.answers && activeFilePreview.answers.length > 0 && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                    <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                      Hasil Pengerjaan Butir Soal ({activeFilePreview.answers.length} Butir):
-                    </div>
-                    {activeFilePreview.answers.map((ans, idx) => {
-                      const q = (assignmentDetail?.questions || selected?.questions || []).find(qItem => qItem.id === ans.question_id);
-                      return (
-                        <div key={ans.question_id || idx} style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '0.75rem 1rem', background: '#ffffff', fontSize: '0.8rem' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
-                            <span style={{ fontWeight: 700, color: '#0f172a' }}>
-                              {idx + 1}. {ans.question_text || q?.question_text || `Pertanyaan #${idx + 1}`}
-                            </span>
-                            <span style={{ fontSize: '0.72rem', background: '#f1f5f9', padding: '2px 6px', borderRadius: '4px', color: '#475569', flexShrink: 0 }}>
-                              {ans.points_earned !== undefined ? `${ans.points_earned} / ${ans.max_points || q?.points || 10} Poin` : `${q?.points || 10} Poin`}
-                            </span>
-                          </div>
+                {/* 1. Structured Questions & Answers */}
+                {(() => {
+                  const assignmentQuestions = (activeFilePreview.questions && activeFilePreview.questions.length > 0)
+                    ? activeFilePreview.questions
+                    : ((assignmentDetail?.questions && assignmentDetail.questions.length > 0)
+                        ? assignmentDetail.questions
+                        : (selected?.questions && selected.questions.length > 0
+                            ? selected.questions
+                            : (activeFilePreview.answers && activeFilePreview.answers.length > 0
+                                ? activeFilePreview.answers.map(a => ({
+                                    id: a.question_id,
+                                    question_text: a.question_text,
+                                    question_type: a.question_type as 'MULTIPLE_CHOICE' | 'ESSAY',
+                                    points: a.max_points,
+                                    choices: a.chosen_choice_text ? [{ id: a.chosen_choice_id, choice_text: a.chosen_choice_text, is_correct: a.is_correct ?? true }] : [],
+                                  }))
+                                : [])));
 
-                          {ans.chosen_choice_text ? (
-                            <div style={{ marginTop: '0.4rem', padding: '0.4rem 0.6rem', background: ans.is_correct ? '#ecfdf5' : '#fef2f2', border: `1px solid ${ans.is_correct ? '#a7f3d0' : '#fecaca'}`, borderRadius: '6px', fontSize: '0.78rem' }}>
-                              <strong>Pilihan Siswa:</strong> {ans.chosen_choice_text} {ans.is_correct !== undefined && (ans.is_correct ? '✅ (Benar)' : '❌ (Kurang Tepat)')}
-                            </div>
-                          ) : ans.text_answer ? (
-                            <div style={{ marginTop: '0.4rem', padding: '0.5rem 0.75rem', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '0.78rem', whiteSpace: 'pre-wrap', lineHeight: 1.5, color: '#1e293b' }}>
-                              <strong>Jawaban Esai Siswa:</strong>
-                              <div style={{ marginTop: '0.2rem' }}>{ans.text_answer}</div>
-                            </div>
-                          ) : (
-                            <div style={{ marginTop: '0.3rem', fontSize: '0.75rem', color: '#94a3b8', fontStyle: 'italic' }}>
-                              (Tidak ada jawaban tersimpan)
-                            </div>
-                          )}
+                  if (assignmentQuestions.length > 0) {
+                    return (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem' }}>
+                          <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#1e293b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                            Lembar Soal &amp; Jawaban Siswa ({assignmentQuestions.length} Butir Soal):
+                          </span>
+                          <span style={{ fontSize: '0.72rem', background: '#e0f2fe', color: '#0369a1', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>
+                            {activeFilePreview.score !== undefined && activeFilePreview.score > 0 ? `Nilai: ${activeFilePreview.score} / ${assignmentDetail?.max_score || 100}` : 'Menunggu Koreksi'}
+                          </span>
                         </div>
-                      );
-                    })}
-                  </div>
-                )}
+                        {assignmentQuestions.map((q, idx) => {
+                          const ans = (activeFilePreview.answers || []).find((a) => a.question_id === q.id);
+                          const isMC = q.question_type === 'MULTIPLE_CHOICE';
 
-                {/* 2. Written Answer / Student Submission Text */}
-                {activeFilePreview.studentAnswerText && (
+                          return (
+                            <div key={q.id || idx} style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '0.85rem 1rem', background: '#ffffff', fontSize: '0.8rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
+                                <span style={{ fontWeight: 700, color: '#0f172a', lineHeight: 1.4 }}>
+                                  {idx + 1}. {q.question_text || `Pertanyaan #${idx + 1}`}
+                                </span>
+                                <span style={{ fontSize: '0.72rem', background: '#f1f5f9', padding: '2px 6px', borderRadius: '4px', color: '#475569', flexShrink: 0, fontWeight: 600 }}>
+                                  {ans?.points_earned !== undefined ? `${ans.points_earned} / ${ans.max_points || q.points || 10} Poin` : `${q.points || 10} Poin`}
+                                </span>
+                              </div>
+
+                              {/* Multiple Choice Options & Selection */}
+                              {isMC && (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', margin: '0.25rem 0' }}>
+                                  {q.choices && q.choices.length > 0 ? (
+                                    q.choices.map((c, cIdx) => {
+                                      const letter = String.fromCharCode(65 + cIdx);
+                                      const isChosen = ans?.chosen_choice_id === c.id || (ans?.chosen_choice_text && ans.chosen_choice_text.trim() === c.choice_text.trim());
+                                      return (
+                                        <div
+                                          key={c.id || cIdx}
+                                          style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between',
+                                            padding: '0.35rem 0.65rem',
+                                            borderRadius: '6px',
+                                            fontSize: '0.76rem',
+                                            background: isChosen ? (ans?.is_correct ? '#ecfdf5' : '#fef2f2') : '#f8fafc',
+                                            border: isChosen ? `1px solid ${ans?.is_correct ? '#10b981' : '#f87171'}` : '1px solid #f1f5f9',
+                                          }}
+                                        >
+                                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                            <span style={{ fontWeight: 800, color: isChosen ? '#0f172a' : '#64748b' }}>{letter}.</span>
+                                            <span style={{ color: isChosen ? '#0f172a' : '#334155', fontWeight: isChosen ? 700 : 400 }}>{c.choice_text}</span>
+                                          </div>
+                                          {isChosen && (
+                                            <span style={{ fontSize: '0.68rem', fontWeight: 800, padding: '1px 6px', borderRadius: '4px', background: ans?.is_correct ? '#d1fae5' : '#fee2e2', color: ans?.is_correct ? '#065f46' : '#991b1b' }}>
+                                              {ans?.is_correct ? '✓ Pilihan Siswa (Benar)' : '✗ Pilihan Siswa (Salah)'}
+                                            </span>
+                                          )}
+                                        </div>
+                                      );
+                                    })
+                                  ) : ans?.chosen_choice_text ? (
+                                    <div style={{ padding: '0.4rem 0.65rem', background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '6px', fontSize: '0.76rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                      <span><strong>Pilihan Siswa:</strong> {ans.chosen_choice_text}</span>
+                                      <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#065f46' }}>✓ Terverifikasi</span>
+                                    </div>
+                                  ) : null}
+                                </div>
+                              )}
+
+                              {/* Student Answer for this question */}
+                              {isMC ? (
+                                !ans?.chosen_choice_text && !ans?.chosen_choice_id && (
+                                  <div style={{ fontSize: '0.74rem', color: '#94a3b8', fontStyle: 'italic', padding: '0.3rem 0' }}>
+                                    (Opsi jawaban belum dipilih oleh siswa di aplikasi mobile)
+                                  </div>
+                                )
+                              ) : (
+                                <div style={{ marginTop: '0.2rem', padding: '0.6rem 0.85rem', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '0.78rem' }}>
+                                  <div style={{ fontWeight: 700, color: '#334155', marginBottom: '0.25rem' }}>Jawaban Esai Siswa:</div>
+                                  <div style={{ color: ans?.text_answer || activeFilePreview.studentAnswerText ? '#0f172a' : '#94a3b8', fontStyle: ans?.text_answer || activeFilePreview.studentAnswerText ? 'normal' : 'italic', whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>
+                                    {ans?.text_answer || activeFilePreview.studentAnswerText || '(Belum ada jawaban teks esai yang diisi)'}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  }
+
+                  return null;
+                })()}
+
+                {/* 2. Written Answer / Student Submission Text (if no structured questions) */}
+                {activeFilePreview.studentAnswerText && (!assignmentDetail?.questions || assignmentDetail.questions.length === 0) && (!selected?.questions || selected.questions.length === 0) && (!activeFilePreview.questions || activeFilePreview.questions.length === 0) && (!activeFilePreview.answers || activeFilePreview.answers.length === 0) && (
                   <div style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '1rem', background: '#f8fafc' }}>
                     <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#334155', marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                       Laporan / Catatan Pengerjaan Siswa:
@@ -1685,8 +1764,8 @@ export default function AssignmentsPage() {
                   </div>
                 )}
 
-                {/* 4. Digital Confirmation (When student submitted without extra file or question answers) */}
-                {!activeFilePreview.fileUrl && (!activeFilePreview.answers || activeFilePreview.answers.length === 0) && !activeFilePreview.studentAnswerText && (
+                {/* 4. Digital Confirmation (When assignment has no structured questions, no file, no answers, and no text) */}
+                {!activeFilePreview.fileUrl && (!activeFilePreview.answers || activeFilePreview.answers.length === 0) && (!assignmentDetail?.questions || assignmentDetail.questions.length === 0) && (!selected?.questions || selected.questions.length === 0) && (!activeFilePreview.questions || activeFilePreview.questions.length === 0) && !activeFilePreview.studentAnswerText && (
                   <div style={{ border: '1px dashed #cbd5e1', borderRadius: '8px', padding: '1.25rem', background: '#f8fafc', textAlign: 'center' }}>
                     <div style={{ fontSize: '1.8rem', marginBottom: '0.5rem' }}>📋</div>
                     <div style={{ fontWeight: 800, fontSize: '0.9rem', color: '#1e293b' }}>

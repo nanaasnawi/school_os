@@ -1,4 +1,5 @@
 export interface QuestionChoice {
+  id?: string;
   choice_text: string;
   is_correct: boolean;
 }
