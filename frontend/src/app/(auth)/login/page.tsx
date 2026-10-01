@@ -462,7 +462,7 @@ export default function LoginPage() {
             <form onSubmit={handleSubmit} className={styles.form}>
               <div className={styles.inputGroup}>
                 <label htmlFor="email" className={styles.label}>
-                  Email Akun
+                  Email atau Username Akun
                 </label>
                 <div className={styles.inputWrapper}>
                   <span className={styles.inputIcon}>
@@ -470,15 +470,18 @@ export default function LoginPage() {
                   </span>
                   <input
                     id="email"
-                    type="email"
+                    type="text"
                     required
-                    placeholder="nama@sekolah.sch.id"
+                    placeholder="nama@sekolah.sch.id atau username"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className={styles.formInput}
-                    autoComplete="email"
+                    autoComplete="username"
                   />
                 </div>
+                <span style={{ fontSize: '0.73rem', color: '#94a3b8', marginTop: '0.28rem', display: 'block', lineHeight: 1.35 }}>
+                  Admin/Kepala Sekolah wajib menggunakan Email. Guru, Siswa, &amp; Wali dapat menggunakan Username (cth: <code>surafatih</code>, <code>ikin.baihaki</code>) atau Email.
+                </span>
               </div>
 
               <div className={styles.inputGroup}>

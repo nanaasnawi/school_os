@@ -10,6 +10,7 @@ import styles from './qr-scan.module.css';
 interface UserAccount {
   id: string;
   email: string;
+  username?: string | null;
   full_name: string;
   role: string;
   is_active: boolean;
@@ -218,10 +219,11 @@ export default function QrScanPage() {
       if (search.trim()) {
         const q = search.toLowerCase();
         const matchName = u.full_name.toLowerCase().includes(q);
+        const matchUsername = u.username?.toLowerCase().includes(q);
         const matchEmail = u.email.toLowerCase().includes(q);
         const matchId = u.identifier?.toLowerCase().includes(q);
         const matchClass = u.class_name?.toLowerCase().includes(q);
-        if (!matchName && !matchEmail && !matchId && !matchClass) {
+        if (!matchName && !matchUsername && !matchEmail && !matchId && !matchClass) {
           return false;
         }
       }
@@ -456,22 +458,45 @@ export default function QrScanPage() {
     if (displayName.length > 28) displayName = displayName.substring(0, 25) + '...';
     ctx.fillText(displayName, 60, 205);
 
-    // Role pill tag below name
-    ctx.fillStyle = '#38bdf8';
-    ctx.font = 'bold 18px system-ui, -apple-system, sans-serif';
-    ctx.fillText(`ID PENGGUNA: ${user.email}`, 60, 248);
+    // Username and ID details below name
+    if (user.username) {
+      ctx.fillStyle = '#38bdf8';
+      ctx.font = 'bold 22px system-ui, -apple-system, sans-serif';
+      ctx.fillText(`Username: @${user.username}`, 60, 248);
 
-    if (user.identifier) {
-      ctx.fillStyle = '#cbd5e1';
-      ctx.font = '500 20px system-ui, -apple-system, sans-serif';
-      const label = user.role.toLowerCase().includes('guru') ? 'NIP' : 'NISN / NIK';
-      ctx.fillText(`${label}: ${user.identifier}`, 60, 288);
-    }
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '16px system-ui, -apple-system, sans-serif';
+      ctx.fillText(`ID: ${user.email}`, 60, 278);
 
-    if (user.class_name) {
-      ctx.fillStyle = '#a78bfa';
-      ctx.font = '600 20px system-ui, -apple-system, sans-serif';
-      ctx.fillText(`Rombel: ${user.class_name}`, 60, 328);
+      if (user.identifier) {
+        ctx.fillStyle = '#cbd5e1';
+        ctx.font = '500 18px system-ui, -apple-system, sans-serif';
+        const label = user.role.toLowerCase().includes('guru') ? 'NIP' : 'NISN / NIK';
+        ctx.fillText(`${label}: ${user.identifier}`, 60, 308);
+      }
+
+      if (user.class_name) {
+        ctx.fillStyle = '#a78bfa';
+        ctx.font = '600 18px system-ui, -apple-system, sans-serif';
+        ctx.fillText(`Rombel: ${user.class_name}`, 60, 338);
+      }
+    } else {
+      ctx.fillStyle = '#38bdf8';
+      ctx.font = 'bold 18px system-ui, -apple-system, sans-serif';
+      ctx.fillText(`ID PENGGUNA: ${user.email}`, 60, 248);
+
+      if (user.identifier) {
+        ctx.fillStyle = '#cbd5e1';
+        ctx.font = '500 20px system-ui, -apple-system, sans-serif';
+        const label = user.role.toLowerCase().includes('guru') ? 'NIP' : 'NISN / NIK';
+        ctx.fillText(`${label}: ${user.identifier}`, 60, 288);
+      }
+
+      if (user.class_name) {
+        ctx.fillStyle = '#a78bfa';
+        ctx.font = '600 20px system-ui, -apple-system, sans-serif';
+        ctx.fillText(`Rombel: ${user.class_name}`, 60, 328);
+      }
     }
 
     // Instruction Box
@@ -959,7 +984,12 @@ export default function QrScanPage() {
                                 <line x1="10" y1="14" x2="21" y2="3" />
                               </svg>
                             </div>
-                            <div className="itemSubtitleCheck">
+                            <div className="itemSubtitleCheck" style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                              {u.username && (
+                                <code style={{ fontSize: '0.72rem', color: '#38bdf8', background: 'rgba(56, 189, 248, 0.12)', padding: '0.1rem 0.35rem', borderRadius: '4px' }}>
+                                  @{u.username}
+                                </code>
+                              )}
                               <span>✓ Akun Mobile Terdaftar</span>
                             </div>
                           </div>
@@ -1138,6 +1168,11 @@ Reset kartu akan MEMBATALKAN QR Code lama secara permanen sehingga kartu lama ti
                 <div className={styles.cardBody}>
                   <div className={styles.cardUserInfo}>
                     <div className={styles.cardUserName}>{previewUser.full_name}</div>
+                    {previewUser.username && (
+                      <div className={styles.cardUserSub} style={{ color: '#38bdf8', fontWeight: 700, fontSize: '0.84rem' }}>
+                        Username: @{previewUser.username}
+                      </div>
+                    )}
                     <div className={styles.cardUserSub}>ID: {previewUser.email}</div>
                     {previewUser.identifier && (
                       <div className={styles.cardUserSub} style={{ color: '#cbd5e1' }}>

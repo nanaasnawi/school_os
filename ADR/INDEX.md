@@ -14,3 +14,4 @@
 | [ADR-0006](file:///c:/Users/USER/Documents/School%20Os/ADR/0006-frontend-feature-sliced-design.md) | Frontend Feature-Sliced Design (FSD) | Accepted | 2026-08-04 |
 | [ADR-0007](file:///c:/Users/USER/Documents/School%20Os/ADR/0007-assessment-decoupling.md) | Assessment & Learning Decoupling | Accepted | 2026-08-04 |
 | [ADR-0008](file:///c:/Users/USER/Documents/School%20Os/ADR/0008-teacher-workstation-modular-frontend.md) | Teacher Workstation Modular Architecture | Accepted | 2026-10-01 |
+| [ADR-0009](file:///c:/Users/USER/Documents/School%20Os/ADR/0009-dynamic-name-based-usernames-and-auth.md) | Dynamic Name-Based Usernames & Role-Aware Auth | Accepted | 2026-10-01 |
