@@ -35,7 +35,7 @@ export default function LoginPage() {
   const [adminTriggerCount, setAdminTriggerCount] = useState(0);
 
   const router = useRouter();
-  const { login, isAuthenticated, isLoading } = useAuth();
+  const { login, user, isAuthenticated, isLoading } = useAuth();
 
   /* ── Theme synchronization with Dashboard Settings ── */
   useEffect(() => {
@@ -173,9 +173,21 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      router.replace('/dashboard');
+      const roleLower = user?.role?.toLowerCase() || '';
+      const isTeacher = (roleLower === 'guru' || roleLower === 'teacher' || roleLower.startsWith('guru ') || roleLower.startsWith('teacher ')) &&
+        !roleLower.includes('kepala') &&
+        !roleLower.includes('admin') &&
+        !roleLower.includes('staff') &&
+        !roleLower.includes('operator');
+      if (isTeacher) {
+        router.replace('/dashboard/teacher');
+      } else if (roleLower.includes('wali') || roleLower.includes('guardian') || roleLower.includes('parent')) {
+        router.replace('/parent');
+      } else {
+        router.replace('/dashboard');
+      }
     }
-  }, [isAuthenticated, isLoading, router]);
+  }, [isAuthenticated, isLoading, user, router]);
 
   useEffect(() => {
     document.title = 'Masuk — School OS';
@@ -206,7 +218,12 @@ export default function LoginPage() {
         }
 
         const roleLower = userRole.toLowerCase();
-        if (roleLower.includes('guru') || roleLower.includes('teacher')) {
+        const isTeacher = (roleLower === 'guru' || roleLower === 'teacher' || roleLower.startsWith('guru ') || roleLower.startsWith('teacher ')) &&
+          !roleLower.includes('kepala') &&
+          !roleLower.includes('admin') &&
+          !roleLower.includes('staff') &&
+          !roleLower.includes('operator');
+        if (isTeacher) {
           router.push('/dashboard/teacher');
         } else if (roleLower.includes('wali') || roleLower.includes('guardian') || roleLower.includes('parent')) {
           router.push('/parent');

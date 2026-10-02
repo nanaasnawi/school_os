@@ -408,7 +408,7 @@ export default function StudentsPage() {
                   onClick={() => handleSetSort('nisn', sortField === 'nisn' && sortOrder === 'asc' ? 'desc' : 'asc')}
                 >
                   <div className="thSortContent">
-                    <span>NISN &amp; NIPD</span>
+                    <span>NISN</span>
                     <span className="sortArrows">{sortField === 'nisn' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}</span>
                   </div>
                 </th>
@@ -482,23 +482,13 @@ export default function StudentsPage() {
                   return (
                     <tr key={s.id} style={{ opacity: s.status === 'MUTASI_OUT' ? 0.75 : 1 }}>
                       <td>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
-                          <code style={{ fontSize: '0.82rem', color: '#0284c7', fontWeight: 700 }}>{s.nisn}</code>
-                          <span style={{ fontSize: '0.72rem', color: '#64748b' }}>NIPD: {s.nipd || '—'}</span>
-                        </div>
+                        <code style={{ fontSize: '0.82rem', color: '#0284c7', fontWeight: 700 }}>{s.nisn}</code>
                       </td>
 
                       <td>
-                        <div>
-                          <Link href={`/dashboard/students/${s.id}`} className="itemPrimaryTitle" title="Lihat Profil Siswa">
-                            <span>{s.full_name}</span>
-                            <svg className="externalLinkIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                          </Link>
-                          <div className="itemSubtitleCheck">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                            <span>{s.status === 'ACTIVE' ? 'Auto Sync Aktif' : 'Terdata di Sistem'}</span>
-                          </div>
-                        </div>
+                        <Link href={`/dashboard/students/${s.id}`} className="itemPrimaryTitle" title="Lihat Profil Siswa">
+                          <span>{s.full_name}</span>
+                        </Link>
                       </td>
 
                       <td>

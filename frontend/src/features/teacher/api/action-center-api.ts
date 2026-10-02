@@ -73,24 +73,7 @@ export async function fetchAtRiskStudents(classId?: string): Promise<AtRiskStude
         const materials: any[] = matJson?.data?.items || matJson?.data || [];
         if (materials.length > 0) {
           const recentMat = materials[0];
-          // Provide actionable item for reading progress follow-up
-          if (atRisk.length === 0) {
-            atRisk.push({
-              student_id: 'sample-risk-1',
-              student_name: 'SURAFATIH',
-              class_id: recentMat.class_id || '',
-              class_name: 'PAKET A5',
-              nisn: '09f4df8f4b',
-              risk_level: 'MEDIUM',
-              category: 'UNREAD_MATERIAL',
-              title: `Belum membaca materi "${recentMat.title || 'Materi Pembelajaran'}"`,
-              description: 'Progress membaca terhenti di halaman awal. Waktu baca tercatat < 3 menit.',
-              action_label: 'Kirim Pengingat',
-              action_type: 'REMIND_STUDENT',
-              target_url: `/dashboard/learning/materials`,
-              updated_at: new Date().toISOString(),
-            });
-          }
+
         }
       }
     } catch (e) {
@@ -179,9 +162,9 @@ export async function fetchActiveCbts(): Promise<ActiveCbtSummary[]> {
         class_name: q.class_name || 'Semua Rombel',
         start_time: q.starts_at || 'Hari ini',
         end_time: q.ends_at || 'Selesai',
-        total_participants: 32,
-        in_progress_count: 14,
-        completed_count: 18,
+        total_participants: q.total_participants ?? q.participant_count ?? 0,
+        in_progress_count: q.in_progress_count ?? 0,
+        completed_count: q.completed_count ?? 0,
       }));
   } catch (err) {
     console.error('Failed to fetch active CBTs:', err);

@@ -91,9 +91,13 @@ export default function DashboardPage() {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
 
+  const roleLower = user?.role?.toLowerCase() || '';
   const isTeacher = Boolean(
-    user?.role?.toLowerCase().includes('guru') ||
-    user?.role?.toLowerCase().includes('teacher')
+    (roleLower === 'guru' || roleLower === 'teacher' || roleLower.startsWith('guru ') || roleLower.startsWith('teacher ')) &&
+    !roleLower.includes('kepala') &&
+    !roleLower.includes('admin') &&
+    !roleLower.includes('staff') &&
+    !roleLower.includes('operator')
   );
 
   useEffect(() => {

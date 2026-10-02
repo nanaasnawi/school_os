@@ -198,7 +198,6 @@ const NAV_SECTIONS = [
       { label: 'Siswa', path: '/dashboard/students', icon: 'students' },
       { label: 'Kartu QR Login', path: '/dashboard/students/qr-scan', icon: 'qr' },
       { label: 'Guru', path: '/dashboard/teachers', icon: 'teachers' },
-      { label: 'Portal Guru (Workstation)', path: '/dashboard/teacher', icon: 'teachers' },
       { label: 'Tenaga Kependidikan', path: '/dashboard/staff', icon: 'staff' },
       { label: 'Mata Pelajaran', path: '/dashboard/learning', icon: 'learning' },
     ],
@@ -448,9 +447,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const router = useRouter();
   const { user, logout, isAuthenticated, isLoading } = useAuth();
 
+  const roleLower = user?.role?.toLowerCase() || '';
   const isTeacherRole = Boolean(
-    user?.role?.toLowerCase().includes('guru') ||
-    user?.role?.toLowerCase().includes('teacher')
+    (roleLower === 'guru' || roleLower === 'teacher' || roleLower.startsWith('guru ') || roleLower.startsWith('teacher ')) &&
+    !roleLower.includes('kepala') &&
+    !roleLower.includes('admin') &&
+    !roleLower.includes('staff') &&
+    !roleLower.includes('operator')
   );
 
   // List of path prefixes strictly reserved for Administrator & Tata Usaha (Non-Teachers)
@@ -655,7 +658,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     );
   }
 
-  const isTeacherWorkstation = pathname.startsWith('/dashboard/teacher') || isTeacherRole;
+  const isTeacherWorkstation = (pathname === '/dashboard/teacher' || pathname.startsWith('/dashboard/teacher/')) || isTeacherRole;
   const activeNavSections = isTeacherWorkstation ? TEACHER_NAV_SECTIONS : NAV_SECTIONS;
 
   return (
