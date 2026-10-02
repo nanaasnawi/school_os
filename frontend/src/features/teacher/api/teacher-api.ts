@@ -71,13 +71,13 @@ export async function fetchCurrentTeacherProfile(): Promise<TeacherProfile | nul
 /**
  * Fetch list of classes taught or assigned to the current teacher dynamically
  */
-export async function fetchTeacherClasses(): Promise<TeacherClassSummary[]> {
+export async function fetchTeacherClasses(existingProfile?: TeacherProfile): Promise<TeacherClassSummary[]> {
   try {
     const headers = getAuthHeaders();
 
     // Fetch teacher profile, all classes, all students, and sessions in parallel
     const [profile, classesRes, studentsRes, sessionsRes] = await Promise.all([
-      fetchCurrentTeacherProfile(),
+      existingProfile ? Promise.resolve(existingProfile) : fetchCurrentTeacherProfile(),
       fetch(getApiUrl('/api/v1/academic/classes?page_size=200'), { headers })
         .then((r) => (r.ok ? r.json() : null))
         .catch(() => null),
@@ -210,11 +210,11 @@ export async function fetchTodaySchedule(): Promise<TodayScheduleItem[]> {
 /**
  * Fetch overall teacher workstation stats computed dynamically
  */
-export async function fetchWorkstationStats(): Promise<TeacherWorkstationStats> {
+export async function fetchWorkstationStats(existingClasses?: TeacherClassSummary[]): Promise<TeacherWorkstationStats> {
   try {
     const headers = getAuthHeaders();
     const [classes, assignmentsRes, quizzesRes, inquiriesRes] = await Promise.all([
-      fetchTeacherClasses(),
+      existingClasses ? Promise.resolve(existingClasses) : fetchTeacherClasses(),
       fetch(getApiUrl('/api/v1/learning/assignments'), { headers }).then((r) => (r.ok ? r.json() : null)).catch(() => null),
       fetch(getApiUrl('/api/v1/learning/quizzes'), { headers }).then((r) => (r.ok ? r.json() : null)).catch(() => null),
       fetch(getApiUrl('/api/v1/learning/inquiries/unread-count'), { headers }).then((r) => (r.ok ? r.json() : null)).catch(() => null),

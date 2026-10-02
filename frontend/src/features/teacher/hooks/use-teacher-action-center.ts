@@ -41,31 +41,37 @@ export function useTeacherActionCenter() {
   const loadData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const [
-        prof,
-        cls,
-        sched,
-        st,
-        risk,
-        pending,
-        cbts,
-      ] = await Promise.all([
+      // 1. Fetch core profile, schedule, and active CBTs in parallel
+      const [prof, sched, cbts] = await Promise.all([
         fetchCurrentTeacherProfile(),
-        fetchTeacherClasses(),
         fetchTodaySchedule(),
-        fetchWorkstationStats(),
-        fetchAtRiskStudents(selectedClassId === 'ALL' ? undefined : selectedClassId),
-        fetchPendingGradingTasks(),
         fetchActiveCbts(),
       ]);
 
       setProfile(prof);
-      setClasses(cls);
       setTodaySchedule(sched);
-      setStats(st);
-      setAtRiskStudents(risk);
-      setPendingGrading(pending);
       setActiveCbts(cbts);
+
+      // 2. Fetch classes & workstation stats reusing the already resolved profile
+      const cls = await fetchTeacherClasses(prof || undefined);
+      setClasses(cls);
+
+      const st = await fetchWorkstationStats(cls);
+      setStats(st);
+
+      // Primary workstation dashboard is ready to display!
+      setIsLoading(false);
+
+      // 3. Asynchronously load secondary widgets (at-risk & pending grading) without blocking UI
+      Promise.all([
+        fetchAtRiskStudents(selectedClassId === 'ALL' ? undefined : selectedClassId, prof || undefined),
+        fetchPendingGradingTasks(prof || undefined),
+      ])
+        .then(([risk, pending]) => {
+          setAtRiskStudents(risk);
+          setPendingGrading(pending);
+        })
+        .catch(console.error);
     } catch (err) {
       console.error('Error loading teacher action center data:', err);
     } finally {

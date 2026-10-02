@@ -1,29 +1,29 @@
 .pageContainer {
-  padding: 1.5rem 2rem 3.5rem;
+  padding: 1rem 1.25rem 2.5rem;
   max-width: 1680px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1rem;
   animation: fadeIn 0.3s ease;
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(6px); }
+  from { opacity: 0; transform: translateY(5px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
 @media (max-width: 768px) {
   .pageContainer {
-    padding: 1rem 1rem 2.5rem;
-    gap: 1.25rem;
+    padding: 0.75rem 0.75rem 2rem;
+    gap: 0.85rem;
   }
 }
 
 .actionCenterGrid {
   display: grid;
-  grid-template-columns: 1.6fr 1fr;
-  gap: 1.5rem;
+  grid-template-columns: 1.55fr 1fr;
+  gap: 1rem;
   align-items: start;
 }
 
@@ -36,81 +36,256 @@
 .leftCol, .rightCol {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1rem;
 }
 
 /* Card Container */
 .widgetCard {
   background: var(--bg-surface, #ffffff);
   border: 1px solid var(--border-light, #e2e8f0);
-  border-radius: 16px;
+  border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="dark"] .widgetCard {
+  background: #18181b;
+  border-color: #27272a;
 }
 
 .widgetHeader {
-  padding: 1.15rem 1.35rem;
+  padding: 0.75rem 1rem;
   border-bottom: 1px solid var(--border-light, #f1f5f9);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.65rem;
+  flex-wrap: wrap;
 }
 
 .widgetHeaderLeft {
   display: flex;
   align-items: center;
-  gap: 0.65rem;
+  gap: 0.6rem;
+  flex: 1;
 }
 
 .widgetTitle {
-  font-size: 1.05rem;
-  font-weight: 800;
+  font-size: 0.92rem;
+  font-weight: 700;
   color: var(--text-primary, #0f172a);
   margin: 0;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .badgeCount {
-  font-size: 0.75rem;
-  font-weight: 800;
-  padding: 2px 7px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 6px;
   border-radius: 99px;
   background: #fee2e2;
   color: #dc2626;
 }
 
 .badgeCountNeutral {
-  font-size: 0.75rem;
-  font-weight: 800;
-  padding: 2px 7px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 6px;
   border-radius: 99px;
   background: #f1f5f9;
   color: #475569;
 }
 
-.widgetSub {
-  font-size: 0.8rem;
-  color: var(--text-secondary, #64748b);
-  margin: 0.2rem 0 0 0;
+[data-theme="dark"] .badgeCountNeutral {
+  background: #27272a;
+  color: #94a3b8;
 }
 
-/* At-Risk List */
-.riskList {
+.widgetSub {
+  font-size: 0.72rem;
+  color: var(--text-secondary, #64748b);
+  margin: 0.15rem 0 0 0;
+}
+
+/* ── Teacher Insight & Distribution Bar ── */
+.insightStrip {
+  background: var(--bg-hover, #f8fafc);
+  border-bottom: 1px solid var(--border-light, #f1f5f9);
+  padding: 0.65rem 1rem;
   display: flex;
   flex-direction: column;
+  gap: 0.5rem;
 }
 
+[data-theme="dark"] .insightStrip {
+  background: #202023;
+  border-color: #27272a;
+}
+
+.stackedBar {
+  display: flex;
+  height: 6px;
+  border-radius: 99px;
+  overflow: hidden;
+  background: #e2e8f0;
+  width: 100%;
+}
+
+.barSegment {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.barRed { background: #ef4444; }
+.barAmber { background: #f59e0b; }
+.barOrange { background: #fb923c; }
+.barGreen { background: #10b981; }
+
+.legendRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.dotRed { width: 6px; height: 6px; border-radius: 50%; background: #ef4444; }
+.dotAmber { width: 6px; height: 6px; border-radius: 50%; background: #f59e0b; }
+.dotOrange { width: 6px; height: 6px; border-radius: 50%; background: #fb923c; }
+.dotGreen { width: 6px; height: 6px; border-radius: 50%; background: #10b981; }
+
+/* ── Filter Bar & Interactive Tabs ── */
+.filterBar {
+  padding: 0.55rem 1rem;
+  border-bottom: 1px solid var(--border-light, #f1f5f9);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  background: var(--bg-surface, #ffffff);
+}
+
+[data-theme="dark"] .filterBar {
+  background: #18181b;
+  border-color: #27272a;
+}
+
+.tabGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.tabGroup::-webkit-scrollbar { display: none; }
+
+.tabBtn {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.3rem 0.65rem;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-secondary, #64748b);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.tabBtn:hover {
+  background: var(--bg-hover, #f1f5f9);
+  color: var(--text-primary, #0f172a);
+}
+
+.tabBtnActive {
+  background: #0284c7 !important;
+  color: #ffffff !important;
+  font-weight: 700;
+}
+
+.searchBox {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--bg-hover, #f8fafc);
+  border: 1px solid var(--border-light, #cbd5e1);
+  border-radius: 6px;
+  padding: 0.25rem 0.55rem;
+  min-width: 160px;
+}
+
+[data-theme="dark"] .searchBox {
+  background: #27272a;
+  border-color: #3f3f46;
+}
+
+.searchInput {
+  border: none;
+  background: transparent;
+  font-size: 0.72rem;
+  color: var(--text-primary, #0f172a);
+  outline: none;
+  width: 100%;
+}
+
+.batchActionBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: #f0fdf4;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+  padding: 0.3rem 0.65rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.batchActionBtn:hover {
+  background: #16a34a;
+  color: #ffffff;
+}
+
+/* ── Bounded Scrollable List ── */
+.scrollableList {
+  display: flex;
+  flex-direction: column;
+  max-height: 340px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+.scrollableList::-webkit-scrollbar {
+  width: 5px;
+}
+.scrollableList::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+/* At-Risk List Items */
 .riskItem {
-  padding: 1.15rem 1.35rem;
-  border-bottom: 1px solid var(--border-light, #f8fafc);
+  padding: 0.65rem 0.95rem;
+  border-bottom: 1px solid var(--border-light, #f1f5f9);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 1rem;
-  transition: background 0.15s ease;
+  gap: 0.75rem;
+  transition: background 0.12s ease;
 }
 
 .riskItem:last-child {
@@ -121,38 +296,49 @@
   background: var(--bg-hover, #f8fafc);
 }
 
+[data-theme="dark"] .riskItem:hover {
+  background: #222226;
+}
+
 .riskItemLeft {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: 0.2rem;
+  min-width: 0;
+  flex: 1;
 }
 
 .riskItemMeta {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
   flex-wrap: wrap;
 }
 
 .studentName {
-  font-size: 0.95rem;
+  font-size: 0.82rem;
   font-weight: 700;
   color: var(--text-primary, #0f172a);
 }
 
 .classBadge {
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 700;
-  padding: 2px 6px;
+  padding: 1px 5px;
   border-radius: 4px;
   background: #f1f5f9;
   color: #475569;
 }
 
+[data-theme="dark"] .classBadge {
+  background: #27272a;
+  color: #cbd5e1;
+}
+
 .riskCategoryPill {
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 700;
-  padding: 2px 6px;
+  padding: 1px 5px;
   border-radius: 4px;
 }
 
@@ -166,15 +352,23 @@
   color: #b45309;
 }
 
+.riskInfo {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
 .riskItemTitle {
-  font-size: 0.86rem;
+  font-size: 0.76rem;
   color: var(--text-secondary, #334155);
   font-weight: 600;
   margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .riskItemDesc {
-  font-size: 0.78rem;
+  font-size: 0.7rem;
   color: #64748b;
   margin: 0;
 }
@@ -182,18 +376,19 @@
 .actionBtnSmall {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 0.45rem 0.85rem;
-  border-radius: 8px;
-  font-size: 0.8rem;
+  gap: 4px;
+  padding: 0.32rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.72rem;
   font-weight: 700;
   border: 1px solid #0284c7;
   background: #f0f9ff;
   color: #0284c7;
   cursor: pointer;
   text-decoration: none;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .actionBtnSmall:hover {
@@ -201,19 +396,37 @@
   color: #ffffff;
 }
 
+.listFooter {
+  padding: 0.45rem 0.95rem;
+  background: var(--bg-hover, #f8fafc);
+  border-top: 1px solid var(--border-light, #f1f5f9);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.68rem;
+  color: var(--text-secondary, #64748b);
+  font-weight: 600;
+}
+
+[data-theme="dark"] .listFooter {
+  background: #202023;
+  border-color: #27272a;
+}
+
 /* Empty State */
 .emptyState {
-  padding: 2.5rem 1.5rem;
+  padding: 1.75rem 1rem;
   text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.35rem;
   color: var(--text-secondary, #64748b);
+  font-size: 0.75rem;
 }
 
 .emptyStateTitle {
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   font-weight: 700;
   color: #0f172a;
 }
@@ -225,12 +438,12 @@
 }
 
 .scheduleItem {
-  padding: 1rem 1.25rem;
+  padding: 0.65rem 0.95rem;
   border-bottom: 1px solid var(--border-light, #f1f5f9);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 .scheduleItem:last-child {
@@ -243,20 +456,25 @@
   align-items: center;
   background: #f8fafc;
   border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 0.4rem 0.65rem;
-  min-width: 65px;
+  border-radius: 6px;
+  padding: 0.3rem 0.5rem;
+  min-width: 56px;
   text-align: center;
 }
 
+[data-theme="dark"] .scheduleTimeBox {
+  background: #27272a;
+  border-color: #3f3f46;
+}
+
 .scheduleTime {
-  font-size: 0.88rem;
+  font-size: 0.78rem;
   font-weight: 800;
   color: #0f172a;
 }
 
 .scheduleTimeSub {
-  font-size: 0.68rem;
+  font-size: 0.64rem;
   color: #64748b;
   font-weight: 600;
 }
@@ -264,34 +482,41 @@
 .scheduleDetail {
   display: flex;
   flex-direction: column;
+  gap: 0.1rem;
   flex: 1;
 }
 
 .scheduleSubject {
-  font-size: 0.92rem;
+  font-size: 0.82rem;
   font-weight: 700;
   color: #0f172a;
 }
 
 .scheduleRoom {
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   color: #64748b;
 }
 
 .scheduleStatusBadge {
-  font-size: 0.72rem;
-  font-weight: 800;
-  padding: 3px 8px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 6px;
   border-radius: 99px;
+  white-space: nowrap;
 }
 
 .badgeLive {
   background: #dcfce7;
   color: #15803d;
-  box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.15);
+  box-shadow: 0 0 0 1px rgba(22, 163, 74, 0.2);
 }
 
 .badgeUpcoming {
   background: #f1f5f9;
   color: #475569;
+}
+
+[data-theme="dark"] .badgeUpcoming {
+  background: #27272a;
+  color: #94a3b8;
 }

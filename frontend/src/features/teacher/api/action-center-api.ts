@@ -13,7 +13,7 @@ function getAuthHeaders(): HeadersInit {
 /**
  * Fetch students needing attention (unread materials, overdue assignments, low scores)
  */
-export async function fetchAtRiskStudents(classId?: string): Promise<AtRiskStudent[]> {
+export async function fetchAtRiskStudents(classId?: string, existingProfile?: any): Promise<AtRiskStudent[]> {
   try {
     // 1. Fetch live assignments to detect overdue or low-scoring submissions
     const res = await fetch(getApiUrl('/api/v1/learning/assignments'), {
@@ -24,7 +24,7 @@ export async function fetchAtRiskStudents(classId?: string): Promise<AtRiskStude
     const json = await res.json();
     const assignments: any[] = json?.data?.items || json?.data || [];
 
-    const profile = await fetchCurrentTeacherProfile().catch(() => null);
+    const profile = existingProfile || await fetchCurrentTeacherProfile().catch(() => null);
     const currentTeacherId = profile?.id;
     const currentUserId = profile?.user_id;
 
@@ -40,43 +40,45 @@ export async function fetchAtRiskStudents(classId?: string): Promise<AtRiskStude
 
     const atRisk: AtRiskStudent[] = [];
 
-    // Check recent assignments
-    for (const a of teacherAssignments.slice(0, 5)) {
-      if (classId && a.class_id && a.class_id !== classId) continue;
+    // Check recent assignments in parallel
+    await Promise.all(
+      teacherAssignments.slice(0, 5).map(async (a) => {
+        if (classId && a.class_id && a.class_id !== classId) return;
 
-      try {
-        const subRes = await fetch(getApiUrl(`/api/v1/learning/assignments/${a.id}/submissions`), {
-          headers: getAuthHeaders(),
-        });
-        if (subRes.ok) {
-          const subJson = await subRes.json();
-          const subs: any[] = subJson?.data || [];
+        try {
+          const subRes = await fetch(getApiUrl(`/api/v1/learning/assignments/${a.id}/submissions`), {
+            headers: getAuthHeaders(),
+          });
+          if (subRes.ok) {
+            const subJson = await subRes.json();
+            const subs: any[] = subJson?.data || [];
 
-          for (const s of subs) {
-            // Flag 1: Low score (< 70)
-            if (s.score !== null && s.score !== undefined && s.score < 70) {
-              atRisk.push({
-                student_id: s.student_id,
-                student_name: s.student_name || 'Peserta Didik',
-                class_id: a.class_id || '',
-                class_name: a.class_name || 'Rombel',
-                nisn: s.student_nisn || null,
-                risk_level: s.score < 60 ? 'HIGH' : 'MEDIUM',
-                category: 'LOW_SCORE',
-                title: `Nilai ${a.title} di bawah KKM (${s.score}/100)`,
-                description: `Siswa memperoleh skor ${s.score}. Perlu diberikan bimbingan atau tugas remedial.`,
-                action_label: 'Beri Remedial',
-                action_type: 'ASSIGN_REMEDIAL',
-                target_url: `/dashboard/learning/assignments?id=${a.id}`,
-                updated_at: s.submitted_at || new Date().toISOString(),
-              });
+            for (const s of subs) {
+              // Flag 1: Low score (< 70)
+              if (s.score !== null && s.score !== undefined && s.score < 70) {
+                atRisk.push({
+                  student_id: s.student_id,
+                  student_name: s.student_name || 'Peserta Didik',
+                  class_id: a.class_id || '',
+                  class_name: a.class_name || 'Rombel',
+                  nisn: s.student_nisn || null,
+                  risk_level: s.score < 60 ? 'HIGH' : 'MEDIUM',
+                  category: 'LOW_SCORE',
+                  title: `Nilai ${a.title} di bawah KKM (${s.score}/100)`,
+                  description: `Siswa memperoleh skor ${s.score}. Perlu diberikan bimbingan atau tugas remedial.`,
+                  action_label: 'Beri Remedial',
+                  action_type: 'ASSIGN_REMEDIAL',
+                  target_url: `/dashboard/learning/assignments?id=${a.id}`,
+                  updated_at: s.submitted_at || new Date().toISOString(),
+                });
+              }
             }
           }
+        } catch {
+          // non-critical
         }
-      } catch (e) {
-        console.error('Failed to check assignment submissions for at-risk:', e);
-      }
-    }
+      })
+    );
 
     // Flag 2: Reading progress check
     try {
@@ -117,8 +119,8 @@ export async function fetchAtRiskStudents(classId?: string): Promise<AtRiskStude
           }
         }
       }
-    } catch (e) {
-      console.error(e);
+    } catch {
+      // non-critical
     }
 
     return atRisk;
@@ -131,7 +133,7 @@ export async function fetchAtRiskStudents(classId?: string): Promise<AtRiskStude
 /**
  * Fetch pending grading tasks (assignments awaiting teacher correction)
  */
-export async function fetchPendingGradingTasks(): Promise<PendingGradingTask[]> {
+export async function fetchPendingGradingTasks(existingProfile?: any): Promise<PendingGradingTask[]> {
   try {
     const res = await fetch(getApiUrl('/api/v1/learning/assignments'), {
       headers: getAuthHeaders(),
@@ -141,7 +143,7 @@ export async function fetchPendingGradingTasks(): Promise<PendingGradingTask[]> 
     const json = await res.json();
     const assignments: any[] = json?.data?.items || json?.data || [];
 
-    const profile = await fetchCurrentTeacherProfile().catch(() => null);
+    const profile = existingProfile || await fetchCurrentTeacherProfile().catch(() => null);
     const currentTeacherId = profile?.id;
     const currentUserId = profile?.user_id;
 
@@ -157,37 +159,40 @@ export async function fetchPendingGradingTasks(): Promise<PendingGradingTask[]> 
 
     const pendingTasks: PendingGradingTask[] = [];
 
-    for (const a of teacherAssignments) {
-      try {
-        const subRes = await fetch(getApiUrl(`/api/v1/learning/assignments/${a.id}/submissions`), {
-          headers: getAuthHeaders(),
-        });
-        if (subRes.ok) {
-          const subJson = await subRes.json();
-          const subs: any[] = subJson?.data || [];
+    // Check submissions in parallel
+    await Promise.all(
+      teacherAssignments.slice(0, 8).map(async (a) => {
+        try {
+          const subRes = await fetch(getApiUrl(`/api/v1/learning/assignments/${a.id}/submissions`), {
+            headers: getAuthHeaders(),
+          });
+          if (subRes.ok) {
+            const subJson = await subRes.json();
+            const subs: any[] = subJson?.data || [];
 
-          const graded = subs.filter((s) => s.status === 'graded').length;
-          const pending = subs.filter((s) => s.status !== 'graded').length;
+            const graded = subs.filter((s) => s.status === 'graded').length;
+            const pending = subs.filter((s) => s.status !== 'graded').length;
 
-          if (pending > 0 || subs.length > 0) {
-            pendingTasks.push({
-              assignment_id: a.id,
-              assignment_title: a.title,
-              class_id: a.class_id || '',
-              class_name: a.class_name || 'Rombel',
-              subject_name: a.subject_name || 'Mata Pelajaran',
-              due_date: a.due_date || '',
-              total_submissions: subs.length,
-              graded_count: graded,
-              pending_count: pending,
-              has_essay_questions: true,
-            });
+            if (pending > 0 || subs.length > 0) {
+              pendingTasks.push({
+                assignment_id: a.id,
+                assignment_title: a.title,
+                class_id: a.class_id || '',
+                class_name: a.class_name || 'Rombel',
+                subject_name: a.subject_name || 'Mata Pelajaran',
+                due_date: a.due_date || '',
+                total_submissions: subs.length,
+                graded_count: graded,
+                pending_count: pending,
+                has_essay_questions: true,
+              });
+            }
           }
+        } catch {
+          // non-critical
         }
-      } catch (e) {
-        console.error(e);
-      }
-    }
+      })
+    );
 
     return pendingTasks;
   } catch (err) {

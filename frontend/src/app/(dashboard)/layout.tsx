@@ -173,6 +173,13 @@ function Icon({ name }: { name: string }) {
         <path d="M4 16l4-4 3 3 5-5" />
       </svg>
     ),
+    attendance: (
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" width="16" height="16">
+        <rect x="2" y="3.5" width="16" height="14" rx="2" />
+        <path d="M14 2v3M6 2v3M2 8.5h16" />
+        <path d="M7 13l2 2 4-4" />
+      </svg>
+    ),
     export_data: (
       <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" width="16" height="16">
         <path d="M16 14v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2" />
@@ -196,6 +203,7 @@ const NAV_SECTIONS = [
     items: [
       { label: 'Tahun Ajaran', path: '/dashboard/academic-years', icon: 'years' },
       { label: 'Kelas', path: '/dashboard/classes', icon: 'classes' },
+      { label: 'Presensi & Kehadiran', path: '/dashboard/attendance', icon: 'attendance' },
       { label: 'Siswa', path: '/dashboard/students', icon: 'students' },
       { label: 'Kartu QR Login', path: '/dashboard/students/qr-scan', icon: 'qr' },
       { label: 'Guru', path: '/dashboard/teachers', icon: 'teachers' },
@@ -252,6 +260,7 @@ const TEACHER_NAV_SECTIONS = [
     label: 'Teacher Workstation',
     items: [
       { label: 'Action Center', path: '/dashboard/teacher', icon: 'dashboard' },
+      { label: 'Presensi & Kehadiran', path: '/dashboard/attendance', icon: 'attendance' },
       { label: 'Kelas Saya', path: '/dashboard/teacher/classes', icon: 'classes' },
     ],
   },

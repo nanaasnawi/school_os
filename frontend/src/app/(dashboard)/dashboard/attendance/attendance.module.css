@@ -1,0 +1,643 @@
+/* ══════════════════════════════════════════════════════════════════
+   ATTENDANCE & PRESENSI MODULE STYLES (Admin & Teacher Workstation)
+   Scaled down to match compact 13px sidebar aesthetics
+   ══════════════════════════════════════════════════════════════════ */
+
+.container {
+  padding: 1rem 1.25rem 2.5rem;
+  max-width: 1680px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 0.75rem 0.75rem 2rem;
+    gap: 0.85rem;
+  }
+}
+
+/* ── Top Header ── */
+.header {
+  background: var(--bg-surface, #ffffff);
+  border: 1px solid var(--border-light, #e2e8f0);
+  border-radius: 12px;
+  padding: 0.85rem 1.15rem;
+  box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.04);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+}
+
+[data-theme="dark"] .header {
+  background: #18181b;
+  border-color: #27272a;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.headerIcon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.25);
+  flex-shrink: 0;
+}
+
+.titleArea {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.badgeTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #059669;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  padding: 1px 6px;
+  border-radius: 5px;
+  width: fit-content;
+}
+
+[data-theme="dark"] .badgeTag {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: #065f46;
+}
+
+.title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary, #0f172a);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.subtitle {
+  font-size: 0.78rem;
+  color: var(--text-secondary, #64748b);
+  margin: 0;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* ── Filter Controls Row ── */
+.controlsCard {
+  background: var(--bg-surface, #ffffff);
+  border: 1px solid var(--border-light, #e2e8f0);
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+[data-theme="dark"] .controlsCard {
+  background: #18181b;
+  border-color: #27272a;
+}
+
+.filterGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.selectLabel {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-secondary, #475569);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.selectInput {
+  background: var(--bg-hover, #f8fafc);
+  border: 1px solid var(--border-light, #cbd5e1);
+  border-radius: 6px;
+  padding: 0.38rem 0.65rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-primary, #0f172a);
+  outline: none;
+  cursor: pointer;
+}
+
+[data-theme="dark"] .selectInput {
+  background: #27272a;
+  border-color: #3f3f46;
+  color: #f1f5f9;
+}
+
+/* ── KPI Metric Grid ── */
+.metricGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.85rem;
+}
+
+@media (max-width: 1100px) {
+  .metricGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .metricGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.metricCard {
+  background: var(--bg-surface, #ffffff);
+  border: 1px solid var(--border-light, #e2e8f0);
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+[data-theme="dark"] .metricCard {
+  background: #18181b;
+  border-color: #27272a;
+}
+
+.metricCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.metricLabel {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-secondary, #64748b);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.metricValueRow {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.metricValue {
+  font-size: 1.45rem;
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.metricSub {
+  font-size: 0.72rem;
+  color: var(--text-secondary, #64748b);
+  font-weight: 500;
+}
+
+.metricBadge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+/* ── Charts Grid ── */
+.chartsGrid {
+  display: grid;
+  grid-template-columns: 1.55fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 1050px) {
+  .chartsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.chartCard {
+  background: var(--bg-surface, #ffffff);
+  border: 1px solid var(--border-light, #e2e8f0);
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+[data-theme="dark"] .chartCard {
+  background: #18181b;
+  border-color: #27272a;
+}
+
+.chartHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chartTitle {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-primary, #0f172a);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chartSub {
+  font-size: 0.7rem;
+  color: var(--text-secondary, #64748b);
+}
+
+/* ── Bar Chart Component ── */
+.barChartWrapper {
+  height: 160px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.85rem;
+  padding-top: 1.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-light, #f1f5f9);
+}
+
+.barCol {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.barTrack {
+  width: 100%;
+  max-width: 36px;
+  height: 100%;
+  background: var(--bg-hover, #f1f5f9);
+  border-radius: 6px 6px 0 0;
+  display: flex;
+  align-items: flex-end;
+  position: relative;
+  overflow: hidden;
+}
+
+[data-theme="dark"] .barTrack {
+  background: #27272a;
+}
+
+.barFill {
+  width: 100%;
+  background: linear-gradient(180deg, #10b981 0%, #059669 100%);
+  border-radius: 6px 6px 0 0;
+  transition: height 0.4s ease;
+  position: relative;
+}
+
+.barFill:hover {
+  filter: brightness(1.1);
+}
+
+.barValueTag {
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #059669;
+  white-space: nowrap;
+}
+
+.barDayLabel {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-secondary, #64748b);
+}
+
+/* ── Donut Chart Component ── */
+.donutWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  gap: 1rem;
+  padding: 0.5rem 0;
+}
+
+.donutSvg {
+  width: 110px;
+  height: 110px;
+  transform: rotate(-90deg);
+}
+
+.donutLegend {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  flex: 1;
+}
+
+.legendRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.74rem;
+}
+
+.legendLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  color: var(--text-secondary, #475569);
+}
+
+.legendDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.legendValue {
+  font-weight: 700;
+  color: var(--text-primary, #0f172a);
+}
+
+/* ── Attendance Roster Table ── */
+.rosterCard {
+  background: var(--bg-surface, #ffffff);
+  border: 1px solid var(--border-light, #e2e8f0);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="dark"] .rosterCard {
+  background: #18181b;
+  border-color: #27272a;
+}
+
+.rosterHeader {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border-light, #f1f5f9);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.rosterTitle {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text-primary, #0f172a);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rosterActions {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.btnPrimary {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #10b981;
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.38rem 0.75rem;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btnPrimary:hover {
+  background: #059669;
+}
+
+.btnSecondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--bg-surface, #ffffff);
+  color: var(--text-primary, #1e293b);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.38rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid var(--border-light, #cbd5e1);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btnSecondary:hover {
+  background: var(--bg-hover, #f8fafc);
+}
+
+/* Roster Filter Bar */
+.rosterFilterBar {
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid var(--border-light, #f1f5f9);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  background: var(--bg-hover, #f8fafc);
+}
+
+[data-theme="dark"] .rosterFilterBar {
+  background: #202023;
+  border-color: #27272a;
+}
+
+.tableWrapper {
+  overflow-x: auto;
+}
+
+.rosterTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+  text-align: left;
+}
+
+.rosterTable th {
+  padding: 0.6rem 0.95rem;
+  background: var(--bg-surface, #ffffff);
+  color: var(--text-secondary, #64748b);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border-bottom: 1px solid var(--border-light, #e2e8f0);
+}
+
+[data-theme="dark"] .rosterTable th {
+  background: #18181b;
+  border-color: #27272a;
+}
+
+.rosterTable td {
+  padding: 0.6rem 0.95rem;
+  border-bottom: 1px solid var(--border-light, #f1f5f9);
+  vertical-align: middle;
+}
+
+[data-theme="dark"] .rosterTable td {
+  border-color: #27272a;
+}
+
+.rosterTable tr:hover {
+  background: var(--bg-hover, #f8fafc);
+}
+
+[data-theme="dark"] .rosterTable tr:hover {
+  background: #202023;
+}
+
+/* Status Selector Buttons Group */
+.statusButtonGroup {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--border-light, #cbd5e1);
+  background: var(--bg-surface, #ffffff);
+}
+
+[data-theme="dark"] .statusButtonGroup {
+  background: #27272a;
+  border-color: #3f3f46;
+}
+
+.statusBtn {
+  border: none;
+  background: transparent;
+  padding: 0.28rem 0.55rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  color: var(--text-secondary, #64748b);
+  border-right: 1px solid var(--border-light, #e2e8f0);
+}
+
+.statusBtn:last-child {
+  border-right: none;
+}
+
+[data-theme="dark"] .statusBtn {
+  border-color: #3f3f46;
+}
+
+.statusBtn:hover {
+  background: var(--bg-hover, #f1f5f9);
+}
+
+.btnHadirActive {
+  background: #10b981 !important;
+  color: #ffffff !important;
+}
+
+.btnSakitActive {
+  background: #f59e0b !important;
+  color: #ffffff !important;
+}
+
+.btnIzinActive {
+  background: #0284c7 !important;
+  color: #ffffff !important;
+}
+
+.btnAlpaActive {
+  background: #ef4444 !important;
+  color: #ffffff !important;
+}
+
+.notesInput {
+  border: 1px solid var(--border-light, #cbd5e1);
+  border-radius: 5px;
+  background: transparent;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.72rem;
+  color: var(--text-primary, #0f172a);
+  width: 100%;
+  max-width: 160px;
+}
+
+[data-theme="dark"] .notesInput {
+  border-color: #3f3f46;
+  color: #f1f5f9;
+}
+
+.saveStickyBar {
+  padding: 0.65rem 1rem;
+  background: var(--bg-surface, #ffffff);
+  border-top: 1px solid var(--border-light, #e2e8f0);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+[data-theme="dark"] .saveStickyBar {
+  background: #18181b;
+  border-color: #27272a;
+}
