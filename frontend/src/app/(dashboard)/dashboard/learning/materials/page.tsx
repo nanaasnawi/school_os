@@ -28,6 +28,20 @@ type MaterialItem = {
   sourceType?: string;
 };
 
+function getEmbedUrl(url: string): string {
+  if (!url) return '';
+  if (url.includes('embed/')) return url;
+  let videoId = '';
+  if (url.includes('youtu.be/')) {
+    videoId = url.split('youtu.be/')[1]?.split('?')[0]?.split('&')[0];
+  } else if (url.includes('watch?v=')) {
+    videoId = url.split('watch?v=')[1]?.split('&')[0]?.split('?')[0];
+  } else if (url.includes('shorts/')) {
+    videoId = url.split('shorts/')[1]?.split('?')[0]?.split('&')[0];
+  }
+  return videoId ? `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&fs=1` : url;
+}
+
 export default function MaterialsPage() {
   const { user } = useAuth();
   const isTeacher = user?.role?.toLowerCase().includes('guru') || user?.role?.toLowerCase().includes('teacher') || user?.role?.toLowerCase().includes('pengajar');
@@ -1051,11 +1065,21 @@ startxref
               </div>
 
               {previewMaterial.format === 'VIDEO' && previewMaterial.youtubeUrl && (
-                <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', padding: '0.85rem' }}>
-                  <div style={{ fontSize: '0.78rem', color: '#dc2626', fontWeight: 700, marginBottom: '6px' }}>▶️ Video Pembelajaran:</div>
-                  <a href={previewMaterial.youtubeUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb', fontSize: '0.8rem', wordBreak: 'break-all' }}>
-                    {previewMaterial.youtubeUrl}
-                  </a>
+                <div style={{ background: '#0f172a', borderRadius: '10px', overflow: 'hidden', border: '1px solid var(--border-light)' }}>
+                  <div style={{ position: 'relative', width: '100%', paddingBottom: '56.25%', height: 0 }}>
+                    <iframe
+                      src={getEmbedUrl(previewMaterial.youtubeUrl)}
+                      style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
+                      allowFullScreen
+                    />
+                  </div>
+                  <div style={{ padding: '0.6rem 0.85rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-elevated)' }}>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>▶️ Video Pembelajaran</span>
+                    <a href={previewMaterial.youtubeUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb', fontSize: '0.75rem', fontWeight: 700 }}>
+                      Buka di YouTube ↗
+                    </a>
+                  </div>
                 </div>
               )}
 
