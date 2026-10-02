@@ -62,12 +62,31 @@ export function ActionCenterView() {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-          <span style={{ fontSize: '1.15rem' }}>📅</span>
+          <div
+            style={{
+              width: '28px',
+              height: '28px',
+              borderRadius: '7px',
+              background: '#ecfdf5',
+              color: '#059669',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+              <line x1="16" y1="2" x2="16" y2="6" />
+              <line x1="8" y1="2" x2="8" y2="6" />
+              <line x1="3" y1="10" x2="21" y2="10" />
+            </svg>
+          </div>
           <div>
-            <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary, #0f172a)' }}>
+            <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-primary, #0f172a)' }}>
               Presensi &amp; Kehadiran Sesi Belajar
             </div>
-            <div style={{ fontSize: '0.72rem', color: '#15803d' }}>
+            <div style={{ fontSize: '0.7rem', color: '#15803d' }}>
               Catat absensi peserta didik hari ini dan pantau rekapitulasi kehadiran rombel secara real-time.
             </div>
           </div>

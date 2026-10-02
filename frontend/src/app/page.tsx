@@ -33,7 +33,6 @@ import {
 } from 'lucide-react';
 
 export default function LandingPage() {
-  // Interactive state
   const [activeArchTab, setActiveArchTab] = useState<'RUST' | 'BRIDGE' | 'DDD' | 'MOBILE'>('RUST');
   const [activeFaqIndex, setActiveFaqIndex] = useState<number>(0);
 
@@ -66,7 +65,7 @@ export default function LandingPage() {
       <div className={styles.bgDotGrid} />
 
       {/* ══════════════════════════════════════════════════════════
-         1. NAVIGATION HEADER (Light Mode)
+         1. NAVIGATION HEADER
          ══════════════════════════════════════════════════════════ */}
       <header className={styles.header}>
         <div className={styles.container}>
@@ -132,7 +131,7 @@ export default function LandingPage() {
       </header>
 
       {/* ══════════════════════════════════════════════════════════
-         2. HERO SECTION (Light Mode Matching Figma node-id=0-485)
+         2. HERO SECTION (High-End Light Mode Figma node-id=0-485)
          ══════════════════════════════════════════════════════════ */}
       <section className={styles.heroSection}>
         <div className={styles.container}>
@@ -197,81 +196,120 @@ export default function LandingPage() {
 
             {/* Right Hero 3D Futuristic Smartphone Mockup */}
             <div className={styles.heroVisualWrapper}>
-              <div className={styles.heroCurvedBackdrop}>
-                {/* 3D Angled Phone Chassis */}
-                <div className={styles.phoneMockupFrame}>
-                  <div className={styles.phoneScreen}>
-                    {/* Screen Header */}
-                    <div className={styles.phoneScreenHeader}>
-                      <span>9:41</span>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <Activity size={11} color="#00CEC9" />
-                        <span style={{ fontSize: '0.62rem', color: '#10B981', fontWeight: 700 }}>5G</span>
-                      </div>
-                    </div>
+              {/* Background Concentric Glowing Aura Rings */}
+              <div className={styles.heroAuraBackdrop} />
+              <div className={styles.heroAuraRing2} />
 
-                    {/* School Identity */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '4px 0' }}>
-                      <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#6C5CE7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <GraduationCap size={15} color="#FFFFFF" />
-                      </div>
-                      <div>
-                        <div style={{ fontSize: '0.74rem', fontWeight: 800, color: '#FFFFFF' }}>SMA Negeri 1 Prestasi</div>
-                        <div style={{ fontSize: '0.62rem', color: '#94A3B8' }}>NPSN: 20108920 • Semester Ganjil</div>
-                      </div>
+              {/* 3D Angled Phone Chassis */}
+              <div className={styles.phoneIsometricChassis}>
+                <div className={styles.phoneInnerScreen}>
+                  {/* Status Bar */}
+                  <div className={styles.phoneStatusBar}>
+                    <span>9:41</span>
+                    <div className={styles.phonePunchHole} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <Activity size={11} color="#00CEC9" />
+                      <span style={{ fontSize: '0.62rem', color: '#10B981', fontWeight: 800 }}>5G</span>
                     </div>
+                  </div>
 
-                    {/* Balance / Attendance Card */}
-                    <div className={styles.phoneBalanceCard}>
-                      <span className={styles.phoneBalanceLabel}>Tingkat Kehadiran Hari Ini</span>
-                      <span className={styles.phoneBalanceValue}>98.4%</span>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.68rem', color: '#E0E7FF' }}>
-                        <CheckCircle2 size={12} color="#34D399" />
-                        <span>36 Rombel Aktif • 1.280 Siswa Hadir</span>
-                      </div>
+                  {/* School Identity */}
+                  <div className={styles.phoneSchoolHeader}>
+                    <div className={styles.phoneSchoolOrb}>
+                      <GraduationCap size={16} color="#FFFFFF" />
                     </div>
+                    <div>
+                      <div style={{ fontSize: '0.78rem', fontWeight: 900, color: '#FFFFFF' }}>SMA Negeri 1 Prestasi</div>
+                      <div style={{ fontSize: '0.62rem', color: '#94A3B8' }}>NPSN: 20108920 • Semester Ganjil</div>
+                    </div>
+                  </div>
 
-                    {/* Quick Live Feed */}
-                    <div style={{ background: 'rgba(255, 255, 255, 0.05)', borderRadius: '12px', padding: '10px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.68rem', color: '#CBD5E1' }}>
-                        <span style={{ fontWeight: 700 }}>Materi SIBI Kemdikdasmen</span>
-                        <span style={{ color: '#00CEC9', fontWeight: 700 }}>Aktif</span>
-                      </div>
-                      <div style={{ fontSize: '0.64rem', color: '#94A3B8' }}>Bahasa Indonesia Kelas X - Bab 3 Teks Negosiasi</div>
-                      <div style={{ height: '4px', background: 'rgba(255, 255, 255, 0.1)', borderRadius: '99px', overflow: 'hidden' }}>
-                        <div style={{ width: '84%', height: '100%', background: '#6C5CE7' }} />
-                      </div>
+                  {/* Main Attendance Highlight Card */}
+                  <div className={styles.phoneCardAttendance}>
+                    <span className={styles.phoneCardLabel}>Tingkat Kehadiran Hari Ini</span>
+                    <span className={styles.phoneCardValue}>98.4%</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.68rem', color: '#E0E7FF' }}>
+                      <CheckCircle2 size={12} color="#34D399" />
+                      <span>36 Rombel Aktif • 1.280 Siswa Hadir</span>
                     </div>
+                  </div>
 
-                    {/* Quick Action Button */}
-                    <div style={{ marginTop: 'auto', background: '#6C5CE7', color: '#FFFFFF', borderRadius: '10px', padding: '8px 12px', textAlign: 'center', fontSize: '0.72rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-                      <QrCode size={13} />
-                      <span>Presensi Kartu QR Instan</span>
+                  {/* Quick SIBI Reader Progress Feed */}
+                  <div style={{ background: 'rgba(255, 255, 255, 0.05)', borderRadius: '14px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '6px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.68rem', color: '#CBD5E1' }}>
+                      <span style={{ fontWeight: 800 }}>Materi SIBI Kemdikdasmen</span>
+                      <span style={{ color: '#00CEC9', fontWeight: 800 }}>Aktif Dibaca</span>
                     </div>
+                    <div style={{ fontSize: '0.66rem', color: '#94A3B8' }}>Bahasa Indonesia Kelas X - Bab 3 Teks Negosiasi</div>
+                    <div style={{ height: '5px', background: 'rgba(255, 255, 255, 0.1)', borderRadius: '99px', overflow: 'hidden' }}>
+                      <div style={{ width: '84%', height: '100%', background: 'linear-gradient(90deg, #6C5CE7, #00CEC9)' }} />
+                    </div>
+                  </div>
+
+                  {/* Quick Action Button */}
+                  <div style={{ marginTop: 'auto', background: '#6C5CE7', color: '#FFFFFF', borderRadius: '12px', padding: '10px 14px', textAlign: 'center', fontSize: '0.74rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: '0 4px 14px rgba(108, 92, 231, 0.4)' }}>
+                    <QrCode size={14} />
+                    <span>Presensi Kartu QR Instan</span>
                   </div>
                 </div>
+              </div>
 
-                {/* Floating White Stat Pill 1: Dapodik Bridge */}
-                <div className={styles.floatingPillTop}>
-                  <div style={{ width: '32px', height: '32px', borderRadius: '10px', background: '#ECFDF5', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#059669' }}>
-                    <FolderSync size={18} />
-                  </div>
-                  <div>
-                    <div className={styles.floatingStatLabel}>Dapodik Local Bridge</div>
-                    <div className={styles.floatingStatVal}>100% Selaras (3.420 Data)</div>
-                  </div>
+              {/* Floating 3D Glass Card 1 (Top Left) */}
+              <div className={styles.floatingGlassCard1}>
+                <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#34D399', border: '1px solid rgba(52, 211, 153, 0.3)' }}>
+                  <FolderSync size={20} />
                 </div>
+                <div>
+                  <div style={{ fontSize: '0.72rem', color: '#94A3B8', fontWeight: 700 }}>Dapodik Local Bridge</div>
+                  <div style={{ fontSize: '0.88rem', fontWeight: 900, color: '#FFFFFF' }}>100% Selaras (3.420 Data)</div>
+                </div>
+                <span style={{ background: 'rgba(52, 211, 153, 0.2)', color: '#34D399', fontSize: '0.68rem', fontWeight: 800, padding: '3px 8px', borderRadius: '6px', border: '1px solid rgba(52, 211, 153, 0.35)' }}>
+                  +2.96%
+                </span>
+              </div>
 
-                {/* Floating White Stat Pill 2: Teacher Workstation */}
-                <div className={styles.floatingPillBottom}>
-                  <div style={{ width: '32px', height: '32px', borderRadius: '10px', background: '#F5F3FF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6C5CE7' }}>
-                    <FileCheck2 size={18} />
-                  </div>
-                  <div>
-                    <div className={styles.floatingStatLabel}>Teacher Workstation</div>
-                    <div className={styles.floatingStatVal}>32 Esai Menunggu Penilaian</div>
-                  </div>
+              {/* Floating 3D Glass Card 2 (Bottom Right) */}
+              <div className={styles.floatingGlassCard2}>
+                <div style={{ width: '38px', height: '38px', borderRadius: '12px', background: '#F5F3FF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6C5CE7', border: '1px solid #DDD6FE' }}>
+                  <FileCheck2 size={20} />
                 </div>
+                <div>
+                  <div style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: 700 }}>Teacher Workstation</div>
+                  <div style={{ fontSize: '0.94rem', fontWeight: 900, color: '#0F172A' }}>32 Esai Menunggu Koreksi</div>
+                </div>
+              </div>
+
+              {/* Floating 3D Badge (Bottom Left) */}
+              <div className={styles.floatingBadgeGradient}>
+                <Sparkles size={14} />
+                <span>Mass Grader Aktif</span>
+              </div>
+            </div>
+          </div>
+
+          {/* 3-Column Hero Feature Ticker Bar (media_1790964832641.png) */}
+          <div className={styles.heroTickerRow}>
+            <div className={styles.heroTickerItem}>
+              <div className={styles.tickerDot} style={{ background: '#00CEC9', boxShadow: '0 0 8px #00CEC9' }} />
+              <div>
+                <h4 className={styles.tickerTitle}>Presensi Real-Time 1-Klik</h4>
+                <p className={styles.tickerDesc}>Presensi kilat kartu QR siswa &amp; rekap kehadiran otomatis.</p>
+              </div>
+            </div>
+
+            <div className={styles.heroTickerItem}>
+              <div className={styles.tickerDot} style={{ background: '#6C5CE7', boxShadow: '0 0 8px #6C5CE7' }} />
+              <div>
+                <h4 className={styles.tickerTitle}>Local Dapodik Bridge</h4>
+                <p className={styles.tickerDesc}>Sinkronisasi dua arah dari database PostgreSQL Dapodik lokal.</p>
+              </div>
+            </div>
+
+            <div className={styles.heroTickerItem}>
+              <div className={styles.tickerDot} style={{ background: '#EC4899', boxShadow: '0 0 8px #EC4899' }} />
+              <div>
+                <h4 className={styles.tickerTitle}>Buku Digital SIBI Kemdikdasmen</h4>
+                <p className={styles.tickerDesc}>Ribuan buku kurikulum resmi &amp; modul ujian CBT interaktif.</p>
               </div>
             </div>
           </div>
@@ -279,14 +317,14 @@ export default function LandingPage() {
       </section>
 
       {/* ══════════════════════════════════════════════════════════
-         3. 3-STEP IMPLEMENTATION SECTION (Light Mode)
+         3. 3-STEP IMPLEMENTATION SECTION (media_1790964851896.png)
          ══════════════════════════════════════════════════════════ */}
       <section id="process" className={styles.processSection}>
         <div className={styles.watermarkText}>GET STARTED</div>
         <div className={styles.container}>
           <div className={styles.sectionHeaderCenter}>
             <h2 className={styles.sectionTitle}>
-              Implementasi Sekolah Modern dalam 3 Langkah Mudah
+              Implementasi Sekolah Modern dalam 3 Langkah
             </h2>
             <div className={styles.accentLine}>
               <span className={styles.accentDot} />
@@ -298,41 +336,51 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className={styles.stepsGrid}>
+          {/* 3 Spherical Floating Medallions with Horizontal Connectors */}
+          <div className={styles.stepsMedallionRow}>
             {/* Step 1 */}
-            <div className={styles.stepCard}>
-              <div className={`${styles.stepIconCircle} ${styles.stepIconPurple}`}>
-                <FolderSync size={32} />
-                <span className={styles.stepNumber}>1</span>
+            <div className={styles.stepItemCol}>
+              <div className={`${styles.stepMedallionSphere} ${styles.spherePurple}`}>
+                <FolderSync size={46} strokeWidth={2.2} />
               </div>
-              <h3 className={styles.stepTitle}>Hubungkan Local Bridge</h3>
-              <p className={styles.stepDesc}>
+              <h3 className={styles.stepItemTitle}>1. Hubungkan Local Bridge</h3>
+              <p className={styles.stepItemDesc}>
                 Jalankan agen daemon Rust lokal di server sekolah. Data Dapodik, rombel, guru,
                 dan peserta didik langsung tersinkronisasi otomatis tanpa entri ulang ganda.
               </p>
             </div>
 
+            {/* Connector 1 */}
+            <div className={styles.stepConnectorTrack}>
+              <div className={styles.connectorDot} style={{ background: '#00CEC9' }} />
+              <div className={styles.connectorPill} style={{ background: 'linear-gradient(90deg, #00CEC9, #6C5CE7)' }} />
+            </div>
+
             {/* Step 2 */}
-            <div className={styles.stepCard}>
-              <div className={`${styles.stepIconCircle} ${styles.stepIconCyan}`}>
-                <QrCode size={32} />
-                <span className={styles.stepNumber}>2</span>
+            <div className={styles.stepItemCol}>
+              <div className={`${styles.stepMedallionSphere} ${styles.sphereCyan}`}>
+                <QrCode size={46} strokeWidth={2.2} />
               </div>
-              <h3 className={styles.stepTitle}>Aktivasi Kartu QR Siswa</h3>
-              <p className={styles.stepDesc}>
+              <h3 className={styles.stepItemTitle}>2. Aktivasi Kartu QR Siswa</h3>
+              <p className={styles.stepItemDesc}>
                 Cetak kartu QR login instan untuk peserta didik. Siswa dan guru dapat langsung
-                masuk ke sistem CBT dan absensi kelas tanpa risiko lupa kata sandi.
+                masuk ke sistem CBT dan absensi kelas tanpa risiko lupa sandi.
               </p>
             </div>
 
+            {/* Connector 2 */}
+            <div className={styles.stepConnectorTrack}>
+              <div className={styles.connectorDot} style={{ background: '#6C5CE7' }} />
+              <div className={styles.connectorPill} style={{ background: 'linear-gradient(90deg, #6C5CE7, #EC4899)' }} />
+            </div>
+
             {/* Step 3 */}
-            <div className={styles.stepCard}>
-              <div className={`${styles.stepIconCircle} ${styles.stepIconPink}`}>
-                <Sparkles size={32} />
-                <span className={styles.stepNumber}>3</span>
+            <div className={styles.stepItemCol}>
+              <div className={`${styles.stepMedallionSphere} ${styles.spherePink}`}>
+                <GraduationCap size={46} strokeWidth={2.2} />
               </div>
-              <h3 className={styles.stepTitle}>Jalankan Workstation &amp; LMS</h3>
-              <p className={styles.stepDesc}>
+              <h3 className={styles.stepItemTitle}>3. Jalankan Workstation &amp; LMS</h3>
+              <p className={styles.stepItemDesc}>
                 Guru langsung mengelola jadwal mengajar, modul bacaan SIBI Kemdikdasmen,
                 dan koreksi massal esai dengan efisiensi waktu hingga 70%.
               </p>
@@ -342,143 +390,190 @@ export default function LandingPage() {
       </section>
 
       {/* ══════════════════════════════════════════════════════════
-         4. HIGHLIGHT CONTRAST BANNER (Solid Royal Purple Card)
+         4. SOLID ROYAL PURPLE CARD (media_1790964865136.png)
          ══════════════════════════════════════════════════════════ */}
       <section className={styles.highlightSection}>
         <div className={styles.container}>
           <div className={styles.highlightCard}>
+            <div className={styles.ambientSphereTopLeft} />
+
             <div className={styles.highlightLeft}>
               <h2 className={styles.highlightTitle}>
-                Pantau Aktivitas Akademik &amp; Kinerja Sistem Real-Time
+                Pantau Kinerja Akademik &amp; Sistem Real-Time
               </h2>
+              <div className={styles.accentLine}>
+                <span className={styles.accentDot} style={{ background: '#00CEC9' }} />
+                <span className={styles.accentBar} style={{ background: 'linear-gradient(90deg, #00CEC9, rgba(0, 206, 201, 0.3))' }} />
+              </div>
               <p className={styles.highlightSubtitle}>
                 Didesain dengan arsitektur Event-Driven dan Clean Architecture (ADR-0001).
-                Seluruh aktivitas kehadiran, penilaian, dan pembacaan buku teragregasi
+                Seluruh aktivitas presensi, penilaian, dan pembacaan buku teragregasi
                 dengan latensi sub-detik melalui Rust Axum core engine.
               </p>
               <Link href="/dashboard" className={styles.highlightBtn}>
-                <span>Pelajari Selengkapnya</span>
+                <span>Eksplorasi Fitur Lengkap</span>
+                <ArrowRight size={16} />
               </Link>
             </div>
 
-            {/* Sparkline Rows */}
+            {/* Wide Area Sparkline Rows (Crypto Table Layout in Figma) */}
             <div className={styles.sparklineList}>
               {/* Row 1: Dapodik Local Bridge */}
               <div className={styles.sparklineRow}>
                 <div className={styles.sparklineLeft}>
-                  <div className={styles.sparklineIcon}>
-                    <FolderSync size={18} />
+                  <div className={styles.sparklineIcon} style={{ background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)' }}>
+                    <FolderSync size={20} />
                   </div>
                   <div>
-                    <div className={styles.sparklineName}>Dapodik Sync Daemon</div>
-                    <div className={styles.sparklineMeta}>3.420 Rekor Rombel &amp; PTK Selaras</div>
+                    <div className={styles.sparklineName}>DAPODIK SYNC</div>
+                    <div className={styles.sparklineMeta}>3.420 Rekor Selaras</div>
                   </div>
                 </div>
-                <svg className={styles.sparklineSvg} viewBox="0 0 90 28" fill="none">
-                  <path d="M0 20 Q 25 5, 50 14 T 90 6" stroke="#34D399" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+                <svg className={styles.sparklineAreaSvg} viewBox="0 0 160 38" fill="none">
+                  <defs>
+                    <linearGradient id="areaGreen" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#34D399" stopOpacity="0.45" />
+                      <stop offset="100%" stopColor="#34D399" stopOpacity="0.0" />
+                    </linearGradient>
+                  </defs>
+                  <path d="M0 28 Q 20 8, 40 20 T 80 10 T 120 16 T 160 4 L 160 38 L 0 38 Z" fill="url(#areaGreen)" />
+                  <path d="M0 28 Q 20 8, 40 20 T 80 10 T 120 16 T 160 4" stroke="#34D399" strokeWidth="2.5" fill="none" strokeLinecap="round" />
                 </svg>
-                <span className={styles.sparklineBadgeUp}>+100% Selaras</span>
+                <div className={styles.sparklineChange} style={{ color: '#34D399' }}>
+                  ▲ +100%
+                </div>
               </div>
 
               {/* Row 2: Attendance Rate */}
               <div className={styles.sparklineRow}>
                 <div className={styles.sparklineLeft}>
-                  <div className={styles.sparklineIcon}>
-                    <Activity size={18} />
+                  <div className={styles.sparklineIcon} style={{ background: 'linear-gradient(135deg, #00CEC9 0%, #0891B2 100%)' }}>
+                    <Activity size={20} />
                   </div>
                   <div>
-                    <div className={styles.sparklineName}>Presensi Kehadiran Siswa</div>
-                    <div className={styles.sparklineMeta}>98.4% Tingkat Kehadiran Pekan Ini</div>
+                    <div className={styles.sparklineName}>PRESENSI SISWA</div>
+                    <div className={styles.sparklineMeta}>98.4% Hadir Pekan Ini</div>
                   </div>
                 </div>
-                <svg className={styles.sparklineSvg} viewBox="0 0 90 28" fill="none">
-                  <path d="M0 22 Q 30 18, 55 10 T 90 4" stroke="#00CEC9" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+                <svg className={styles.sparklineAreaSvg} viewBox="0 0 160 38" fill="none">
+                  <defs>
+                    <linearGradient id="areaCyan" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#00CEC9" stopOpacity="0.45" />
+                      <stop offset="100%" stopColor="#00CEC9" stopOpacity="0.0" />
+                    </linearGradient>
+                  </defs>
+                  <path d="M0 32 Q 30 18, 60 26 T 110 8 T 160 2 L 160 38 L 0 38 Z" fill="url(#areaCyan)" />
+                  <path d="M0 32 Q 30 18, 60 26 T 110 8 T 160 2" stroke="#00CEC9" strokeWidth="2.5" fill="none" strokeLinecap="round" />
                 </svg>
-                <span className={styles.sparklineBadgeUp}>+3.2% Naik</span>
+                <div className={styles.sparklineChange} style={{ color: '#00CEC9' }}>
+                  ▲ +3.2%
+                </div>
               </div>
 
               {/* Row 3: Mass Grader */}
               <div className={styles.sparklineRow}>
                 <div className={styles.sparklineLeft}>
-                  <div className={styles.sparklineIcon}>
-                    <FileCheck2 size={18} />
+                  <div className={styles.sparklineIcon} style={{ background: 'linear-gradient(135deg, #A855F7 0%, #7E22CE 100%)' }}>
+                    <FileCheck2 size={20} />
                   </div>
                   <div>
-                    <div className={styles.sparklineName}>Mass Grader Workstation</div>
-                    <div className={styles.sparklineMeta}>4.120 Esai Terselesaikan Otomatis</div>
+                    <div className={styles.sparklineName}>MASS GRADER</div>
+                    <div className={styles.sparklineMeta}>4.120 Esai Terselesaikan</div>
                   </div>
                 </div>
-                <svg className={styles.sparklineSvg} viewBox="0 0 90 28" fill="none">
-                  <path d="M0 24 Q 25 15, 60 8 T 90 5" stroke="#F472B6" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+                <svg className={styles.sparklineAreaSvg} viewBox="0 0 160 38" fill="none">
+                  <defs>
+                    <linearGradient id="areaPink" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#F472B6" stopOpacity="0.45" />
+                      <stop offset="100%" stopColor="#F472B6" stopOpacity="0.0" />
+                    </linearGradient>
+                  </defs>
+                  <path d="M0 24 Q 25 10, 50 18 T 100 6 T 160 2 L 160 38 L 0 38 Z" fill="url(#areaPink)" />
+                  <path d="M0 24 Q 25 10, 50 18 T 100 6 T 160 2" stroke="#F472B6" strokeWidth="2.5" fill="none" strokeLinecap="round" />
                 </svg>
-                <span className={styles.sparklineBadgeUp}>99.1% Akurat</span>
+                <div className={styles.sparklineChange} style={{ color: '#F472B6' }}>
+                  ▲ 99.1%
+                </div>
               </div>
 
               {/* Row 4: SIBI Digital Books */}
               <div className={styles.sparklineRow}>
                 <div className={styles.sparklineLeft}>
-                  <div className={styles.sparklineIcon}>
-                    <BookOpen size={18} />
+                  <div className={styles.sparklineIcon} style={{ background: 'linear-gradient(135deg, #EC4899 0%, #BE185D 100%)' }}>
+                    <BookOpen size={20} />
                   </div>
                   <div>
-                    <div className={styles.sparklineName}>Buku Digital SIBI Kemdikdasmen</div>
-                    <div className={styles.sparklineMeta}>1.250 Eksemplar Dibaca Siswa</div>
+                    <div className={styles.sparklineName}>SIBI KEMDIKDASMEN</div>
+                    <div className={styles.sparklineMeta}>1.250 Eksemplar Dibaca</div>
                   </div>
                 </div>
-                <svg className={styles.sparklineSvg} viewBox="0 0 90 28" fill="none">
-                  <path d="M0 18 Q 30 22, 60 10 T 90 6" stroke="#A78BFA" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+                <svg className={styles.sparklineAreaSvg} viewBox="0 0 160 38" fill="none">
+                  <defs>
+                    <linearGradient id="areaViolet" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#C084FC" stopOpacity="0.45" />
+                      <stop offset="100%" stopColor="#C084FC" stopOpacity="0.0" />
+                    </linearGradient>
+                  </defs>
+                  <path d="M0 30 Q 35 22, 70 12 T 120 18 T 160 6 L 160 38 L 0 38 Z" fill="url(#areaViolet)" />
+                  <path d="M0 30 Q 35 22, 70 12 T 120 18 T 160 6" stroke="#C084FC" strokeWidth="2.5" fill="none" strokeLinecap="round" />
                 </svg>
-                <span className={styles.sparklineBadgeUp}>+450 Hari Ini</span>
+                <div className={styles.sparklineChange} style={{ color: '#C084FC' }}>
+                  ▲ +450
+                </div>
               </div>
+
+              {/* Explore More link in Cyan */}
+              <a href="#features" className={styles.sparklineExploreLink}>
+                <span>Lihat Semua Metrik Sistem</span>
+                <ArrowRight size={15} strokeWidth={2.5} />
+              </a>
             </div>
           </div>
         </div>
       </section>
 
       {/* ══════════════════════════════════════════════════════════
-         5. FEATURE SECTION 1: TEACHER WORKSTATION (Real Photo Cutout)
+         5. FEATURE SECTION 1: TEACHER WORKSTATION (media_1790964895957.png)
          ══════════════════════════════════════════════════════════ */}
       <section id="features" className={styles.featureSection}>
         <div className={styles.container}>
           <div className={styles.featureGrid}>
-            {/* Visual Composite with Photorealistic Cutout Photo */}
+            {/* Visual Composite with Circular Portal & Studio Cutout Photo */}
             <div className={styles.featureVisualComposite}>
-              <div className={styles.featureCircleBackdrop} />
-
-              {/* Real Photo Cutout of Teacher with Mobile Phone */}
-              <div className={styles.personPhotoContainer}>
+              {/* Circular Portal Frame with Luminous Gradient */}
+              <div className={styles.featureCirclePortal}>
                 <Image
                   src="/teacher-phone.jpg"
-                  alt="Guru Akselerasi-Edu menggunakan Teacher Workstation di smartphone"
-                  width={320}
-                  height={380}
-                  className={styles.personPhoto}
+                  alt="Guru Akselerasi-Edu menggunakan Teacher Workstation di ponsel"
+                  width={360}
+                  height={360}
+                  className={styles.featurePersonPhoto}
                   priority
                 />
               </div>
 
               {/* Floating Stat Card 1 (Top Left) */}
               <div className={styles.featureFloatingCard1}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: '#ECFDF5', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#10B981' }}>
-                    <CheckCircle2 size={16} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ width: '32px', height: '32px', borderRadius: '10px', background: '#ECFDF5', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#10B981', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                    <CheckCircle2 size={18} />
                   </div>
                   <div>
-                    <div className={styles.floatingStatLabel}>Presensi Cepat 1-Klik</div>
-                    <div className={styles.floatingStatVal}>38/38 Siswa Hadir</div>
+                    <div style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: 700 }}>Presensi Cepat 1-Klik</div>
+                    <div style={{ fontSize: '0.98rem', fontWeight: 900, color: '#0F172A' }}>38/38 Siswa Hadir</div>
                   </div>
                 </div>
               </div>
 
               {/* Floating Stat Card 2 (Bottom Right) */}
               <div className={styles.featureFloatingCard2}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: '#F5F3FF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6C5CE7' }}>
-                    <Sparkles size={16} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ width: '32px', height: '32px', borderRadius: '10px', background: '#F5F3FF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6C5CE7', border: '1px solid #DDD6FE' }}>
+                    <Sparkles size={18} />
                   </div>
                   <div>
-                    <div className={styles.floatingStatLabel}>Auto-Grading Progress</div>
-                    <div className={styles.floatingStatVal}>92% Tugas Terperiksa</div>
+                    <div style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: 700 }}>Mass Grader Esai</div>
+                    <div style={{ fontSize: '0.98rem', fontWeight: 900, color: '#0F172A' }}>92% Tugas Terperiksa</div>
                   </div>
                 </div>
               </div>
@@ -506,7 +601,7 @@ export default function LandingPage() {
                 secara manual.
               </p>
 
-              {/* Feature Benefit Checklist */}
+              {/* Feature Benefit Checklist with Custom Check Medallions */}
               <ul className={styles.featureList}>
                 <li className={styles.featureListItem}>
                   <div className={styles.featureCheckIcon}>
@@ -546,9 +641,9 @@ export default function LandingPage() {
       </section>
 
       {/* ══════════════════════════════════════════════════════════
-         6. ARCHITECTURE SECTION (Light Mode with Interactive Code Box)
+         6. ARCHITECTURE SECTION (media_1790964914283.png)
          ══════════════════════════════════════════════════════════ */}
-      <section id="architecture" className={styles.featureSection} style={{ background: '#F8FAFC' }}>
+      <section id="architecture" className={styles.featureSection} style={{ background: '#F8F9FE' }}>
         <div className={styles.container}>
           <div className={styles.sectionHeaderCenter}>
             <div className={styles.featureBadge}>
@@ -602,7 +697,7 @@ export default function LandingPage() {
 
           {/* Interactive Code Preview Box & Specification */}
           <div className={styles.featureGridReverse}>
-            {/* Left: Dark Mac Terminal Code Spec Card */}
+            {/* Left: 3D Tilted Dark Mac Code Card */}
             <div className={styles.codeSpecCard}>
               <div className={styles.codeMacHeader}>
                 <div className={styles.codeMacDots}>
@@ -761,7 +856,7 @@ class SibiReaderViewModel(private val repository: SibiRepository) : ViewModel() 
       </section>
 
       {/* ══════════════════════════════════════════════════════════
-         7. INTERSECTING DUAL-CIRCLE ECOSYSTEM (Light Mode)
+         7. INTERSECTING DUAL-CIRCLE ECOSYSTEM (media_1790965024224.png)
          ══════════════════════════════════════════════════════════ */}
       <section id="ecosystem" className={styles.ecosystemSection}>
         <div className={styles.container}>
@@ -784,23 +879,23 @@ class SibiReaderViewModel(private val repository: SibiRepository) : ViewModel() 
           </div>
 
           {/* Dual Intersecting Circular Frames with Studio Portraits */}
-          <div className={styles.dualCircleWrapper}>
-            <div className={styles.circlePhotoLeft}>
+          <div className={styles.dualOrbitWrapper}>
+            <div className={styles.orbitCirclePurple}>
               <Image
                 src="/teacher-phone.jpg"
                 alt="Pendidik modern menggunakan ponsel"
-                width={220}
-                height={220}
-                className={styles.personPhoto}
+                width={240}
+                height={240}
+                className={styles.featurePersonPhoto}
               />
             </div>
-            <div className={styles.circlePhotoRight}>
+            <div className={styles.orbitCircleCyan}>
               <Image
                 src="/teacher-laptop.jpg"
                 alt="Pendidik menggunakan laptop di kelas"
-                width={220}
-                height={220}
-                className={styles.personPhoto}
+                width={240}
+                height={240}
+                className={styles.featurePersonPhoto}
               />
             </div>
           </div>
@@ -810,7 +905,7 @@ class SibiReaderViewModel(private val repository: SibiRepository) : ViewModel() 
             {/* Role 1: Guru */}
             <div className={styles.roleCard}>
               <div className={styles.roleIconBox} style={{ background: '#F5F3FF', color: '#6C5CE7' }}>
-                <GraduationCap size={22} />
+                <GraduationCap size={24} />
               </div>
               <h4 className={styles.roleTitle}>Guru &amp; Pendidik</h4>
               <p className={styles.roleDesc}>
@@ -824,7 +919,7 @@ class SibiReaderViewModel(private val repository: SibiRepository) : ViewModel() 
             {/* Role 2: Siswa */}
             <div className={styles.roleCard}>
               <div className={styles.roleIconBox} style={{ background: '#ECFEFF', color: '#00CEC9' }}>
-                <BookOpen size={22} />
+                <BookOpen size={24} />
               </div>
               <h4 className={styles.roleTitle}>Peserta Didik</h4>
               <p className={styles.roleDesc}>
@@ -838,7 +933,7 @@ class SibiReaderViewModel(private val repository: SibiRepository) : ViewModel() 
             {/* Role 3: Orang Tua */}
             <div className={styles.roleCard}>
               <div className={styles.roleIconBox} style={{ background: '#FCE7F3', color: '#EC4899' }}>
-                <Users size={22} />
+                <Users size={24} />
               </div>
               <h4 className={styles.roleTitle}>Wali Murid</h4>
               <p className={styles.roleDesc}>
@@ -852,7 +947,7 @@ class SibiReaderViewModel(private val repository: SibiRepository) : ViewModel() 
             {/* Role 4: Pimpinan */}
             <div className={styles.roleCard}>
               <div className={styles.roleIconBox} style={{ background: '#ECFDF5', color: '#10B981' }}>
-                <BarChart3 size={22} />
+                <BarChart3 size={24} />
               </div>
               <h4 className={styles.roleTitle}>Pimpinan Sekolah</h4>
               <p className={styles.roleDesc}>
@@ -867,25 +962,29 @@ class SibiReaderViewModel(private val repository: SibiRepository) : ViewModel() 
       </section>
 
       {/* ══════════════════════════════════════════════════════════
-         8. STATS COUNTER ROW (Light Gray Contrast Band)
+         8. STATS COUNTER ROW (media_1790965043539.png)
          ══════════════════════════════════════════════════════════ */}
       <section className={styles.statsSection}>
         <div className={styles.container}>
           <div className={styles.statsGrid}>
-            <div>
-              <div className={styles.statNumber}>50+</div>
+            <div className={styles.statItem}>
+              <div className={styles.statNumber}>+50</div>
+              <div className={styles.statPillBarCyan} />
               <div className={styles.statLabel}>Sekolah Siap Implementasi</div>
             </div>
-            <div>
+            <div className={styles.statItem}>
+              <div className={styles.statNumber}>+120K</div>
+              <div className={styles.statPillBarPurple} />
+              <div className={styles.statLabel}>Siswa &amp; Guru Terhubung</div>
+            </div>
+            <div className={styles.statItem}>
               <div className={styles.statNumber}>&lt; 1.6s</div>
+              <div className={styles.statPillBarCyan} />
               <div className={styles.statLabel}>Cold-start Latensi Rust Core</div>
             </div>
-            <div>
-              <div className={styles.statNumber}>100%</div>
-              <div className={styles.statLabel}>Akurasi Sinkronisasi Dapodik</div>
-            </div>
-            <div>
+            <div className={styles.statItem}>
               <div className={styles.statNumber}>99.98%</div>
+              <div className={styles.statPillBarPink} />
               <div className={styles.statLabel}>SLA Ketersediaan Sistem</div>
             </div>
           </div>
@@ -893,7 +992,7 @@ class SibiReaderViewModel(private val repository: SibiRepository) : ViewModel() 
       </section>
 
       {/* ══════════════════════════════════════════════════════════
-         9. FAQ SECTION (With Cutout Photo of Presenter)
+         9. FAQ SECTION (media_1790965109963.png)
          ══════════════════════════════════════════════════════════ */}
       <section id="faq" className={styles.faqSection}>
         <div className={styles.container}>
@@ -915,20 +1014,20 @@ class SibiReaderViewModel(private val repository: SibiRepository) : ViewModel() 
           </div>
 
           <div className={styles.faqGrid}>
-            {/* Left: Presenter Photo Cutout */}
+            {/* Left: Presenter Photo Cutout inside Organic Petal Shape */}
             <div className={styles.faqPresenterCol}>
-              <div className={styles.faqPresenterPhoto}>
+              <div className={styles.faqPresenterShape}>
                 <Image
                   src="/faq-presenter.jpg"
                   alt="Konsultan Akselerasi-Edu siap menjawab pertanyaan sekolah"
                   width={320}
                   height={380}
-                  className={styles.personPhoto}
+                  className={styles.featurePersonPhoto}
                 />
               </div>
               <div style={{ marginTop: '16px', textAlign: 'center' }}>
-                <div style={{ fontSize: '1rem', fontWeight: 800, color: '#0F172A' }}>Butuh Konsultasi Lanjutan?</div>
-                <div style={{ fontSize: '0.84rem', color: '#64748B', marginTop: '4px' }}>Tim spesialis kami siap mendemonstrasikan sistem ke sekolah Anda.</div>
+                <div style={{ fontSize: '1.05rem', fontWeight: 900, color: '#0F172A' }}>Butuh Konsultasi Lanjutan?</div>
+                <div style={{ fontSize: '0.86rem', color: '#64748B', marginTop: '4px' }}>Tim spesialis kami siap mendemonstrasikan sistem ke sekolah Anda.</div>
               </div>
             </div>
 
@@ -945,9 +1044,9 @@ class SibiReaderViewModel(private val repository: SibiRepository) : ViewModel() 
                     <div className={styles.faqQuestionRow}>
                       <h4 className={styles.faqQuestion}>{faq.q}</h4>
                       {isExpanded ? (
-                        <ChevronUp size={20} color="#FFFFFF" />
+                        <ChevronUp size={22} color="#FFFFFF" />
                       ) : (
-                        <ChevronDown size={20} color="#6C5CE7" />
+                        <ChevronDown size={22} color="#6C5CE7" />
                       )}
                     </div>
                     {isExpanded && <p className={styles.faqAnswer}>{faq.a}</p>}
@@ -960,7 +1059,7 @@ class SibiReaderViewModel(private val repository: SibiRepository) : ViewModel() 
       </section>
 
       {/* ══════════════════════════════════════════════════════════
-         10. CALL TO ACTION BANNER (Light Mode)
+         10. CALL TO ACTION BANNER (media_1790965085101.png)
          ══════════════════════════════════════════════════════════ */}
       <section className={styles.ctaBannerSection}>
         <div className={styles.container}>
@@ -973,10 +1072,10 @@ class SibiReaderViewModel(private val repository: SibiRepository) : ViewModel() 
                 Tingkatkan efisiensi kerja guru, integrasikan buku digital SIBI, dan nikmati sinkronisasi Dapodik otomatis.
               </p>
             </div>
-            <div className={styles.heroActionGroup}>
+            <div className={styles.storeBadgesRow}>
               <Link href="/dashboard" className={styles.ctaPillPurple}>
                 <span>Coba Demo Sistem</span>
-                <ArrowRight size={15} strokeWidth={2.5} />
+                <ArrowRight size={16} strokeWidth={2.5} />
               </Link>
               <Link href="/login" className={styles.ctaOutlinePurple}>
                 <span>Masuk ke Akun</span>
@@ -1007,7 +1106,7 @@ class SibiReaderViewModel(private val repository: SibiRepository) : ViewModel() 
                   <span className={styles.logoBadge}>SCHOOL OS</span>
                 </div>
               </div>
-              <p style={{ fontSize: '0.86rem', color: '#64748B', lineHeight: '1.6', margin: '8px 0 0' }}>
+              <p style={{ fontSize: '0.88rem', color: '#64748B', lineHeight: '1.65', margin: '8px 0 0' }}>
                 Operating System sekolah modern berbasis Rust Axum dan Clean Architecture. Menghubungkan guru, peserta didik, dan Dapodik secara mulus.
               </p>
             </div>

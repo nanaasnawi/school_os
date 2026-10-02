@@ -64,7 +64,7 @@
 }
 
 .teacherName {
-  font-size: 1.15rem;
+  font-size: 1.05rem;
   font-weight: 700;
   color: var(--text-primary, #0f172a);
   margin: 0;
@@ -72,7 +72,7 @@
 }
 
 .teacherSubtitle {
-  font-size: 0.78rem;
+  font-size: 0.74rem;
   color: var(--text-secondary, #64748b);
   margin: 0;
 }
@@ -91,14 +91,14 @@
   background: #0284c7;
   color: #ffffff;
   font-weight: 600;
-  font-size: 0.78rem;
-  padding: 0.42rem 0.85rem;
-  border-radius: 8px;
+  font-size: 0.75rem;
+  padding: 0.38rem 0.75rem;
+  border-radius: 7px;
   border: none;
   cursor: pointer;
   text-decoration: none;
   transition: all 0.15s ease;
-  box-shadow: 0 1px 4px rgba(2, 132, 199, 0.2);
+  box-shadow: 0 1px 3px rgba(2, 132, 199, 0.2);
 }
 
 .actionBtnPrimary:hover {
@@ -113,9 +113,9 @@
   background: var(--bg-surface, #ffffff);
   color: var(--text-primary, #1e293b);
   font-weight: 600;
-  font-size: 0.78rem;
-  padding: 0.42rem 0.75rem;
-  border-radius: 8px;
+  font-size: 0.75rem;
+  padding: 0.38rem 0.7rem;
+  border-radius: 7px;
   border: 1px solid var(--border-light, #cbd5e1);
   cursor: pointer;
   text-decoration: none;
@@ -127,38 +127,73 @@
   border-color: #94a3b8;
 }
 
-/* ── Metric Grid & Cards (Exact Proportionate Teacher Scale) ── */
+/* ══════════════════════════════════════════════════
+   TEACHER METRIC GRID — Premium Redesign
+   4-column analytics cards with icon pills, live badges,
+   gradient CTA strips, and reading progress bar.
+══════════════════════════════════════════════════ */
 .metricGrid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 0.85rem;
-  margin: 0;
 }
 
-@media (max-width: 1200px) {
+@media (max-width: 1280px) {
   .metricGrid {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
-@media (max-width: 600px) {
+@media (max-width: 640px) {
   .metricGrid {
     grid-template-columns: 1fr;
   }
 }
 
+/* Base card shell */
 .metricCard {
   background: var(--bg-card, #ffffff);
   border: 1px solid var(--border-light, #e2e8f0);
-  border-radius: 12px;
+  border-radius: 14px;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.04), 0 1px 3px -1px rgba(0, 0, 0, 0.02);
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  justify-content: space-between;
+  min-height: 148px;
+  box-shadow:
+    0 1px 3px rgba(0,0,0,0.04),
+    0 4px 12px -4px rgba(0,0,0,0.05);
+  transition:
+    transform 0.22s cubic-bezier(0.16,1,0.3,1),
+    box-shadow 0.22s cubic-bezier(0.16,1,0.3,1),
+    border-color 0.18s ease;
   position: relative;
   overflow: hidden;
-  text-decoration: none;
-  min-height: 94px;
+}
+
+/* Subtle left accent line */
+.metricCard::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 12px;
+  bottom: 12px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--card-color, #0284c7);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.metricCard:hover::before {
+  opacity: 1;
+}
+
+.metricCard:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    0 2px 4px rgba(0,0,0,0.04),
+    0 10px 28px -6px rgba(0,0,0,0.1);
+  border-color: var(--border-medium, #cbd5e1);
 }
 
 [data-theme="dark"] .metricCard {
@@ -166,132 +201,192 @@
   border-color: #27272a;
 }
 
-.metricCard:hover {
-  box-shadow: 0 6px 16px -3px rgba(0, 0, 0, 0.07), 0 2px 6px -1px rgba(0, 0, 0, 0.03);
-  transform: translateY(-2px);
-  border-color: var(--border-medium, #cbd5e1);
-}
-
 [data-theme="dark"] .metricCard:hover {
   border-color: #3f3f46;
 }
 
-.metricTop {
-  padding: 0.75rem 1rem 0.55rem;
+/* ── Top Row: Icon Pill + Status badge ── */
+.metricTopRow {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 0.75rem;
-  position: relative;
-  flex: 1;
+  padding: 0.85rem 1rem 0.45rem;
+  gap: 0.5rem;
 }
 
-.metricInfo {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  min-width: 0;
-  z-index: 1;
-}
-
-.metricValue {
-  font-size: 1.45rem;
-  font-weight: 800;
-  line-height: 1.15;
-  letter-spacing: -0.02em;
-}
-
-.metricSubtitle {
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.01em;
-  line-height: 1.25;
-}
-
-.metricWatermark {
-  position: absolute;
-  right: 1rem;
-  top: 50%;
-  transform: translateY(-50%);
+.metricIconPill {
   width: 36px;
   height: 36px;
-  color: #94a3b8;
-  opacity: 0.16;
+  border-radius: 9px;
   display: flex;
   align-items: center;
   justify-content: center;
-  pointer-events: none;
-  transition: transform 0.25s ease, opacity 0.25s ease;
+  flex-shrink: 0;
 }
 
-.metricCard:hover .metricWatermark {
-  transform: translateY(-50%) scale(1.08);
-  opacity: 0.22;
+.metricIconPill svg {
+  width: 18px;
+  height: 18px;
 }
 
-.metricWatermark svg {
+.metricStatusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 99px;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.metricStatusBadge[data-status="normal"] {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.metricStatusBadge[data-status="good"] {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.metricStatusBadge[data-status="warn"] {
+  background: #fff7ed;
+  color: #b45309;
+}
+
+.metricStatusBadge[data-status="urgent"] {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.metricStatusBadge[data-status="live"] {
+  background: #dcfce7;
+  color: #15803d;
+  box-shadow: 0 0 0 2px rgba(22,163,74,0.15);
+}
+
+[data-theme="dark"] .metricStatusBadge[data-status="normal"] {
+  background: #27272a;
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .metricStatusBadge[data-status="good"],
+[data-theme="dark"] .metricStatusBadge[data-status="live"] {
+  background: rgba(22,163,74,0.18);
+  color: #4ade80;
+}
+
+[data-theme="dark"] .metricStatusBadge[data-status="warn"] {
+  background: rgba(217,119,6,0.15);
+  color: #fbbf24;
+}
+
+[data-theme="dark"] .metricStatusBadge[data-status="urgent"] {
+  background: rgba(220,38,38,0.15);
+  color: #f87171;
+}
+
+/* Animated green dot for live status */
+.livePulse {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #16a34a;
+  animation: livePulseAnim 1.8s ease-in-out infinite;
+}
+
+@keyframes livePulseAnim {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.75); }
+}
+
+/* ── Middle: Body (value + labels + progress bar) ── */
+.metricBody {
+  padding: 0 1rem 0.55rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  flex: 1;
+}
+
+.metricValue {
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+}
+
+.metricLabel {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--text-primary, #0f172a);
+  line-height: 1.3;
+  margin-top: 0.1rem;
+}
+
+[data-theme="dark"] .metricLabel {
+  color: #f1f5f9;
+}
+
+.metricSubLabel {
+  font-size: 0.67rem;
+  color: var(--text-secondary, #64748b);
+  font-weight: 500;
+  line-height: 1.3;
+  margin-top: 0.05rem;
+}
+
+/* Reading progress bar (card 4 only) */
+.metricProgressTrack {
+  margin-top: 0.55rem;
+  height: 4px;
+  border-radius: 99px;
+  background: #e2e8f0;
+  overflow: hidden;
   width: 100%;
-  height: 100%;
 }
 
-.metricBottom {
+[data-theme="dark"] .metricProgressTrack {
+  background: #27272a;
+}
+
+.metricProgressFill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width 0.65s cubic-bezier(0.16,1,0.3,1);
+}
+
+/* ── Bottom: Gradient CTA Link ── */
+.metricCta {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.42rem 1rem;
+  padding: 0.52rem 1rem;
   color: #ffffff;
-  font-size: 0.74rem;
+  font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.01em;
   text-decoration: none;
-  transition: background-color 0.2s ease, filter 0.2s ease;
+  transition: filter 0.18s ease;
+  gap: 0.35rem;
 }
 
-.metricArrow {
+.metricCta:hover {
+  filter: brightness(1.08);
+}
+
+.metricCtaArrow {
   width: 14px;
   height: 14px;
+  flex-shrink: 0;
   transition: transform 0.2s ease;
   fill: currentColor;
 }
 
-.metricCard:hover .metricArrow {
-  transform: translateX(3px);
+.metricCard:hover .metricCtaArrow {
+  transform: translateX(4px);
 }
 
-/* ── Thematic Card Colors (Admin Dashboard Philosophy) ── */
-.cardBlue .metricValue { color: #0284c7; }
-.cardBlue .metricSubtitle { color: #0284c7; }
-.cardBlue .metricBottom { background: #0284c7; }
-.cardBlue:hover .metricBottom { background: #0369a1; }
-.cardBlue:hover .metricBottom { background: #0369a1; }
-
-.cardOrange .metricValue { color: #ea580c; }
-.cardOrange .metricSubtitle { color: #ea580c; }
-.cardOrange .metricBottom { background: #ea580c; }
-.cardOrange:hover .metricBottom { background: #c2410c; }
-
-.cardEmerald .metricValue { color: #059669; }
-.cardEmerald .metricSubtitle { color: #059669; }
-.cardEmerald .metricBottom { background: #059669; }
-.cardEmerald:hover .metricBottom { background: #047857; }
-
-.cardPurple .metricValue { color: #7c3aed; }
-.cardPurple .metricSubtitle { color: #7c3aed; }
-.cardPurple .metricBottom { background: #7c3aed; }
-.cardPurple:hover .metricBottom { background: #6d28d9; }
-
-.cardIndigo .metricValue { color: #2563eb; }
-.cardIndigo .metricSubtitle { color: #2563eb; }
-.cardIndigo .metricBottom { background: #2563eb; }
-.cardIndigo:hover .metricBottom { background: #1d4ed8; }
-
-.cardAmber .metricValue { color: #d97706; }
-.cardAmber .metricSubtitle { color: #d97706; }
-.cardAmber .metricBottom { background: #d97706; }
-.cardAmber:hover .metricBottom { background: #b45309; }
-
-.cardTeal .metricValue { color: #0d9488; }
-.cardTeal .metricSubtitle { color: #0d9488; }
-.cardTeal .metricBottom { background: #0d9488; }
-.cardTeal:hover .metricBottom { background: #0f766e; }
 

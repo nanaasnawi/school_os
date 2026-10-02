@@ -52,6 +52,10 @@ export default function AttendancePage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'present' | 'sick' | 'excused' | 'absent'>('ALL');
 
+  // Pagination states (Datatable)
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(25);
+
   function getAuthHeaders(): HeadersInit {
     const token =
       apiClient.getToken() ||
@@ -116,7 +120,10 @@ export default function AttendancePage() {
 
         setClasses(formatted);
         if (formatted.length > 0) {
-          setSelectedClassId(formatted[0].id);
+          setSelectedClassId((prev) => {
+            if (prev && formatted.some((c: any) => c.id === prev)) return prev;
+            return formatted[0].id;
+          });
         }
       } catch (err) {
         console.error('Failed to load classes for attendance:', err);
@@ -126,7 +133,7 @@ export default function AttendancePage() {
     }
 
     loadClasses();
-  }, [user, isTeacher]);
+  }, [user?.id, isTeacher]);
 
   // ── 2. Fetch Sessions and Students for Selected Class ──
   useEffect(() => {
@@ -382,6 +389,19 @@ export default function AttendancePage() {
     });
   }, [students, attendanceMap, statusFilter, searchQuery]);
 
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter, selectedClassId, pageSize]);
+
+  // Pagination calculation
+  const totalFiltered = filteredStudents.length;
+  const totalPages = Math.max(1, Math.ceil(totalFiltered / pageSize));
+  const startIndex = (currentPage - 1) * pageSize;
+  const paginatedStudents = useMemo(() => {
+    return filteredStudents.slice(startIndex, startIndex + pageSize);
+  }, [filteredStudents, startIndex, pageSize]);
+
   // Formatted date text
   const dateFormatted = useMemo(() => {
     try {
@@ -407,7 +427,14 @@ export default function AttendancePage() {
       {/* ── 1. Top Header ── */}
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <div className={styles.headerIcon}>📅</div>
+          <div className={styles.headerIcon}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+              <line x1="16" y1="2" x2="16" y2="6" />
+              <line x1="8" y1="2" x2="8" y2="6" />
+              <line x1="3" y1="10" x2="21" y2="10" />
+            </svg>
+          </div>
           <div className={styles.titleArea}>
             <div className={styles.badgeTag}>
               <span>{isTeacher ? 'Teacher Workstation' : 'School Administration'}</span>
@@ -851,14 +878,14 @@ export default function AttendancePage() {
               </tr>
             </thead>
             <tbody>
-              {filteredStudents.length === 0 ? (
+              {paginatedStudents.length === 0 ? (
                 <tr>
                   <td colSpan={6} style={{ textAlign: 'center', padding: '2rem 1rem', color: '#64748b' }}>
                     Tidak ada siswa yang sesuai filter atau kelas belum memiliki siswa terdaftar.
                   </td>
                 </tr>
               ) : (
-                filteredStudents.map((student, idx) => {
+                paginatedStudents.map((student, idx) => {
                   const record = attendanceMap[student.id] || {
                     student_id: student.id,
                     status: 'present',
@@ -869,7 +896,7 @@ export default function AttendancePage() {
                   return (
                     <tr key={student.id}>
                       <td style={{ textAlign: 'center', color: '#64748b', fontWeight: 600 }}>
-                        {idx + 1}
+                        {startIndex + idx + 1}
                       </td>
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -954,18 +981,92 @@ export default function AttendancePage() {
           </table>
         </div>
 
-        {/* Sticky Save Bar */}
-        <div className={styles.saveStickyBar}>
-          <span style={{ fontSize: '0.72rem', color: '#64748b' }}>
-            Menampilkan <strong>{filteredStudents.length}</strong> dari <strong>{students.length}</strong> siswa
-          </span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        {/* ── Datatable Pagination Bar ── */}
+        <div className={styles.paginationBar}>
+          <div className={styles.paginationInfo}>
+            Menampilkan <strong>{totalFiltered > 0 ? startIndex + 1 : 0}</strong> - <strong>{Math.min(startIndex + pageSize, totalFiltered)}</strong> dari <strong>{totalFiltered}</strong> siswa ({students.length} terdaftar)
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.72rem', color: '#64748b' }}>
+              <span>Baris:</span>
+              <select
+                value={pageSize}
+                onChange={(e) => setPageSize(Number(e.target.value))}
+                className={styles.pageSizeSelect}
+              >
+                <option value={15}>15</option>
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+            </div>
+
+            <div className={styles.paginationControls}>
+              <button
+                onClick={() => setCurrentPage(1)}
+                disabled={currentPage === 1}
+                className={styles.pageBtn}
+                title="Halaman Pertama"
+              >
+                &laquo;
+              </button>
+              <button
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className={styles.pageBtn}
+                title="Halaman Sebelumnya"
+              >
+                &lsaquo;
+              </button>
+
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter((p) => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
+                .map((p, index, array) => {
+                  const showEllipsis = index > 0 && p - array[index - 1] > 1;
+                  return (
+                    <React.Fragment key={p}>
+                      {showEllipsis && <span style={{ padding: '0 3px', color: '#94a3b8', fontSize: '0.72rem' }}>...</span>}
+                      <button
+                        onClick={() => setCurrentPage(p)}
+                        className={`${styles.pageBtn} ${currentPage === p ? styles.pageBtnActive : ''}`}
+                      >
+                        {p}
+                      </button>
+                    </React.Fragment>
+                  );
+                })}
+
+              <button
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className={styles.pageBtn}
+                title="Halaman Selanjutnya"
+              >
+                &rsaquo;
+              </button>
+              <button
+                onClick={() => setCurrentPage(totalPages)}
+                disabled={currentPage === totalPages}
+                className={styles.pageBtn}
+                title="Halaman Terakhir"
+              >
+                &raquo;
+              </button>
+            </div>
+
             <button
               onClick={handleSaveAttendance}
               disabled={saving}
               className={styles.btnPrimary}
+              style={{ marginLeft: '6px' }}
             >
-              <span>{saving ? 'Menyimpan...' : 'Simpan Perubahan'}</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                <polyline points="17 21 17 13 7 13 7 21" />
+                <polyline points="7 3 7 8 15 8" />
+              </svg>
+              <span>{saving ? 'Menyimpan...' : 'Simpan Presensi'}</span>
             </button>
           </div>
         </div>

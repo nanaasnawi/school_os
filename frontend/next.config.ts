@@ -5,6 +5,15 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: path.resolve(__dirname),
   },
+  async redirects() {
+    return [
+      {
+        source: '/dashboard/quizzes',
+        destination: '/dashboard/learning/quizzes',
+        permanent: false,
+      },
+    ];
+  },
   async rewrites() {
     const DEFAULT_PRODUCTION_API_URL = 'https://schoolosbackend-production.up.railway.app';
     let backendUrl = (process.env.NEXT_PUBLIC_API_URL || DEFAULT_PRODUCTION_API_URL).trim();

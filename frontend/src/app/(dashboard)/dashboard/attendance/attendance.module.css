@@ -641,3 +641,91 @@
   background: #18181b;
   border-color: #27272a;
 }
+
+/* ── Datatable Pagination Bar ── */
+.paginationBar {
+  padding: 0.55rem 1rem;
+  background: var(--bg-surface, #ffffff);
+  border-top: 1px solid var(--border-light, #e2e8f0);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+[data-theme="dark"] .paginationBar {
+  background: #18181b;
+  border-color: #27272a;
+}
+
+.paginationInfo {
+  font-size: 0.72rem;
+  color: var(--text-secondary, #64748b);
+  font-weight: 500;
+}
+
+.paginationControls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pageBtn {
+  min-width: 26px;
+  height: 26px;
+  padding: 0 5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 5px;
+  border: 1px solid var(--border-light, #cbd5e1);
+  background: var(--bg-surface, #ffffff);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-primary, #334155);
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+[data-theme="dark"] .pageBtn {
+  background: #27272a;
+  border-color: #3f3f46;
+  color: #cbd5e1;
+}
+
+.pageBtn:hover:not(:disabled) {
+  background: var(--bg-hover, #f1f5f9);
+  border-color: #94a3b8;
+}
+
+.pageBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pageBtnActive {
+  background: #10b981 !important;
+  color: #ffffff !important;
+  border-color: #10b981 !important;
+  font-weight: 700;
+}
+
+.pageSizeSelect {
+  background: var(--bg-surface, #ffffff);
+  border: 1px solid var(--border-light, #cbd5e1);
+  border-radius: 5px;
+  padding: 0.2rem 0.45rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-primary, #0f172a);
+  outline: none;
+  cursor: pointer;
+}
+
+[data-theme="dark"] .pageSizeSelect {
+  background: #27272a;
+  border-color: #3f3f46;
+  color: #f1f5f9;
+}
+
