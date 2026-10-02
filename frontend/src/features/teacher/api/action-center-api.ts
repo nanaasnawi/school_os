@@ -1,5 +1,6 @@
 import { getApiUrl, apiClient } from '@/lib/api';
 import type { AtRiskStudent, PendingGradingTask, ActiveCbtSummary } from '../types';
+import { fetchCurrentTeacherProfile } from './teacher-api';
 
 function getAuthHeaders(): HeadersInit {
   const token = apiClient.getToken();
@@ -23,10 +24,24 @@ export async function fetchAtRiskStudents(classId?: string): Promise<AtRiskStude
     const json = await res.json();
     const assignments: any[] = json?.data?.items || json?.data || [];
 
+    const profile = await fetchCurrentTeacherProfile().catch(() => null);
+    const currentTeacherId = profile?.id;
+    const currentUserId = profile?.user_id;
+
+    const teacherAssignments = assignments.filter((a) => {
+      if (!currentTeacherId && !currentUserId) return true;
+      return (
+        !a.teacher_id ||
+        a.teacher_id === currentTeacherId ||
+        a.created_by === currentTeacherId ||
+        (currentUserId && (a.teacher_id === currentUserId || a.created_by === currentUserId))
+      );
+    });
+
     const atRisk: AtRiskStudent[] = [];
 
     // Check recent assignments
-    for (const a of assignments.slice(0, 5)) {
+    for (const a of teacherAssignments.slice(0, 5)) {
       if (classId && a.class_id && a.class_id !== classId) continue;
 
       try {
@@ -126,9 +141,23 @@ export async function fetchPendingGradingTasks(): Promise<PendingGradingTask[]> 
     const json = await res.json();
     const assignments: any[] = json?.data?.items || json?.data || [];
 
+    const profile = await fetchCurrentTeacherProfile().catch(() => null);
+    const currentTeacherId = profile?.id;
+    const currentUserId = profile?.user_id;
+
+    const teacherAssignments = assignments.filter((a) => {
+      if (!currentTeacherId && !currentUserId) return true;
+      return (
+        !a.teacher_id ||
+        a.teacher_id === currentTeacherId ||
+        a.created_by === currentTeacherId ||
+        (currentUserId && (a.teacher_id === currentUserId || a.created_by === currentUserId))
+      );
+    });
+
     const pendingTasks: PendingGradingTask[] = [];
 
-    for (const a of assignments) {
+    for (const a of teacherAssignments) {
       try {
         const subRes = await fetch(getApiUrl(`/api/v1/learning/assignments/${a.id}/submissions`), {
           headers: getAuthHeaders(),

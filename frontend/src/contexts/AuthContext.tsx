@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { apiClient, getApiUrl } from '@/lib/api';
+import { decodeJwtPayload } from '@/lib/jwt';
 
 export interface User {
   id: string;
@@ -29,37 +30,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const initializeAuth = async () => {
       const token = apiClient.getToken();
       if (token) {
-        try {
-          // Decode the JWT to get basic user info
-          const payloadBase64 = token.split('.')[1];
-          const payloadJson = atob(payloadBase64);
-          const payload = JSON.parse(payloadJson);
-          
+        const payload = decodeJwtPayload<Record<string, any>>(token);
+        if (payload) {
           const initialUser: User = { 
-            id: payload.sub, 
+            id: payload.sub || '', 
             email: payload.email || '', 
             full_name: payload.full_name || '',
             role: payload.role || 'Administrator' 
           };
           setUser(initialUser);
 
-          // Fetch full profile from /api/v1/auth/me to get real name if token didn't contain it
+          // Fetch full profile from /api/v1/auth/me to get real name and verified role
           fetch(getApiUrl('/api/v1/auth/me'), {
             headers: { Authorization: `Bearer ${token}` }
           })
             .then(res => res.json())
             .then(json => {
-              if (json?.data?.full_name) {
+              if (json?.data) {
                 setUser({
                   id: json.data.id || initialUser.id,
                   email: json.data.email || initialUser.email,
-                  full_name: json.data.full_name,
+                  full_name: json.data.full_name || initialUser.full_name,
                   role: json.data.role || initialUser.role,
                 });
               }
             })
             .catch(() => {});
-        } catch {
+        } else {
           apiClient.clearToken();
         }
       }

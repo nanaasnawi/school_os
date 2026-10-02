@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { login as sdkLogin } from '@/lib/sdk';
 import { getApiUrl } from '@/lib/api';
-import { getTenantItem } from '@/lib/tenant-storage';
+import { getTenantItem, setTenantItem } from '@/lib/tenant-storage';
+import { decodeJwtPayload } from '@/lib/jwt';
 import {
   RefreshCw,
   Lock,
@@ -201,20 +202,27 @@ export default function LoginPage() {
       const { data, error: apiErr, response } = await sdkLogin({ body: { email, password } });
       if (!apiErr && data?.data?.access_token) {
         const token = data.data.access_token;
-        let userRole = 'Administrator';
-        try {
-          const payloadBase64 = token.split('.')[1];
-          const payload = JSON.parse(atob(payloadBase64));
-          const responseData = data?.data as Record<string, unknown> | undefined;
-          userRole = (responseData?.role as string) || payload.role || 'Administrator';
-          login(token, {
-            id: payload.sub || '1',
-            email: payload.email || email,
-            full_name: (responseData?.name as string) || payload.full_name || '',
-            role: userRole,
-          });
-        } catch {
-          login(token, { id: '1', email, role: 'Administrator' });
+        const responseData = data?.data as Record<string, unknown> | undefined;
+        const payload = decodeJwtPayload<Record<string, any>>(token);
+
+        const userRole = (responseData?.role as string) || payload?.role || 'Administrator';
+        const userId = (responseData?.user_id as string) || payload?.sub || '1';
+        const userEmail = (responseData?.email as string) || payload?.email || email;
+        const userFullName = (responseData?.name as string) || payload?.full_name || '';
+
+        login(token, {
+          id: userId,
+          email: userEmail,
+          full_name: userFullName,
+          role: userRole,
+        });
+
+        // Store tenant / school details if present in login response
+        if (responseData?.school_name && typeof window !== 'undefined') {
+          setTenantItem('dapodik_nama_sekolah', responseData.school_name as string);
+        }
+        if (responseData?.school_logo_url && typeof window !== 'undefined') {
+          setTenantItem('school_logo_url', responseData.school_logo_url as string);
         }
 
         const roleLower = userRole.toLowerCase();
@@ -223,6 +231,7 @@ export default function LoginPage() {
           !roleLower.includes('admin') &&
           !roleLower.includes('staff') &&
           !roleLower.includes('operator');
+
         if (isTeacher) {
           router.push('/dashboard/teacher');
         } else if (roleLower.includes('wali') || roleLower.includes('guardian') || roleLower.includes('parent')) {
