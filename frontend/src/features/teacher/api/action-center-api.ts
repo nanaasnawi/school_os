@@ -73,7 +73,33 @@ export async function fetchAtRiskStudents(classId?: string): Promise<AtRiskStude
         const materials: any[] = matJson?.data?.items || matJson?.data || [];
         if (materials.length > 0) {
           const recentMat = materials[0];
-
+          const compRes = await fetch(getApiUrl(`/api/v1/learning/materials/${recentMat.id}/completions`), {
+            headers: getAuthHeaders(),
+          });
+          if (compRes.ok) {
+            const compJson = await compRes.json();
+            const completions: any[] = compJson?.data || [];
+            for (const c of completions) {
+              if (classId && c.class_id && c.class_id !== classId) continue;
+              if (!c.is_completed && (c.current_page || 0) < 3) {
+                atRisk.push({
+                  student_id: c.student_id,
+                  student_name: c.student_name || 'Peserta Didik',
+                  class_id: c.class_id || recentMat.class_id || '',
+                  class_name: c.class_name || recentMat.class_name || 'Rombel',
+                  nisn: c.nisn || null,
+                  risk_level: 'MEDIUM',
+                  category: 'UNREAD_MATERIAL',
+                  title: `Belum Membaca Materi ${recentMat.title}`,
+                  description: `Siswa baru membaca sampai halaman ${c.current_page || 1}. Diperlukan pengingat literasi.`,
+                  action_label: 'Kirim Pengingat',
+                  action_type: 'REMIND_STUDENT',
+                  target_url: `/dashboard/learning/materials?id=${recentMat.id}`,
+                  updated_at: c.last_read_at || new Date().toISOString(),
+                });
+              }
+            }
+          }
         }
       }
     } catch (e) {

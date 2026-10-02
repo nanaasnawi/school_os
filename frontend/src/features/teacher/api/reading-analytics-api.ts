@@ -31,6 +31,9 @@ export async function fetchMaterialsAnalyticsList(): Promise<MaterialAnalyticsOv
       const totalPages = Math.max(1, (end - start) + 1);
       const completed = Number(m.completed_count || 0);
 
+      const assigned = Number(m.total_students || m.student_count || 0) || (completed > 0 ? completed : 0);
+      const avgProgress = assigned > 0 ? Math.min(100, Math.round((completed / assigned) * 100)) : (completed > 0 ? 100 : 0);
+
       return {
         material_id: m.id,
         title: m.title || 'Materi Pembelajaran',
@@ -41,9 +44,9 @@ export async function fetchMaterialsAnalyticsList(): Promise<MaterialAnalyticsOv
         start_page: start,
         end_page: end,
         total_pages: totalPages,
-        total_assigned_students: 35, // default rombel baseline
+        total_assigned_students: assigned,
         completed_students_count: completed,
-        average_progress_percentage: completed > 0 ? Math.min(100, Math.round((completed / 35) * 100)) : 0,
+        average_progress_percentage: avgProgress,
       };
     });
   } catch (err) {

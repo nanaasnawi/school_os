@@ -9,6 +9,8 @@ import { useMaterials } from '@/features/material/queries/use-materials';
 import { Button } from '@/shared/ui/button';
 import { X, BookOpen, Check } from 'lucide-react';
 
+import { getApiUrl, apiClient } from '@/lib/api';
+
 export interface LessonCreateModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -18,10 +20,11 @@ export interface LessonCreateModalProps {
 export function LessonCreateModal({
   isOpen,
   onClose,
-  defaultSyllabusId = '00000000-0000-0000-0000-000000000001',
+  defaultSyllabusId,
 }: LessonCreateModalProps) {
   const createLesson = useCreateLesson();
   const { data: materials = [] } = useMaterials();
+  const [syllabuses, setSyllabuses] = React.useState<Array<{ id: string; title: string }>>([]);
 
   const {
     register,
@@ -33,13 +36,35 @@ export function LessonCreateModal({
   } = useForm<LessonFormValues>({
     resolver: zodResolver(lessonFormSchema),
     defaultValues: {
-      syllabus_id: defaultSyllabusId,
+      syllabus_id: defaultSyllabusId || '',
       title: '',
       summary: '',
       order_index: 1,
       material_ids: [],
     },
   });
+
+  React.useEffect(() => {
+    async function loadSyllabuses() {
+      try {
+        const token = apiClient.getToken();
+        const res = await fetch(getApiUrl('/api/v1/learning/syllabuses'), {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (res.ok) {
+          const json = await res.json();
+          const items = Array.isArray(json.data) ? json.data : (json.data?.items || []);
+          setSyllabuses(items);
+          if (items.length > 0 && !defaultSyllabusId) {
+            setValue('syllabus_id', items[0].id);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load syllabuses:', err);
+      }
+    }
+    loadSyllabuses();
+  }, [defaultSyllabusId, setValue]);
 
   const selectedMaterialIds = useWatch({ control, name: 'material_ids' }) || [];
 
@@ -79,6 +104,21 @@ export function LessonCreateModal({
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-slate-300 mb-1">Silabus Pembelajaran</label>
+            <select
+              {...register('syllabus_id')}
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500"
+            >
+              {syllabuses.map((sy) => (
+                <option key={sy.id} value={sy.id}>
+                  {sy.title}
+                </option>
+              ))}
+            </select>
+            {errors.syllabus_id && <p className="text-xs text-rose-400 mt-1">{errors.syllabus_id.message}</p>}
+          </div>
+
           <div>
             <label className="block text-xs font-semibold text-slate-300 mb-1">Judul Modul Pembelajaran</label>
             <input

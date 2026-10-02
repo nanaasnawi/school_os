@@ -2,50 +2,9 @@ import { client } from './sdk/client.gen';
 
 export const DEFAULT_PRODUCTION_API_URL = 'https://schoolosbackend-production.up.railway.app';
 
-/**
- * Detect whether the application is deployed on Vercel.
- *
- * Vercel automatically provides these signals:
- *  - `process.env.VERCEL` = '1'          (server-side only)
- *  - `process.env.NEXT_PUBLIC_VERCEL_ENV` = 'production' | 'preview' | 'development'  (inlined client+server)
- *
- * We also check `window.location.hostname` at runtime for `*.vercel.app` as a
- * last-resort signal (e.g. custom domains or preview deployments).
- */
-function isVercelDeployment(): boolean {
-  // Server-side (SSR / build-time module initialisation)
-  if (typeof process !== 'undefined' && process.env.VERCEL === '1') {
-    return true;
-  }
-
-  // Client-side, inlined at build time by Next.js
-  const publicVercelEnv =
-    typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_VERCEL_ENV : undefined;
-  if (publicVercelEnv !== undefined && publicVercelEnv !== null) {
-    return true;
-  }
-
-  // Runtime check in the browser (covers custom domains on Vercel)
-  if (typeof window !== 'undefined' && window.location?.hostname?.includes('vercel.app')) {
-    return true;
-  }
-
-  return false;
-}
 
 export function getApiBaseUrl(): string {
-  // ── Vercel ──────────────────────────────────────────────────────────────
-  // On Vercel the browser runs on a different origin (vercel.app) than the
-  // Railway backend.  Direct cross-origin fetches fail with CORS errors
-  // unless the backend explicitly allows the Vercel origin.
-  //
-  // Instead of hitting the Railway URL from the browser, we return an empty
-  // base URL so that getApiUrl() produces *relative* paths (e.g. /api/v1/auth/me).
-  // Vercel's rewrite rule in next.config.ts (/api/v1/:path* → Railway) acts
-  // as a reverse proxy, and the browser sees same-origin requests → no CORS.
-  if (isVercelDeployment()) {
-    return '';
-  }
+
 
   let envUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
   if (envUrl) {

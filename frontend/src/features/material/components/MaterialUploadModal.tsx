@@ -8,14 +8,17 @@ import { useCreateMaterial } from '../mutations/use-create-material';
 import { Button } from '@/shared/ui/button';
 import { X, FileText, Video, Link2, Music } from 'lucide-react';
 
+import { useSubjects } from '../queries/use-subjects';
+
 export interface MaterialUploadModalProps {
   isOpen: boolean;
   onClose: () => void;
   defaultSubjectId?: string;
 }
 
-export function MaterialUploadModal({ isOpen, onClose, defaultSubjectId = '00000000-0000-0000-0000-000000000001' }: MaterialUploadModalProps) {
+export function MaterialUploadModal({ isOpen, onClose, defaultSubjectId }: MaterialUploadModalProps) {
   const createMaterial = useCreateMaterial();
+  const { data: subjects = [] } = useSubjects();
 
   const {
     register,
@@ -27,13 +30,20 @@ export function MaterialUploadModal({ isOpen, onClose, defaultSubjectId = '00000
   } = useForm<MaterialFormValues>({
     resolver: zodResolver(materialFormSchema),
     defaultValues: {
-      subject_id: defaultSubjectId,
+      subject_id: defaultSubjectId || (subjects.length > 0 ? subjects[0].id : ''),
       title: '',
       content: '',
       file_url: '',
       material_type: 'pdf',
     },
   });
+
+  // Keep subject_id updated when subjects load
+  React.useEffect(() => {
+    if (!defaultSubjectId && subjects.length > 0) {
+      setValue('subject_id', subjects[0].id);
+    }
+  }, [subjects, defaultSubjectId, setValue]);
 
   const selectedType = useWatch({ control, name: 'material_type' }) || 'pdf';
 
@@ -67,6 +77,21 @@ export function MaterialUploadModal({ isOpen, onClose, defaultSubjectId = '00000
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-slate-300 mb-1">Mata Pelajaran</label>
+            <select
+              {...register('subject_id')}
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500"
+            >
+              {subjects.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name} ({s.code})
+                </option>
+              ))}
+            </select>
+            {errors.subject_id && <p className="text-xs text-rose-400 mt-1">{errors.subject_id.message}</p>}
+          </div>
+
           <div>
             <label className="block text-xs font-semibold text-slate-300 mb-1">Judul Materi</label>
             <input

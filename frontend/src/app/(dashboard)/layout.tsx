@@ -5,6 +5,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { getApiUrl } from '@/lib/api';
 import {
   fetchNotifications,
   fetchUnreadCount,
@@ -411,7 +412,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     async function fetchProfile() {
       try {
         const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
-        const res = await fetch('/api/v1/schools/profile', {
+        const res = await fetch(getApiUrl('/api/v1/schools/profile'), {
           headers: token ? { Authorization: `Bearer ${token}` } : {}
         });
         if (res.ok) {
@@ -480,9 +481,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       router.replace('/login');
-    } else if (!isLoading && isAuthenticated && isTeacherRole) {
-      if (isForbiddenForTeacher(pathname)) {
-        router.replace('/dashboard/teacher');
+    } else if (!isLoading && isAuthenticated) {
+      if (isTeacherRole) {
+        if (isForbiddenForTeacher(pathname)) {
+          router.replace('/dashboard/teacher');
+        }
+      } else {
+        // Administrator, Kepala Sekolah, Operator, Staff must NEVER enter the teacher workstation
+        if (pathname === '/dashboard/teacher' || pathname.startsWith('/dashboard/teacher/')) {
+          router.replace('/dashboard/teachers');
+        }
       }
     }
   }, [isAuthenticated, isLoading, isTeacherRole, pathname, isForbiddenForTeacher, router]);
