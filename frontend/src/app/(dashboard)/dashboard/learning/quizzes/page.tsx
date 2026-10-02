@@ -189,7 +189,16 @@ export default function QuizzesPage() {
         }
 
         if (quizRes?.data && Array.isArray(quizRes.data) && quizRes.data.length > 0) {
-          const mapped: QuizItem[] = quizRes.data.map((q: Record<string, unknown>) => ({
+          const rawList = quizRes.data;
+          const filteredList = isTeacher && user?.full_name
+            ? rawList.filter((q: Record<string, unknown>) => {
+                const tName = String(q.teacher_name || '').toLowerCase();
+                const uName = (user.full_name || '').toLowerCase();
+                return tName === uName || q.created_by === user.id || q.teacher_id === user.id;
+              })
+            : rawList;
+
+          const mapped: QuizItem[] = filteredList.map((q: Record<string, unknown>) => ({
             id: String(q.id),
             title: String(q.title || ''),
             subject: String(q.subject_name || '-'),
@@ -210,7 +219,7 @@ export default function QuizzesPage() {
     };
 
     loadData();
-  }, []);
+  }, [isTeacher, user?.full_name, user?.id]);
 
   const handleOpenAnalysisModal = async (q: QuizItem) => {
     setAnalyzedQuiz(q);

@@ -195,7 +195,15 @@ export default function AssignmentsPage() {
   }, [submissions, submissionFilter]);
 
   const assignments = useMemo<AssignmentItem[]>(() => {
-    return assignmentsData.map((a) => {
+    const dataList = isTeacher && user?.full_name
+      ? assignmentsData.filter(a => {
+          const tName = (a.teacher_name || '').toLowerCase();
+          const uName = (user.full_name || '').toLowerCase();
+          return tName === uName || (a as any).created_by === user.id || (a as any).teacher_id === user.id;
+        })
+      : assignmentsData;
+
+    return dataList.map((a) => {
       let dueFormatted = 'Segera';
       if (a.due_at) {
         const d = new Date(a.due_at);
@@ -214,7 +222,7 @@ export default function AssignmentsPage() {
         questions: a.questions || [],
       };
     });
-  }, [assignmentsData, activeAssignmentId, submissions]);
+  }, [assignmentsData, activeAssignmentId, submissions, isTeacher, user?.full_name, user?.id]);
 
   useEffect(() => {
     async function loadMetadata() {

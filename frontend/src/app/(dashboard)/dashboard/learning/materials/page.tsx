@@ -69,7 +69,15 @@ export default function MaterialsPage() {
   }, [libraryBooks, bookSearchQuery]);
 
   const materials = useMemo<MaterialItem[]>(() => {
-    return materialsData.map((m) => {
+    const dataList = isTeacher && user?.full_name
+      ? materialsData.filter(m => {
+          const tName = (m.teacher_name || '').toLowerCase();
+          const uName = (user.full_name || '').toLowerCase();
+          return tName === uName || (m as any).created_by === user.id || (m as any).teacher_id === user.id;
+        })
+      : materialsData;
+
+    return dataList.map((m) => {
       const desc = m.description || '';
       const descParts = desc.includes(' • ') ? desc.split(' • ') : [];
       const isVideo = m.material_type === 'video' || (m.external_url && (m.external_url.includes('youtube.com') || m.external_url.includes('youtu.be')));
@@ -98,7 +106,7 @@ export default function MaterialsPage() {
         sourceType: m.source_type,
       };
     });
-  }, [materialsData]);
+  }, [materialsData, isTeacher, user?.full_name, user?.id]);
 
   // Modal Input State
   const [showAddModal, setShowAddModal] = useState(false);

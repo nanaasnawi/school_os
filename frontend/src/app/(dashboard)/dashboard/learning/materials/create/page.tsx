@@ -5,10 +5,13 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { listTeachers, listClasses } from '@/lib/sdk/sdk.gen';
 import { getApiUrl } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
 import { useLibraryBooks, useSubjects, LibraryBook, AcademicSubject } from '@/features/material';
 
 export default function CreateMaterialPage() {
   const router = useRouter();
+  const { user } = useAuth();
+  const isTeacher = user?.role?.toLowerCase().includes('guru') || user?.role?.toLowerCase().includes('teacher') || user?.role?.toLowerCase().includes('pengajar');
 
   // Mode: LIBRARY (600+ Buku Kemendikbudristek) vs MANUAL (Upload File / Video / Teks)
   const [creationMode, setCreationMode] = useState<'LIBRARY' | 'MANUAL'>('LIBRARY');
@@ -62,7 +65,11 @@ export default function CreateMaterialPage() {
         if (teacherRes?.data?.data) {
           const list = teacherRes.data.data;
           setTeachers(list);
-          if (list.length > 0) setAuthor(list[0].full_name);
+          if (isTeacher && user?.full_name) {
+            setAuthor(user.full_name);
+          } else if (list.length > 0) {
+            setAuthor(list[0].full_name);
+          }
         }
         if (classRes?.data?.data) {
           const list = classRes.data.data;
@@ -77,6 +84,12 @@ export default function CreateMaterialPage() {
     }
     loadSdkData();
   }, []);
+
+  useEffect(() => {
+    if (isTeacher && user?.full_name) {
+      setAuthor(user.full_name);
+    }
+  }, [isTeacher, user?.full_name]);
 
   // Derived book & subject when TanStack Query caches populate
   const currentBook = selectedBook ?? (libraryBooks.length > 0 ? libraryBooks[0] : null);
@@ -149,8 +162,9 @@ export default function CreateMaterialPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
+    const effectiveAuthor = (isTeacher && user?.full_name) ? user.full_name : author;
     const targetClassObj = classesList.find(c => c.name === targetGrade) || classesList[0];
-    const targetTeacherObj = teachers.find(t => t.full_name === author) || teachers[0];
+    const targetTeacherObj = teachers.find(t => t.full_name === effectiveAuthor || (isTeacher && (t.user_id === user?.id || t.id === user?.id))) || (isTeacher ? null : teachers[0]);
     const targetSubjectObj = subjectsList.find(s => s.name === currentSubject);
 
     setIsSubmitting(true);
@@ -226,7 +240,7 @@ export default function CreateMaterialPage() {
         const payload = {
           material_type: manualFormat.toLowerCase(),
           title: title.trim(),
-          description: `${subject || 'Umum'} • ${targetGrade || 'Semua Rombel'} • ${author || 'Guru Pengampu'} • ${description || 'Modul Pembelajaran Mandiri'}`,
+          description: `${subject || 'Umum'} • ${targetGrade || 'Semua Rombel'} • ${effectiveAuthor || 'Guru Pengampu'} • ${description || 'Modul Pembelajaran Mandiri'}`,
           storage_key: storageKey,
           external_url: externalUrl,
           order_index: 0,
@@ -855,15 +869,25 @@ export default function CreateMaterialPage() {
               <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, marginBottom: '0.35rem' }}>
                 Guru Pengampu *
               </label>
-              <select
-                value={author}
-                onChange={e => setAuthor(e.target.value)}
-                className="input"
-              >
-                {teachers.map(t => (
-                  <option key={t.id} value={t.full_name}>{t.full_name} ({t.nip || 'Guru'})</option>
-                ))}
-              </select>
+              {isTeacher && user?.full_name ? (
+                <input
+                  type="text"
+                  disabled
+                  value={user.full_name}
+                  className="input"
+                  style={{ width: '100%', background: 'var(--bg-elevated)', cursor: 'not-allowed', fontWeight: 700 }}
+                />
+              ) : (
+                <select
+                  value={author}
+                  onChange={e => setAuthor(e.target.value)}
+                  className="input"
+                >
+                  {teachers.map(t => (
+                    <option key={t.id} value={t.full_name}>{t.full_name} ({t.nip || 'Guru'})</option>
+                  ))}
+                </select>
+              )}
             </div>
 
             <div>

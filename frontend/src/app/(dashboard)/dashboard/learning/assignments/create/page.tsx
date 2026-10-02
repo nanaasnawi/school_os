@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { listTeachers, listClasses } from '@/lib/sdk/sdk.gen';
 import { getApiUrl } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
 
 type QuestionChoice = {
   choice_text: string;
@@ -37,6 +38,8 @@ interface SubjectItem {
 
 export default function CreateAssignmentPage() {
   const router = useRouter();
+  const { user } = useAuth();
+  const isTeacher = user?.role?.toLowerCase().includes('guru') || user?.role?.toLowerCase().includes('teacher') || user?.role?.toLowerCase().includes('pengajar');
 
   // Master Data
   const [teachers, setTeachers] = useState<TeacherItem[]>([]);
@@ -104,7 +107,11 @@ export default function CreateAssignmentPage() {
         if (teacherRes?.data?.data) {
           const list = teacherRes.data.data;
           setTeachers(list);
-          if (list.length > 0) setTeacherName(list[0].full_name);
+          if (isTeacher && user?.full_name) {
+            setTeacherName(user.full_name);
+          } else if (list.length > 0) {
+            setTeacherName(list[0].full_name);
+          }
         }
         if (classRes?.data?.data) {
           const list = classRes.data.data;
@@ -121,6 +128,12 @@ export default function CreateAssignmentPage() {
     }
     loadMasterData();
   }, []);
+
+  useEffect(() => {
+    if (isTeacher && user?.full_name) {
+      setTeacherName(user.full_name);
+    }
+  }, [isTeacher, user?.full_name]);
 
   // Questions Helper Methods
   const addQuestion = (type: 'MULTIPLE_CHOICE' | 'ESSAY') => {
@@ -245,10 +258,11 @@ export default function CreateAssignmentPage() {
     try {
       const totalQuestionsPoints = payloadQuestions.reduce((acc, q) => acc + (q.points || 0), 0);
       const computedMaxScore = totalQuestionsPoints > 0 ? totalQuestionsPoints : 100;
+      const effectiveTeacherName = (isTeacher && user?.full_name) ? user.full_name : (teacherName || user?.full_name || 'Guru Pengampu');
 
       const payload = {
         title: title.trim(),
-        description: `${subjectName || 'Umum'} • ${className || 'Semua Rombel'} • ${teacherName || 'Guru Pengampu'} • ${instructions.slice(0, 100) || 'Tugas Pembelajaran Terstruktur'}`,
+        description: `${subjectName || 'Umum'} • ${className || 'Semua Rombel'} • ${effectiveTeacherName} • ${instructions.slice(0, 100) || 'Tugas Pembelajaran Terstruktur'}`,
         instructions: instructions.trim() || undefined,
         max_score: computedMaxScore,
         due_at: `${dueDate}T${dueTime}:00Z`,
@@ -495,15 +509,25 @@ export default function CreateAssignmentPage() {
                 <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, marginBottom: '0.35rem' }}>
                   Guru Pengampu *
                 </label>
-                <select
-                  value={teacherName}
-                  onChange={e => setTeacherName(e.target.value)}
-                  className="input"
-                >
-                  {teachers.map(t => (
-                    <option key={t.id} value={t.full_name}>{t.full_name}</option>
-                  ))}
-                </select>
+                {isTeacher && user?.full_name ? (
+                  <input
+                    type="text"
+                    disabled
+                    value={user.full_name}
+                    className="input"
+                    style={{ width: '100%', background: 'var(--bg-elevated)', cursor: 'not-allowed', fontWeight: 700 }}
+                  />
+                ) : (
+                  <select
+                    value={teacherName}
+                    onChange={e => setTeacherName(e.target.value)}
+                    className="input"
+                  >
+                    {teachers.map(t => (
+                      <option key={t.id} value={t.full_name}>{t.full_name}</option>
+                    ))}
+                  </select>
+                )}
               </div>
             </div>
 
