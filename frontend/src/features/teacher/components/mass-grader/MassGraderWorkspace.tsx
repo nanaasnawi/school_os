@@ -107,6 +107,53 @@ export function MassGraderWorkspace() {
       {/* ── Main Split Workstation ── */}
       {isLoading ? (
         <MassGraderSkeleton />
+      ) : assignmentList.length === 0 ? (
+        /* ── Empty State: no assignments created yet ── */
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '0.75rem',
+          padding: '4rem 2rem',
+          textAlign: 'center',
+          color: 'var(--text-secondary, #64748b)',
+        }}>
+          <div style={{
+            width: 56, height: 56, borderRadius: 14,
+            background: '#f1f5f9',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+            </svg>
+          </div>
+          <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary, #0f172a)' }}>
+            Belum Ada Tugas Aktif
+          </div>
+          <div style={{ fontSize: '0.8rem', maxWidth: 380 }}>
+            Buat tugas terlebih dahulu di menu <strong>Tugas Siswa</strong>, lalu siswa dapat mengumpulkan dan kamu bisa mulai menilai di sini.
+          </div>
+          <a
+            href="/dashboard/learning/assignments/create"
+            style={{
+              marginTop: '0.5rem',
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              background: '#0284c7', color: '#fff',
+              padding: '0.45rem 1rem', borderRadius: 8,
+              fontWeight: 700, fontSize: '0.8rem',
+              textDecoration: 'none',
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Buat Tugas Baru
+          </a>
+        </div>
       ) : (
         <div className={styles.splitLayout}>
           {/* Left Column: Submissions Sidebar */}

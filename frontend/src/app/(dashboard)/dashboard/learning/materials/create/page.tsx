@@ -314,18 +314,9 @@ export default function CreateMaterialPage() {
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem', marginTop: '0.25rem' }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <Link
-                href="/dashboard/learning/materials"
-                className="btn btn-secondary btn-sm"
-                style={{ borderRadius: '10px', padding: '0.4rem 0.75rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
-              >
-                <span>←</span> Kembali
-              </Link>
               <h1 style={{ margin: 0, fontSize: '1.65rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>
                 Tambah Modul &amp; Materi Pembelajaran
               </h1>
-            </div>
             <p style={{ margin: '0.35rem 0 0 0', fontSize: '0.84rem', color: 'var(--text-muted)' }}>
               Pilih dari katalog 600+ buku teks resmi Kemendikbudristek atau unggah dokumen mandiri &amp; video materi untuk siswa.
             </p>

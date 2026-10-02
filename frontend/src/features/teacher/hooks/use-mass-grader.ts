@@ -30,7 +30,7 @@ export function useMassGrader(initialAssignmentId?: string) {
   const [questionScores, setQuestionScores] = useState<Record<string, number>>({});
   const [questionFeedbacks, setQuestionFeedbacks] = useState<Record<string, string>>({});
 
-  // 1. Fetch teacher assignments for switcher dropdown
+  // 1. Fetch teacher assignments for switcher dropdown (run once on mount only)
   useEffect(() => {
     async function loadAssignments() {
       try {
@@ -51,20 +51,35 @@ export function useMassGrader(initialAssignmentId?: string) {
               class_name: i.class_name,
             }))
           );
-          if (!selectedAssignmentId && items.length > 0) {
-            setSelectedAssignmentId(items[0].id);
+          // Only auto-select first if no assignment was pre-selected via URL
+          setSelectedAssignmentId((current) => {
+            if (!current && items.length > 0) return items[0].id;
+            return current;
+          });
+          // If no items exist at all, stop the loading spinner
+          if (items.length === 0) {
+            setIsLoading(false);
           }
+        } else {
+          // API error: stop loading so user sees empty state, not infinite spinner
+          setIsLoading(false);
         }
       } catch (err) {
         console.error('Failed to load assignments list:', err);
+        setIsLoading(false);
       }
     }
     loadAssignments();
-  }, [selectedAssignmentId]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run once on mount — selectedAssignmentId in deps caused infinite re-fetch loop
 
   // 2. Fetch assignment details and submissions when selectedAssignmentId changes
   const loadSubmissionsData = useCallback(async () => {
-    if (!selectedAssignmentId) return;
+    // Guard: if no assignment is selected, stop loading immediately (don't leave spinner)
+    if (!selectedAssignmentId) {
+      setIsLoading(false);
+      return;
+    }
     setIsLoading(true);
     try {
       const [asg, subs] = await Promise.all([
