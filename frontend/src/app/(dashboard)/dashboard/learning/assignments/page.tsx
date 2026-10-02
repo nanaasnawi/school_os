@@ -8,6 +8,7 @@ import { getApiUrl } from '@/lib/api';
 import { useAssignments, useAssignment, useAssignmentSubmissions, AssignmentQuestion, SubmissionAnswer } from '@/features/assignment';
 import { useSubjects } from '@/features/material';
 import { getTenantItem } from '@/lib/tenant-storage';
+import { useAuth } from '@/contexts/AuthContext';
 
 type AssignmentItem = {
   id: string;
@@ -40,6 +41,9 @@ type SubmissionItem = {
 };
 
 export default function AssignmentsPage() {
+  const { user } = useAuth();
+  const isTeacher = user?.role?.toLowerCase().includes('guru') || user?.role?.toLowerCase().includes('teacher') || user?.role?.toLowerCase().includes('pengajar');
+
   const [selectedId, setSelectedId] = useState('');
   const [assignmentTab, setAssignmentTab] = useState<'questions' | 'submissions'>('questions');
   const [submissionFilter, setSubmissionFilter] = useState<'all' | 'needs_grading' | 'graded' | 'unsubmitted'>('all');
@@ -228,7 +232,9 @@ export default function AssignmentsPage() {
         if (teacherRes?.data?.data) {
           const list = teacherRes.data.data as Array<{ id: string; full_name: string }>;
           setTeachers(list);
-          if (list.length > 0) {
+          if (isTeacher && user?.full_name) {
+            setNewAssignment(prev => ({ ...prev, teacherName: user.full_name || '' }));
+          } else if (list.length > 0) {
             setNewAssignment(prev => ({ ...prev, teacherName: prev.teacherName || list[0].full_name }));
           }
         }
@@ -342,10 +348,11 @@ export default function AssignmentsPage() {
       const totalQuestionsPoints = payloadQuestions.reduce((acc, q) => acc + (q.points || 0), 0);
       const computedMaxScore = totalQuestionsPoints > 0 ? totalQuestionsPoints : (Number(newAssignment.maxScore) || 100);
 
+      const effectiveTeacherName = (isTeacher && user?.full_name) ? user.full_name : (newAssignment.teacherName || user?.full_name || 'Guru Pengampu');
       const effectiveSubject = newAssignment.subjectName || (subjectsList.length > 0 ? subjectsList[0].name : 'Umum');
       const payload = {
         title: newAssignment.title,
-        description: `${effectiveSubject} • ${newAssignment.className} • ${newAssignment.teacherName} • ${newAssignment.description || 'Tugas Baru'}`,
+        description: `${effectiveSubject} • ${newAssignment.className} • ${effectiveTeacherName} • ${newAssignment.description || 'Tugas Baru'}`,
         instructions: newAssignment.instructions || undefined,
         max_score: computedMaxScore,
         due_at: `${newAssignment.dueDate}T${newAssignment.dueTime}:00Z`,
@@ -1040,17 +1047,27 @@ export default function AssignmentsPage() {
 
               <div>
                 <label style={{ fontSize: '0.76rem', fontWeight: 700 }}>Guru Pengampu *</label>
-                <select
-                  value={newAssignment.teacherName}
-                  onChange={e => setNewAssignment({ ...newAssignment, teacherName: e.target.value })}
-                  className="input"
-                >
-                  {teachers.length > 0 ? (
-                    teachers.map(t => <option key={t.id} value={t.full_name}>{t.full_name}</option>)
-                  ) : (
-                    <option value="">Belum ada guru</option>
-                  )}
-                </select>
+                {isTeacher && user?.full_name ? (
+                  <input
+                    type="text"
+                    disabled
+                    value={user.full_name}
+                    className="input"
+                    style={{ background: 'var(--bg-elevated)', cursor: 'not-allowed', fontWeight: 700 }}
+                  />
+                ) : (
+                  <select
+                    value={newAssignment.teacherName}
+                    onChange={e => setNewAssignment({ ...newAssignment, teacherName: e.target.value })}
+                    className="input"
+                  >
+                    {teachers.length > 0 ? (
+                      teachers.map(t => <option key={t.id} value={t.full_name}>{t.full_name}</option>)
+                    ) : (
+                      <option value="">Belum ada guru</option>
+                    )}
+                  </select>
+                )}
               </div>
 
               {/* Assignment Format Selector */}

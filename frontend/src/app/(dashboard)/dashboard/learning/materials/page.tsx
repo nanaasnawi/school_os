@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { listTeachers, listClasses } from '@/lib/sdk/sdk.gen';
 import { getApiUrl } from '@/lib/api';
 import { useMaterials, useLibraryBooks, useSubjects, LibraryBook } from '@/features/material';
+import { useAuth } from '@/contexts/AuthContext';
 
 type MaterialItem = {
   id: string;
@@ -28,6 +29,9 @@ type MaterialItem = {
 };
 
 export default function MaterialsPage() {
+  const { user } = useAuth();
+  const isTeacher = user?.role?.toLowerCase().includes('guru') || user?.role?.toLowerCase().includes('teacher') || user?.role?.toLowerCase().includes('pengajar');
+
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSubject, setSelectedSubject] = useState('ALL');
   
@@ -37,7 +41,7 @@ export default function MaterialsPage() {
   const { data: materialsData = [], refetch: refetchMaterials } = useMaterials();
 
   // Teachers and Classes for dropdowns
-  const [teachers, setTeachers] = useState<Array<{ id: string; full_name: string }>>([]);
+  const [teachers, setTeachers] = useState<Array<{ id: string; full_name: string; user_id?: string; nip?: string }>>([]);
   const [classesList, setClassesList] = useState<Array<{ id: string; name: string }>>([]);
 
   // Library Books State (Mode Perpustakaan Guru)
@@ -137,7 +141,11 @@ export default function MaterialsPage() {
         if (teacherList.length > 0) {
           const typedTeachers = teacherList as Array<{ id: string; full_name: string }>;
           setTeachers(typedTeachers);
-          setNewMaterial(prev => ({ ...prev, author: prev.author || typedTeachers[0].full_name }));
+          if (isTeacher && user?.full_name) {
+            setNewMaterial(prev => ({ ...prev, author: user.full_name || '' }));
+          } else {
+            setNewMaterial(prev => ({ ...prev, author: prev.author || typedTeachers[0].full_name }));
+          }
         }
 
         const cList = Array.isArray(classRes?.data?.data)
@@ -226,11 +234,12 @@ export default function MaterialsPage() {
         }
       }
 
-      const targetTeacher = teachers.find((t: any) => t.full_name === newMaterial.author);
+      const effectiveAuthor = (isTeacher && user?.full_name) ? user.full_name : (newMaterial.author || user?.full_name || 'Guru');
+      const targetTeacher = teachers.find((t: any) => t.full_name === effectiveAuthor) || teachers.find((t: any) => t.user_id === user?.id);
       const payload = {
         material_type: newMaterial.format.toLowerCase(),
         title: newMaterial.title,
-        description: `${newMaterial.subject || 'Umum'} • ${newMaterial.grade || 'Semua Rombel'} • ${newMaterial.author || 'Guru'} • ${newMaterial.description || 'Modul Pelajaran'}`,
+        description: `${newMaterial.subject || 'Umum'} • ${newMaterial.grade || 'Semua Rombel'} • ${effectiveAuthor} • ${newMaterial.description || 'Modul Pelajaran'}`,
         storage_key: storageKey,
         external_url: externalUrl,
         order_index: 0,
@@ -273,7 +282,8 @@ export default function MaterialsPage() {
       return;
     }
     const targetSubject = subjectsList.find(s => s.name === newMaterial.subject);
-    const targetTeacher = teachers.find(t => t.full_name === newMaterial.author) || teachers[0];
+    const effectiveAuthor = (isTeacher && user?.full_name) ? user.full_name : (newMaterial.author || user?.full_name || 'Guru');
+    const targetTeacher = teachers.find(t => t.full_name === effectiveAuthor) || teachers.find((t: any) => t.user_id === user?.id) || teachers[0];
     try {
       const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
       const startP = Math.max(1, Number(bookStartPage) || 1);
@@ -769,22 +779,32 @@ startxref
 
                   <div>
                     <label style={{ fontSize: '0.76rem', fontWeight: 700 }}>Guru Pengampu *</label>
-                    <select
-                      value={newMaterial.author}
-                      onChange={e => setNewMaterial({ ...newMaterial, author: e.target.value })}
-                      className="input"
-                      style={{ fontWeight: 600 }}
-                    >
-                      {teachers.length > 0 ? (
-                        teachers.map((t: any) => (
-                          <option key={t.id} value={t.full_name}>
-                            {t.full_name} {t.nip ? `(NIP: ${t.nip})` : ''}
-                          </option>
-                        ))
-                      ) : (
-                        <option value="">Belum ada data guru pengampu</option>
-                      )}
-                    </select>
+                    {isTeacher && user?.full_name ? (
+                      <input
+                        type="text"
+                        disabled
+                        value={user.full_name}
+                        className="input"
+                        style={{ background: 'var(--bg-elevated)', cursor: 'not-allowed', fontWeight: 700 }}
+                      />
+                    ) : (
+                      <select
+                        value={newMaterial.author}
+                        onChange={e => setNewMaterial({ ...newMaterial, author: e.target.value })}
+                        className="input"
+                        style={{ fontWeight: 600 }}
+                      >
+                        {teachers.length > 0 ? (
+                          teachers.map((t: any) => (
+                            <option key={t.id} value={t.full_name}>
+                              {t.full_name} {t.nip ? `(NIP: ${t.nip})` : ''}
+                            </option>
+                          ))
+                        ) : (
+                          <option value="">Belum ada data guru pengampu</option>
+                        )}
+                      </select>
+                    )}
                   </div>
 
                   <div>
@@ -843,21 +863,31 @@ startxref
 
                 <div>
                   <label style={{ fontSize: '0.76rem', fontWeight: 700 }}>Guru Pengampu *</label>
-                  <select
-                    value={newMaterial.author}
-                    onChange={e => setNewMaterial({ ...newMaterial, author: e.target.value })}
-                    className="input"
-                  >
-                    {teachers.length > 0 ? (
-                      teachers.map((t: any) => (
-                        <option key={t.id} value={t.full_name}>
-                          {t.full_name} {t.nip ? `(NIP: ${t.nip})` : ''}
-                        </option>
-                      ))
-                    ) : (
-                      <option value="">Belum ada guru</option>
-                    )}
-                  </select>
+                  {isTeacher && user?.full_name ? (
+                    <input
+                      type="text"
+                      disabled
+                      value={user.full_name}
+                      className="input"
+                      style={{ background: 'var(--bg-elevated)', cursor: 'not-allowed', fontWeight: 700 }}
+                    />
+                  ) : (
+                    <select
+                      value={newMaterial.author}
+                      onChange={e => setNewMaterial({ ...newMaterial, author: e.target.value })}
+                      className="input"
+                    >
+                      {teachers.length > 0 ? (
+                        teachers.map((t: any) => (
+                          <option key={t.id} value={t.full_name}>
+                            {t.full_name} {t.nip ? `(NIP: ${t.nip})` : ''}
+                          </option>
+                        ))
+                      ) : (
+                        <option value="">Belum ada guru</option>
+                      )}
+                    </select>
+                  )}
                 </div>
 
                 <div>

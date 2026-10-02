@@ -5,6 +5,7 @@ import Link from 'next/link';
 import styles from './quizzes.module.css';
 import { listTeachers, listClasses, listStudents } from '@/lib/sdk/sdk.gen';
 import { getApiUrl } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
 
 type QuizItem = {
   id: string;
@@ -89,6 +90,9 @@ interface SubjectItem {
 const INITIAL_QUIZZES: QuizItem[] = [];
 
 export default function QuizzesPage() {
+  const { user } = useAuth();
+  const isTeacher = user?.role?.toLowerCase().includes('guru') || user?.role?.toLowerCase().includes('teacher') || user?.role?.toLowerCase().includes('pengajar');
+
   const [activeView, setActiveView] = useState<'LIST' | 'ANALYSIS' | 'QUESTIONS'>('LIST');
   const [quizzes, setQuizzes] = useState<QuizItem[]>(INITIAL_QUIZZES);
   const [search, setSearch] = useState('');
@@ -166,7 +170,11 @@ export default function QuizzesPage() {
         if (teacherRes?.data?.data) {
           const list = teacherRes.data.data;
           setTeachers(list);
-          if (list.length > 0) setNewQuiz(prev => ({ ...prev, teacherName: list[0].full_name }));
+          if (isTeacher && user?.full_name) {
+            setNewQuiz(prev => ({ ...prev, teacherName: user.full_name || '' }));
+          } else if (list.length > 0) {
+            setNewQuiz(prev => ({ ...prev, teacherName: prev.teacherName || list[0].full_name }));
+          }
         }
 
         if (classRes?.data?.data) {
@@ -343,9 +351,10 @@ export default function QuizzesPage() {
     try {
       const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
       const durationMinutes = parseInt(newQuiz.duration.replace(/\D/g, '')) || 30;
+      const effectiveTeacherName = (isTeacher && user?.full_name) ? user.full_name : (newQuiz.teacherName || user?.full_name || 'Guru');
       const payload = {
         title: newQuiz.title,
-        description: `${newQuiz.subject} • ${newQuiz.classRoom} • ${newQuiz.teacherName} • ${newQuiz.description || 'Kuis online CBT'}`,
+        description: `${newQuiz.subject} • ${newQuiz.classRoom} • ${effectiveTeacherName} • ${newQuiz.description || 'Kuis online CBT'}`,
         duration_minutes: durationMinutes,
         passing_score: Number(newQuiz.passingScore) || 70,
         class_id: newQuiz.classRoom,
@@ -375,7 +384,7 @@ export default function QuizzesPage() {
           title: newQuiz.title,
           subject: newQuiz.subject,
           classRoom: newQuiz.classRoom,
-          teacherName: newQuiz.teacherName,
+          teacherName: effectiveTeacherName,
           duration: `${durationMinutes} Menit`,
           totalQuestions: 0,
           status: 'PUBLISHED',
@@ -1386,20 +1395,30 @@ export default function QuizzesPage() {
                   <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, marginBottom: '0.35rem', color: 'var(--text-primary)' }}>
                     Guru Pembuat / Pengawas:
                   </label>
-                  <select
-                    value={newQuiz.teacherName}
-                    onChange={e => setNewQuiz({ ...newQuiz, teacherName: e.target.value })}
-                    className="input"
-                    style={{ width: '100%' }}
-                  >
-                    {teachers.length > 0 ? (
-                      teachers.map((t: TeacherItem) => (
-                        <option key={t.id} value={t.full_name}>{t.full_name}</option>
-                      ))
-                    ) : (
-                      <option value="">Belum ada guru</option>
-                    )}
-                  </select>
+                  {isTeacher && user?.full_name ? (
+                    <input
+                      type="text"
+                      disabled
+                      value={user.full_name}
+                      className="input"
+                      style={{ width: '100%', background: 'var(--bg-elevated)', cursor: 'not-allowed', fontWeight: 700 }}
+                    />
+                  ) : (
+                    <select
+                      value={newQuiz.teacherName}
+                      onChange={e => setNewQuiz({ ...newQuiz, teacherName: e.target.value })}
+                      className="input"
+                      style={{ width: '100%' }}
+                    >
+                      {teachers.length > 0 ? (
+                        teachers.map((t: TeacherItem) => (
+                          <option key={t.id} value={t.full_name}>{t.full_name}</option>
+                        ))
+                      ) : (
+                        <option value="">Belum ada guru</option>
+                      )}
+                    </select>
+                  )}
                 </div>
 
                 <div>

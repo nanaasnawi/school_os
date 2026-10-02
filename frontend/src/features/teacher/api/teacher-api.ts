@@ -75,8 +75,8 @@ export async function fetchTeacherClasses(): Promise<TeacherClassSummary[]> {
   try {
     const headers = getAuthHeaders();
 
-    // Fetch teacher profile, all classes, and all students in parallel
-    const [profile, classesRes, studentsRes] = await Promise.all([
+    // Fetch teacher profile, all classes, all students, and sessions in parallel
+    const [profile, classesRes, studentsRes, sessionsRes] = await Promise.all([
       fetchCurrentTeacherProfile(),
       fetch(getApiUrl('/api/v1/academic/classes?page_size=200'), { headers })
         .then((r) => (r.ok ? r.json() : null))
@@ -84,10 +84,21 @@ export async function fetchTeacherClasses(): Promise<TeacherClassSummary[]> {
       fetch(getApiUrl('/api/v1/students?page_size=1000'), { headers })
         .then((r) => (r.ok ? r.json() : null))
         .catch(() => null),
+      fetch(getApiUrl('/api/v1/learning/sessions'), { headers })
+        .then((r) => (r.ok ? r.json() : null))
+        .catch(() => null),
     ]);
 
     const rawClasses: any[] = classesRes?.data?.items || classesRes?.data || [];
     const rawStudents: any[] = studentsRes?.data?.items || studentsRes?.data || [];
+    const rawSessions: any[] = sessionsRes?.data?.items || sessionsRes?.data || [];
+
+    const scheduledClassIds = new Set<string>();
+    const scheduledClassNames = new Set<string>();
+    rawSessions.forEach((s: any) => {
+      if (s.class_id) scheduledClassIds.add(s.class_id);
+      if (s.class_name) scheduledClassNames.add(s.class_name.trim().toLowerCase());
+    });
 
     // Compute live student count per class from real students data
     const studentCountMap = new Map<string, number>();
@@ -103,17 +114,19 @@ export async function fetchTeacherClasses(): Promise<TeacherClassSummary[]> {
     const currentTeacherId = profile?.id;
     const currentUserId = profile?.user_id;
 
-    // Filter homeroom classes assigned to this specific teacher
-    const homeroomClasses = rawClasses.filter((c: any) => {
+    // Strictly filter classes assigned to this teacher (either as homeroom teacher or in teaching schedule)
+    const assignedClasses = rawClasses.filter((c: any) => {
       if (!currentTeacherId && !currentUserId) return false;
-      return (
+      const isHomeroom =
         (currentTeacherId && c.homeroom_teacher_id === currentTeacherId) ||
-        (currentUserId && c.homeroom_teacher_id === currentUserId)
-      );
+        (currentUserId && c.homeroom_teacher_id === currentUserId);
+      const isScheduled =
+        scheduledClassIds.has(c.id) ||
+        scheduledClassNames.has((c.name || '').trim().toLowerCase());
+      return isHomeroom || isScheduled;
     });
 
-    // If teacher has dedicated homeroom classes, show them; otherwise show available active classes
-    const activeClasses = homeroomClasses.length > 0 ? homeroomClasses : rawClasses;
+    const activeClasses = assignedClasses;
 
     const teacherClasses: TeacherClassSummary[] = activeClasses.map((c) => {
       const className = c.name || `Kelas ${c.grade_level || ''}`;

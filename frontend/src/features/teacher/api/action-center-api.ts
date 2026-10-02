@@ -29,12 +29,12 @@ export async function fetchAtRiskStudents(classId?: string): Promise<AtRiskStude
     const currentUserId = profile?.user_id;
 
     const teacherAssignments = assignments.filter((a) => {
-      if (!currentTeacherId && !currentUserId) return true;
+      if (!currentTeacherId && !currentUserId && !profile?.full_name) return true;
       return (
-        !a.teacher_id ||
         a.teacher_id === currentTeacherId ||
         a.created_by === currentTeacherId ||
-        (currentUserId && (a.teacher_id === currentUserId || a.created_by === currentUserId))
+        (currentUserId && (a.teacher_id === currentUserId || a.created_by === currentUserId)) ||
+        (profile?.full_name && a.teacher_name && a.teacher_name.trim().toLowerCase() === profile.full_name.trim().toLowerCase())
       );
     });
 
@@ -146,12 +146,12 @@ export async function fetchPendingGradingTasks(): Promise<PendingGradingTask[]> 
     const currentUserId = profile?.user_id;
 
     const teacherAssignments = assignments.filter((a) => {
-      if (!currentTeacherId && !currentUserId) return true;
+      if (!currentTeacherId && !currentUserId && !profile?.full_name) return true;
       return (
-        !a.teacher_id ||
         a.teacher_id === currentTeacherId ||
         a.created_by === currentTeacherId ||
-        (currentUserId && (a.teacher_id === currentUserId || a.created_by === currentUserId))
+        (currentUserId && (a.teacher_id === currentUserId || a.created_by === currentUserId)) ||
+        (profile?.full_name && a.teacher_name && a.teacher_name.trim().toLowerCase() === profile.full_name.trim().toLowerCase())
       );
     });
 
