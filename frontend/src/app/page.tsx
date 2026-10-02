@@ -2,52 +2,71 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import styles from './page.module.css';
+import {
+  ArrowRight,
+  ChevronDown,
+  ChevronUp,
+  FolderSync,
+  QrCode,
+  Sparkles,
+  Server,
+  Layers,
+  Smartphone,
+  GraduationCap,
+  BookOpen,
+  Users,
+  BarChart3,
+  CheckCircle2,
+  Cpu,
+  Clock,
+  ShieldCheck,
+  Activity,
+  Check,
+  FileCheck2,
+  ExternalLink,
+  Lock,
+  Zap,
+  Globe,
+  Database
+} from 'lucide-react';
 
 export default function LandingPage() {
   // Interactive state
   const [activeArchTab, setActiveArchTab] = useState<'RUST' | 'BRIDGE' | 'DDD' | 'MOBILE'>('RUST');
   const [activeFaqIndex, setActiveFaqIndex] = useState<number>(0);
-  const [activeIntegrationTab, setActiveIntegrationTab] = useState<'DAPODIK' | 'SIBI' | 'MERDEKA'>('DAPODIK');
-  const [subscribedEmail, setSubscribedEmail] = useState('');
-  const [subscribeSuccess, setSubscribeSuccess] = useState(false);
-
-  const handleSubscribe = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (subscribedEmail.trim()) {
-      setSubscribeSuccess(true);
-      setTimeout(() => {
-        setSubscribedEmail('');
-        setSubscribeSuccess(false);
-      }, 4000);
-    }
-  };
 
   const faqs = [
     {
       q: 'Bagaimana cara integrasi dengan aplikasi Dapodik lokal sekolah?',
-      a: 'Akselerasi-Edu dilengkapi dengan Local Bridge Agent berbasis Rust yang berjalan ringan di server sekolah. Agen ini membaca database PostgreSQL lokal Dapodik (Port 5432) dan menyinkronkan data rombel, siswa, dan guru secara otomatis ke cloud tanpa perlu entri manual ganda.',
+      a: 'Akselerasi-Edu dilengkapi dengan Local Bridge Agent berbasis Rust yang berjalan sangat ringan di server lokal sekolah. Agen ini membaca database PostgreSQL lokal Dapodik (Port 5432) dan menyinkronkan data rombel, siswa, dan guru secara otomatis ke cloud tanpa perlu entri manual ganda.',
     },
     {
       q: 'Apakah sistem tetap dapat digunakan saat koneksi internet lambat?',
-      a: 'Ya! Arsitektur kami mengadopsi prinsip offline-first dan idempotency. Mobile app siswa menyimpan materi pembelajaran dan buku SIBI secara lokal, sementara Local Bridge menyimpan antrean outbox events yang otomatis tersinkronisasi saat koneksi pulih.',
+      a: 'Ya! Arsitektur kami mengadopsi prinsip offline-first dan idempotency. Mobile app siswa menyimpan materi pembelajaran dan buku SIBI secara lokal, sementara Local Bridge menyimpan antrean outbox events yang otomatis tersinkronisasi saat koneksi internet sekolah pulih.',
     },
     {
       q: 'Bagaimana Akselerasi-Edu melindungi keamanan dan isolasi data sekolah?',
       a: 'Sistem menerapkan isolasi multi-tenant yang ketat (ADR-0004). Setiap tenant/sekolah memiliki ruang data terenkripsi berdasarkan NPSN unik. Akses diamankan dengan RBAC berbasis klaim JWT dan enkripsi password berstandar industri Argon2.',
     },
     {
-      q: 'Apakah guru dan wali murid mendapatkan modul khusus?',
-      a: 'Tentu! Guru memiliki Teacher Workstation lengkap dengan Action Center, Mass Grader koreksi esai, dan presensi kelas. Wali murid memiliki Parent Portal terpisah untuk memantau rekap nilai, kehadiran, dan agenda sekolah secara real-time.',
+      q: 'Apakah guru dan wali murid mendapatkan modul antarmuka khusus?',
+      a: 'Tentu! Guru memiliki Teacher Workstation lengkap dengan Action Center, Mass Grader koreksi esai, dan presensi kelas 1-klik. Wali murid memiliki Parent Portal terpisah untuk memantau rekap nilai, kehadiran, dan agenda sekolah secara real-time.',
+    },
+    {
+      q: 'Bagaimana proses migrasi data dari sistem lama ke Akselerasi-Edu?',
+      a: 'Proses migrasi berlangsung cepat dan otomatis melalui impor basis data Dapodik lokal atau file Excel/CSV standar Kemdikdasmen. Tim teknis kami menyediakan pendampingan deployment dan verifikasi integritas data hingga siap digunakan.',
     },
   ];
 
   return (
     <div className={styles.pageWrapper}>
-      <div className={styles.bgVectorLines} />
+      {/* Subtle Dot Grid Background Pattern */}
+      <div className={styles.bgDotGrid} />
 
       {/* ══════════════════════════════════════════════════════════
-         1. NAVIGATION HEADER
+         1. NAVIGATION HEADER (Light Mode)
          ══════════════════════════════════════════════════════════ */}
       <header className={styles.header}>
         <div className={styles.container}>
@@ -76,13 +95,13 @@ export default function LandingPage() {
                   </a>
                 </li>
                 <li>
-                  <a href="#architecture" className={styles.navLink}>
-                    <span>Arsitektur</span>
+                  <a href="#process" className={styles.navLink}>
+                    <span>Cara Kerja</span>
                   </a>
                 </li>
                 <li>
-                  <a href="#benefits" className={styles.navLink}>
-                    <span>Keunggulan</span>
+                  <a href="#architecture" className={styles.navLink}>
+                    <span>Arsitektur</span>
                   </a>
                 </li>
                 <li>
@@ -103,11 +122,9 @@ export default function LandingPage() {
               <Link href="/login" className={styles.loginBtn}>
                 Masuk Sistem
               </Link>
-              <Link href="/dashboard" className={styles.ctaPillCyan}>
+              <Link href="/dashboard" className={styles.ctaPillPurple}>
                 <span>Mulai Sekarang</span>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="9 18 15 12 9 6" />
-                </svg>
+                <ArrowRight size={15} strokeWidth={2.5} />
               </Link>
             </div>
           </div>
@@ -115,7 +132,7 @@ export default function LandingPage() {
       </header>
 
       {/* ══════════════════════════════════════════════════════════
-         2. HERO SECTION
+         2. HERO SECTION (Light Mode Matching Figma node-id=0-485)
          ══════════════════════════════════════════════════════════ */}
       <section className={styles.heroSection}>
         <div className={styles.container}>
@@ -123,7 +140,7 @@ export default function LandingPage() {
             {/* Left Hero Content */}
             <div className={styles.heroLeft}>
               <div className={styles.heroBadge}>
-                <span style={{ color: '#00F5D4' }}>●</span>
+                <Sparkles size={14} color="#6C5CE7" />
                 <span>OPERATING SYSTEM SEKOLAH MODERN • RUST &amp; NEXT.JS</span>
               </div>
 
@@ -134,86 +151,125 @@ export default function LandingPage() {
 
               <p className={styles.heroSubtitle}>
                 Platform SaaS generasi baru untuk sekolah modern. Menyatukan Teacher Workstation,
-                LMS buku digital SIBI Kemdikdasmen, sinkronisasi Dapodik otomatis tanpa entri ulang,
-                dan portal pantau wali murid dalam satu arsitektur tangguh.
+                LMS buku digital SIBI Kemdikdasmen, sinkronisasi Dapodik otomatis tanpa entri ulang ganda,
+                dan portal pantau orang tua dalam satu arsitektur tangguh.
               </p>
 
-              <div className={styles.heroActionGroup}>
-                <Link href="/dashboard" className={styles.ctaPillCyan}>
-                  <span>Jelajahi Workstation</span>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <line x1="5" y1="12" x2="19" y2="12" />
-                    <polyline points="12 5 19 12 12 19" />
+              {/* Official Store Badges (App Store & Google Play) */}
+              <div className={styles.storeBadgesRow}>
+                <a
+                  href="#download-ios"
+                  className={styles.storeBadgeBtn}
+                  aria-label="Download on the App Store"
+                >
+                  <svg width="22" height="26" viewBox="0 0 170 170" fill="currentColor">
+                    <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.16-1.9-14.42-6.08-3.69-3.04-7.6-7.85-11.75-14.44-6.1-9.69-10.88-20.65-14.33-32.88-3.46-12.23-5.19-23.47-5.19-33.72 0-14.03 3.65-25.75 10.96-35.16 7.31-9.41 16.54-14.24 27.69-14.48 4.9.11 10.36 1.39 16.37 3.84 6.01 2.45 10.02 3.73 12.03 3.84 1.58-.22 5.86-1.61 12.83-4.17 6.97-2.56 12.79-3.73 17.47-3.52 13.25.86 23.86 5.56 31.84 14.1-11.53 6.96-17.18 16.54-16.96 28.74.22 9.69 3.92 17.74 11.1 24.16 7.18 6.42 15.78 10.23 25.8 11.43-2.18 6.64-4.8 13.59-7.86 20.85zM119.22 33.64c0-7.4 2.66-14.37 7.99-20.91 5.33-6.54 11.87-10.78 19.62-12.73.54 3.7.38 7.35-.48 10.96-.86 3.61-2.4 7.08-4.63 10.41-4.79 6.86-11.23 11.08-19.32 12.67-.32-.13-.72-.25-1.18-.35v-.05z" />
                   </svg>
-                </Link>
-                <Link href="/dashboard/teacher" className={styles.ctaOutline}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                    <polygon points="5 3 19 12 5 21 5 3" />
+                  <div>
+                    <span className={styles.storeBadgeSub}>Download on the</span>
+                    <span className={styles.storeBadgeName}>App Store</span>
+                  </div>
+                </a>
+
+                <a
+                  href="#download-android"
+                  className={styles.storeBadgeBtn}
+                  aria-label="Get it on Google Play"
+                >
+                  <svg width="22" height="24" viewBox="0 0 512 512" fill="none">
+                    <path d="M325.3 234.3L104.6 13l280.8 161.2-60.1 60.1z" fill="#00CEC9" />
+                    <path d="M47 36.7c-4.4 7.6-7 16.9-7 27.3v384c0 10.4 2.6 19.7 7 27.3l222-222L47 36.7z" fill="#6C5CE7" />
+                    <path d="M325.3 277.7l60.1 60.1L104.6 499l220.7-221.3z" fill="#EF4444" />
+                    <path d="M441 230.1L385.4 198l-60.1 36.3 60.1 36.3 55.6-32.1c8.3-4.8 8.3-13.6 0-18.4z" fill="#F59E0B" />
                   </svg>
-                  <span>Teacher Action Center</span>
+                  <div>
+                    <span className={styles.storeBadgeSub}>GET IT ON</span>
+                    <span className={styles.storeBadgeName}>Google Play</span>
+                  </div>
+                </a>
+
+                <Link href="/dashboard" className={styles.ctaOutlinePurple}>
+                  <span>Akses Web Portal</span>
+                  <ExternalLink size={14} />
                 </Link>
               </div>
             </div>
 
-            {/* Right Hero 3D Futuristic Dashboard Mockup */}
+            {/* Right Hero 3D Futuristic Smartphone Mockup */}
             <div className={styles.heroVisualWrapper}>
-              <div className={styles.heroPortalRing}>
-                {/* 3D Angled Central Card */}
-                <div className={styles.heroMockupCard}>
-                  <div className={styles.mockupHeader}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontSize: '1.2rem' }}>⚡</span>
-                      <span className={styles.mockupTitle}>Akselerasi Core</span>
+              <div className={styles.heroCurvedBackdrop}>
+                {/* 3D Angled Phone Chassis */}
+                <div className={styles.phoneMockupFrame}>
+                  <div className={styles.phoneScreen}>
+                    {/* Screen Header */}
+                    <div className={styles.phoneScreenHeader}>
+                      <span>9:41</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <Activity size={11} color="#00CEC9" />
+                        <span style={{ fontSize: '0.62rem', color: '#10B981', fontWeight: 700 }}>5G</span>
+                      </div>
                     </div>
-                    <span className={styles.mockupBadgeLive}>● Live Engine</span>
-                  </div>
 
-                  <div className={styles.mockupBalance}>
-                    <span className={styles.mockupBalanceLabel}>Kehadiran Sesi Belajar Hari Ini</span>
-                    <span className={styles.mockupBalanceValue}>96.8%</span>
-                    <span style={{ fontSize: '0.74rem', color: '#34D399', fontWeight: 700 }}>
-                      ▲ +3.2% dari pekan lalu • 32 Sesi Aktif
-                    </span>
-                  </div>
-
-                  {/* Micro dashboard graph */}
-                  <div style={{ background: 'rgba(255, 255, 255, 0.05)', borderRadius: '12px', padding: '12px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: '#94A3B8', marginBottom: '8px' }}>
-                      <span>Throughput Latensi API</span>
-                      <span style={{ color: '#00F5D4', fontWeight: 800 }}>&lt; 1.6s Cold / 45ms Hot</span>
+                    {/* School Identity */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '4px 0' }}>
+                      <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#6C5CE7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <GraduationCap size={15} color="#FFFFFF" />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '0.74rem', fontWeight: 800, color: '#FFFFFF' }}>SMA Negeri 1 Prestasi</div>
+                        <div style={{ fontSize: '0.62rem', color: '#94A3B8' }}>NPSN: 20108920 • Semester Ganjil</div>
+                      </div>
                     </div>
-                    <svg viewBox="0 0 100 28" fill="none" style={{ width: '100%', height: '36px' }}>
-                      <defs>
-                        <linearGradient id="heroSpark" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#00F5D4" stopOpacity="0.5" />
-                          <stop offset="100%" stopColor="#00F5D4" stopOpacity="0.0" />
-                        </linearGradient>
-                      </defs>
-                      <path d="M0 24 Q 20 8, 40 18 T 80 8 L 100 12 L 100 28 L 0 28 Z" fill="url(#heroSpark)" />
-                      <path d="M0 24 Q 20 8, 40 18 T 80 8 L 100 12" stroke="#00F5D4" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-                    </svg>
+
+                    {/* Balance / Attendance Card */}
+                    <div className={styles.phoneBalanceCard}>
+                      <span className={styles.phoneBalanceLabel}>Tingkat Kehadiran Hari Ini</span>
+                      <span className={styles.phoneBalanceValue}>98.4%</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.68rem', color: '#E0E7FF' }}>
+                        <CheckCircle2 size={12} color="#34D399" />
+                        <span>36 Rombel Aktif • 1.280 Siswa Hadir</span>
+                      </div>
+                    </div>
+
+                    {/* Quick Live Feed */}
+                    <div style={{ background: 'rgba(255, 255, 255, 0.05)', borderRadius: '12px', padding: '10px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.68rem', color: '#CBD5E1' }}>
+                        <span style={{ fontWeight: 700 }}>Materi SIBI Kemdikdasmen</span>
+                        <span style={{ color: '#00CEC9', fontWeight: 700 }}>Aktif</span>
+                      </div>
+                      <div style={{ fontSize: '0.64rem', color: '#94A3B8' }}>Bahasa Indonesia Kelas X - Bab 3 Teks Negosiasi</div>
+                      <div style={{ height: '4px', background: 'rgba(255, 255, 255, 0.1)', borderRadius: '99px', overflow: 'hidden' }}>
+                        <div style={{ width: '84%', height: '100%', background: '#6C5CE7' }} />
+                      </div>
+                    </div>
+
+                    {/* Quick Action Button */}
+                    <div style={{ marginTop: 'auto', background: '#6C5CE7', color: '#FFFFFF', borderRadius: '10px', padding: '8px 12px', textAlign: 'center', fontSize: '0.72rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                      <QrCode size={13} />
+                      <span>Presensi Kartu QR Instan</span>
+                    </div>
                   </div>
                 </div>
 
-                {/* Floating Glass Widget 1: Dapodik Bridge */}
-                <div className={styles.floatingBadge1}>
-                  <div style={{ width: '30px', height: '30px', borderRadius: '8px', background: '#00F5D4', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0B0826', fontWeight: 900 }}>
-                    🔄
+                {/* Floating White Stat Pill 1: Dapodik Bridge */}
+                <div className={styles.floatingPillTop}>
+                  <div style={{ width: '32px', height: '32px', borderRadius: '10px', background: '#ECFDF5', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#059669' }}>
+                    <FolderSync size={18} />
                   </div>
                   <div>
-                    <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#FFFFFF' }}>Dapodik Local Bridge</div>
-                    <div style={{ fontSize: '0.68rem', color: '#34D399', fontWeight: 700 }}>100% Selaras (3.420 Rekor)</div>
+                    <div className={styles.floatingStatLabel}>Dapodik Local Bridge</div>
+                    <div className={styles.floatingStatVal}>100% Selaras (3.420 Data)</div>
                   </div>
                 </div>
 
-                {/* Floating Glass Widget 2: Mass Grader */}
-                <div className={styles.floatingBadge2}>
-                  <div style={{ width: '30px', height: '30px', borderRadius: '8px', background: '#8B5CF6', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FFFFFF', fontWeight: 900 }}>
-                    📝
+                {/* Floating White Stat Pill 2: Teacher Workstation */}
+                <div className={styles.floatingPillBottom}>
+                  <div style={{ width: '32px', height: '32px', borderRadius: '10px', background: '#F5F3FF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6C5CE7' }}>
+                    <FileCheck2 size={18} />
                   </div>
                   <div>
-                    <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#FFFFFF' }}>Mass Grader Workstation</div>
-                    <div style={{ fontSize: '0.68rem', color: '#C4B5FD', fontWeight: 700 }}>4.120 Esai Terselesaikan</div>
+                    <div className={styles.floatingStatLabel}>Teacher Workstation</div>
+                    <div className={styles.floatingStatVal}>32 Esai Menunggu Penilaian</div>
                   </div>
                 </div>
               </div>
@@ -223,9 +279,9 @@ export default function LandingPage() {
       </section>
 
       {/* ══════════════════════════════════════════════════════════
-         3. 3-STEP IMPLEMENTATION PROCESS
+         3. 3-STEP IMPLEMENTATION SECTION (Light Mode)
          ══════════════════════════════════════════════════════════ */}
-      <section className={styles.processSection}>
+      <section id="process" className={styles.processSection}>
         <div className={styles.watermarkText}>GET STARTED</div>
         <div className={styles.container}>
           <div className={styles.sectionHeaderCenter}>
@@ -237,29 +293,29 @@ export default function LandingPage() {
               <span className={styles.accentBar} />
             </div>
             <p className={styles.sectionSubtitle}>
-              Hanya butuh beberapa menit tanpa konfigurasi rumit. Tersedia di web browser,
-              tablet guru, smartphone Android siswa, serta server lokal sekolah.
+              Hanya butuh beberapa menit tanpa konfigurasi rumit. Terintegrasi penuh di web browser guru,
+              smartphone Android siswa, serta server lokal sekolah.
             </p>
           </div>
 
           <div className={styles.stepsGrid}>
             {/* Step 1 */}
             <div className={styles.stepCard}>
-              <div className={`${styles.stepOrbContainer} ${styles.stepOrbPurple}`}>
-                <span>🔌</span>
+              <div className={`${styles.stepIconCircle} ${styles.stepIconPurple}`}>
+                <FolderSync size={32} />
                 <span className={styles.stepNumber}>1</span>
               </div>
               <h3 className={styles.stepTitle}>Hubungkan Local Bridge</h3>
               <p className={styles.stepDesc}>
-                Instal agen daemon Rust lokal di server sekolah. Data Dapodik, rombel, guru,
+                Jalankan agen daemon Rust lokal di server sekolah. Data Dapodik, rombel, guru,
                 dan peserta didik langsung tersinkronisasi otomatis tanpa entri ulang ganda.
               </p>
             </div>
 
             {/* Step 2 */}
             <div className={styles.stepCard}>
-              <div className={`${styles.stepOrbContainer} ${styles.stepOrbCyan}`}>
-                <span>🪪</span>
+              <div className={`${styles.stepIconCircle} ${styles.stepIconCyan}`}>
+                <QrCode size={32} />
                 <span className={styles.stepNumber}>2</span>
               </div>
               <h3 className={styles.stepTitle}>Aktivasi Kartu QR Siswa</h3>
@@ -271,8 +327,8 @@ export default function LandingPage() {
 
             {/* Step 3 */}
             <div className={styles.stepCard}>
-              <div className={`${styles.stepOrbContainer} ${styles.stepOrbPink}`}>
-                <span>🚀</span>
+              <div className={`${styles.stepIconCircle} ${styles.stepIconPink}`}>
+                <Sparkles size={32} />
                 <span className={styles.stepNumber}>3</span>
               </div>
               <h3 className={styles.stepTitle}>Jalankan Workstation &amp; LMS</h3>
@@ -286,7 +342,7 @@ export default function LandingPage() {
       </section>
 
       {/* ══════════════════════════════════════════════════════════
-         4. PORTFOLIO HIGHLIGHT CARD (Live Sparkline Rows)
+         4. HIGHLIGHT CONTRAST BANNER (Solid Royal Purple Card)
          ══════════════════════════════════════════════════════════ */}
       <section className={styles.highlightSection}>
         <div className={styles.container}>
@@ -298,81 +354,81 @@ export default function LandingPage() {
               <p className={styles.highlightSubtitle}>
                 Didesain dengan arsitektur Event-Driven dan Clean Architecture (ADR-0001).
                 Seluruh aktivitas kehadiran, penilaian, dan pembacaan buku teragregasi
-                secara instan tanpa membebani server lokal sekolah.
+                dengan latensi sub-detik melalui Rust Axum core engine.
               </p>
-              <Link href="#features" className={styles.highlightBtn}>
-                PELAJARI FITUR &rarr;
+              <Link href="/dashboard" className={styles.highlightBtn}>
+                <span>Pelajari Selengkapnya</span>
               </Link>
             </div>
 
-            {/* Right Live Sparklines */}
+            {/* Sparkline Rows */}
             <div className={styles.sparklineList}>
-              {/* Row 1 */}
+              {/* Row 1: Dapodik Local Bridge */}
               <div className={styles.sparklineRow}>
                 <div className={styles.sparklineLeft}>
-                  <div className={styles.sparklineIcon} style={{ background: '#0284C7' }}>
-                    🏫
+                  <div className={styles.sparklineIcon}>
+                    <FolderSync size={18} />
                   </div>
                   <div>
-                    <div className={styles.sparklineName}>Sinkronisasi Dapodik</div>
-                    <div className={styles.sparklineMeta}>3.420 data siswa &amp; rombel selaras</div>
+                    <div className={styles.sparklineName}>Dapodik Sync Daemon</div>
+                    <div className={styles.sparklineMeta}>3.420 Rekor Rombel &amp; PTK Selaras</div>
                   </div>
                 </div>
-                <svg className={styles.sparklineSvg} viewBox="0 0 90 28">
-                  <path d="M0 20 Q 25 5, 50 15 T 90 6" stroke="#38BDF8" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+                <svg className={styles.sparklineSvg} viewBox="0 0 90 28" fill="none">
+                  <path d="M0 20 Q 25 5, 50 14 T 90 6" stroke="#34D399" strokeWidth="2.5" fill="none" strokeLinecap="round" />
                 </svg>
-                <span className={styles.sparklineBadgeUp}>▲ 0.4s</span>
+                <span className={styles.sparklineBadgeUp}>+100% Selaras</span>
               </div>
 
-              {/* Row 2 */}
+              {/* Row 2: Attendance Rate */}
               <div className={styles.sparklineRow}>
                 <div className={styles.sparklineLeft}>
-                  <div className={styles.sparklineIcon} style={{ background: '#10B981' }}>
-                    📅
+                  <div className={styles.sparklineIcon}>
+                    <Activity size={18} />
                   </div>
                   <div>
-                    <div className={styles.sparklineName}>Presensi Sesi Belajar</div>
-                    <div className={styles.sparklineMeta}>96.8% Kehadiran rombel harian</div>
+                    <div className={styles.sparklineName}>Presensi Kehadiran Siswa</div>
+                    <div className={styles.sparklineMeta}>98.4% Tingkat Kehadiran Pekan Ini</div>
                   </div>
                 </div>
-                <svg className={styles.sparklineSvg} viewBox="0 0 90 28">
-                  <path d="M0 24 Q 25 18, 50 10 T 90 4" stroke="#34D399" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+                <svg className={styles.sparklineSvg} viewBox="0 0 90 28" fill="none">
+                  <path d="M0 22 Q 30 18, 55 10 T 90 4" stroke="#00CEC9" strokeWidth="2.5" fill="none" strokeLinecap="round" />
                 </svg>
-                <span className={styles.sparklineBadgeUp}>▲ 3.2%</span>
+                <span className={styles.sparklineBadgeUp}>+3.2% Naik</span>
               </div>
 
-              {/* Row 3 */}
+              {/* Row 3: Mass Grader */}
               <div className={styles.sparklineRow}>
                 <div className={styles.sparklineLeft}>
-                  <div className={styles.sparklineIcon} style={{ background: '#EA580C' }}>
-                    ✍️
+                  <div className={styles.sparklineIcon}>
+                    <FileCheck2 size={18} />
                   </div>
                   <div>
-                    <div className={styles.sparklineName}>Mass Grader Koreksi</div>
-                    <div className={styles.sparklineMeta}>4.120 berkas esai dinilai cepat</div>
+                    <div className={styles.sparklineName}>Mass Grader Workstation</div>
+                    <div className={styles.sparklineMeta}>4.120 Esai Terselesaikan Otomatis</div>
                   </div>
                 </div>
-                <svg className={styles.sparklineSvg} viewBox="0 0 90 28">
-                  <path d="M0 16 Q 30 24, 60 8 T 90 4" stroke="#FB923C" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+                <svg className={styles.sparklineSvg} viewBox="0 0 90 28" fill="none">
+                  <path d="M0 24 Q 25 15, 60 8 T 90 5" stroke="#F472B6" strokeWidth="2.5" fill="none" strokeLinecap="round" />
                 </svg>
-                <span className={styles.sparklineBadgeUp}>▲ 14%</span>
+                <span className={styles.sparklineBadgeUp}>99.1% Akurat</span>
               </div>
 
-              {/* Row 4 */}
+              {/* Row 4: SIBI Digital Books */}
               <div className={styles.sparklineRow}>
                 <div className={styles.sparklineLeft}>
-                  <div className={styles.sparklineIcon} style={{ background: '#7C3AED' }}>
-                    📖
+                  <div className={styles.sparklineIcon}>
+                    <BookOpen size={18} />
                   </div>
                   <div>
-                    <div className={styles.sparklineName}>Perpustakaan Digital SIBI</div>
-                    <div className={styles.sparklineMeta}>Buku resmi Kurikulum Merdeka Kemdikdasmen</div>
+                    <div className={styles.sparklineName}>Buku Digital SIBI Kemdikdasmen</div>
+                    <div className={styles.sparklineMeta}>1.250 Eksemplar Dibaca Siswa</div>
                   </div>
                 </div>
-                <svg className={styles.sparklineSvg} viewBox="0 0 90 28">
-                  <path d="M0 18 Q 30 6, 60 12 T 90 2" stroke="#A78BFA" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+                <svg className={styles.sparklineSvg} viewBox="0 0 90 28" fill="none">
+                  <path d="M0 18 Q 30 22, 60 10 T 90 6" stroke="#A78BFA" strokeWidth="2.5" fill="none" strokeLinecap="round" />
                 </svg>
-                <span className={styles.sparklineBadgeUp}>▲ 99.2%</span>
+                <span className={styles.sparklineBadgeUp}>+450 Hari Ini</span>
               </div>
             </div>
           </div>
@@ -380,90 +436,109 @@ export default function LandingPage() {
       </section>
 
       {/* ══════════════════════════════════════════════════════════
-         5. FEATURE SECTION 1: PRO-LEVEL CONTROL FOR TEACHERS
+         5. FEATURE SECTION 1: TEACHER WORKSTATION (Real Photo Cutout)
          ══════════════════════════════════════════════════════════ */}
       <section id="features" className={styles.featureSection}>
-        <div className={styles.watermarkText}>FEATURES</div>
         <div className={styles.container}>
           <div className={styles.featureGrid}>
-            {/* Visual Composite with floating glass cards */}
+            {/* Visual Composite with Photorealistic Cutout Photo */}
             <div className={styles.featureVisualComposite}>
               <div className={styles.featureCircleBackdrop} />
 
-              {/* Central stylized preview */}
-              <div style={{ width: '380px', background: 'rgba(18, 14, 56, 0.85)', borderRadius: '24px', padding: '24px', border: '1px solid rgba(139, 92, 246, 0.3)', boxShadow: '0 20px 50px rgba(0,0,0,0.6)', zIndex: 2 }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '12px', marginBottom: '14px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '1.2rem' }}>🎯</span>
-                    <span style={{ fontSize: '0.9rem', fontWeight: 800 }}>Teacher Action Center</span>
-                  </div>
-                  <span style={{ fontSize: '0.68rem', background: '#fee2e2', color: '#b91c1c', fontWeight: 800, padding: '2px 8px', borderRadius: '99px' }}>
-                    3 Perlu Perhatian
-                  </span>
-                </div>
+              {/* Real Photo Cutout of Teacher with Mobile Phone */}
+              <div className={styles.personPhotoContainer}>
+                <Image
+                  src="/teacher-phone.jpg"
+                  alt="Guru Akselerasi-Edu menggunakan Teacher Workstation di smartphone"
+                  width={320}
+                  height={380}
+                  className={styles.personPhoto}
+                  priority
+                />
+              </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '10px', padding: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                      <div style={{ fontSize: '0.8rem', fontWeight: 700 }}>Ahmad Fauzi</div>
-                      <div style={{ fontSize: '0.68rem', color: '#94A3B8' }}>PAKET A4 • Nilai Matematika &lt; KKM</div>
-                    </div>
-                    <span style={{ fontSize: '0.7rem', color: '#00F5D4', fontWeight: 700 }}>Kirim Pengingat &gt;</span>
+              {/* Floating Stat Card 1 (Top Left) */}
+              <div className={styles.featureFloatingCard1}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: '#ECFDF5', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#10B981' }}>
+                    <CheckCircle2 size={16} />
                   </div>
-
-                  <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '10px', padding: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                      <div style={{ fontSize: '0.8rem', fontWeight: 700 }}>Siti Nurhaliza</div>
-                      <div style={{ fontSize: '0.68rem', color: '#94A3B8' }}>PAKET A5 • Modul SIBI Tertinggal</div>
-                    </div>
-                    <span style={{ fontSize: '0.7rem', color: '#00F5D4', fontWeight: 700 }}>Kirim Pengingat &gt;</span>
+                  <div>
+                    <div className={styles.floatingStatLabel}>Presensi Cepat 1-Klik</div>
+                    <div className={styles.floatingStatVal}>38/38 Siswa Hadir</div>
                   </div>
                 </div>
               </div>
 
-              {/* Floating Glass Widget 1 */}
-              <div className={styles.featureGlassWidget1}>
-                <div style={{ fontSize: '0.72rem', color: '#94A3B8', fontWeight: 600 }}>Tingkat Kehadiran Rombel</div>
-                <div style={{ fontSize: '1.2rem', fontWeight: 900, color: '#34D399', margin: '2px 0' }}>96.8% Hadir</div>
-                <div style={{ fontSize: '0.68rem', color: '#00F5D4', fontWeight: 700 }}>28/30 Siswa Tepat Waktu</div>
-              </div>
-
-              {/* Floating Glass Widget 2 */}
-              <div className={styles.featureGlassWidget2}>
-                <div style={{ fontSize: '0.72rem', color: '#94A3B8', fontWeight: 600 }}>Koreksi Cepat Mass Grader</div>
-                <div style={{ fontSize: '1.1rem', fontWeight: 900, color: '#FB923C' }}>4 Menit / Rombel</div>
-                <div style={{ fontSize: '0.68rem', color: '#C4B5FD', fontWeight: 700 }}>Auto-Grading &amp; Rubrik</div>
+              {/* Floating Stat Card 2 (Bottom Right) */}
+              <div className={styles.featureFloatingCard2}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: '#F5F3FF', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6C5CE7' }}>
+                    <Sparkles size={16} />
+                  </div>
+                  <div>
+                    <div className={styles.floatingStatLabel}>Auto-Grading Progress</div>
+                    <div className={styles.floatingStatVal}>92% Tugas Terperiksa</div>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Right Text */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <h2 className={styles.sectionTitle} style={{ textAlign: 'left' }}>
-                Kendali Penuh Manajemen Sekolah dalam Satu Platform Terpadu
+            {/* Feature Content */}
+            <div className={styles.featureContent}>
+              <div className={styles.featureBadge}>
+                <GraduationCap size={14} color="#6C5CE7" />
+                <span>TEACHER WORKSTATION</span>
+              </div>
+
+              <h2 className={styles.featureTitle}>
+                Beban Administrasi Guru Berkurang hingga 70%
               </h2>
-              <div className={styles.accentLine} style={{ alignSelf: 'flex-start' }}>
+
+              <div className={styles.accentLine}>
                 <span className={styles.accentDot} />
                 <span className={styles.accentBar} />
               </div>
-              <p style={{ color: '#94A3B8', lineHeight: 1.7, fontSize: '0.96rem' }}>
-                Guru tidak lagi dibebani tumpukan kertas dan rekonsiliasi nilai manual.
-                Dengan Teacher Workstation, pendidik dapat memantau siswa berisiko secara
-                otomatis, memeriksa pengumpulan tugas esai dengan Mass Grader, serta mencatat
-                presensi kelas hanya dalam satu klik.
+
+              <p className={styles.featureSubtitle}>
+                Dirancang khusus dari hasil riset lapangan bersama puluhan tenaga pendidik.
+                Guru tidak lagi dipusingkan oleh rekap presensi berbelit atau koreksi ratusan esai
+                secara manual.
               </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '8px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <span style={{ color: '#00F5D4', fontWeight: 800 }}>✓</span>
-                  <span style={{ fontSize: '0.9rem', color: '#E2E8F0' }}>Action Center proaktif: deteksi keterlambatan membaca &amp; tugas</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <span style={{ color: '#00F5D4', fontWeight: 800 }}>✓</span>
-                  <span style={{ fontSize: '0.9rem', color: '#E2E8F0' }}>Digital Worksheet Viewer untuk koreksi esai tanpa download file</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <span style={{ color: '#00F5D4', fontWeight: 800 }}>✓</span>
-                  <span style={{ fontSize: '0.9rem', color: '#E2E8F0' }}>Integrasi buku nilai otomatis ke rapor kurikulum merdeka</span>
-                </div>
+
+              {/* Feature Benefit Checklist */}
+              <ul className={styles.featureList}>
+                <li className={styles.featureListItem}>
+                  <div className={styles.featureCheckIcon}>
+                    <Check size={13} strokeWidth={3} />
+                  </div>
+                  <span>
+                    <strong>Action Center Cerdas:</strong> Menyoroti seketika siswa yang membutuhkan perhatian khusus dan tugas yang menunggu penilaian.
+                  </span>
+                </li>
+                <li className={styles.featureListItem}>
+                  <div className={styles.featureCheckIcon}>
+                    <Check size={13} strokeWidth={3} />
+                  </div>
+                  <span>
+                    <strong>Presensi 1-Klik &amp; Scan QR:</strong> Catat kehadiran satu kelas hanya dalam hitungan detik tanpa memanggil nama satu per satu.
+                  </span>
+                </li>
+                <li className={styles.featureListItem}>
+                  <div className={styles.featureCheckIcon}>
+                    <Check size={13} strokeWidth={3} />
+                  </div>
+                  <span>
+                    <strong>Mass Grader Esai:</strong> Rubrik penilaian terstruktur yang memungkinkan penilaian cepat puluhan tugas siswa dalam satu layar.
+                  </span>
+                </li>
+              </ul>
+
+              <div style={{ marginTop: '10px' }}>
+                <Link href="/dashboard" className={styles.ctaPillPurple}>
+                  <span>Buka Workstation Guru</span>
+                  <ArrowRight size={15} strokeWidth={2.5} />
+                </Link>
               </div>
             </div>
           </div>
@@ -471,313 +546,411 @@ export default function LandingPage() {
       </section>
 
       {/* ══════════════════════════════════════════════════════════
-         6. FEATURE SECTION 2: INDUSTRY-GRADE ARCHITECTURE (Docs)
+         6. ARCHITECTURE SECTION (Light Mode with Interactive Code Box)
          ══════════════════════════════════════════════════════════ */}
-      <section id="architecture" className={styles.featureSection} style={{ background: 'rgba(18, 14, 56, 0.25)' }}>
-        <div className={styles.watermarkText}>ARCHITECTURE</div>
+      <section id="architecture" className={styles.featureSection} style={{ background: '#F8FAFC' }}>
         <div className={styles.container}>
           <div className={styles.sectionHeaderCenter}>
+            <div className={styles.featureBadge}>
+              <Cpu size={14} color="#6C5CE7" />
+              <span>ARSITEKTUR &amp; PERFORMA</span>
+            </div>
             <h2 className={styles.sectionTitle}>
-              Arsitektur Berstandar Industri: Rust Core + Outbox Events + UUID v7
-            </h2>
-            <div className={styles.accentLine}>
-              <span className={styles.accentDotCyan} />
-              <span className={styles.accentBarCyan} />
-            </div>
-            <p className={styles.sectionSubtitle}>
-              Dibangun berdasarkan dokumentasi teknis dan standar arsitektur kelas dunia (ADR-0001 s.d. ADR-0007).
-              Performa luar biasa, keamanan multi-tenant, dan nol redundansi data.
-            </p>
-          </div>
-
-          {/* Interactive Arch Tabs */}
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '32px', flexWrap: 'wrap' }}>
-            {[
-              { id: 'RUST', label: 'Rust Axum API Server' },
-              { id: 'BRIDGE', label: 'Local Dapodik Bridge' },
-              { id: 'DDD', label: 'Domain-Driven Design' },
-              { id: 'MOBILE', label: 'Native Android Kotlin' },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveArchTab(tab.id as any)}
-                style={{
-                  background: activeArchTab === tab.id ? '#00F5D4' : 'rgba(18, 14, 56, 0.8)',
-                  color: activeArchTab === tab.id ? '#0B0826' : '#94A3B8',
-                  border: '1px solid rgba(139, 92, 246, 0.3)',
-                  padding: '8px 18px',
-                  borderRadius: '9999px',
-                  fontSize: '0.82rem',
-                  fontWeight: 800,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                }}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-
-          <div className={styles.featureGridReverse}>
-            {/* Left Technical Highlights */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {activeArchTab === 'RUST' && (
-                <>
-                  <h3 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#FFFFFF', margin: 0 }}>
-                    ⚡ Backend Rust Berkecepatan Tinggi
-                  </h3>
-                  <p style={{ color: '#94A3B8', lineHeight: 1.7, fontSize: '0.94rem' }}>
-                    Menggunakan Rust Edition 2024 dengan web framework Axum 0.8 dan Tokio 1.52.
-                    Menyediakan performa asinkron tanpa garbage collection (zero runtime overhead),
-                    menangani puluhan ribu permintaan per detik dengan konsumsi RAM sangat efisien (&lt; 60 MB).
-                  </p>
-                  <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                    <span className={styles.logoBadge}>Axum 0.8</span>
-                    <span className={styles.logoBadge}>SQLx 0.7 Compile-Time Query</span>
-                    <span className={styles.logoBadge}>PostgreSQL 15</span>
-                  </div>
-                </>
-              )}
-
-              {activeArchTab === 'BRIDGE' && (
-                <>
-                  <h3 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#FFFFFF', margin: 0 }}>
-                    🔄 Local Bridge Agent untuk Dapodik
-                  </h3>
-                  <p style={{ color: '#94A3B8', lineHeight: 1.7, fontSize: '0.94rem' }}>
-                    Daemon latar belakang independen yang berjalan di komputer operator sekolah.
-                    Membaca port 5432 Dapodik secara aman dan menyinkronkan data guru, siswa, dan rombel
-                    ke cloud tanpa mengubah database asli Dapodik Kementerian.
-                  </p>
-                  <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                    <span className={styles.logoBadge}>Zero Manual Re-Entry</span>
-                    <span className={styles.logoBadge}>Isolated Port 5433</span>
-                    <span className={styles.logoBadge}>SQLite Offline Cache</span>
-                  </div>
-                </>
-              )}
-
-              {activeArchTab === 'DDD' && (
-                <>
-                  <h3 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#FFFFFF', margin: 0 }}>
-                    🏛️ Clean Architecture &amp; Outbox Events
-                  </h3>
-                  <p style={{ color: '#94A3B8', lineHeight: 1.7, fontSize: '0.94rem' }}>
-                    Memisahkan lapisan Presentation, Domain (`school-core`), dan Infrastructure (ADR-0001).
-                    Menggunakan tabel outbox events untuk menjamin atomisitas pengiriman notifikasi FCM
-                    dan pembaruan nilai tanpa risiko inkonsistensi transaksi database.
-                  </p>
-                  <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                    <span className={styles.logoBadge}>UUID v7 Time-Sortable</span>
-                    <span className={styles.logoBadge}>Multi-Tenant Isolation</span>
-                    <span className={styles.logoBadge}>Event-Driven Outbox</span>
-                  </div>
-                </>
-              )}
-
-              {activeArchTab === 'MOBILE' && (
-                <>
-                  <h3 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#FFFFFF', margin: 0 }}>
-                    📱 Native Android dengan Jetpack Compose
-                  </h3>
-                  <p style={{ color: '#94A3B8', lineHeight: 1.7, fontSize: '0.94rem' }}>
-                    Aplikasi mobile resmi untuk siswa dan orang tua. Dilengkapi CameraX untuk pemindaian
-                    QR kartu login, Firebase Cloud Messaging (HTTP v1) untuk notifikasi jam belajar,
-                    dan modul offline SIBI Kemdikdasmen reader.
-                  </p>
-                  <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                    <span className={styles.logoBadge}>Kotlin &amp; Compose</span>
-                    <span className={styles.logoBadge}>CameraX QR Auth</span>
-                    <span className={styles.logoBadge}>FCM WakeLock</span>
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Right Perspective Angled Dashboard */}
-            <div className={styles.angledDashboardMockup}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '12px' }}>
-                <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#00F5D4' }}>system_architecture.spec</span>
-                <span style={{ fontSize: '0.7rem', color: '#94A3B8' }}>PostgreSQL 15 • 58 Migrations</span>
-              </div>
-              <pre style={{ margin: 0, padding: '14px', background: 'rgba(0,0,0,0.3)', borderRadius: '12px', fontSize: '0.78rem', color: '#38BDF8', fontFamily: 'monospace', overflowX: 'auto', lineHeight: 1.6 }}>
-{`// Bounded Context Registry (Rust & Next.js)
-├── Identity  -> QR Token Auth & RBAC Claims
-├── Academic  -> Classes, Rombel, & Dapodik Sync
-├── Learning  -> Assignments, CBT & SIBI Library
-├── People    -> Students, Teachers, & Guardians
-├── Reporting -> Rapor Digital & Attendance Analytics
-└── Events    -> Outbox Queue & FCM Push Engine`}
-              </pre>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ══════════════════════════════════════════════════════════
-         7. INTERSECTING NETWORK NODES (Ecosystem / Multi-Role)
-         ══════════════════════════════════════════════════════════ */}
-      <section id="ecosystem" className={styles.ecosystemSection}>
-        <div className={styles.watermarkText}>ECOSYSTEM</div>
-        <div className={styles.container}>
-          <div className={styles.sectionHeaderCenter}>
-            <h2 className={styles.sectionTitle}>
-              Sinergi Harmonis: Guru, Siswa, Admin, &amp; Orang Tua
+              Dibangun dengan Rust &amp; Clean DDD untuk Keandalan Maksimal
             </h2>
             <div className={styles.accentLine}>
               <span className={styles.accentDot} />
               <span className={styles.accentBar} />
             </div>
             <p className={styles.sectionSubtitle}>
-              Satu sistem operasi yang menghubungkan seluruh pemangku kepentingan pendidikan
-              dalam interaksi terpadu dan transparan.
+              Menjawab tantangan server sekolah yang sering tumbang saat ujian massal.
+              Arsitektur Axum Rust memberikan performa kilat, penggunaan memori minimal, dan isolasi data ketat.
             </p>
           </div>
 
-          <div className={styles.networkDiagramWrapper}>
-            <div className={styles.orbitCircles}>
-              <div className={styles.orbitLeft} />
-              <div className={styles.orbitRight} />
-
-              <div className={styles.nodeCenterLeft}>
-                <span style={{ fontSize: '1.8rem', marginBottom: '4px' }}>👨‍🏫</span>
-                <span>GURU</span>
-                <span style={{ fontSize: '0.68rem', color: '#DDD6FE', fontWeight: 600 }}>Workstation</span>
-              </div>
-
-              <div className={styles.nodeCenterRight}>
-                <span style={{ fontSize: '1.8rem', marginBottom: '4px' }}>🎓</span>
-                <span>SISWA</span>
-                <span style={{ fontSize: '0.68rem', color: '#A5F3FC', fontWeight: 600 }}>LMS &amp; CBT</span>
-              </div>
-            </div>
+          {/* Architecture Switcher Tabs */}
+          <div className={styles.archTabsRow}>
+            <button
+              onClick={() => setActiveArchTab('RUST')}
+              className={`${styles.archTabBtn} ${activeArchTab === 'RUST' ? styles.archTabBtnActive : ''}`}
+            >
+              <Server size={15} />
+              <span>Rust Axum Core API</span>
+            </button>
+            <button
+              onClick={() => setActiveArchTab('BRIDGE')}
+              className={`${styles.archTabBtn} ${activeArchTab === 'BRIDGE' ? styles.archTabBtnActive : ''}`}
+            >
+              <FolderSync size={15} />
+              <span>Dapodik Local Bridge</span>
+            </button>
+            <button
+              onClick={() => setActiveArchTab('DDD')}
+              className={`${styles.archTabBtn} ${activeArchTab === 'DDD' ? styles.archTabBtnActive : ''}`}
+            >
+              <Layers size={15} />
+              <span>Clean Architecture DDD</span>
+            </button>
+            <button
+              onClick={() => setActiveArchTab('MOBILE')}
+              className={`${styles.archTabBtn} ${activeArchTab === 'MOBILE' ? styles.archTabBtnActive : ''}`}
+            >
+              <Smartphone size={15} />
+              <span>Native Android App</span>
+            </button>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginTop: '40px' }}>
-            <div style={{ background: 'rgba(18, 14, 56, 0.6)', padding: '20px', borderRadius: '16px', border: '1px solid rgba(139, 92, 246, 0.2)' }}>
-              <div style={{ fontSize: '1.3rem', marginBottom: '8px' }}>👨‍🏫 Pendidik</div>
-              <div style={{ fontSize: '0.8rem', color: '#94A3B8' }}>Action center, koreksi massal esai, bank soal CBT, dan absensi 1-klik.</div>
+          {/* Interactive Code Preview Box & Specification */}
+          <div className={styles.featureGridReverse}>
+            {/* Left: Dark Mac Terminal Code Spec Card */}
+            <div className={styles.codeSpecCard}>
+              <div className={styles.codeMacHeader}>
+                <div className={styles.codeMacDots}>
+                  <span className={`${styles.codeMacDot} ${styles.codeMacDotRed}`} />
+                  <span className={`${styles.codeMacDot} ${styles.codeMacDotYellow}`} />
+                  <span className={`${styles.codeMacDot} ${styles.codeMacDotGreen}`} />
+                </div>
+                <span className={styles.codeFilePath}>
+                  {activeArchTab === 'RUST' && 'api-server/src/presentation/materials/controller.rs'}
+                  {activeArchTab === 'BRIDGE' && 'local-bridge-agent/src/sync/daemon.rs'}
+                  {activeArchTab === 'DDD' && 'core/domain/tenant/model.rs'}
+                  {activeArchTab === 'MOBILE' && 'android/app/src/main/java/ReaderActivity.kt'}
+                </span>
+                <span className={styles.codeTag}>
+                  {activeArchTab === 'RUST' && 'Rust 1.80+ Axum'}
+                  {activeArchTab === 'BRIDGE' && 'Tokio Async Daemon'}
+                  {activeArchTab === 'DDD' && 'Clean Architecture'}
+                  {activeArchTab === 'MOBILE' && 'Kotlin Coroutines'}
+                </span>
+              </div>
+
+              {/* Code Snippet */}
+              <pre className={styles.codeContent}>
+                {activeArchTab === 'RUST' && (
+`// Handler Axum Rust dengan isolasi multi-tenant ketat
+pub async fn submit_material_progress(
+    State(ctx): State<Arc<AppContext>>,
+    Extension(tenant): Extension<TenantContext>,
+    Json(payload): Json<ProgressPayload>,
+) -> Result<impl IntoResponse, AppError> {
+    // Audit log & event idempotency
+    let event = StudentCompletedMaterialEvent::new(
+        tenant.id, payload.student_id, payload.material_id
+    );
+    ctx.outbox.dispatch(event).await?;
+    Ok(StatusCode::ACCEPTED)
+}`
+                )}
+                {activeArchTab === 'BRIDGE' && (
+`// Local Bridge Daemon menghubungkan PostgreSQL Dapodik (5432)
+pub async fn sync_dapodik_incremental(
+    local_pool: &PgPool,
+    cloud_client: &ApiClient,
+) -> Result<SyncSummary, BridgeError> {
+    let uncommitted = dapodik::query_uncommitted_roster(local_pool).await?;
+    let batch = StreamChunk::from(uncommitted);
+    let ack = cloud_client.push_roster_batch(batch).await?;
+    dapodik::mark_synced(local_pool, ack.ids).await?;
+    Ok(SyncSummary::ok(ack.count))
+}`
+                )}
+                {activeArchTab === 'DDD' && (
+`// Domain Model: Tenant & Role-Based Access Control
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TenantContext {
+    pub npsn: String,
+    pub school_id: Uuid,
+    pub active_academic_year: String,
+    pub subscription_tier: Tier,
+}
+
+impl TenantContext {
+    pub fn enforce_isolation(&self, query_npsn: &str) -> Result<(), SecurityError> {
+        if self.npsn != query_npsn {
+            return Err(SecurityError::TenantBoundaryViolation);
+        }
+        Ok(())
+    }
+}`
+                )}
+                {activeArchTab === 'MOBILE' && (
+`// Offline-first Android SIBI Reader dengan Enkripsi Cache
+class SibiReaderViewModel(private val repository: SibiRepository) : ViewModel() {
+    val materialStream = repository.observeMaterialWithCache(materialId)
+        .catch { emit(MaterialUiState.OfflineFallback) }
+        .stateIn(viewModelScope, SharingStarted.Lazily, MaterialUiState.Loading)
+
+    fun markCompleted() = viewModelScope.launch {
+        repository.queueOfflineSync(SyncPayload(materialId, System.currentTimeMillis()))
+    }
+}`
+                )}
+              </pre>
+
+              {/* Latency & Resource Metrics */}
+              <div className={styles.codeMetricsRow}>
+                <div className={styles.codeMetric}>
+                  <span className={styles.codeMetricLabel}>Cold Start Latency</span>
+                  <span className={styles.codeMetricVal}>&lt; 1.6s</span>
+                </div>
+                <div className={styles.codeMetric}>
+                  <span className={styles.codeMetricLabel}>Memory Footprint</span>
+                  <span className={styles.codeMetricVal}>~18 MB RAM</span>
+                </div>
+                <div className={styles.codeMetric}>
+                  <span className={styles.codeMetricLabel}>Garbage Collection</span>
+                  <span className={styles.codeMetricVal}>0 ms (Zero GC)</span>
+                </div>
+              </div>
             </div>
-            <div style={{ background: 'rgba(18, 14, 56, 0.6)', padding: '20px', borderRadius: '16px', border: '1px solid rgba(0, 245, 212, 0.2)' }}>
-              <div style={{ fontSize: '1.3rem', marginBottom: '8px' }}>🎓 Peserta Didik</div>
-              <div style={{ fontSize: '0.8rem', color: '#94A3B8' }}>QR login kilat, modul interaktif SIBI Kemdikdasmen, dan kuis online anti-curang.</div>
-            </div>
-            <div style={{ background: 'rgba(18, 14, 56, 0.6)', padding: '20px', borderRadius: '16px', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
-              <div style={{ fontSize: '1.3rem', marginBottom: '8px' }}>👨‍👩‍👧 Orang Tua</div>
-              <div style={{ fontSize: '0.8rem', color: '#94A3B8' }}>Parent Portal untuk melihat nilai, rekapitulasi kehadiran, dan pengumuman sekolah.</div>
-            </div>
-            <div style={{ background: 'rgba(18, 14, 56, 0.6)', padding: '20px', borderRadius: '16px', border: '1px solid rgba(236, 72, 153, 0.2)' }}>
-              <div style={{ fontSize: '1.3rem', marginBottom: '8px' }}>🏛️ Manajemen &amp; TU</div>
-              <div style={{ fontSize: '0.8rem', color: '#94A3B8' }}>Otomasi Dapodik, manajemen tahun ajaran, buku rapor, dan analitik multi-rombel.</div>
+
+            {/* Right: Technical Explanation */}
+            <div className={styles.featureContent}>
+              <h3 className={styles.featureTitle}>
+                {activeArchTab === 'RUST' && 'Performa Kilat Tanpa Beban Runtime'}
+                {activeArchTab === 'BRIDGE' && 'Sinkronisasi Otomatis Tanpa Entri Ganda'}
+                {activeArchTab === 'DDD' && 'Struktur Kode Bersih & Skalabilitas Tinggi'}
+                {activeArchTab === 'MOBILE' && 'Aplikasi Siswa Nyaman Digunakan Offline'}
+              </h3>
+
+              <div className={styles.accentLine}>
+                <span className={styles.accentDot} />
+                <span className={styles.accentBar} />
+              </div>
+
+              <p className={styles.featureSubtitle}>
+                {activeArchTab === 'RUST' &&
+                  'Dibangun di atas framework web Axum dan Tokio runtime async di bahasa Rust. Menghasilkan respons secepat kilat bahkan saat ribuan siswa mengakses ujian serentak.'}
+                {activeArchTab === 'BRIDGE' &&
+                  'Aplikasi Dapodik lokal sekolah tetap menjadi sumber kebenaran (source of truth). Local Bridge membaca langsung PostgreSQL lokal dan melakukan sinkronisasi dua arah secara aman.'}
+                {activeArchTab === 'DDD' &&
+                  'Menerapkan Domain-Driven Design dengan pemisahan Domain, Use Cases, dan Infrastructure. Memastikan logika bisnis sekolah terlindungi dan mudah dirawat jangka panjang.'}
+                {activeArchTab === 'MOBILE' &&
+                  'Siswa dapat membaca buku SIBI Kemdikdasmen dan mengerjakan modul pembelajaran tanpa perlu internet stabil sepanjang waktu. Data tersimpan aman di database SQLite lokal.'}
+              </p>
+
+              <ul className={styles.featureList}>
+                <li className={styles.featureListItem}>
+                  <div className={styles.featureCheckIcon}>
+                    <Check size={13} strokeWidth={3} />
+                  </div>
+                  <span>
+                    <strong>Multi-Tenant Isolation (ADR-0004):</strong> Basis data terenkripsi dan tersekat rapi per NPSN sekolah mitra.
+                  </span>
+                </li>
+                <li className={styles.featureListItem}>
+                  <div className={styles.featureCheckIcon}>
+                    <Check size={13} strokeWidth={3} />
+                  </div>
+                  <span>
+                    <strong>Idempotent Event Sourcing:</strong> Mencegah duplikasi data absensi atau tugas ganda akibat jaringan tidak stabil.
+                  </span>
+                </li>
+                <li className={styles.featureListItem}>
+                  <div className={styles.featureCheckIcon}>
+                    <Check size={13} strokeWidth={3} />
+                  </div>
+                  <span>
+                    <strong>Keamanan Standar Industri:</strong> Enkripsi kata sandi Argon2, JWT token klaim bertingkat, dan TLS 1.3.
+                  </span>
+                </li>
+              </ul>
             </div>
           </div>
         </div>
       </section>
 
       {/* ══════════════════════════════════════════════════════════
-         8. KEY STATS & METRICS COUNTER
+         7. INTERSECTING DUAL-CIRCLE ECOSYSTEM (Light Mode)
          ══════════════════════════════════════════════════════════ */}
-      <section id="benefits" className={styles.statsSection}>
+      <section id="ecosystem" className={styles.ecosystemSection}>
+        <div className={styles.container}>
+          <div className={styles.sectionHeaderCenter}>
+            <div className={styles.featureBadge}>
+              <Users size={14} color="#6C5CE7" />
+              <span>KOLABORASI SEMUA PIHAK</span>
+            </div>
+            <h2 className={styles.sectionTitle}>
+              Ekosistem Pendidikan yang Menghubungkan Semua Pihak
+            </h2>
+            <div className={styles.accentLine}>
+              <span className={styles.accentDot} />
+              <span className={styles.accentBar} />
+            </div>
+            <p className={styles.sectionSubtitle}>
+              Akselerasi-Edu menjembatani komunikasi transparan antara pendidik, peserta didik,
+              wali murid, dan manajemen sekolah dalam satu kesatuan sistem.
+            </p>
+          </div>
+
+          {/* Dual Intersecting Circular Frames with Studio Portraits */}
+          <div className={styles.dualCircleWrapper}>
+            <div className={styles.circlePhotoLeft}>
+              <Image
+                src="/teacher-phone.jpg"
+                alt="Pendidik modern menggunakan ponsel"
+                width={220}
+                height={220}
+                className={styles.personPhoto}
+              />
+            </div>
+            <div className={styles.circlePhotoRight}>
+              <Image
+                src="/teacher-laptop.jpg"
+                alt="Pendidik menggunakan laptop di kelas"
+                width={220}
+                height={220}
+                className={styles.personPhoto}
+              />
+            </div>
+          </div>
+
+          {/* 4 Role Cards Grid */}
+          <div className={styles.roleCardsGrid}>
+            {/* Role 1: Guru */}
+            <div className={styles.roleCard}>
+              <div className={styles.roleIconBox} style={{ background: '#F5F3FF', color: '#6C5CE7' }}>
+                <GraduationCap size={22} />
+              </div>
+              <h4 className={styles.roleTitle}>Guru &amp; Pendidik</h4>
+              <p className={styles.roleDesc}>
+                Workstation mengajar modern, pembuatan tugas cepat, koreksi esai massal, dan presensi 1-klik.
+              </p>
+              <span className={styles.roleBadge} style={{ background: '#F5F3FF', color: '#6C5CE7' }}>
+                Workstation Web &amp; Tablet
+              </span>
+            </div>
+
+            {/* Role 2: Siswa */}
+            <div className={styles.roleCard}>
+              <div className={styles.roleIconBox} style={{ background: '#ECFEFF', color: '#00CEC9' }}>
+                <BookOpen size={22} />
+              </div>
+              <h4 className={styles.roleTitle}>Peserta Didik</h4>
+              <p className={styles.roleDesc}>
+                Akses ribuan buku digital SIBI Kemdikdasmen, CBT interaktif, materi video, dan kartu QR instan.
+              </p>
+              <span className={styles.roleBadge} style={{ background: '#ECFEFF', color: '#00CEC9' }}>
+                Android &amp; iOS Mobile App
+              </span>
+            </div>
+
+            {/* Role 3: Orang Tua */}
+            <div className={styles.roleCard}>
+              <div className={styles.roleIconBox} style={{ background: '#FCE7F3', color: '#EC4899' }}>
+                <Users size={22} />
+              </div>
+              <h4 className={styles.roleTitle}>Wali Murid</h4>
+              <p className={styles.roleDesc}>
+                Parent Portal untuk memantau rekap absensi harian, nilai akademik, dan komunikasi langsung dengan wali kelas.
+              </p>
+              <span className={styles.roleBadge} style={{ background: '#FCE7F3', color: '#EC4899' }}>
+                Parent Portal Web &amp; Notifikasi
+              </span>
+            </div>
+
+            {/* Role 4: Pimpinan */}
+            <div className={styles.roleCard}>
+              <div className={styles.roleIconBox} style={{ background: '#ECFDF5', color: '#10B981' }}>
+                <BarChart3 size={22} />
+              </div>
+              <h4 className={styles.roleTitle}>Pimpinan Sekolah</h4>
+              <p className={styles.roleDesc}>
+                Dashboard analitik eksekutif tentang tingkat kehadiran, ketercapaian kurikulum, dan sinkronisasi Dapodik.
+              </p>
+              <span className={styles.roleBadge} style={{ background: '#ECFDF5', color: '#10B981' }}>
+                Executive Analytics Dashboard
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════════════
+         8. STATS COUNTER ROW (Light Gray Contrast Band)
+         ══════════════════════════════════════════════════════════ */}
+      <section className={styles.statsSection}>
         <div className={styles.container}>
           <div className={styles.statsGrid}>
-            <div className={styles.statItem}>
-              <span className={styles.statNumber}>50+</span>
-              <div className={styles.accentLine} style={{ margin: '4px 0 0' }}>
-                <span className={styles.accentDotCyan} />
-                <span className={styles.accentBarCyan} />
-              </div>
-              <span className={styles.statLabel}>Modul Terintegrasi</span>
+            <div>
+              <div className={styles.statNumber}>50+</div>
+              <div className={styles.statLabel}>Sekolah Siap Implementasi</div>
             </div>
-
-            <div className={styles.statItem}>
-              <span className={styles.statNumber}>&lt; 1.6s</span>
-              <div className={styles.accentLine} style={{ margin: '4px 0 0' }}>
-                <span className={styles.accentDot} />
-                <span className={styles.accentBar} />
-              </div>
-              <span className={styles.statLabel}>Latensi Response Core API</span>
+            <div>
+              <div className={styles.statNumber}>&lt; 1.6s</div>
+              <div className={styles.statLabel}>Cold-start Latensi Rust Core</div>
             </div>
-
-            <div className={styles.statItem}>
-              <span className={styles.statNumber}>100%</span>
-              <div className={styles.accentLine} style={{ margin: '4px 0 0' }}>
-                <span className={styles.accentDotCyan} />
-                <span className={styles.accentBarCyan} />
-              </div>
-              <span className={styles.statLabel}>Otomasi Dapodik Lokal</span>
+            <div>
+              <div className={styles.statNumber}>100%</div>
+              <div className={styles.statLabel}>Akurasi Sinkronisasi Dapodik</div>
             </div>
-
-            <div className={styles.statItem}>
-              <span className={styles.statNumber}>99.98%</span>
-              <div className={styles.accentLine} style={{ margin: '4px 0 0' }}>
-                <span className={styles.accentDot} />
-                <span className={styles.accentBar} />
-              </div>
-              <span className={styles.statLabel}>Uptime Reliabilitas Cloud</span>
+            <div>
+              <div className={styles.statNumber}>99.98%</div>
+              <div className={styles.statLabel}>SLA Ketersediaan Sistem</div>
             </div>
           </div>
         </div>
       </section>
 
       {/* ══════════════════════════════════════════════════════════
-         9. FREQUENTLY ASKED QUESTIONS (FAQ Accordion)
+         9. FAQ SECTION (With Cutout Photo of Presenter)
          ══════════════════════════════════════════════════════════ */}
       <section id="faq" className={styles.faqSection}>
-        <div className={styles.watermarkText}>FAQS</div>
         <div className={styles.container}>
+          <div className={styles.sectionHeaderCenter}>
+            <div className={styles.featureBadge}>
+              <ShieldCheck size={14} color="#6C5CE7" />
+              <span>PERTANYAAN UMUM</span>
+            </div>
+            <h2 className={styles.sectionTitle}>
+              Pertanyaan yang Sering Diajukan
+            </h2>
+            <div className={styles.accentLine}>
+              <span className={styles.accentDot} />
+              <span className={styles.accentBar} />
+            </div>
+            <p className={styles.sectionSubtitle}>
+              Temukan jawaban seputar integrasi Dapodik, keamanan multi-tenant, dan kemudahan implementasi.
+            </p>
+          </div>
+
           <div className={styles.faqGrid}>
-            {/* Left FAQ Intro */}
-            <div className={styles.faqLeft}>
-              <h2 className={styles.sectionTitle} style={{ textAlign: 'left' }}>
-                Pertanyaan yang Sering Diajukan
-              </h2>
-              <div className={styles.accentLine} style={{ alignSelf: 'flex-start' }}>
-                <span className={styles.accentDotCyan} />
-                <span className={styles.accentBarCyan} />
+            {/* Left: Presenter Photo Cutout */}
+            <div className={styles.faqPresenterCol}>
+              <div className={styles.faqPresenterPhoto}>
+                <Image
+                  src="/faq-presenter.jpg"
+                  alt="Konsultan Akselerasi-Edu siap menjawab pertanyaan sekolah"
+                  width={320}
+                  height={380}
+                  className={styles.personPhoto}
+                />
               </div>
-              <p style={{ color: '#94A3B8', fontSize: '0.95rem', lineHeight: 1.6 }}>
-                Temukan jawaban lengkap seputar integrasi Dapodik, keamanan data sekolah,
-                metode sinkronisasi lokal, dan kemudahan penggunaan bagi pendidik.
-              </p>
-              <Link href="/dashboard" className={styles.ctaPillCyan} style={{ width: 'fit-content' }}>
-                <span>Coba Akselerasi-Edu &rarr;</span>
-              </Link>
+              <div style={{ marginTop: '16px', textAlign: 'center' }}>
+                <div style={{ fontSize: '1rem', fontWeight: 800, color: '#0F172A' }}>Butuh Konsultasi Lanjutan?</div>
+                <div style={{ fontSize: '0.84rem', color: '#64748B', marginTop: '4px' }}>Tim spesialis kami siap mendemonstrasikan sistem ke sekolah Anda.</div>
+              </div>
             </div>
 
-            {/* Right Accordion */}
+            {/* Right: Accordion FAQ List */}
             <div className={styles.faqList}>
-              {faqs.map((faq, index) => {
-                const isExpanded = activeFaqIndex === index;
-
+              {faqs.map((faq, idx) => {
+                const isExpanded = activeFaqIndex === idx;
                 return (
                   <div
-                    key={index}
-                    onClick={() => setActiveFaqIndex(isExpanded ? -1 : index)}
+                    key={idx}
+                    onClick={() => setActiveFaqIndex(isExpanded ? -1 : idx)}
                     className={isExpanded ? styles.faqItemExpanded : styles.faqItemCollapsed}
                   >
                     <div className={styles.faqQuestionRow}>
                       <h4 className={styles.faqQuestion}>{faq.q}</h4>
-                      <svg
-                        width="18"
-                        height="18"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.5"
-                        style={{
-                          transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-                          transition: 'transform 0.2s ease',
-                          color: isExpanded ? '#FFFFFF' : '#00F5D4',
-                          flexShrink: 0,
-                        }}
-                      >
-                        <polyline points="6 9 12 15 18 9" />
-                      </svg>
+                      {isExpanded ? (
+                        <ChevronUp size={20} color="#FFFFFF" />
+                      ) : (
+                        <ChevronDown size={20} color="#6C5CE7" />
+                      )}
                     </div>
-
-                    {isExpanded && (
-                      <p className={styles.faqAnswer}>{faq.a}</p>
-                    )}
+                    {isExpanded && <p className={styles.faqAnswer}>{faq.a}</p>}
                   </div>
                 );
               })}
@@ -787,30 +960,26 @@ export default function LandingPage() {
       </section>
 
       {/* ══════════════════════════════════════════════════════════
-         10. CALL TO ACTION BANNER
+         10. CALL TO ACTION BANNER (Light Mode)
          ══════════════════════════════════════════════════════════ */}
       <section className={styles.ctaBannerSection}>
         <div className={styles.container}>
           <div className={styles.ctaBannerCard}>
             <div>
               <h2 className={styles.ctaBannerTitle}>
-                Siap Mengakselerasi Manajemen Sekolah Anda?
+                Siap Modernisasi Sekolah Anda Hari Ini?
               </h2>
               <p className={styles.ctaBannerSubtitle}>
-                Tingkatkan efisiensi kerja guru, satukan data akademik Dapodik, dan beri
-                pengalaman belajar terbaik bagi generasi masa depan.
+                Tingkatkan efisiensi kerja guru, integrasikan buku digital SIBI, dan nikmati sinkronisasi Dapodik otomatis.
               </p>
             </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
-              <Link href="/dashboard" className={styles.ctaPillCyan}>
-                <span>Masuk ke Dashboard</span>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <polyline points="9 18 15 12 9 6" />
-                </svg>
+            <div className={styles.heroActionGroup}>
+              <Link href="/dashboard" className={styles.ctaPillPurple}>
+                <span>Coba Demo Sistem</span>
+                <ArrowRight size={15} strokeWidth={2.5} />
               </Link>
-              <Link href="/login" className={styles.ctaOutline}>
-                <span>Login Pengguna</span>
+              <Link href="/login" className={styles.ctaOutlinePurple}>
+                <span>Masuk ke Akun</span>
               </Link>
             </div>
           </div>
@@ -818,111 +987,75 @@ export default function LandingPage() {
       </section>
 
       {/* ══════════════════════════════════════════════════════════
-         11. FOOTER (4-Column Directory & Newsletter)
+         11. FOOTER (Light Mode)
          ══════════════════════════════════════════════════════════ */}
       <footer className={styles.footer}>
         <div className={styles.container}>
           <div className={styles.footerGrid}>
-            {/* Col 1: Brand */}
+            {/* Col 1: Brand Info */}
             <div className={styles.footerCol}>
               <div className={styles.logoGroup}>
-                <div className={styles.logoOrb} style={{ width: '32px', height: '32px' }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2.5">
+                <div className={styles.logoOrb}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M12 2L2 7l10 5 10-5-10-5z" />
                     <path d="M2 17l10 5 10-5" />
                     <path d="M2 12l10 5 10-5" />
                   </svg>
                 </div>
-                <span style={{ fontSize: '1.1rem', fontWeight: 900, color: '#FFFFFF' }}>AKSELERASI-EDU</span>
+                <div className={styles.logoText}>
+                  <span>AKSELERASI</span>
+                  <span className={styles.logoBadge}>SCHOOL OS</span>
+                </div>
               </div>
-              <p style={{ fontSize: '0.84rem', color: '#94A3B8', lineHeight: 1.6, margin: 0 }}>
-                Next-generation Educational Operating System (School OS) berkinerja tinggi
-                untuk sekolah digital modern di Indonesia.
+              <p style={{ fontSize: '0.86rem', color: '#64748B', lineHeight: '1.6', margin: '8px 0 0' }}>
+                Operating System sekolah modern berbasis Rust Axum dan Clean Architecture. Menghubungkan guru, peserta didik, dan Dapodik secara mulus.
               </p>
-              <form onSubmit={handleSubscribe} style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
-                <input
-                  type="email"
-                  placeholder="Masukkan email Anda..."
-                  value={subscribedEmail}
-                  onChange={(e) => setSubscribedEmail(e.target.value)}
-                  style={{
-                    background: 'rgba(255,255,255,0.06)',
-                    border: '1px solid rgba(139, 92, 246, 0.3)',
-                    borderRadius: '8px',
-                    padding: '8px 12px',
-                    fontSize: '0.78rem',
-                    color: '#FFFFFF',
-                    outline: 'none',
-                    flex: 1,
-                  }}
-                  required
-                />
-                <button
-                  type="submit"
-                  style={{
-                    background: '#00F5D4',
-                    color: '#0B0826',
-                    border: 'none',
-                    borderRadius: '8px',
-                    padding: '8px 14px',
-                    fontSize: '0.78rem',
-                    fontWeight: 800,
-                    cursor: 'pointer',
-                  }}
-                >
-                  {subscribeSuccess ? '✓' : 'Kirim'}
-                </button>
-              </form>
-              {subscribeSuccess && (
-                <span style={{ fontSize: '0.7rem', color: '#34D399', fontWeight: 700 }}>
-                  ✓ Terima kasih telah berlangganan info rilis.
-                </span>
-              )}
             </div>
 
-            {/* Col 2: Solusi & Fitur */}
+            {/* Col 2: Fitur & Modul */}
             <div className={styles.footerCol}>
-              <h4 className={styles.footerColTitle}>SOLUSI SEKOLAH</h4>
+              <h5 className={styles.footerColTitle}>Fitur Utama</h5>
               <ul className={styles.footerLinks}>
-                <li><Link href="/dashboard/teacher" className={styles.footerLink}>Teacher Workstation</Link></li>
-                <li><Link href="/dashboard/teacher/grading" className={styles.footerLink}>Mass Grader Esai</Link></li>
-                <li><Link href="/dashboard/attendance" className={styles.footerLink}>Presensi &amp; Absensi Sesi</Link></li>
-                <li><Link href="/dashboard/learning/materials" className={styles.footerLink}>Perpustakaan Buku SIBI</Link></li>
-                <li><Link href="/dashboard/learning/quizzes" className={styles.footerLink}>Kuis &amp; CBT Anti-Curang</Link></li>
+                <li><Link href="/dashboard" className={styles.footerLink}>Teacher Workstation</Link></li>
+                <li><Link href="/dashboard" className={styles.footerLink}>Presensi Kelas 1-Klik</Link></li>
+                <li><Link href="/dashboard" className={styles.footerLink}>Buku Digital SIBI</Link></li>
+                <li><Link href="/dashboard" className={styles.footerLink}>Mass Grader Esai</Link></li>
+                <li><Link href="/dashboard" className={styles.footerLink}>Kartu QR Siswa</Link></li>
               </ul>
             </div>
 
-            {/* Col 3: Arsitektur & Teknologi */}
+            {/* Col 3: Arsitektur */}
             <div className={styles.footerCol}>
-              <h4 className={styles.footerColTitle}>ARSITEKTUR RUST</h4>
+              <h5 className={styles.footerColTitle}>Teknologi</h5>
               <ul className={styles.footerLinks}>
-                <li><a href="#architecture" className={styles.footerLink}>Clean Architecture (ADR-0001)</a></li>
-                <li><a href="#architecture" className={styles.footerLink}>Domain-Driven Design</a></li>
-                <li><a href="#architecture" className={styles.footerLink}>Local Dapodik Bridge Agent</a></li>
-                <li><a href="#architecture" className={styles.footerLink}>Outbox Events &amp; FCM HTTP v1</a></li>
-                <li><a href="#architecture" className={styles.footerLink}>UUID v7 High Indexing</a></li>
+                <li><a href="#architecture" className={styles.footerLink}>Rust Axum Core</a></li>
+                <li><a href="#architecture" className={styles.footerLink}>Dapodik Local Bridge</a></li>
+                <li><a href="#architecture" className={styles.footerLink}>Clean Architecture DDD</a></li>
+                <li><a href="#architecture" className={styles.footerLink}>Multi-Tenant Security</a></li>
+                <li><a href="#architecture" className={styles.footerLink}>Offline-First Android</a></li>
               </ul>
             </div>
 
-            {/* Col 4: Akses & Ekosistem */}
+            {/* Col 4: Hubungi Kami */}
             <div className={styles.footerCol}>
-              <h4 className={styles.footerColTitle}>PORTAL PENGGUNA</h4>
+              <h5 className={styles.footerColTitle}>Akses Cepat</h5>
               <ul className={styles.footerLinks}>
-                <li><Link href="/dashboard" className={styles.footerLink}>Portal Administrator</Link></li>
-                <li><Link href="/dashboard/teacher" className={styles.footerLink}>Portal Guru Pengampu</Link></li>
-                <li><Link href="/parent" className={styles.footerLink}>Parent Monitoring Portal</Link></li>
-                <li><Link href="/login" className={styles.footerLink}>Login Kartu QR Siswa</Link></li>
-                <li><Link href="/dashboard/dapodik" className={styles.footerLink}>Dapodik Sync Hub</Link></li>
+                <li><Link href="/login" className={styles.footerLink}>Masuk Akun Guru</Link></li>
+                <li><Link href="/login" className={styles.footerLink}>Portal Siswa</Link></li>
+                <li><Link href="/login" className={styles.footerLink}>Parent Portal</Link></li>
+                <li><a href="#faq" className={styles.footerLink}>Pusat Bantuan &amp; FAQ</a></li>
               </ul>
             </div>
           </div>
 
           <div className={styles.footerBottom}>
-            <span>&copy; {new Date().getFullYear()} Akselerasi-Edu (School OS). Seluruh hak cipta dilindungi.</span>
+            <div>
+              &copy; {new Date().getFullYear()} Akselerasi-Edu (School OS). Hak Cipta Dilindungi Undang-Undang.
+            </div>
             <div style={{ display: 'flex', gap: '20px' }}>
-              <a href="#features" className={styles.footerLink}>Privasi Data Siswa</a>
-              <a href="#architecture" className={styles.footerLink}>Dokumentasi Arsitektur</a>
-              <a href="#faq" className={styles.footerLink}>Pusat Bantuan</a>
+              <a href="#" className={styles.footerLink}>Ketentuan Layanan</a>
+              <a href="#" className={styles.footerLink}>Kebijakan Privasi</a>
+              <a href="#" className={styles.footerLink}>Standar Keamanan</a>
             </div>
           </div>
         </div>
