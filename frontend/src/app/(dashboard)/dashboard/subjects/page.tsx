@@ -49,18 +49,55 @@ export default function SubjectsPage() {
   const [selectedClass, setSelectedClass] = useState<string>('');
   const [selectedTeacher, setSelectedTeacher] = useState<string>('');
 
-  // New Schedule Form State
+  // New Schedule Form State (Mendukung Multi-Rombel Sekaligus)
   const [showAddForm, setShowAddForm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formSchedule, setFormSchedule] = useState({
-    className: '',
-    subjectName: 'Pendidikan Agama Islam dan Budi Pekerti',
+    selectedClassIds: [] as string[],
+    subjectName: '',
     teacherName: '',
     day: 'Senin' as 'Senin' | 'Selasa' | 'Rabu' | 'Kamis' | 'Jumat' | 'Sabtu',
     timeStart: '08:00',
     timeEnd: '09:30',
     room: 'Ruang Kelas',
   });
+
+  // Helper toggle & quick select rombel
+  const toggleClassSelect = (id: string) => {
+    setFormSchedule(prev => {
+      const exists = prev.selectedClassIds.includes(id);
+      return {
+        ...prev,
+        selectedClassIds: exists
+          ? prev.selectedClassIds.filter(cId => cId !== id)
+          : [...prev.selectedClassIds, id]
+      };
+    });
+  };
+
+  const selectClassesByPackage = (prefix: string) => {
+    const matchingIds = classesList
+      .filter(c => c.name.toUpperCase().includes(prefix.toUpperCase()))
+      .map(c => c.id);
+    setFormSchedule(prev => {
+      const set = new Set([...prev.selectedClassIds, ...matchingIds]);
+      return { ...prev, selectedClassIds: Array.from(set) };
+    });
+  };
+
+  const selectAllClasses = () => {
+    setFormSchedule(prev => ({
+      ...prev,
+      selectedClassIds: classesList.map(c => c.id)
+    }));
+  };
+
+  const clearAllClasses = () => {
+    setFormSchedule(prev => ({
+      ...prev,
+      selectedClassIds: []
+    }));
+  };
 
   // Toast
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -89,7 +126,11 @@ export default function SubjectsPage() {
           setTeachers(list);
           if (list.length > 0) {
             setSelectedTeacher(list[0].full_name);
-            setFormSchedule(prev => ({ ...prev, teacherName: list[0].full_name }));
+            setFormSchedule(prev => ({
+              ...prev,
+              teacherName: list[0].full_name,
+              subjectName: list[0].subject || prev.subjectName,
+            }));
           }
         }
 
@@ -98,7 +139,10 @@ export default function SubjectsPage() {
           setClassesList(allRombels);
           if (allRombels.length > 0) {
             setSelectedClass(allRombels[0].name);
-            setFormSchedule(prev => ({ ...prev, className: allRombels[0].name }));
+            setFormSchedule(prev => ({
+              ...prev,
+              selectedClassIds: prev.selectedClassIds.length > 0 ? prev.selectedClassIds : [allRombels[0].id]
+            }));
           }
         }
 
@@ -144,14 +188,20 @@ export default function SubjectsPage() {
 
   const handleCreateSchedule = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formSchedule.teacherName) return;
+    if (!formSchedule.teacherName) {
+      showToast('⚠️ Silakan pilih Guru Pengampu');
+      return;
+    }
+    if (formSchedule.selectedClassIds.length === 0) {
+      showToast('⚠️ Pilih minimal 1 Rombel untuk jadwal pelajaran');
+      return;
+    }
 
-    const matchedClass = classesList.find(c => c.name === formSchedule.className);
     const matchedSubject = subjects.find(s => s.name === formSchedule.subjectName);
     const matchedTeacher = teachers.find(t => t.full_name === formSchedule.teacherName);
 
-    if (!matchedClass || !matchedSubject || !matchedTeacher) {
-      showToast('⚠️ Data belum lengkap');
+    if (!matchedSubject || !matchedTeacher) {
+      showToast('⚠️ Data mata pelajaran atau guru belum lengkap');
       return;
     }
 
@@ -165,7 +215,7 @@ export default function SubjectsPage() {
           ...(token ? { Authorization: `Bearer ${token}` } : {})
         },
         body: JSON.stringify({
-          class_id: matchedClass.id,
+          class_ids: formSchedule.selectedClassIds,
           subject_id: matchedSubject.id,
           teacher_id: matchedTeacher.id,
           day_of_week: formSchedule.day,
@@ -177,8 +227,8 @@ export default function SubjectsPage() {
 
       const json = await res.json();
       if (res.ok && json.data) {
-        const item = json.data;
-        const newSch: ScheduleItem = {
+        const items = Array.isArray(json.data) ? json.data : [json.data];
+        const newScheds: ScheduleItem[] = items.map((item: any) => ({
           id: item.id,
           classId: item.class_id,
           className: item.class_name,
@@ -189,13 +239,13 @@ export default function SubjectsPage() {
           day: item.day_of_week,
           timeStart: item.start_time,
           timeEnd: item.end_time,
-          room: item.room,
-        };
-        setSchedules(prev => [newSch, ...prev]);
+          room: item.room || 'Ruang Kelas',
+        }));
+        setSchedules(prev => [...newScheds, ...prev]);
         setShowAddForm(false);
-        showToast('✓ Jadwal berhasil disimpan');
+        showToast(`✓ Jadwal berhasil diplot untuk ${newScheds.length} rombel!`);
       } else {
-        showToast('⚠️ Gagal menyimpan jadwal');
+        showToast(json?.error?.message || '⚠️ Gagal menyimpan jadwal');
       }
     } catch (err: any) {
       console.error('Error creating schedule:', err);
@@ -524,18 +574,123 @@ export default function SubjectsPage() {
 
             <form onSubmit={handleCreateSchedule}>
               <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                {/* Rombel Target */}
+                {/* Rombel Target (Multi-Select) */}
                 <div className={styles.formGroup}>
-                  <label className={styles.label}>Rombongan Belajar (Rombel) *</label>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    <label className={styles.label} style={{ margin: 0 }}>
+                      Rombongan Belajar (Rombel): <strong style={{ color: '#2563eb' }}>{formSchedule.selectedClassIds.length} Terpilih</strong> *
+                    </label>
+                    <div style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap' }}>
+                      <button
+                        type="button"
+                        onClick={() => selectClassesByPackage('PAKET A')}
+                        style={{ fontSize: '0.72rem', padding: '0.2rem 0.5rem', borderRadius: '4px', border: '1px solid #cbd5e1', background: '#f8fafc', cursor: 'pointer', fontWeight: 600 }}
+                      >
+                        + Paket A
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => selectClassesByPackage('PAKET B')}
+                        style={{ fontSize: '0.72rem', padding: '0.2rem 0.5rem', borderRadius: '4px', border: '1px solid #cbd5e1', background: '#f8fafc', cursor: 'pointer', fontWeight: 600 }}
+                      >
+                        + Paket B
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => selectClassesByPackage('PAKET C')}
+                        style={{ fontSize: '0.72rem', padding: '0.2rem 0.5rem', borderRadius: '4px', border: '1px solid #cbd5e1', background: '#f8fafc', cursor: 'pointer', fontWeight: 600 }}
+                      >
+                        + Paket C
+                      </button>
+                      <button
+                        type="button"
+                        onClick={selectAllClasses}
+                        style={{ fontSize: '0.72rem', padding: '0.2rem 0.5rem', borderRadius: '4px', border: '1px solid #cbd5e1', background: '#f8fafc', cursor: 'pointer', fontWeight: 600 }}
+                      >
+                        Semua
+                      </button>
+                      <button
+                        type="button"
+                        onClick={clearAllClasses}
+                        style={{ fontSize: '0.72rem', padding: '0.2rem 0.5rem', borderRadius: '4px', border: '1px solid #ef4444', color: '#ef4444', background: 'transparent', cursor: 'pointer', fontWeight: 600 }}
+                      >
+                        Reset
+                      </button>
+                    </div>
+                  </div>
+
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))',
+                    gap: '0.4rem',
+                    maxHeight: '135px',
+                    overflowY: 'auto',
+                    padding: '0.5rem',
+                    borderRadius: '8px',
+                    border: '1px solid #e2e8f0',
+                    background: '#f8fafc'
+                  }}>
+                    {classesList.map(c => {
+                      const isSelected = formSchedule.selectedClassIds.includes(c.id);
+                      return (
+                        <button
+                          key={c.id}
+                          type="button"
+                          onClick={() => toggleClassSelect(c.id)}
+                          style={{
+                            padding: '0.35rem 0.5rem',
+                            borderRadius: '6px',
+                            border: isSelected ? '1.5px solid #2563eb' : '1px solid #cbd5e1',
+                            background: isSelected ? '#eff6ff' : '#ffffff',
+                            color: isSelected ? '#1d4ed8' : '#1e293b',
+                            fontSize: '0.78rem',
+                            fontWeight: isSelected ? 700 : 500,
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            transition: 'all 0.15s ease',
+                          }}
+                        >
+                          <span>{c.name}</span>
+                          <span style={{ fontSize: '0.85rem' }}>{isSelected ? '✓' : ''}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {formSchedule.selectedClassIds.length === 0 && (
+                    <div style={{ fontSize: '0.75rem', color: '#ef4444', marginTop: '0.25rem' }}>
+                      * Pilih minimal 1 rombel untuk mem-plotting jadwal mengajar.
+                    </div>
+                  )}
+                </div>
+
+                {/* Guru Pengampu */}
+                <div className={styles.formGroup}>
+                  <label className={styles.label}>Guru Pengampu *</label>
                   <select
-                    value={formSchedule.className}
-                    onChange={e => setFormSchedule({ ...formSchedule, className: e.target.value })}
+                    value={formSchedule.teacherName}
+                    onChange={e => {
+                      const selectedName = e.target.value;
+                      const teacherObj = teachers.find(t => t.full_name === selectedName);
+                      setFormSchedule(prev => ({
+                        ...prev,
+                        teacherName: selectedName,
+                        subjectName: teacherObj?.subject || prev.subjectName,
+                      }));
+                    }}
                     className="input"
+                    required
                   >
-                    {classesList.length > 0 ? (
-                      classesList.map(c => <option key={c.id} value={c.name}>{c.name}</option>)
+                    {teachers.length > 0 ? (
+                      teachers.map((t: any) => (
+                        <option key={t.id} value={t.full_name}>
+                          {t.full_name} {t.nip ? `(NIP: ${t.nip})` : ''} {t.subject ? `• ${t.subject}` : ''}
+                        </option>
+                      ))
                     ) : (
-                      <option value="">Belum ada rombel terdaftar</option>
+                      <option value="">Memuat data guru...</option>
                     )}
                   </select>
                 </div>
@@ -547,29 +702,12 @@ export default function SubjectsPage() {
                     value={formSchedule.subjectName}
                     onChange={e => setFormSchedule({ ...formSchedule, subjectName: e.target.value })}
                     className="input"
+                    required
                   >
-                    {subjects.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
-                  </select>
-                </div>
-
-                {/* Guru Pengampu */}
-                <div className={styles.formGroup}>
-                  <label className={styles.label}>Guru Pengampu *</label>
-                  <select
-                    value={formSchedule.teacherName}
-                    onChange={e => setFormSchedule({ ...formSchedule, teacherName: e.target.value })}
-                    className="input"
-                  >
-                    {teachers.length > 0 ? (
-                      teachers.map((t: any) => <option key={t.id} value={t.full_name}>{t.full_name} (NIP: {t.nip})</option>)
+                    {subjects.length > 0 ? (
+                      subjects.map(s => <option key={s.id} value={s.name}>{s.name}</option>)
                     ) : (
-                      <>
-                        <option value="EHA MEIDA KARTIKA">EHA MEIDA KARTIKA</option>
-                        <option value="ESI ROKESI">ESI ROKESI</option>
-                        <option value="FITRI NAFISAH">FITRI NAFISAH</option>
-                        <option value="HASSAN MUSTOFA">HASSAN MUSTOFA</option>
-                        <option value="TAUFIQ HIDAYAT">TAUFIQ HIDAYAT</option>
-                      </>
+                      <option value="">Memuat mata pelajaran...</option>
                     )}
                   </select>
                 </div>
@@ -616,7 +754,9 @@ export default function SubjectsPage() {
 
               <div style={{ padding: '0.875rem 1.25rem', borderTop: '1px solid var(--border-light)', background: 'var(--bg-elevated)', display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
                 <button type="button" className="btn btn-secondary btn-sm" onClick={() => setShowAddForm(false)}>Batal</button>
-                <button type="submit" className="btn btn-primary btn-sm">💾 Simpan &amp; Hubungkan Jadwal</button>
+                <button type="submit" className="btn btn-primary btn-sm" disabled={isSubmitting || formSchedule.selectedClassIds.length === 0}>
+                  {isSubmitting ? 'Menyimpan...' : '💾 Simpan & Hubungkan Jadwal'}
+                </button>
               </div>
             </form>
           </div>

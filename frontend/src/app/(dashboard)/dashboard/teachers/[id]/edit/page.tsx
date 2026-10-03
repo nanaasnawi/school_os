@@ -32,15 +32,27 @@ export default function EditTeacherPage() {
     subject: 'Matematika',
   });
 
+  const [subjectsList, setSubjectsList] = useState<{ id: string; name: string }[]>([]);
+
   useEffect(() => {
     let cancelled = false;
 
-    async function loadTeacher() {
+    async function loadData() {
       try {
         const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
-        const res = await fetch(getApiUrl(`/api/v1/teachers/${id}`), {
-          headers: token ? { Authorization: `Bearer ${token}` } : {}
-        });
+        const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+
+        const [res, subRes] = await Promise.all([
+          fetch(getApiUrl(`/api/v1/teachers/${id}`), { headers }),
+          fetch(getApiUrl('/api/v1/academic/subjects'), { headers }).catch(() => null),
+        ]);
+
+        if (subRes && subRes.ok) {
+          const subJson = await subRes.json().catch(() => null);
+          if (subJson?.data && Array.isArray(subJson.data) && !cancelled) {
+            setSubjectsList(subJson.data);
+          }
+        }
 
         if (res.ok) {
           const json = await res.json();
@@ -59,7 +71,7 @@ export default function EditTeacherPage() {
               alamat_jalan: d.alamat_jalan || '',
               no_hp: d.no_hp || '',
               email: d.email || '',
-              subject: d.subject || 'Matematika',
+              subject: d.subject || '',
             });
             setFetching(false);
             return;
@@ -75,7 +87,7 @@ export default function EditTeacherPage() {
     }
 
     if (id) {
-      loadTeacher();
+      loadData();
     }
     return () => { cancelled = true; };
   }, [id]);
@@ -245,6 +257,26 @@ export default function EditTeacherPage() {
                   <option value="Guru Kelas">Guru Kelas</option>
                   <option value="Guru BK">Guru Bimbingan Konseling (BK)</option>
                   <option value="Guru Pendamping Khusus">Guru Pendamping Khusus</option>
+                </select>
+              </div>
+
+              <div className={styles.formGroup}>
+                <label htmlFor="subject" className={styles.label}>Mata Pelajaran (Pengampu Utama) *</label>
+                <select
+                  id="subject"
+                  name="subject"
+                  value={formData.subject}
+                  onChange={handleChange}
+                  className={styles.input}
+                  required
+                >
+                  {subjectsList.length > 0 ? (
+                    subjectsList.map((s: any) => (
+                      <option key={s.id || s.code} value={s.name}>{s.name}</option>
+                    ))
+                  ) : (
+                    <option value={formData.subject}>{formData.subject || 'Pilih Mata Pelajaran'}</option>
+                  )}
                 </select>
               </div>
             </div>

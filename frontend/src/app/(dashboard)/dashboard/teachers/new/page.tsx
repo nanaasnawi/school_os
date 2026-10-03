@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import styles from '../teachers.module.css';
@@ -20,6 +20,31 @@ export default function NewTeacherPage() {
     phone: '',
   });
 
+  const [subjectsList, setSubjectsList] = useState<{ id: string; name: string }[]>([]);
+
+  useEffect(() => {
+    async function loadSubjects() {
+      try {
+        const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
+        const res = await fetch('/api/v1/academic/subjects', {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.data && Array.isArray(json.data)) {
+            setSubjectsList(json.data);
+            if (json.data.length > 0) {
+              setFormData(prev => ({ ...prev, subject: json.data[0].name }));
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching subjects:', err);
+      }
+    }
+    loadSubjects();
+  }, []);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
@@ -31,12 +56,29 @@ export default function NewTeacherPage() {
     setSuccessMsg('');
 
     try {
-      await createTeacher({
+      const created = await createTeacher({
         body: {
           nip: formData.nip,
           full_name: formData.full_name,
         }
       }).catch(() => null);
+
+      const teacherId = (created as any)?.data?.data?.id;
+      if (teacherId) {
+        const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
+        await fetch(`/api/v1/teachers/${teacherId}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {})
+          },
+          body: JSON.stringify({
+            subject: formData.subject,
+            jenis_ptk: formData.role,
+            no_hp: formData.phone,
+          })
+        }).catch(() => null);
+      }
 
       setSuccessMsg(`✓ Guru "${formData.full_name}" berhasil didaftarkan ke Dapodik!`);
       setTimeout(() => {
@@ -107,12 +149,13 @@ export default function NewTeacherPage() {
                 className="input"
                 disabled={loading}
               >
-                <option value="Pendidikan Agama & Budi Pekerti">Pendidikan Agama &amp; Budi Pekerti</option>
-                <option value="Bahasa Indonesia">Bahasa Indonesia</option>
-                <option value="Matematika">Matematika</option>
-                <option value="IPA (Ilmu Pengetahuan Alam)">IPA (Ilmu Pengetahuan Alam)</option>
-                <option value="IPS (Ilmu Pengetahuan Sosial)">IPS (Ilmu Pengetahuan Sosial)</option>
-                <option value="Bahasa Inggris">Bahasa Inggris</option>
+                {subjectsList.length > 0 ? (
+                  subjectsList.map((s: any) => (
+                    <option key={s.id || s.code} value={s.name}>{s.name}</option>
+                  ))
+                ) : (
+                  <option value="">Memuat mata pelajaran...</option>
+                )}
               </select>
             </div>
 

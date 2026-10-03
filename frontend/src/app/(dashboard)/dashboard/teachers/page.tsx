@@ -5,7 +5,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import styles from './teachers.module.css';
 import { exportToExcel } from '@/lib/exportExcel';
-import { apiClient } from '@/lib/api';
+import { apiClient, getApiUrl } from '@/lib/api';
 import { listTeachers } from '@/lib/sdk/sdk.gen';
 
 type TeacherItem = {
@@ -76,12 +76,12 @@ export default function TeachersPage() {
             tempat_lahir: t.tempat_lahir || '-',
             tanggal_lahir: t.tanggal_lahir || '-',
             status_kepegawaian: t.status_kepegawaian || '-',
-            jenis_ptk: t.jenis_ptk || '-',
+            jenis_ptk: t.jenis_ptk || '',
             agama: t.agama || '-',
             alamat_jalan: t.alamat_jalan || '-',
             no_hp: t.no_hp || '-',
             email: t.email || '-',
-            subject: t.subject || '-',
+            subject: t.subject || '',
             is_active: t.is_active !== undefined ? t.is_active : ((t.status || '').toLowerCase() === 'active' || (t.status || '').toLowerCase() === 'aktif')
           })));
           setIsLoading(false);
@@ -238,7 +238,7 @@ export default function TeachersPage() {
 
     try {
       const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
-      const res = await fetch(`/api/v1/teachers/${editTeacher.id}`, {
+      const res = await fetch(getApiUrl(`/api/v1/teachers/${editTeacher.id}`), {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -587,7 +587,14 @@ export default function TeachersPage() {
                       </td>
 
                       <td>
-                        <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{t.jenis_ptk || t.subject || 'Guru Mapel'}</span>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>
+                            {t.subject && t.subject !== '-' ? t.subject : (t.jenis_ptk && t.jenis_ptk !== '-' ? t.jenis_ptk : 'Guru Mapel')}
+                          </span>
+                          <span style={{ fontSize: '0.74rem', color: 'var(--text-secondary, #64748b)' }}>
+                            {t.jenis_ptk && t.jenis_ptk !== '-' ? t.jenis_ptk : 'Guru Mata Pelajaran'}
+                          </span>
+                        </div>
                       </td>
 
                       <td>
@@ -838,9 +845,9 @@ export default function TeachersPage() {
                     className="input"
                   />
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                   <div className={styles.formGroup}>
-                    <label className={styles.label}>Pengampu Utama</label>
+                    <label className={styles.label}>Mata Pelajaran (Pengampu Utama) *</label>
                     <select
                       value={formData.subject}
                       onChange={e => setFormData({ ...formData, subject: e.target.value })}
@@ -851,6 +858,22 @@ export default function TeachersPage() {
                       ))}
                     </select>
                   </div>
+                  <div className={styles.formGroup}>
+                    <label className={styles.label}>Jenis PTK</label>
+                    <select
+                      value={formData.jenis_ptk || 'Guru Mapel'}
+                      onChange={e => setFormData({ ...formData, jenis_ptk: e.target.value })}
+                      className="input"
+                    >
+                      <option value="Guru Mapel">Guru Mapel</option>
+                      <option value="Guru Kelas">Guru Kelas</option>
+                      <option value="Guru BK">Guru BK</option>
+                      <option value="Tenaga Kependidikan">Tenaga Kependidikan</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                   <div className={styles.formGroup}>
                     <label className={styles.label}>No. WA</label>
                     <input
