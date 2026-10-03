@@ -241,6 +241,45 @@ export function parseExcelSchedule(
   });
 }
 
+async function loadPdfJs(): Promise<any> {
+  if (typeof window === 'undefined') {
+    throw new Error('Pembacaan berkas PDF hanya dapat dilakukan di browser.');
+  }
+
+  const win = window as any;
+  if (win.pdfjsLib) {
+    return win.pdfjsLib;
+  }
+
+  return new Promise((resolve, reject) => {
+    const existingScript = document.getElementById('pdfjs-cdn-script');
+    if (existingScript) {
+      existingScript.addEventListener('load', () => {
+        if (win.pdfjsLib) resolve(win.pdfjsLib);
+        else reject(new Error('Gagal memuat PDF reader'));
+      });
+      existingScript.addEventListener('error', () => reject(new Error('Gagal mengunduh script PDF dari CDN')));
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.id = 'pdfjs-cdn-script';
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+    script.async = true;
+    script.onload = () => {
+      if (win.pdfjsLib) {
+        win.pdfjsLib.GlobalWorkerOptions.workerSrc =
+          'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        resolve(win.pdfjsLib);
+      } else {
+        reject(new Error('Pustaka PDF tidak berhasil diinisialisasi'));
+      }
+    };
+    script.onerror = () => reject(new Error('Koneksi ke CDN PDF reader gagal'));
+    document.head.appendChild(script);
+  });
+}
+
 export async function parsePdfSchedule(
   file: File,
   allTeachers: any[],
@@ -248,10 +287,7 @@ export async function parsePdfSchedule(
   allClasses: any[]
 ): Promise<ParsedScheduleRow[]> {
   try {
-    const pdfjs = await import('pdfjs-dist');
-    if (!pdfjs.GlobalWorkerOptions.workerSrc) {
-      pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
-    }
+    const pdfjs = await loadPdfJs();
     const arrayBuffer = await file.arrayBuffer();
     const loadingTask = pdfjs.getDocument({ data: arrayBuffer });
     const pdf = await loadingTask.promise;
@@ -275,9 +311,9 @@ export async function parsePdfSchedule(
     }
 
     return parseLinesToSchedule(lines, allTeachers, allSubjects, allClasses);
-  } catch (err) {
+  } catch (err: any) {
     console.error('Failed to parse PDF with pdfjs:', err);
-    throw new Error('Format PDF tidak terbaca atau terproteksi. Silakan gunakan format Excel (.xlsx) atau masukkan jadwal secara langsung.');
+    throw new Error(err?.message || 'Format PDF tidak terbaca atau terproteksi. Silakan gunakan format Excel (.xlsx) atau masukkan jadwal secara langsung.');
   }
 }
 
