@@ -979,14 +979,13 @@ export default function QrScanPage() {
                             >
                               <span>{u.full_name}</span>
                             </div>
-                            <div className="itemSubtitleCheck" style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
-                              {u.username && (
+                            {u.username && (
+                              <div className="itemSubtitleCheck" style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
                                 <code style={{ fontSize: '0.72rem', color: '#38bdf8', background: 'rgba(56, 189, 248, 0.12)', padding: '0.1rem 0.35rem', borderRadius: '4px' }}>
                                   @{u.username}
                                 </code>
-                              )}
-                              <span>✓ Akun Mobile Terdaftar</span>
-                            </div>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </td>
