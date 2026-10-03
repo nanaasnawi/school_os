@@ -423,55 +423,42 @@ export default function AttendancePage() {
   const strokeDashoffset = circumference - (stats.presentPct / 100) * circumference;
 
   return (
-    <div className={styles.container}>
-      {/* ── 1. Top Header ── */}
-      <div className={styles.header}>
-        <div className={styles.headerLeft}>
-          <div className={styles.headerIcon}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-              <line x1="16" y1="2" x2="16" y2="6" />
-              <line x1="8" y1="2" x2="8" y2="6" />
-              <line x1="3" y1="10" x2="21" y2="10" />
-            </svg>
-          </div>
-          <div className={styles.titleArea}>
-            <div className={styles.badgeTag}>
-              <span>{isTeacher ? 'Teacher Workstation' : 'School Administration'}</span>
-            </div>
-            <h1 className={styles.title}>Presensi &amp; Kehadiran Siswa</h1>
-            <p className={styles.subtitle}>
-              Pusat kelola kehadiran belajar tatap muka, monitoring ketidakhadiran, dan rekapitulasi analitik.
-            </p>
+    <div className={styles.page}>
+      {/* Toast Notification */}
+      {saveMessage && (
+        <div className="toastContainer">
+          <div className={`toast ${saveMessage.isError ? 'toastError' : 'toastSuccess'}`}>
+            <span>{saveMessage.text}</span>
           </div>
         </div>
+      )}
 
-        <div className={styles.headerActions}>
+      {/* ── 1. Top Header (Standard SchoolOS Enterprise Design) ── */}
+      <div className={styles.header}>
+        <div className={styles.headerLeft}>
+          <h1 className={styles.title}>Presensi &amp; Kehadiran Siswa</h1>
+          <p className={styles.subtitle}>
+            Pusat kelola kehadiran belajar tatap muka, monitoring ketidakhadiran, dan rekapitulasi analitik
+          </p>
+        </div>
+
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
           <button
+            type="button"
             onClick={() => window.print()}
-            className={styles.btnSecondary}
+            className="btn btn-secondary btn-sm"
             title="Cetak lembar presensi fisik"
           >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="6 9 6 2 18 2 18 9" />
-              <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
-              <rect x="6" y="14" width="12" height="8" />
-            </svg>
-            <span>Cetak Rekap</span>
+            🖨️ Cetak Rekap
           </button>
 
-          <Link href="/dashboard/reports/export" className={styles.btnSecondary}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" />
-              <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
-            <span>Ekspor Data</span>
+          <Link href="/dashboard/reports/export" className="btn btn-secondary btn-sm">
+            📊 Ekspor Data
           </Link>
         </div>
       </div>
 
-      {/* ── 2. Filter & Date Selector Card ── */}
+      {/* ── 2. Filter & Date Selector Card (Clean Enterprise Bar) ── */}
       <div className={styles.controlsCard}>
         <div className={styles.filterGroup}>
           <div className={styles.selectLabel}>
@@ -479,7 +466,8 @@ export default function AttendancePage() {
             <select
               value={selectedClassId}
               onChange={(e) => setSelectedClassId(e.target.value)}
-              className={styles.selectInput}
+              className="input"
+              style={{ padding: '0.35rem 0.75rem', fontSize: '0.82rem', fontWeight: 600 }}
               disabled={loading || classes.length === 0}
             >
               {classes.map((c) => (
@@ -496,7 +484,8 @@ export default function AttendancePage() {
               type="date"
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
-              className={styles.selectInput}
+              className="input"
+              style={{ padding: '0.35rem 0.75rem', fontSize: '0.82rem' }}
             />
           </div>
 
@@ -506,7 +495,8 @@ export default function AttendancePage() {
               <select
                 value={selectedSessionId}
                 onChange={(e) => setSelectedSessionId(e.target.value)}
-                className={styles.selectInput}
+                className="input"
+                style={{ padding: '0.35rem 0.75rem', fontSize: '0.82rem', fontWeight: 600 }}
               >
                 <option value="daily-session">Presensi Reguler Harian</option>
                 {sessions.map((s) => (
@@ -519,26 +509,10 @@ export default function AttendancePage() {
           )}
         </div>
 
-        <div style={{ fontSize: '0.74rem', color: '#64748b', fontWeight: 600 }}>
-          {dateFormatted}
+        <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+          📅 {dateFormatted}
         </div>
       </div>
-
-      {saveMessage && (
-        <div
-          style={{
-            background: saveMessage.isError ? '#fef2f2' : '#ecfdf5',
-            color: saveMessage.isError ? '#dc2626' : '#047857',
-            padding: '0.5rem 1rem',
-            borderRadius: '8px',
-            fontSize: '0.75rem',
-            fontWeight: 700,
-            border: `1px solid ${saveMessage.isError ? '#fecaca' : '#a7f3d0'}`,
-          }}
-        >
-          {saveMessage.text}
-        </div>
-      )}
 
       {/* ── 3. KPI Metrics Cards ── */}
       <div className={styles.metricGrid}>
@@ -547,17 +521,18 @@ export default function AttendancePage() {
           <div className={styles.metricLabel}>
             <span>Tingkat Kehadiran</span>
             <span
-              className={styles.metricBadge}
+              className="badge"
               style={{
                 background: stats.rate >= 90 ? '#dcfce7' : '#fef3c7',
                 color: stats.rate >= 90 ? '#15803d' : '#b45309',
+                border: stats.rate >= 90 ? '1px solid #86efac' : '1px solid #fde68a',
               }}
             >
               {stats.rate >= 90 ? 'Sangat Baik' : 'Perlu Pantauan'}
             </span>
           </div>
           <div className={styles.metricValueRow}>
-            <span className={styles.metricValue} style={{ color: '#059669' }}>
+            <span className={styles.metricValue} style={{ color: stats.rate >= 90 ? '#059669' : '#d97706' }}>
               {stats.rate}%
             </span>
           </div>
@@ -570,15 +545,15 @@ export default function AttendancePage() {
         <div className={styles.metricCard}>
           <div className={styles.metricLabel}>
             <span>Siswa Hadir</span>
-            <span className={styles.metricBadge} style={{ background: '#ecfdf5', color: '#047857' }}>
+            <span className="badge badge-success">
               {Math.round(stats.presentPct)}%
             </span>
           </div>
           <div className={styles.metricValueRow}>
-            <span className={styles.metricValue} style={{ color: '#10b981' }}>
+            <span className={styles.metricValue} style={{ color: '#059669' }}>
               {stats.present}
             </span>
-            <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>Siswa</span>
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>Siswa</span>
           </div>
           <span className={styles.metricSub}>Hadir tepat waktu mengikuti sesi</span>
         </div>
@@ -587,15 +562,15 @@ export default function AttendancePage() {
         <div className={styles.metricCard}>
           <div className={styles.metricLabel}>
             <span>Sakit &amp; Izin</span>
-            <span className={styles.metricBadge} style={{ background: '#fef3c7', color: '#b45309' }}>
+            <span className="badge badge-warning">
               {stats.sick + stats.excused} Siswa
             </span>
           </div>
           <div className={styles.metricValueRow}>
-            <span className={styles.metricValue} style={{ color: '#f59e0b' }}>
+            <span className={styles.metricValue} style={{ color: '#d97706' }}>
               {stats.sick + stats.excused}
             </span>
-            <span style={{ fontSize: '0.72rem', color: '#64748b' }}>
+            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
               ({stats.sick} Sakit, {stats.excused} Izin)
             </span>
           </div>
@@ -607,23 +582,24 @@ export default function AttendancePage() {
           <div className={styles.metricLabel}>
             <span>Alpa (Tanpa Ket.)</span>
             <span
-              className={styles.metricBadge}
+              className="badge"
               style={{
                 background: stats.absent > 0 ? '#fee2e2' : '#f1f5f9',
                 color: stats.absent > 0 ? '#dc2626' : '#64748b',
+                border: stats.absent > 0 ? '1px solid #fecaca' : '1px solid #e2e8f0',
               }}
             >
-              {stats.absent > 0 ? 'Perlu Follow-up' : 'Nihil'}
+              {stats.absent > 0 ? 'Perlu Tindak Lanjut' : 'Nihil'}
             </span>
           </div>
           <div className={styles.metricValueRow}>
             <span
               className={styles.metricValue}
-              style={{ color: stats.absent > 0 ? '#ef4444' : '#64748b' }}
+              style={{ color: stats.absent > 0 ? '#dc2626' : 'var(--text-primary)' }}
             >
               {stats.absent}
             </span>
-            <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>Siswa</span>
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>Siswa</span>
           </div>
           <span className={styles.metricSub}>
             {stats.absent > 0 ? 'Tindak lanjuti dengan wali murid' : 'Seluruh siswa terkonfirmasi'}
@@ -638,16 +614,11 @@ export default function AttendancePage() {
           <div className={styles.chartHeader}>
             <div>
               <h3 className={styles.chartTitle}>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2.2">
-                  <path d="M18 20V10" />
-                  <path d="M12 20V4" />
-                  <path d="M6 20v-6" />
-                </svg>
-                <span>Tren Kehadiran Mingguan (Senin - Sabtu)</span>
+                <span>📊 Tren Kehadiran Mingguan (Senin - Sabtu)</span>
               </h3>
               <span className={styles.chartSub}>Persentase kehadiran kelas pada pekan aktif berjalan</span>
             </div>
-            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#059669' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#2563eb' }}>
               Rata-rata: 95.8%
             </span>
           </div>
@@ -678,11 +649,7 @@ export default function AttendancePage() {
           <div className={styles.chartHeader}>
             <div>
               <h3 className={styles.chartTitle}>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0284c7" strokeWidth="2.2">
-                  <circle cx="12" cy="12" r="10" />
-                  <polyline points="12 6 12 12 14 14" />
-                </svg>
-                <span>Komposisi Status Hari Ini</span>
+                <span>🕒 Komposisi Status Hari Ini</span>
               </h3>
               <span className={styles.chartSub}>Distribusi hadir, sakit, izin, dan alpa</span>
             </div>
@@ -719,7 +686,7 @@ export default function AttendancePage() {
                 textAnchor="middle"
                 dominantBaseline="middle"
                 transform="rotate(90 50 50)"
-                style={{ fontSize: '16px', fontWeight: 800, fill: '#0f172a' }}
+                style={{ fontSize: '16px', fontWeight: 800, fill: 'var(--text-primary, #0f172a)' }}
               >
                 {stats.rate}%
               </text>
@@ -762,126 +729,103 @@ export default function AttendancePage() {
         </div>
       </div>
 
-      {/* ── 5. Attendance Roster Table (Lembar Presensi) ── */}
-      <div className={styles.rosterCard}>
-        <div className={styles.rosterHeader}>
-          <div className={styles.rosterTitle}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2.2">
-              <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-              <circle cx="8.5" cy="7" r="4" />
-              <polyline points="17 11 19 13 23 9" />
-            </svg>
-            <span>Daftar Hadir Siswa (Roster Presensi)</span>
-            <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>
+      {/* ── 5. Master Enterprise Datatable (Daftar Hadir Siswa) ── */}
+      <div className="tableCard">
+        {/* Top Toolbar */}
+        <div className="tableToolbar">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+            <h2 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+              📋 Daftar Hadir Siswa (Roster Presensi)
+            </h2>
+            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>
               ({filteredStudents.length} siswa)
             </span>
+
+            {/* Filter status tabs in unified modern segmented switcher */}
+            <div style={{ display: 'inline-flex', background: 'var(--bg-elevated, #f1f5f9)', padding: '3px', borderRadius: '8px', border: '1px solid var(--border-light, #e2e8f0)' }}>
+              {[
+                { id: 'ALL', label: `Semua (${students.length})` },
+                { id: 'present', label: `Hadir (${stats.present})` },
+                { id: 'sick', label: `Sakit (${stats.sick})` },
+                { id: 'excused', label: `Izin (${stats.excused})` },
+                { id: 'absent', label: `Alpa (${stats.absent})` },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setStatusFilter(tab.id as any)}
+                  style={{
+                    padding: '0.25rem 0.65rem',
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    borderRadius: '6px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    background: statusFilter === tab.id ? '#2563eb' : 'transparent',
+                    color: statusFilter === tab.id ? '#ffffff' : 'var(--text-secondary, #64748b)',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
           </div>
 
-          <div className={styles.rosterActions}>
+          {/* Right Toolbar: Search & Action Buttons */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <div className="tableSearchBox">
+              <input
+                type="text"
+                placeholder="Cari siswa atau NISN..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="tableSearchInput"
+              />
+              <svg className="tableSearchIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+            </div>
+
             <button
+              type="button"
               onClick={handleMarkAllPresent}
-              className={styles.btnSecondary}
+              className="btn btn-secondary btn-sm"
               title="Tandai seluruh siswa sebagai Hadir dengan sekali klik"
             >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="3">
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-              <span>Tandai Semua Hadir</span>
+              ✓ Tandai Semua Hadir
             </button>
 
             <button
+              type="button"
               onClick={handleSaveAttendance}
               disabled={saving}
-              className={styles.btnPrimary}
+              className="btn btn-primary btn-sm"
             >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-                <polyline points="17 21 17 13 7 13 7 21" />
-                <polyline points="7 3 7 8 15 8" />
-              </svg>
-              <span>{saving ? 'Menyimpan...' : 'Simpan Presensi'}</span>
+              {saving ? 'Menyimpan...' : '💾 Simpan Presensi'}
             </button>
           </div>
         </div>
 
-        {/* Filter bar for roster */}
-        <div className={styles.rosterFilterBar}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
-            <button
-              onClick={() => setStatusFilter('ALL')}
-              className={`${styles.statusBtn} ${statusFilter === 'ALL' ? styles.btnHadirActive : ''}`}
-              style={{ borderRadius: '5px' }}
-            >
-              Semua ({students.length})
-            </button>
-            <button
-              onClick={() => setStatusFilter('present')}
-              className={`${styles.statusBtn} ${statusFilter === 'present' ? styles.btnHadirActive : ''}`}
-              style={{ borderRadius: '5px' }}
-            >
-              Hadir ({stats.present})
-            </button>
-            <button
-              onClick={() => setStatusFilter('sick')}
-              className={`${styles.statusBtn} ${statusFilter === 'sick' ? styles.btnSakitActive : ''}`}
-              style={{ borderRadius: '5px' }}
-            >
-              Sakit ({stats.sick})
-            </button>
-            <button
-              onClick={() => setStatusFilter('excused')}
-              className={`${styles.statusBtn} ${statusFilter === 'excused' ? styles.btnIzinActive : ''}`}
-              style={{ borderRadius: '5px' }}
-            >
-              Izin ({stats.excused})
-            </button>
-            <button
-              onClick={() => setStatusFilter('absent')}
-              className={`${styles.statusBtn} ${statusFilter === 'absent' ? styles.btnAlpaActive : ''}`}
-              style={{ borderRadius: '5px' }}
-            >
-              Alpa ({stats.absent})
-            </button>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-            <input
-              type="text"
-              placeholder="Cari siswa atau NISN..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className={styles.notesInput}
-              style={{ maxWidth: '190px' }}
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#94a3b8', fontSize: '0.75rem' }}
-              >
-                ✕
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Table */}
-        <div className={styles.tableWrapper}>
-          <table className={styles.rosterTable}>
+        {/* Master Table Wrap */}
+        <div className="tableWrap">
+          <table className="table">
             <thead>
               <tr>
-                <th style={{ width: '40px', textAlign: 'center' }}>No</th>
-                <th>Nama Peserta Didik</th>
-                <th>NISN / ID</th>
-                <th style={{ textAlign: 'center' }}>Status Kehadiran</th>
-                <th>Keterangan / Alasan</th>
-                <th style={{ textAlign: 'right' }}>Waktu Presensi</th>
+                <th style={{ width: '50px', textAlign: 'center' }}>NO</th>
+                <th>NAMA PESERTA DIDIK</th>
+                <th style={{ width: '150px' }}>NISN / ID</th>
+                <th style={{ width: '220px', textAlign: 'center' }}>STATUS KEHADIRAN</th>
+                <th>KETERANGAN / ALASAN</th>
+                <th style={{ width: '130px', textAlign: 'right' }}>WAKTU PRESENSI</th>
               </tr>
             </thead>
             <tbody>
               {paginatedStudents.length === 0 ? (
                 <tr>
-                  <td colSpan={6} style={{ textAlign: 'center', padding: '2rem 1rem', color: '#64748b' }}>
-                    Tidak ada siswa yang sesuai filter atau kelas belum memiliki siswa terdaftar.
+                  <td colSpan={6} style={{ textAlign: 'center', padding: '2.5rem 1rem', color: '#64748b' }}>
+                    Tidak ada siswa yang sesuai filter atau rombel belum memiliki siswa terdaftar.
                   </td>
                 </tr>
               ) : (
@@ -905,14 +849,15 @@ export default function AttendancePage() {
                               width: '28px',
                               height: '28px',
                               borderRadius: '6px',
-                              background: '#e0f2fe',
-                              color: '#0369a1',
+                              background: '#eff6ff',
+                              color: '#2563eb',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              fontWeight: 700,
+                              fontWeight: 800,
                               fontSize: '0.74rem',
                               flexShrink: 0,
+                              border: '1px solid #bfdbfe',
                             }}
                           >
                             {initial}
@@ -922,8 +867,10 @@ export default function AttendancePage() {
                           </span>
                         </div>
                       </td>
-                      <td style={{ color: '#64748b', fontFamily: 'monospace' }}>
-                        {student.nisn || '-'}
+                      <td>
+                        <code style={{ fontSize: '0.78rem', color: '#475569' }}>
+                          {student.nisn || '-'}
+                        </code>
                       </td>
                       <td style={{ textAlign: 'center' }}>
                         <div className={styles.statusButtonGroup}>
@@ -967,11 +914,14 @@ export default function AttendancePage() {
                           placeholder="Tambahkan catatan jika sakit/izin..."
                           value={record.notes || ''}
                           onChange={(e) => handleSetNotes(student.id, e.target.value)}
-                          className={styles.notesInput}
+                          className="input"
+                          style={{ padding: '0.28rem 0.6rem', fontSize: '0.75rem', width: '100%', maxWidth: '240px' }}
                         />
                       </td>
-                      <td style={{ textAlign: 'right', color: '#64748b', fontSize: '0.72rem' }}>
-                        {record.status === 'present' ? (record.checked_in_at || '07:30 WIB') : '-'}
+                      <td style={{ textAlign: 'right' }}>
+                        <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>
+                          {record.status === 'present' ? (record.checked_in_at || '07:30 WIB') : '-'}
+                        </span>
                       </td>
                     </tr>
                   );
@@ -981,19 +931,20 @@ export default function AttendancePage() {
           </table>
         </div>
 
-        {/* ── Datatable Pagination Bar ── */}
-        <div className={styles.paginationBar}>
-          <div className={styles.paginationInfo}>
+        {/* ── Table Footer & Pagination ── */}
+        <div className="tableToolbar" style={{ borderTop: '1px solid var(--border-light, #f1f5f9)', paddingTop: '0.75rem', marginTop: '0.5rem' }}>
+          <div className="tableInfoText">
             Menampilkan <strong>{totalFiltered > 0 ? startIndex + 1 : 0}</strong> - <strong>{Math.min(startIndex + pageSize, totalFiltered)}</strong> dari <strong>{totalFiltered}</strong> siswa ({students.length} terdaftar)
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.72rem', color: '#64748b' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.75rem', color: '#64748b' }}>
               <span>Baris:</span>
               <select
                 value={pageSize}
                 onChange={(e) => setPageSize(Number(e.target.value))}
-                className={styles.pageSizeSelect}
+                className="entriesSelect"
+                style={{ padding: '0.22rem 0.5rem', fontSize: '0.75rem' }}
               >
                 <option value={15}>15</option>
                 <option value={25}>25</option>
@@ -1002,72 +953,47 @@ export default function AttendancePage() {
               </select>
             </div>
 
-            <div className={styles.paginationControls}>
+            <div className="paginationBtns">
               <button
+                type="button"
                 onClick={() => setCurrentPage(1)}
                 disabled={currentPage === 1}
-                className={styles.pageBtn}
+                className="pageBtn"
                 title="Halaman Pertama"
               >
-                &laquo;
+                «
               </button>
               <button
+                type="button"
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className={styles.pageBtn}
+                className="pageBtn"
                 title="Halaman Sebelumnya"
               >
-                &lsaquo;
+                ‹
               </button>
-
-              {Array.from({ length: totalPages }, (_, i) => i + 1)
-                .filter((p) => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
-                .map((p, index, array) => {
-                  const showEllipsis = index > 0 && p - array[index - 1] > 1;
-                  return (
-                    <React.Fragment key={p}>
-                      {showEllipsis && <span style={{ padding: '0 3px', color: '#94a3b8', fontSize: '0.72rem' }}>...</span>}
-                      <button
-                        onClick={() => setCurrentPage(p)}
-                        className={`${styles.pageBtn} ${currentPage === p ? styles.pageBtnActive : ''}`}
-                      >
-                        {p}
-                      </button>
-                    </React.Fragment>
-                  );
-                })}
-
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, padding: '0 0.5rem', color: 'var(--text-secondary)' }}>
+                {currentPage} / {totalPages}
+              </span>
               <button
+                type="button"
                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
-                className={styles.pageBtn}
+                className="pageBtn"
                 title="Halaman Selanjutnya"
               >
-                &rsaquo;
+                ›
               </button>
               <button
+                type="button"
                 onClick={() => setCurrentPage(totalPages)}
                 disabled={currentPage === totalPages}
-                className={styles.pageBtn}
+                className="pageBtn"
                 title="Halaman Terakhir"
               >
-                &raquo;
+                »
               </button>
             </div>
-
-            <button
-              onClick={handleSaveAttendance}
-              disabled={saving}
-              className={styles.btnPrimary}
-              style={{ marginLeft: '6px' }}
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-                <polyline points="17 21 17 13 7 13 7 21" />
-                <polyline points="7 3 7 8 15 8" />
-              </svg>
-              <span>{saving ? 'Menyimpan...' : 'Simpan Presensi'}</span>
-            </button>
           </div>
         </div>
       </div>
