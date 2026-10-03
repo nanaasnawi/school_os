@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import styles from './subjects.module.css';
 import { listTeachers, listClasses } from '@/lib/sdk/sdk.gen';
@@ -34,6 +34,31 @@ export default function SubjectsPage() {
   const [teachers, setTeachers] = useState<any[]>([]);
   const [classesList, setClassesList] = useState<any[]>([]);
   const [schedules, setSchedules] = useState<ScheduleItem[]>([]);
+  const [subjectSortField, setSubjectSortField] = useState<'code' | 'name' | 'totalHours'>('name');
+  const [subjectSortOrder, setSubjectSortOrder] = useState<'asc' | 'desc'>('asc');
+
+  const handleSetSubjectSort = (field: 'code' | 'name' | 'totalHours') => {
+    if (subjectSortField === field) {
+      setSubjectSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSubjectSortField(field);
+      setSubjectSortOrder('asc');
+    }
+  };
+
+  const sortedSubjects = useMemo(() => {
+    return [...subjects].sort((a, b) => {
+      let comparison = 0;
+      if (subjectSortField === 'code') {
+        comparison = (a.code || '').localeCompare(b.code || '');
+      } else if (subjectSortField === 'name') {
+        comparison = (a.name || '').localeCompare(b.name || '');
+      } else if (subjectSortField === 'totalHours') {
+        comparison = (a.totalHours || 0) - (b.totalHours || 0);
+      }
+      return subjectSortOrder === 'asc' ? comparison : -comparison;
+    });
+  }, [subjects, subjectSortField, subjectSortOrder]);
 
   // View Mode: 'class' (Per Rombel) atau 'teacher' (Per Guru Pengampu)
   const [viewMode, setViewMode] = useState<'class' | 'teacher'>('class');
@@ -519,13 +544,28 @@ export default function SubjectsPage() {
             <table className={styles.table}>
               <thead>
                 <tr>
-                  <th>Kode</th>
-                  <th>Mata Pelajaran</th>
-                  <th>Beban Jam</th>
+                  <th className="thSortable" onClick={() => handleSetSubjectSort('code')}>
+                    <div className="thSortContent">
+                      <span>Kode</span>
+                      <span className="sortArrows">{subjectSortField === 'code' ? (subjectSortOrder === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                    </div>
+                  </th>
+                  <th className="thSortable" onClick={() => handleSetSubjectSort('name')}>
+                    <div className="thSortContent">
+                      <span>Mata Pelajaran</span>
+                      <span className="sortArrows">{subjectSortField === 'name' ? (subjectSortOrder === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                    </div>
+                  </th>
+                  <th className="thSortable" onClick={() => handleSetSubjectSort('totalHours')}>
+                    <div className="thSortContent">
+                      <span>Beban Jam</span>
+                      <span className="sortArrows">{subjectSortField === 'totalHours' ? (subjectSortOrder === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                    </div>
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                {subjects.map(s => (
+                {sortedSubjects.map(s => (
                   <tr key={s.id}>
                     <td><code>{s.code}</code></td>
                     <td><strong>{s.name}</strong></td>

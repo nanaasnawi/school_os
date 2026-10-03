@@ -2,7 +2,7 @@
 'use client';
 import { getTenantItem } from '@/lib/tenant-storage';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import QRCode from 'qrcode';
 import styles from './report-cards.module.css';
@@ -447,17 +447,51 @@ export default function ReportCardsPage() {
     showToast(`📦 Mempersiapkan bundel penerbitan seluruh rapor ${schoolInfo.name}...`);
   };
 
+  type CardSortField = 'studentName' | 'className' | 'phase' | 'teacherName';
+  const [sortField, setSortField] = useState<CardSortField>('studentName');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+
+  const handleSetSort = (field: CardSortField) => {
+    if (sortField === field) {
+      setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortOrder('asc');
+    }
+  };
+
   const filtered = reportCards.filter(r => {
     const matchClass = selectedClass === 'ALL' || r.className === selectedClass;
     const matchSearch = r.studentName.toLowerCase().includes(search.toLowerCase()) || r.nisn.includes(search);
     return matchClass && matchSearch;
   });
 
+  const sortedCards = useMemo(() => {
+    return [...filtered].sort((a, b) => {
+      let comparison = 0;
+      if (sortField === 'studentName') {
+        comparison = (a.studentName || '').localeCompare(b.studentName || '');
+      } else if (sortField === 'className') {
+        comparison = (a.className || '').localeCompare(b.className || '');
+      } else if (sortField === 'phase') {
+        comparison = (a.phase || '').localeCompare(b.phase || '');
+      } else if (sortField === 'teacherName') {
+        comparison = (a.teacherName || '').localeCompare(b.teacherName || '');
+      }
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
+  }, [filtered, sortField, sortOrder]);
+
   const [currentPage, setCurrentPage] = React.useState(1);
   const itemsPerPage = 10;
-  const totalPages = Math.ceil(filtered.length / itemsPerPage) || 1;
+
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [sortedCards.length]);
+
+  const totalPages = Math.ceil(sortedCards.length / itemsPerPage) || 1;
   const safePage = Math.min(Math.max(1, currentPage), totalPages);
-  const paginated = filtered.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
+  const paginated = sortedCards.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
 
   const currentDateStr = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
 
@@ -539,10 +573,30 @@ export default function ReportCardsPage() {
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
           <thead>
             <tr style={{ background: 'var(--bg-elevated)', borderBottom: '2px solid var(--border-light)', textAlign: 'left' }}>
-              <th style={{ padding: '0.85rem 1rem' }}>NISN &amp; NAMA SISWA</th>
-              <th style={{ padding: '0.85rem 1rem' }}>ROMBEL</th>
-              <th style={{ padding: '0.85rem 1rem' }}>FASE KURIKULUM</th>
-              <th style={{ padding: '0.85rem 1rem' }}>WALI KELAS PENGAMPU</th>
+              <th className="thSortable" onClick={() => handleSetSort('studentName')}>
+                <div className="thSortContent">
+                  <span>NISN &amp; NAMA SISWA</span>
+                  <span className="sortArrows">{sortField === 'studentName' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                </div>
+              </th>
+              <th className="thSortable" onClick={() => handleSetSort('className')}>
+                <div className="thSortContent">
+                  <span>ROMBEL</span>
+                  <span className="sortArrows">{sortField === 'className' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                </div>
+              </th>
+              <th className="thSortable" onClick={() => handleSetSort('phase')}>
+                <div className="thSortContent">
+                  <span>FASE KURIKULUM</span>
+                  <span className="sortArrows">{sortField === 'phase' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                </div>
+              </th>
+              <th className="thSortable" onClick={() => handleSetSort('teacherName')}>
+                <div className="thSortContent">
+                  <span>WALI KELAS PENGAMPU</span>
+                  <span className="sortArrows">{sortField === 'teacherName' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                </div>
+              </th>
               <th style={{ padding: '0.85rem 1rem' }}>STATUS RAPOR</th>
               <th style={{ padding: '0.85rem 1rem', textAlign: 'right' }}>AKSI PENCETAKAN</th>
             </tr>

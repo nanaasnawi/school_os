@@ -1,7 +1,7 @@
 'use client';
 import { getTenantItem, setTenantItem, removeTenantItem } from '@/lib/tenant-storage';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import styles from './users.module.css';
 import { exportToExcel } from '@/lib/exportExcel';
@@ -210,12 +210,43 @@ export default function UsersPage() {
     showToast('✓ Berkas Excel berhasil diunduh');
   };
 
+  type UserSortField = 'username' | 'role' | 'connectedEntity' | 'lastLogin' | 'status';
+  const [sortField, setSortField] = useState<UserSortField>('username');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+
+  const handleSetSort = (field: UserSortField) => {
+    if (sortField === field) {
+      setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortOrder('asc');
+    }
+  };
+
   const filtered = users.filter(u => {
     const matchTab = activeTab === 'ALL' || u.role === activeTab;
     const matchSearch = u.username.toLowerCase().includes(search.toLowerCase()) || u.connectedEntity.toLowerCase().includes(search.toLowerCase());
     const matchStatus = statusFilter === 'ALL' || u.status === statusFilter;
     return matchTab && matchSearch && matchStatus;
   });
+
+  const sortedUsers = useMemo(() => {
+    return [...filtered].sort((a, b) => {
+      let comparison = 0;
+      if (sortField === 'username') {
+        comparison = (a.username || '').localeCompare(b.username || '');
+      } else if (sortField === 'role') {
+        comparison = (a.role || '').localeCompare(b.role || '');
+      } else if (sortField === 'connectedEntity') {
+        comparison = (a.connectedEntity || '').localeCompare(b.connectedEntity || '');
+      } else if (sortField === 'lastLogin') {
+        comparison = (a.lastLogin || '').localeCompare(b.lastLogin || '');
+      } else if (sortField === 'status') {
+        comparison = (a.status || '').localeCompare(b.status || '');
+      }
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
+  }, [filtered, sortField, sortOrder]);
 
   const [currentPage, setCurrentPage] = React.useState(1);
   const [itemsPerPage, setItemsPerPage] = React.useState(10);
@@ -238,10 +269,10 @@ export default function UsersPage() {
   
   React.useEffect(() => { 
     setCurrentPage(1); 
-  }, [filtered.length]);
+  }, [sortedUsers.length]);
 
-  const totalPages = Math.ceil(filtered.length / itemsPerPage) || 1;
-  const paginated = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const totalPages = Math.ceil(sortedUsers.length / itemsPerPage) || 1;
+  const paginated = sortedUsers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   return (
     <div className={styles.page}>
@@ -329,12 +360,37 @@ export default function UsersPage() {
           <table className="table">
             <thead>
               <tr>
-                <th>Username Login</th>
+                <th className="thSortable" onClick={() => handleSetSort('username')}>
+                  <div className="thSortContent">
+                    <span>Username Login</span>
+                    <span className="sortArrows">{sortField === 'username' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                  </div>
+                </th>
                 <th>Password Kredensial</th>
-                <th>Peran / Hak Akses</th>
-                <th>Entitas Profil Terhubung</th>
-                <th>Terakhir Login</th>
-                <th>Status</th>
+                <th className="thSortable" onClick={() => handleSetSort('role')}>
+                  <div className="thSortContent">
+                    <span>Peran / Hak Akses</span>
+                    <span className="sortArrows">{sortField === 'role' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                  </div>
+                </th>
+                <th className="thSortable" onClick={() => handleSetSort('connectedEntity')}>
+                  <div className="thSortContent">
+                    <span>Entitas Profil Terhubung</span>
+                    <span className="sortArrows">{sortField === 'connectedEntity' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                  </div>
+                </th>
+                <th className="thSortable" onClick={() => handleSetSort('lastLogin')}>
+                  <div className="thSortContent">
+                    <span>Terakhir Login</span>
+                    <span className="sortArrows">{sortField === 'lastLogin' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                  </div>
+                </th>
+                <th className="thSortable" onClick={() => handleSetSort('status')}>
+                  <div className="thSortContent">
+                    <span>Status</span>
+                    <span className="sortArrows">{sortField === 'status' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                  </div>
+                </th>
                 <th style={{ textAlign: 'right', paddingRight: '1rem' }}>Aksi Kredensial</th>
               </tr>
             </thead>

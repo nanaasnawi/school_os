@@ -430,16 +430,49 @@ startxref
     (m.title.toLowerCase().includes(searchTerm.toLowerCase()) || m.author.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
+  type MaterialSortField = 'title' | 'subject' | 'author' | 'format' | 'completedCount' | 'date';
+  const [sortField, setSortField] = useState<MaterialSortField>('title');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+
+  const handleSetSort = (field: MaterialSortField) => {
+    if (sortField === field) {
+      setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortOrder('asc');
+    }
+  };
+
+  const sortedMaterials = useMemo(() => {
+    return [...filtered].sort((a, b) => {
+      let comparison = 0;
+      if (sortField === 'title') {
+        comparison = (a.title || '').localeCompare(b.title || '');
+      } else if (sortField === 'subject') {
+        comparison = (a.subject || '').localeCompare(b.subject || '');
+      } else if (sortField === 'author') {
+        comparison = (a.author || '').localeCompare(b.author || '');
+      } else if (sortField === 'format') {
+        comparison = (a.format || '').localeCompare(b.format || '');
+      } else if (sortField === 'completedCount') {
+        comparison = (a.completedCount || 0) - (b.completedCount || 0);
+      } else if (sortField === 'date') {
+        comparison = (a.date || '').localeCompare(b.date || '');
+      }
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
+  }, [filtered, sortField, sortOrder]);
+
   // --- Client-Side Pagination ---
   const [currentPage, setCurrentPage] = React.useState(1);
   const itemsPerPage = 10;
   
   React.useEffect(() => { 
     setCurrentPage(1); 
-  }, [filtered.length]);
+  }, [sortedMaterials.length]);
 
-  const totalPages = Math.ceil(filtered.length / itemsPerPage) || 1;
-  const paginated = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const totalPages = Math.ceil(sortedMaterials.length / itemsPerPage) || 1;
+  const paginated = sortedMaterials.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
   // ------------------------------
 
   return (
@@ -523,12 +556,42 @@ startxref
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.82rem' }}>
             <thead>
               <tr style={{ background: 'var(--bg-elevated)', borderBottom: '2px solid var(--border-light)' }}>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 800, color: 'var(--text-muted)' }}>Judul Modul</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 800, color: 'var(--text-muted)' }}>Mapel &amp; Rombel</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 800, color: 'var(--text-muted)' }}>Guru Pengampu</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 800, color: 'var(--text-muted)' }}>Format &amp; Media</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 800, color: 'var(--text-muted)' }}>Penyelesaian Siswa</th>
-                <th style={{ padding: '0.75rem 1rem', fontWeight: 800, color: 'var(--text-muted)' }}>Tanggal Tayang</th>
+                <th className="thSortable" onClick={() => handleSetSort('title')}>
+                  <div className="thSortContent">
+                    <span>Judul Modul</span>
+                    <span className="sortArrows">{sortField === 'title' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                  </div>
+                </th>
+                <th className="thSortable" onClick={() => handleSetSort('subject')}>
+                  <div className="thSortContent">
+                    <span>Mapel &amp; Rombel</span>
+                    <span className="sortArrows">{sortField === 'subject' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                  </div>
+                </th>
+                <th className="thSortable" onClick={() => handleSetSort('author')}>
+                  <div className="thSortContent">
+                    <span>Guru Pengampu</span>
+                    <span className="sortArrows">{sortField === 'author' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                  </div>
+                </th>
+                <th className="thSortable" onClick={() => handleSetSort('format')}>
+                  <div className="thSortContent">
+                    <span>Format &amp; Media</span>
+                    <span className="sortArrows">{sortField === 'format' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                  </div>
+                </th>
+                <th className="thSortable" onClick={() => handleSetSort('completedCount')}>
+                  <div className="thSortContent">
+                    <span>Penyelesaian Siswa</span>
+                    <span className="sortArrows">{sortField === 'completedCount' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                  </div>
+                </th>
+                <th className="thSortable" onClick={() => handleSetSort('date')}>
+                  <div className="thSortContent">
+                    <span>Tanggal Tayang</span>
+                    <span className="sortArrows">{sortField === 'date' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                  </div>
+                </th>
                 <th style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 800, color: 'var(--text-muted)' }}>Aksi</th>
               </tr>
             </thead>

@@ -157,12 +157,50 @@ export default function FinalGradesPage() {
     return matchClass && matchSearch;
   });
 
+  type FinalGradesSortField = 'name' | 'className' | 'averageGrade' | 'predicate';
+  const [sortField, setSortField] = React.useState<FinalGradesSortField | null>('name');
+  const [sortOrder, setSortOrder] = React.useState<'asc' | 'desc'>('asc');
+
+  const handleSetSort = (field: FinalGradesSortField) => {
+    if (sortField === field) {
+      if (sortOrder === 'asc') setSortOrder('desc');
+      else {
+        setSortField(null);
+        setSortOrder('asc');
+      }
+    } else {
+      setSortField(field);
+      setSortOrder('asc');
+    }
+  };
+
+  const sorted = React.useMemo(() => {
+    if (!sortField) return filtered;
+    return [...filtered].sort((a, b) => {
+      let comparison = 0;
+      if (sortField === 'name') {
+        comparison = (a.name || '').localeCompare(b.name || '', 'id');
+      } else if (sortField === 'className') {
+        comparison = (a.className || '').localeCompare(b.className || '', undefined, { numeric: true });
+      } else if (sortField === 'averageGrade') {
+        comparison = a.averageGrade - b.averageGrade;
+      } else if (sortField === 'predicate') {
+        comparison = (a.predicate || '').localeCompare(b.predicate || '');
+      }
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
+  }, [filtered, sortField, sortOrder]);
+
   const [currentPage, setCurrentPage] = React.useState(1);
   const itemsPerPage = 10;
 
-  const totalPages = Math.ceil(filtered.length / itemsPerPage) || 1;
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [filtered.length, sortField, sortOrder]);
+
+  const totalPages = Math.ceil(sorted.length / itemsPerPage) || 1;
   const safePage = Math.min(currentPage, totalPages);
-  const paginated = filtered.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
+  const paginated = sorted.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
 
   return (
     <div className={styles.page}>
@@ -246,16 +284,52 @@ export default function FinalGradesPage() {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
             <thead>
               <tr style={{ background: 'var(--bg-elevated)', borderBottom: '2px solid var(--border-light)', textAlign: 'left' }}>
-                <th style={{ padding: '0.85rem 1rem' }}>NISN &amp; NAMA SISWA (DAPODIK REAL)</th>
-                <th style={{ padding: '0.85rem 1rem' }}>ROMBEL</th>
+                <th
+                  className="thSortable"
+                  style={{ padding: '0.85rem 1rem' }}
+                  onClick={() => handleSetSort('name')}
+                >
+                  <div className="thSortContent">
+                    <span>NISN &amp; NAMA SISWA (DAPODIK REAL)</span>
+                    <span className="sortArrows">{sortField === 'name' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                  </div>
+                </th>
+                <th
+                  className="thSortable"
+                  style={{ padding: '0.85rem 1rem' }}
+                  onClick={() => handleSetSort('className')}
+                >
+                  <div className="thSortContent">
+                    <span>ROMBEL</span>
+                    <span className="sortArrows">{sortField === 'className' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                  </div>
+                </th>
                 <th style={{ padding: '0.85rem 0.5rem', textAlign: 'center' }}>MATEMATIKA</th>
                 <th style={{ padding: '0.85rem 0.5rem', textAlign: 'center' }}>B. INDONESIA</th>
                 <th style={{ padding: '0.85rem 0.5rem', textAlign: 'center' }}>IPA</th>
                 <th style={{ padding: '0.85rem 0.5rem', textAlign: 'center' }}>IPS</th>
                 <th style={{ padding: '0.85rem 0.5rem', textAlign: 'center' }}>PAI</th>
                 <th style={{ padding: '0.85rem 0.5rem', textAlign: 'center' }}>B. INGGRIS</th>
-                <th style={{ padding: '0.85rem 1rem', textAlign: 'center' }}>RATA-RATA NILAI AKHIR</th>
-                <th style={{ padding: '0.85rem 1rem' }}>PREDIKAT &amp; KELULUSAN</th>
+                <th
+                  className="thSortable"
+                  style={{ padding: '0.85rem 1rem', textAlign: 'center' }}
+                  onClick={() => handleSetSort('averageGrade')}
+                >
+                  <div className="thSortContent" style={{ justifyContent: 'center' }}>
+                    <span>RATA-RATA NILAI AKHIR</span>
+                    <span className="sortArrows">{sortField === 'averageGrade' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                  </div>
+                </th>
+                <th
+                  className="thSortable"
+                  style={{ padding: '0.85rem 1rem' }}
+                  onClick={() => handleSetSort('predicate')}
+                >
+                  <div className="thSortContent">
+                    <span>PREDIKAT &amp; KELULUSAN</span>
+                    <span className="sortArrows">{sortField === 'predicate' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                  </div>
+                </th>
                 <th style={{ padding: '0.85rem 1rem', textAlign: 'right' }}>AKSI</th>
               </tr>
             </thead>

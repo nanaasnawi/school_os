@@ -368,7 +368,24 @@ export default function AttendancePage() {
     };
   }, [students, attendanceMap]);
 
-  // ── 6. Filtered Roster for Table ──
+  // ── 6. Filtered & Sorted Roster for Table ──
+  type AttendanceSortField = 'name' | 'nisn' | 'status' | 'checked_in_at';
+  const [sortField, setSortField] = useState<AttendanceSortField | null>('name');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+
+  const handleSetSort = (field: AttendanceSortField) => {
+    if (sortField === field) {
+      if (sortOrder === 'asc') setSortOrder('desc');
+      else {
+        setSortField(null);
+        setSortOrder('asc');
+      }
+    } else {
+      setSortField(field);
+      setSortOrder('asc');
+    }
+  };
+
   const filteredStudents = useMemo(() => {
     return students.filter((s) => {
       const rec = attendanceMap[s.id];
@@ -389,18 +406,39 @@ export default function AttendancePage() {
     });
   }, [students, attendanceMap, statusFilter, searchQuery]);
 
+  const sortedStudents = useMemo(() => {
+    if (!sortField) return filteredStudents;
+    return [...filteredStudents].sort((a, b) => {
+      let comparison = 0;
+      if (sortField === 'name') {
+        comparison = (a.name || '').localeCompare(b.name || '', 'id');
+      } else if (sortField === 'nisn') {
+        comparison = (a.nisn || '').localeCompare(b.nisn || '', undefined, { numeric: true });
+      } else if (sortField === 'status') {
+        const sa = attendanceMap[a.id]?.status || 'present';
+        const sb = attendanceMap[b.id]?.status || 'present';
+        comparison = sa.localeCompare(sb);
+      } else if (sortField === 'checked_in_at') {
+        const ta = attendanceMap[a.id]?.checked_in_at || '07:30';
+        const tb = attendanceMap[b.id]?.checked_in_at || '07:30';
+        comparison = ta.localeCompare(tb);
+      }
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
+  }, [filteredStudents, sortField, sortOrder, attendanceMap]);
+
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, statusFilter, selectedClassId, pageSize]);
+  }, [searchQuery, statusFilter, selectedClassId, pageSize, sortField, sortOrder]);
 
   // Pagination calculation
-  const totalFiltered = filteredStudents.length;
+  const totalFiltered = sortedStudents.length;
   const totalPages = Math.max(1, Math.ceil(totalFiltered / pageSize));
   const startIndex = (currentPage - 1) * pageSize;
   const paginatedStudents = useMemo(() => {
-    return filteredStudents.slice(startIndex, startIndex + pageSize);
-  }, [filteredStudents, startIndex, pageSize]);
+    return sortedStudents.slice(startIndex, startIndex + pageSize);
+  }, [sortedStudents, startIndex, pageSize]);
 
   // Formatted date text
   const dateFormatted = useMemo(() => {
@@ -814,11 +852,46 @@ export default function AttendancePage() {
             <thead>
               <tr>
                 <th style={{ width: '50px', textAlign: 'center' }}>NO</th>
-                <th>NAMA PESERTA DIDIK</th>
-                <th style={{ width: '150px' }}>NISN / ID</th>
-                <th style={{ width: '220px', textAlign: 'center' }}>STATUS KEHADIRAN</th>
+                <th
+                  className="thSortable"
+                  onClick={() => handleSetSort('name')}
+                >
+                  <div className="thSortContent">
+                    <span>NAMA PESERTA DIDIK</span>
+                    <span className="sortArrows">{sortField === 'name' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                  </div>
+                </th>
+                <th
+                  className="thSortable"
+                  style={{ width: '160px' }}
+                  onClick={() => handleSetSort('nisn')}
+                >
+                  <div className="thSortContent">
+                    <span>NISN / ID</span>
+                    <span className="sortArrows">{sortField === 'nisn' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                  </div>
+                </th>
+                <th
+                  className="thSortable"
+                  style={{ width: '220px', textAlign: 'center' }}
+                  onClick={() => handleSetSort('status')}
+                >
+                  <div className="thSortContent" style={{ justifyContent: 'center' }}>
+                    <span>STATUS KEHADIRAN</span>
+                    <span className="sortArrows">{sortField === 'status' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                  </div>
+                </th>
                 <th>KETERANGAN / ALASAN</th>
-                <th style={{ width: '130px', textAlign: 'right' }}>WAKTU PRESENSI</th>
+                <th
+                  className="thSortable"
+                  style={{ width: '150px', textAlign: 'right' }}
+                  onClick={() => handleSetSort('checked_in_at')}
+                >
+                  <div className="thSortContent" style={{ justifyContent: 'flex-end' }}>
+                    <span>WAKTU PRESENSI</span>
+                    <span className="sortArrows">{sortField === 'checked_in_at' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                  </div>
+                </th>
               </tr>
             </thead>
             <tbody>

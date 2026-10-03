@@ -1,7 +1,7 @@
 'use client';
 import { getTenantItem } from '@/lib/tenant-storage';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import styles from './gradebook.module.css';
 import { listStudents, listClasses } from '@/lib/sdk/sdk.gen';
 import { exportToExcel } from '@/lib/exportExcel';
@@ -260,11 +260,48 @@ export default function GradebookPage() {
     showToast('📊 Berkas Excel (.xlsx) Buku Nilai Rapor berhasil diunduh!');
   };
 
+  type GradebookSortField = 'name' | 'className' | 'formatif1' | 'formatif2' | 'pts' | 'pas' | 'totalScore' | 'grade';
+  const [sortField, setSortField] = useState<GradebookSortField>('name');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+
+  const handleSetSort = (field: GradebookSortField) => {
+    if (sortField === field) {
+      setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortOrder('asc');
+    }
+  };
+
   const filtered = gradebook.filter(g => {
     const matchClass = selectedClass === 'ALL' || g.className === selectedClass;
     const matchSearch = g.name.toLowerCase().includes(search.toLowerCase()) || g.nisn.includes(search);
     return matchClass && matchSearch;
   });
+
+  const sortedGradebook = useMemo(() => {
+    return [...filtered].sort((a, b) => {
+      let comparison = 0;
+      if (sortField === 'name') {
+        comparison = (a.name || '').localeCompare(b.name || '');
+      } else if (sortField === 'className') {
+        comparison = (a.className || '').localeCompare(b.className || '');
+      } else if (sortField === 'formatif1') {
+        comparison = (a.formatif1 || 0) - (b.formatif1 || 0);
+      } else if (sortField === 'formatif2') {
+        comparison = (a.formatif2 || 0) - (b.formatif2 || 0);
+      } else if (sortField === 'pts') {
+        comparison = (a.pts || 0) - (b.pts || 0);
+      } else if (sortField === 'pas') {
+        comparison = (a.pas || 0) - (b.pas || 0);
+      } else if (sortField === 'totalScore') {
+        comparison = (a.totalScore || 0) - (b.totalScore || 0);
+      } else if (sortField === 'grade') {
+        comparison = (a.grade || '').localeCompare(b.grade || '');
+      }
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
+  }, [filtered, sortField, sortOrder]);
 
   const totalCount = filtered.length;
   const avgTotal = totalCount > 0 ? (filtered.reduce((acc, curr) => acc + curr.totalScore, 0) / totalCount).toFixed(1) : '0';
@@ -273,9 +310,13 @@ export default function GradebookPage() {
   const [currentPage, setCurrentPage] = React.useState(1);
   const itemsPerPage = 10;
   
-  const totalPages = Math.ceil(filtered.length / itemsPerPage) || 1;
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [sortedGradebook.length]);
+
+  const totalPages = Math.ceil(sortedGradebook.length / itemsPerPage) || 1;
   const safePage = Math.min(currentPage, totalPages);
-  const paginated = filtered.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
+  const paginated = sortedGradebook.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
 
   return (
     <div className={styles.page}>
@@ -370,14 +411,54 @@ export default function GradebookPage() {
           <table className={styles.table}>
             <thead>
               <tr>
-                <th>NISN &amp; NAMA SISWA (DAPODIK REAL)</th>
-                <th>ROMBEL</th>
-                <th style={{ textAlign: 'center' }}>FORMATIF 1 (20%)</th>
-                <th style={{ textAlign: 'center' }}>FORMATIF 2 (20%)</th>
-                <th style={{ textAlign: 'center' }}>PTS (30%)</th>
-                <th style={{ textAlign: 'center' }}>PAS (30%)</th>
-                <th style={{ textAlign: 'center' }}>NILAI AKHIR</th>
-                <th>PREDIKAT &amp; STATUS</th>
+                <th className="thSortable" onClick={() => handleSetSort('name')}>
+                  <div className="thSortContent">
+                    <span>NISN &amp; NAMA SISWA (DAPODIK REAL)</span>
+                    <span className="sortArrows">{sortField === 'name' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                  </div>
+                </th>
+                <th className="thSortable" onClick={() => handleSetSort('className')}>
+                  <div className="thSortContent">
+                    <span>ROMBEL</span>
+                    <span className="sortArrows">{sortField === 'className' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                  </div>
+                </th>
+                <th className="thSortable" style={{ textAlign: 'center' }} onClick={() => handleSetSort('formatif1')}>
+                  <div className="thSortContent" style={{ justifyContent: 'center' }}>
+                    <span>FORMATIF 1 (20%)</span>
+                    <span className="sortArrows">{sortField === 'formatif1' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                  </div>
+                </th>
+                <th className="thSortable" style={{ textAlign: 'center' }} onClick={() => handleSetSort('formatif2')}>
+                  <div className="thSortContent" style={{ justifyContent: 'center' }}>
+                    <span>FORMATIF 2 (20%)</span>
+                    <span className="sortArrows">{sortField === 'formatif2' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                  </div>
+                </th>
+                <th className="thSortable" style={{ textAlign: 'center' }} onClick={() => handleSetSort('pts')}>
+                  <div className="thSortContent" style={{ justifyContent: 'center' }}>
+                    <span>PTS (30%)</span>
+                    <span className="sortArrows">{sortField === 'pts' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                  </div>
+                </th>
+                <th className="thSortable" style={{ textAlign: 'center' }} onClick={() => handleSetSort('pas')}>
+                  <div className="thSortContent" style={{ justifyContent: 'center' }}>
+                    <span>PAS (30%)</span>
+                    <span className="sortArrows">{sortField === 'pas' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                  </div>
+                </th>
+                <th className="thSortable" style={{ textAlign: 'center' }} onClick={() => handleSetSort('totalScore')}>
+                  <div className="thSortContent" style={{ justifyContent: 'center' }}>
+                    <span>NILAI AKHIR</span>
+                    <span className="sortArrows">{sortField === 'totalScore' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                  </div>
+                </th>
+                <th className="thSortable" onClick={() => handleSetSort('grade')}>
+                  <div className="thSortContent">
+                    <span>PREDIKAT &amp; STATUS</span>
+                    <span className="sortArrows">{sortField === 'grade' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                  </div>
+                </th>
               </tr>
             </thead>
             <tbody>
