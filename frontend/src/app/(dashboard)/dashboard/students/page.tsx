@@ -4,9 +4,22 @@ import { getTenantItem } from '@/lib/tenant-storage';
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import styles from './students.module.css';
-import { listStudents } from '@/lib/sdk/sdk.gen';
+import { listStudents, listClasses, updateStudent } from '@/lib/sdk';
 import { getDapodikSyncRecords } from '@/lib/dapodik-bridge';
 import { exportToExcel } from '@/lib/exportExcel';
+import {
+  Pencil,
+  UserPlus,
+  X,
+  User,
+  GraduationCap,
+  Check,
+  Loader2,
+  ShieldCheck,
+  Hash,
+  Activity,
+  Sparkles,
+} from 'lucide-react';
 
 type StudentItem = {
   id: string;
@@ -31,6 +44,8 @@ export default function StudentsPage() {
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [classFilter, setClassFilter] = useState('ALL');
   const [isLoading, setIsLoading] = useState(true);
+  const [classesList, setClassesList] = useState<{ id: string; name: string }[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
   const [schoolName, setSchoolName] = useState(() => {
     if (typeof window !== 'undefined') {
       return getTenantItem('dapodik_nama_sekolah') || '';
@@ -49,6 +64,16 @@ export default function StudentsPage() {
         }).then(r => r.ok ? r.json() : null).then(json => {
           if (json?.data?.name) setSchoolName(json.data.name);
         }).catch(() => null);
+
+        // Fetch registered school classes
+        try {
+          const classesRes = await listClasses({ query: { page_size: 200 } });
+          if (classesRes.data && classesRes.data.success && classesRes.data.data) {
+            setClassesList(classesRes.data.data.map((c: any) => ({ id: c.id, name: c.name })));
+          }
+        } catch (e) {
+          console.error('Error fetching classes:', e);
+        }
 
         const response = await listStudents({ query: { page_size: 500 } });
         if (response.data && response.data.success && response.data.data && response.data.data.length > 0) {
@@ -192,13 +217,49 @@ export default function StudentsPage() {
     showToast('✓ Siswa berhasil ditambahkan');
   };
 
-  const handleSaveEdit = (e: React.FormEvent) => {
+  const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editStudent) return;
 
-    setStudents(prev => prev.map(s => s.id === editStudent.id ? editStudent : s));
-    setEditStudent(null);
-    showToast('✓ Data siswa berhasil diperbarui');
+    setIsSaving(true);
+    try {
+      const matchedClass = classesList.find(
+        c => c.name.trim().toLowerCase() === (editStudent.assigned_class || '').trim().toLowerCase()
+      );
+
+      const targetClassName = editStudent.assigned_class !== '-' ? editStudent.assigned_class : undefined;
+
+      const res = await updateStudent({
+        path: { id: editStudent.id },
+        body: {
+          nisn: editStudent.nisn,
+          full_name: editStudent.full_name,
+          status: editStudent.status,
+          class_name: targetClassName,
+          class_id: matchedClass?.id,
+        }
+      });
+
+      if (res.error) {
+        throw new Error((res.error as any)?.message || 'Gagal menyimpan perubahan ke server');
+      }
+
+      setStudents(prev => prev.map(s => s.id === editStudent.id ? {
+        ...s,
+        nisn: editStudent.nisn,
+        full_name: editStudent.full_name,
+        assigned_class: editStudent.assigned_class,
+        status: editStudent.status,
+      } : s));
+
+      setEditStudent(null);
+      showToast('✓ Data siswa & rombel berhasil disimpan ke server!');
+    } catch (err: any) {
+      console.error('Failed to update student:', err);
+      showToast(`⚠️ ${err?.message || 'Gagal menyimpan perubahan ke server'}`);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleDelete = (id: string, name: string) => {
@@ -234,11 +295,10 @@ export default function StudentsPage() {
   };
 
   const availableClasses = Array.from(
-    new Set(
-      students
-        .map(s => s.assigned_class)
-        .filter(c => c && c !== '-' && c !== 'null' && c !== 'Belum Masuk Rombel' && c !== 'Belum Ada Rombel' && c !== 'UMUM')
-    )
+    new Set([
+      ...classesList.map(c => c.name),
+      ...students.map(s => s.assigned_class)
+    ].filter(c => c && c !== '-' && c !== 'null' && c !== 'Belum Masuk Rombel' && c !== 'Belum Ada Rombel' && c !== 'UMUM'))
   ).sort();
 
   const filtered = students.filter((s) => {
@@ -606,47 +666,196 @@ export default function StudentsPage() {
       </div>
       {/* MODAL EDIT SISWA */}
       {editStudent && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(4px)',
-          zIndex: 999999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem',
-        }} onClick={() => setEditStudent(null)}>
-          <div style={{
-            background: 'var(--bg-card)', borderRadius: '16px', maxWidth: '480px', width: '100%',
-            overflow: 'hidden', border: '1px solid var(--border-light)',
-          }} onClick={e => e.stopPropagation()}>
-            <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid var(--border-light)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800 }}>✏️ Edit Data Peserta Didik</h3>
-              <button style={{ border: 'none', background: 'none', fontSize: '1.4rem', cursor: 'pointer' }} onClick={() => setEditStudent(null)}>×</button>
+        <div className={styles.modalOverlay} onClick={() => !isSaving && setEditStudent(null)}>
+          <div className={styles.modalCard} onClick={e => e.stopPropagation()}>
+            {/* Modal Header */}
+            <div className={styles.modalHeader}>
+              <div className={styles.modalHeaderTitleGroup}>
+                <div className={styles.modalHeaderIconBadge}>
+                  <Pencil size={20} strokeWidth={2.2} />
+                </div>
+                <div>
+                  <h3 className={styles.modalHeaderTitle}>Edit Data Peserta Didik</h3>
+                  <p className={styles.modalHeaderSubtitle}>Perbarui informasi identitas, penempatan rombel, dan status siswa.</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                className={styles.modalCloseBtn}
+                disabled={isSaving}
+                onClick={() => setEditStudent(null)}
+                aria-label="Tutup modal"
+              >
+                <X size={18} strokeWidth={2.2} />
+              </button>
             </div>
+
             <form onSubmit={handleSaveEdit}>
-              <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <div>
-                  <label style={{ fontSize: '0.76rem', fontWeight: 700 }}>NISN *</label>
-                  <input type="text" required value={editStudent.nisn} onChange={e => setEditStudent({ ...editStudent, nisn: e.target.value })} className="input" />
-                </div>
-                <div>
-                  <label style={{ fontSize: '0.76rem', fontWeight: 700 }}>Nama Lengkap Siswa *</label>
-                  <input type="text" required value={editStudent.full_name} onChange={e => setEditStudent({ ...editStudent, full_name: e.target.value })} className="input" />
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                  <div>
-                    <label style={{ fontSize: '0.76rem', fontWeight: 700 }}>Rombel / Kelas *</label>
-                    <input type="text" required value={editStudent.assigned_class} onChange={e => setEditStudent({ ...editStudent, assigned_class: e.target.value })} className="input" />
+              <div className={styles.modalBody}>
+                {/* Student Hero Context Badge */}
+                <div className={styles.studentHeroBadge}>
+                  <div className={styles.studentHeroLeft}>
+                    <div className={styles.studentAvatarCircle}>
+                      {(editStudent.full_name || 'S').charAt(0).toUpperCase()}
+                    </div>
+                    <div className={styles.studentHeroInfo}>
+                      <span className={styles.studentHeroName}>{editStudent.full_name || 'Nama Siswa'}</span>
+                      <span className={styles.studentHeroNisn}>NISN: {editStudent.nisn || '-'}</span>
+                    </div>
                   </div>
-                  <div>
-                    <label style={{ fontSize: '0.76rem', fontWeight: 700 }}>Status *</label>
-                    <select value={editStudent.status} onChange={e => setEditStudent({ ...editStudent, status: e.target.value as any })} className="input">
-                      <option value="ACTIVE">● Status Aktif</option>
-                      <option value="MUTASI_OUT">📤 Mutasi Keluar</option>
-                      <option value="INACTIVE">Non-Aktif / Alumni</option>
-                    </select>
+                  <span className={`badge ${
+                    editStudent.status === 'ACTIVE'
+                      ? 'badge-active'
+                      : editStudent.status === 'MUTASI_OUT'
+                      ? 'badge-warning'
+                      : 'badge-inactive'
+                  }`}>
+                    {editStudent.status === 'ACTIVE'
+                      ? '● Status Aktif'
+                      : editStudent.status === 'MUTASI_OUT'
+                      ? '📤 Mutasi Keluar'
+                      : 'Non-Aktif / Alumni'}
+                  </span>
+                </div>
+
+                {/* Field: NISN */}
+                <div className={styles.formFieldGroup}>
+                  <label className={styles.fieldLabel}>
+                    <span>
+                      Nomor Induk Siswa Nasional (NISN)
+                      <span className={styles.fieldLabelRequired}>*</span>
+                    </span>
+                    <span className={styles.fieldHint}>10 digit angka resmi</span>
+                  </label>
+                  <div className={styles.inputWrapper}>
+                    <span className={styles.inputIcon}>
+                      <Hash size={16} strokeWidth={2.2} />
+                    </span>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Contoh: 3009445178"
+                      value={editStudent.nisn}
+                      onChange={e => setEditStudent({ ...editStudent, nisn: e.target.value })}
+                      className={styles.modalInput}
+                      disabled={isSaving}
+                    />
+                  </div>
+                </div>
+
+                {/* Field: Nama Lengkap */}
+                <div className={styles.formFieldGroup}>
+                  <label className={styles.fieldLabel}>
+                    <span>
+                      Nama Lengkap Siswa
+                      <span className={styles.fieldLabelRequired}>*</span>
+                    </span>
+                    <span className={styles.fieldHint}>Sesuai ijazah / akta lahir</span>
+                  </label>
+                  <div className={styles.inputWrapper}>
+                    <span className={styles.inputIcon}>
+                      <User size={16} strokeWidth={2.2} />
+                    </span>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Contoh: GUSTI TAESAR FAKIH"
+                      value={editStudent.full_name}
+                      onChange={e => setEditStudent({ ...editStudent, full_name: e.target.value })}
+                      className={styles.modalInput}
+                      disabled={isSaving}
+                    />
+                  </div>
+                </div>
+
+                {/* Two-Column Grid: Rombel & Status */}
+                <div className={styles.modalGridTwo}>
+                  {/* Field: Rombel / Kelas */}
+                  <div className={styles.formFieldGroup}>
+                    <label className={styles.fieldLabel}>
+                      <span>
+                        Rombel / Kelas
+                        <span className={styles.fieldLabelRequired}>*</span>
+                      </span>
+                    </label>
+                    <div className={styles.inputWrapper}>
+                      <span className={styles.inputIcon}>
+                        <GraduationCap size={16} strokeWidth={2.2} />
+                      </span>
+                      <select
+                        value={editStudent.assigned_class}
+                        onChange={e => setEditStudent({ ...editStudent, assigned_class: e.target.value })}
+                        className={styles.modalSelect}
+                        disabled={isSaving}
+                      >
+                        <option value="-">-- Belum Masuk Rombel --</option>
+                        {availableClasses.map(cName => (
+                          <option key={cName} value={cName}>{cName}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Field: Status */}
+                  <div className={styles.formFieldGroup}>
+                    <label className={styles.fieldLabel}>
+                      <span>
+                        Status Keaktifan
+                        <span className={styles.fieldLabelRequired}>*</span>
+                      </span>
+                    </label>
+                    <div className={styles.inputWrapper}>
+                      <span className={styles.inputIcon}>
+                        <Activity size={16} strokeWidth={2.2} />
+                      </span>
+                      <select
+                        value={editStudent.status}
+                        onChange={e => setEditStudent({ ...editStudent, status: e.target.value as any })}
+                        className={styles.modalSelect}
+                        disabled={isSaving}
+                      >
+                        <option value="ACTIVE">● Status Aktif</option>
+                        <option value="MUTASI_OUT">📤 Mutasi Keluar</option>
+                        <option value="INACTIVE">⏸ Non-Aktif / Alumni</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
               </div>
-              <div style={{ padding: '0.875rem 1.25rem', borderTop: '1px solid var(--border-light)', background: 'var(--bg-elevated)', display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
-                <button type="button" className="btn btn-secondary btn-sm" onClick={() => setEditStudent(null)}>Batal</button>
-                <button type="submit" className="btn btn-primary btn-sm">💾 Simpan Perubahan</button>
+
+              {/* Modal Footer */}
+              <div className={styles.modalFooter}>
+                <div className={styles.modalFooterMeta}>
+                  <ShieldCheck size={15} color="#0ea5e9" strokeWidth={2.2} />
+                  <span>Tersinkronisasi otomatis ke server</span>
+                </div>
+                <div className={styles.modalFooterActions}>
+                  <button
+                    type="button"
+                    className={styles.btnModalCancel}
+                    disabled={isSaving}
+                    onClick={() => setEditStudent(null)}
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    className={styles.btnModalSave}
+                    disabled={isSaving}
+                  >
+                    {isSaving ? (
+                      <>
+                        <Loader2 size={16} className={styles.spinAnimation} />
+                        <span>Menyimpan...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Check size={16} strokeWidth={2.5} />
+                        <span>Simpan Perubahan</span>
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             </form>
           </div>
@@ -655,46 +864,148 @@ export default function StudentsPage() {
 
       {/* MODAL TAMBAH SISWA */}
       {showAddModal && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(15, 23, 42, 0.65)', backdropFilter: 'blur(4px)',
-          zIndex: 999999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem',
-        }} onClick={() => setShowAddModal(false)}>
-          <div style={{
-            background: 'var(--bg-card)', borderRadius: '16px', maxWidth: '480px', width: '100%',
-            overflow: 'hidden', border: '1px solid var(--border-light)',
-          }} onClick={e => e.stopPropagation()}>
-            <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid var(--border-light)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800 }}>+ Tambah Peserta Didik Baru</h3>
-              <button style={{ border: 'none', background: 'none', fontSize: '1.4rem', cursor: 'pointer' }} onClick={() => setShowAddModal(false)}>×</button>
+        <div className={styles.modalOverlay} onClick={() => setShowAddModal(false)}>
+          <div className={styles.modalCard} onClick={e => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <div className={styles.modalHeaderTitleGroup}>
+                <div className={styles.modalHeaderIconBadge}>
+                  <UserPlus size={20} strokeWidth={2.2} />
+                </div>
+                <div>
+                  <h3 className={styles.modalHeaderTitle}>Tambah Peserta Didik Baru</h3>
+                  <p className={styles.modalHeaderSubtitle}>Daftarkan peserta didik baru ke master data sekolah.</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                className={styles.modalCloseBtn}
+                onClick={() => setShowAddModal(false)}
+                aria-label="Tutup modal"
+              >
+                <X size={18} strokeWidth={2.2} />
+              </button>
             </div>
+
             <form onSubmit={handleSaveAdd}>
-              <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <div>
-                  <label style={{ fontSize: '0.76rem', fontWeight: 700 }}>NISN *</label>
-                  <input type="text" required placeholder="contoh: 0092950256" value={formData.nisn} onChange={e => setFormData({ ...formData, nisn: e.target.value })} className="input" />
-                </div>
-                <div>
-                  <label style={{ fontSize: '0.76rem', fontWeight: 700 }}>Nama Lengkap Siswa *</label>
-                  <input type="text" required placeholder="contoh: MUHAMAD RIZKY" value={formData.full_name} onChange={e => setFormData({ ...formData, full_name: e.target.value })} className="input" />
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                  <div>
-                    <label style={{ fontSize: '0.76rem', fontWeight: 700 }}>Rombel / Kelas *</label>
-                    <input type="text" required value={formData.assigned_class} onChange={e => setFormData({ ...formData, assigned_class: e.target.value })} className="input" />
+              <div className={styles.modalBody}>
+                {/* Field: NISN */}
+                <div className={styles.formFieldGroup}>
+                  <label className={styles.fieldLabel}>
+                    <span>
+                      Nomor Induk Siswa Nasional (NISN)
+                      <span className={styles.fieldLabelRequired}>*</span>
+                    </span>
+                    <span className={styles.fieldHint}>10 digit angka</span>
+                  </label>
+                  <div className={styles.inputWrapper}>
+                    <span className={styles.inputIcon}>
+                      <Hash size={16} strokeWidth={2.2} />
+                    </span>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Contoh: 0092950256"
+                      value={formData.nisn}
+                      onChange={e => setFormData({ ...formData, nisn: e.target.value })}
+                      className={styles.modalInput}
+                    />
                   </div>
-                  <div>
-                    <label style={{ fontSize: '0.76rem', fontWeight: 700 }}>Jenis Kelamin *</label>
-                    <select value={formData.gender} onChange={e => setFormData({ ...formData, gender: e.target.value })} className="input">
-                      <option value="Laki-laki">Laki-laki</option>
-                      <option value="Perempuan">Perempuan</option>
-                    </select>
+                </div>
+
+                {/* Field: Nama Lengkap */}
+                <div className={styles.formFieldGroup}>
+                  <label className={styles.fieldLabel}>
+                    <span>
+                      Nama Lengkap Siswa
+                      <span className={styles.fieldLabelRequired}>*</span>
+                    </span>
+                  </label>
+                  <div className={styles.inputWrapper}>
+                    <span className={styles.inputIcon}>
+                      <User size={16} strokeWidth={2.2} />
+                    </span>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Contoh: MUHAMAD RIZKY"
+                      value={formData.full_name}
+                      onChange={e => setFormData({ ...formData, full_name: e.target.value })}
+                      className={styles.modalInput}
+                    />
+                  </div>
+                </div>
+
+                {/* Two-Column Grid: Rombel & Gender */}
+                <div className={styles.modalGridTwo}>
+                  <div className={styles.formFieldGroup}>
+                    <label className={styles.fieldLabel}>
+                      <span>
+                        Rombel / Kelas
+                        <span className={styles.fieldLabelRequired}>*</span>
+                      </span>
+                    </label>
+                    <div className={styles.inputWrapper}>
+                      <span className={styles.inputIcon}>
+                        <GraduationCap size={16} strokeWidth={2.2} />
+                      </span>
+                      <select
+                        value={formData.assigned_class}
+                        onChange={e => setFormData({ ...formData, assigned_class: e.target.value })}
+                        className={styles.modalSelect}
+                      >
+                        <option value="-">-- Pilih Rombel / Kelas --</option>
+                        {availableClasses.map(cName => (
+                          <option key={cName} value={cName}>{cName}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className={styles.formFieldGroup}>
+                    <label className={styles.fieldLabel}>
+                      <span>
+                        Jenis Kelamin
+                        <span className={styles.fieldLabelRequired}>*</span>
+                      </span>
+                    </label>
+                    <div className={styles.inputWrapper}>
+                      <span className={styles.inputIcon}>
+                        <User size={16} strokeWidth={2.2} />
+                      </span>
+                      <select
+                        value={formData.gender}
+                        onChange={e => setFormData({ ...formData, gender: e.target.value })}
+                        className={styles.modalSelect}
+                      >
+                        <option value="Laki-laki">Laki-laki</option>
+                        <option value="Perempuan">Perempuan</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
               </div>
-              <div style={{ padding: '0.875rem 1.25rem', borderTop: '1px solid var(--border-light)', background: 'var(--bg-elevated)', display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
-                <button type="button" className="btn btn-secondary btn-sm" onClick={() => setShowAddModal(false)}>Batal</button>
-                <button type="submit" className="btn btn-primary btn-sm">💾 Buat Record Siswa</button>
+
+              <div className={styles.modalFooter}>
+                <div className={styles.modalFooterMeta}>
+                  <Sparkles size={15} color="#0ea5e9" strokeWidth={2.2} />
+                  <span>Daftar langsung aktif</span>
+                </div>
+                <div className={styles.modalFooterActions}>
+                  <button
+                    type="button"
+                    className={styles.btnModalCancel}
+                    onClick={() => setShowAddModal(false)}
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    className={styles.btnModalSave}
+                  >
+                    <UserPlus size={16} strokeWidth={2.5} />
+                    <span>Buat Record Siswa</span>
+                  </button>
+                </div>
               </div>
             </form>
           </div>

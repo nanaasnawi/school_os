@@ -372,6 +372,9 @@ export type UpdateStudentRequest = {
     nisn?: string | null;
     place_of_birth?: string | null;
     religion?: string | null;
+    status?: string | null;
+    class_id?: string | null;
+    class_name?: string | null;
 };
 
 export type ListAcademicYearsData = {
