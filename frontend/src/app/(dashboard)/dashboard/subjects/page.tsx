@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import styles from './subjects.module.css';
 import { listTeachers, listClasses } from '@/lib/sdk/sdk.gen';
+import { exportToExcel } from '@/lib/exportExcel';
+import ScheduleImportModal from './ScheduleImportModal';
 
 type SubjectItem = {
   id: string;
@@ -27,17 +29,6 @@ type ScheduleItem = {
   room: string;
 };
 
-const MASTER_SUBJECTS: SubjectItem[] = [
-  { id: 'subj-1', code: 'MAT-01', name: 'Matematika', category: 'Wajib', totalHours: 4 },
-  { id: 'subj-2', code: 'BIN-01', name: 'Bahasa Indonesia', category: 'Wajib', totalHours: 4 },
-  { id: 'subj-3', code: 'BIG-01', name: 'Bahasa Inggris', category: 'Wajib', totalHours: 3 },
-  { id: 'subj-4', code: 'IPA-01', name: 'Ilmu Pengetahuan Alam (IPA)', category: 'Wajib', totalHours: 4 },
-  { id: 'subj-5', code: 'IPS-01', name: 'Ilmu Pengetahuan Sosial (IPS)', category: 'Wajib', totalHours: 3 },
-  { id: 'subj-6', code: 'PKN-01', name: 'Pendidikan Pancasila & Kewarganegaraan', category: 'Wajib', totalHours: 2 },
-  { id: 'subj-7', code: 'PAI-01', name: 'Pendidikan Agama Islam', category: 'Wajib', totalHours: 2 },
-  { id: 'subj-8', code: 'INF-01', name: 'Informatika & Komputer', category: 'Peminatan', totalHours: 2 },
-];
-
 export default function SubjectsPage() {
   const [subjects, setSubjects] = useState<SubjectItem[]>([]);
   const [teachers, setTeachers] = useState<any[]>([]);
@@ -51,6 +42,7 @@ export default function SubjectsPage() {
 
   // New Schedule Form State (Mendukung Multi-Rombel Sekaligus)
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formSchedule, setFormSchedule] = useState({
     selectedClassIds: [] as string[],
@@ -186,6 +178,54 @@ export default function SubjectsPage() {
     loadData();
   }, []);
 
+  const refreshSchedules = async () => {
+    try {
+      const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
+      const res = await fetch('/api/v1/academic/schedules', {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json?.data && Array.isArray(json.data)) {
+          const dbSchedules: ScheduleItem[] = json.data.map((item: any) => ({
+            id: item.id,
+            classId: item.class_id,
+            className: item.class_name,
+            subjectId: item.subject_id,
+            subjectName: item.subject_name,
+            teacherId: item.teacher_id,
+            teacherName: item.teacher_name,
+            day: item.day_of_week,
+            timeStart: item.start_time,
+            timeEnd: item.end_time,
+            room: item.room || 'Ruang Kelas',
+          }));
+          setSchedules(dbSchedules);
+        }
+      }
+    } catch (err) {
+      console.error('Error refreshing schedules:', err);
+    }
+  };
+
+  const handleExportSchedule = () => {
+    if (schedules.length === 0) {
+      showToast('⚠️ Belum ada jadwal pelajaran untuk diekspor');
+      return;
+    }
+    const exportData = schedules.map(s => ({
+      'Hari': s.day,
+      'Jam Mulai': s.timeStart,
+      'Jam Selesai': s.timeEnd,
+      'Mata Pelajaran': s.subjectName,
+      'Guru Pengampu': s.teacherName,
+      'Rombel / Kelas': s.className,
+      'Ruangan': s.room
+    }));
+    exportToExcel(exportData, 'Jadwal_Pelajaran_SchoolOS');
+    showToast('✓ Berkas Excel jadwal pelajaran berhasil diunduh');
+  };
+
   const handleCreateSchedule = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formSchedule.teacherName) {
@@ -303,9 +343,35 @@ export default function SubjectsPage() {
           <p className={styles.subtitle}>Pengelolaan kurikulum mata pelajaran, alokasi jam mengajar guru, dan struktur jadwal rombel</p>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            onClick={handleExportSchedule}
+            title="Ekspor Jadwal ke Excel"
+          >
+            📊 Ekspor Jadwal (.xlsx)
+          </button>
+          <button
+            type="button"
+            className="btn btn-sm"
+            onClick={() => setShowImportModal(true)}
+            style={{
+              background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+              color: '#ffffff',
+              border: 'none',
+              fontWeight: 700,
+              boxShadow: '0 2px 4px rgba(5, 150, 105, 0.25)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              cursor: 'pointer',
+            }}
+          >
+            📥 Import Jadwal (Excel / PDF)
+          </button>
           <button className="btn btn-primary btn-sm" onClick={() => setShowAddForm(true)}>
-            + Tambah Jadwal Pelajaran Rombel
+            + Tambah Jadwal Manual
           </button>
         </div>
       </div>
@@ -762,6 +828,19 @@ export default function SubjectsPage() {
           </div>
         </div>
       )}
+
+      {/* Modal Import Jadwal Pelajaran (Excel / PDF) */}
+      <ScheduleImportModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        teachers={teachers}
+        classes={classesList}
+        subjects={subjects}
+        onImportSuccess={() => {
+          refreshSchedules();
+        }}
+        showToast={showToast}
+      />
     </div>
   );
 }
