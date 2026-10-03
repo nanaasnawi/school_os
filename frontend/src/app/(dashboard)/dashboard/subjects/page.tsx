@@ -471,46 +471,38 @@ export default function SubjectsPage() {
         </div>
       </div>
 
-      {/* ── Visual Flow Diagram Integrasi Sistem ── */}
-      <div style={{
-        background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)',
-        color: '#ffffff',
-        borderRadius: '16px',
-        padding: '1.25rem 1.5rem',
-        boxShadow: '0 10px 25px rgba(30, 27, 75, 0.25)',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '0.875rem'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#818cf8' }}>
-            🔄 ALUR INTEGRASI OTOMATIS PEMBELAJARAN (ADMIN ➔ GURU ➔ SISWA)
+      {/* ── Visual Flow Diagram Integrasi Sistem (Clean & Adaptive to Light/Dark) ── */}
+      <div className={styles.flowCard}>
+        <div className={styles.flowHeader}>
+          <span className={styles.flowTitle}>
+            🔄 Alur Integrasi Otomatis Pembelajaran (Admin ➔ Guru ➔ Siswa)
           </span>
-          <span style={{ fontSize: '0.72rem', background: 'rgba(255,255,255,0.15)', padding: '2px 8px', borderRadius: '12px', fontWeight: 700 }}>
-            Real-time Connected
+          <span className={styles.flowBadge}>
+            ● Real-time Connected
           </span>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
-          <div style={{ background: 'rgba(255,255,255,0.08)', borderRadius: '12px', padding: '0.875rem', border: '1px solid rgba(255,255,255,0.12)' }}>
-            <div style={{ fontSize: '0.72rem', color: '#a5b4fc', fontWeight: 800 }}>LANGKAH 1: SEKOLAH / ADMIN</div>
-            <div style={{ fontSize: '0.9rem', fontWeight: 800, marginTop: '0.25rem' }}>1. Input Jadwal Pelajaran</div>
-            <div style={{ fontSize: '0.75rem', color: '#c7d2fe', marginTop: '0.2rem' }}>Admin memetakan Rombel, Matpel, &amp; Guru Pengampu.</div>
+        <div className={styles.flowStepsGrid}>
+          <div className={styles.flowStepItem}>
+            <span className={styles.flowStepTag}>Langkah 1: Sekolah / Admin</span>
+            <div className={styles.flowStepHeading}>1. Input Jadwal Pelajaran</div>
+            <p className={styles.flowStepDesc}>Admin memetakan Rombel, Matpel, &amp; Guru Pengampu.</p>
           </div>
 
-          <div style={{ background: 'rgba(255,255,255,0.08)', borderRadius: '12px', padding: '0.875rem', border: '1px solid rgba(255,255,255,0.12)' }}>
-            <div style={{ fontSize: '0.72rem', color: '#a5b4fc', fontWeight: 800 }}>LANGKAH 2: GURU PENGAMPU</div>
-            <div style={{ fontSize: '0.9rem', fontWeight: 800, marginTop: '0.25rem' }}>2. Guru Upload Materi</div>
-            <div style={{ fontSize: '0.75rem', color: '#c7d2fe', marginTop: '0.2rem' }}>Guru login ➔ Membuat Bab, Modul PDF, Video &amp; Kuis untuk Rombelnya.</div>
+          <div className={styles.flowStepItem}>
+            <span className={styles.flowStepTag}>Langkah 2: Guru Pengampu</span>
+            <div className={styles.flowStepHeading}>2. Guru Upload Materi</div>
+            <p className={styles.flowStepDesc}>Guru login ➔ Membuat Bab, Modul PDF, Video &amp; Kuis untuk Rombelnya.</p>
           </div>
 
-          <div style={{ background: 'rgba(255,255,255,0.08)', borderRadius: '12px', padding: '0.875rem', border: '1px solid rgba(255,255,255,0.12)' }}>
-            <div style={{ fontSize: '0.72rem', color: '#a5b4fc', fontWeight: 800 }}>LANGKAH 3: SISWA ROMBEL</div>
-            <div style={{ fontSize: '0.9rem', fontWeight: 800, marginTop: '0.25rem' }}>3. Siswa Belajar &amp; Latihan</div>
-            <div style={{ fontSize: '0.75rem', color: '#c7d2fe', marginTop: '0.2rem' }}>Siswa di kelas tersebut membaca materi &amp; mengerjakan tugas di Android/Web.</div>
+          <div className={styles.flowStepItem}>
+            <span className={styles.flowStepTag}>Langkah 3: Siswa Rombel</span>
+            <div className={styles.flowStepHeading}>3. Siswa Belajar &amp; Latihan</div>
+            <p className={styles.flowStepDesc}>Siswa di kelas tersebut membaca materi &amp; tugas di Android/Web.</p>
           </div>
         </div>
       </div>
+
 
       {/* Main Grid: Master Subjects & Class Schedule */}
       <div className={styles.gridTwo}>
