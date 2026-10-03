@@ -2,7 +2,11 @@ import { getApiUrl, apiClient } from '@/lib/api';
 import type { GraderSubmissionItem, GraderQuestionAnswer } from '../types';
 
 function getAuthHeaders(): HeadersInit {
-  const token = apiClient.getToken();
+  const token =
+    apiClient.getToken() ||
+    (typeof window !== 'undefined'
+      ? localStorage.getItem('auth_token') || localStorage.getItem('token')
+      : null);
   return {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -62,6 +66,8 @@ export async function fetchAssignmentSubmissions(assignmentId: string): Promise<
       max_score: 100,
       submitted_at: item.submitted_at || new Date().toISOString(),
       feedback: item.feedback || null,
+      content: item.content || null,
+      file_url: item.file_url || null,
       answers_count: Array.isArray(item.answers) ? item.answers.length : 0,
       has_essay: Array.isArray(item.answers) ? item.answers.some((a: any) => a.question_type === 'ESSAY') : true,
       answers: Array.isArray(item.answers)
@@ -74,7 +80,7 @@ export async function fetchAssignmentSubmissions(assignmentId: string): Promise<
             selected_choice_id: a.chosen_choice_id || null,
             selected_choice_text: a.chosen_choice_text || null,
             is_choice_correct: a.is_correct,
-            essay_answer_text: a.text_answer || item.content || null,
+            essay_answer_text: a.text_answer || (idx === 0 ? item.content : null) || null,
             points_earned: a.points_earned ?? null,
             teacher_notes: a.teacher_feedback || null,
           }))

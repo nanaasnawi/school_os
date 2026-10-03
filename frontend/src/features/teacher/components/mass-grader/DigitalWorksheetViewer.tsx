@@ -218,21 +218,94 @@ export function DigitalWorksheetViewer({
           <div className={styles.questionCard}>
             <div className={styles.questionHeader}>
               <span className={styles.questionNumberBadge}>Lembar Pengumpulan Tugas</span>
-              <span className={styles.questionTypeBadge}>Teks Mandiri</span>
+              <span className={styles.questionTypeBadge}>
+                {submission.file_url ? 'Lampiran Berkas / Dokumen' : 'Teks Tugas'}
+              </span>
             </div>
             <p className={styles.questionPrompt}>
-              {assignment?.instructions || assignment?.description || 'Tugas Siswa'}
+              {assignment?.instructions || assignment?.description || 'Tugas Mandiri Siswa'}
             </p>
-            <div className={styles.answerBlock}>
-              <div className={styles.answerLabel}>Teks Pengumpulan Siswa:</div>
-              <div className={styles.answerText}>
-                {submission.answers_count === 0 && (
-                  <span>
-                    Teks laporan hasil observasi dan analisis materi tugas Bahasa Indonesia mengenai struktur teks dan
-                    kaidah kebahasaan.
-                  </span>
-                )}
+
+            {submission.content && (
+              <div className={styles.answerBlock}>
+                <div className={styles.answerLabel}>Teks Pengumpulan Siswa:</div>
+                <div className={styles.answerText}>
+                  {submission.content}
+                </div>
               </div>
+            )}
+
+            {submission.file_url && (
+              <div className={styles.fileAttachmentBlock}>
+                <div className={styles.answerLabel}>Lampiran Berkas Siswa:</div>
+                <div className={styles.fileCard}>
+                  <div className={styles.fileIconWrapper}>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0284c7" strokeWidth="2">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                      <polyline points="14 2 14 8 20 8" />
+                      <line x1="16" y1="13" x2="8" y2="13" />
+                      <line x1="16" y1="17" x2="8" y2="17" />
+                    </svg>
+                  </div>
+                  <div className={styles.fileInfo}>
+                    <span className={styles.fileName}>
+                      {submission.file_url.split('/').pop() || 'Dokumen Tugas Siswa'}
+                    </span>
+                    <span className={styles.fileSub}>Berkas terunggah via aplikasi siswa</span>
+                  </div>
+                  <a
+                    href={submission.file_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={styles.fileDownloadBtn}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                      <polyline points="15 3 21 3 21 9" />
+                      <line x1="10" y1="14" x2="21" y2="3" />
+                    </svg>
+                    Buka Berkas
+                  </a>
+                </div>
+              </div>
+            )}
+
+            {!submission.content && !submission.file_url && (
+              <div className={styles.answerBlock}>
+                <div className={styles.answerLabel}>Keterangan Pengumpulan:</div>
+                <div className={styles.answerText} style={{ color: '#64748b', fontStyle: 'italic' }}>
+                  Siswa telah menandai selesai tetapi tidak melampirkan teks atau berkas tambahan.
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Extra file attachment if questions exist and file also submitted */}
+        {answers.length > 0 && submission.file_url && (
+          <div className={styles.fileAttachmentBlock} style={{ marginTop: '0.5rem' }}>
+            <div className={styles.answerLabel}>Lampiran Berkas Siswa:</div>
+            <div className={styles.fileCard}>
+              <div className={styles.fileIconWrapper}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0284c7" strokeWidth="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                </svg>
+              </div>
+              <div className={styles.fileInfo}>
+                <span className={styles.fileName}>
+                  {submission.file_url.split('/').pop() || 'Dokumen Tugas Siswa'}
+                </span>
+                <span className={styles.fileSub}>Berkas terunggah via aplikasi siswa</span>
+              </div>
+              <a
+                href={submission.file_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={styles.fileDownloadBtn}
+              >
+                Buka Berkas ↗
+              </a>
             </div>
           </div>
         )}
@@ -240,6 +313,23 @@ export function DigitalWorksheetViewer({
 
       {/* ── Sticky Bottom Grading Bar ── */}
       <div className={styles.gradingBar}>
+        {submission.status === 'unsubmitted' && (
+          <div style={{
+            fontSize: '0.78rem',
+            fontWeight: 700,
+            color: '#b45309',
+            background: '#fffbeb',
+            border: '1px solid #fde68a',
+            padding: '0.4rem 0.75rem',
+            borderRadius: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+          }}>
+            <span>⚠️</span>
+            <span>Peserta didik belum mengumpulkan tugas secara digital. Penilaian dinonaktifkan untuk data ini.</span>
+          </div>
+        )}
         <div className={styles.gradingBarTop}>
           <div className={styles.scoreGroup}>
             <div className={styles.scoreInputWrapper}>
@@ -258,6 +348,7 @@ export function DigitalWorksheetViewer({
                 value={score}
                 onChange={(e) => onScoreChange(e.target.value === '' ? '' : Number(e.target.value))}
                 placeholder="0"
+                disabled={submission.status === 'unsubmitted'}
                 className={styles.totalScoreInput}
               />
               <span className={styles.maxScoreLabel}>/ 100</span>
@@ -265,16 +356,36 @@ export function DigitalWorksheetViewer({
 
             {/* Presets */}
             <div className={styles.presetsList}>
-              <button type="button" className={styles.presetBtn} onClick={() => onScorePreset(70)}>
+              <button
+                type="button"
+                className={styles.presetBtn}
+                onClick={() => onScorePreset(70)}
+                disabled={submission.status === 'unsubmitted'}
+              >
                 KKM 70
               </button>
-              <button type="button" className={styles.presetBtn} onClick={() => onScorePreset(80)}>
+              <button
+                type="button"
+                className={styles.presetBtn}
+                onClick={() => onScorePreset(80)}
+                disabled={submission.status === 'unsubmitted'}
+              >
                 80
               </button>
-              <button type="button" className={styles.presetBtn} onClick={() => onScorePreset(90)}>
+              <button
+                type="button"
+                className={styles.presetBtn}
+                onClick={() => onScorePreset(90)}
+                disabled={submission.status === 'unsubmitted'}
+              >
                 90
               </button>
-              <button type="button" className={styles.presetBtn} onClick={() => onScorePreset(100)}>
+              <button
+                type="button"
+                className={styles.presetBtn}
+                onClick={() => onScorePreset(100)}
+                disabled={submission.status === 'unsubmitted'}
+              >
                 100 🌟
               </button>
             </div>
@@ -285,7 +396,8 @@ export function DigitalWorksheetViewer({
               type="button"
               className={styles.btnSaveOnly}
               onClick={() => onSave(false)}
-              disabled={isSaving}
+              disabled={isSaving || submission.status === 'unsubmitted'}
+              title={submission.status === 'unsubmitted' ? 'Siswa belum mengumpulkan' : 'Simpan Nilai'}
             >
               {isSaving ? 'Menyimpan...' : 'Simpan'}
             </button>
@@ -293,8 +405,8 @@ export function DigitalWorksheetViewer({
               type="button"
               className={styles.btnSaveAndNext}
               onClick={() => onSave(true)}
-              disabled={isSaving}
-              title="Simpan nilai dan langsung buka siswa berikutnya (Ctrl + Enter)"
+              disabled={isSaving || submission.status === 'unsubmitted'}
+              title={submission.status === 'unsubmitted' ? 'Siswa belum mengumpulkan' : 'Simpan nilai dan langsung buka siswa berikutnya (Ctrl + Enter)'}
             >
               {isSaving ? 'Menyimpan...' : 'Simpan & Lanjut ➔'}
             </button>

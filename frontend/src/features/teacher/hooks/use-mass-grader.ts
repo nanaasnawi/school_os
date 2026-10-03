@@ -34,7 +34,11 @@ export function useMassGrader(initialAssignmentId?: string) {
   useEffect(() => {
     async function loadAssignments() {
       try {
-        const token = apiClient.getToken();
+        const token =
+          apiClient.getToken() ||
+          (typeof window !== 'undefined'
+            ? localStorage.getItem('auth_token') || localStorage.getItem('token')
+            : null);
         const res = await fetch(getApiUrl('/api/v1/learning/assignments'), {
           headers: {
             'Content-Type': 'application/json',
@@ -44,25 +48,57 @@ export function useMassGrader(initialAssignmentId?: string) {
         if (res.ok) {
           const json = await res.json();
           const items: any[] = json?.data?.items || json?.data || [];
-          setAssignmentList(
-            items.map((i) => ({
-              id: i.id,
-              title: i.title,
-              class_name: i.class_name,
-            }))
-          );
-          // Only auto-select first if no assignment was pre-selected via URL
-          setSelectedAssignmentId((current) => {
-            if (!current && items.length > 0) return items[0].id;
-            return current;
-          });
-          // If no items exist at all, stop the loading spinner
-          if (items.length === 0) {
+          let mappedList = items.map((i) => ({
+            id: i.id,
+            title: i.title,
+            class_name: i.class_name,
+          }));
+
+          // If initialAssignmentId was provided via URL or prop, ensure it's in the list
+          if (initialAssignmentId) {
+            const exists = mappedList.some((a) => a.id === initialAssignmentId);
+            if (!exists) {
+              const extraDetail = await fetchAssignmentDetail(initialAssignmentId);
+              if (extraDetail) {
+                mappedList = [
+                  {
+                    id: extraDetail.id,
+                    title: extraDetail.title,
+                    class_name: extraDetail.class_name || undefined,
+                  },
+                  ...mappedList,
+                ];
+              }
+            }
+            setSelectedAssignmentId(initialAssignmentId);
+          } else if (mappedList.length > 0) {
+            setSelectedAssignmentId((current) => current || mappedList[0].id);
+          }
+
+          setAssignmentList(mappedList);
+
+          if (mappedList.length === 0) {
             setIsLoading(false);
           }
         } else {
-          // API error: stop loading so user sees empty state, not infinite spinner
-          setIsLoading(false);
+          // If initialAssignmentId was passed, try loading it directly
+          if (initialAssignmentId) {
+            const extraDetail = await fetchAssignmentDetail(initialAssignmentId);
+            if (extraDetail) {
+              setAssignmentList([
+                {
+                  id: extraDetail.id,
+                  title: extraDetail.title,
+                  class_name: extraDetail.class_name || undefined,
+                },
+              ]);
+              setSelectedAssignmentId(initialAssignmentId);
+            } else {
+              setIsLoading(false);
+            }
+          } else {
+            setIsLoading(false);
+          }
         }
       } catch (err) {
         console.error('Failed to load assignments list:', err);
@@ -88,7 +124,9 @@ export function useMassGrader(initialAssignmentId?: string) {
       ]);
       setAssignment(asg);
       setSubmissions(subs);
-      setActiveSubmissionIndex(0);
+      // Auto-select first student who actually submitted so teacher immediately sees student work
+      const firstSubmittedIdx = subs.findIndex((s) => s.status !== 'unsubmitted');
+      setActiveSubmissionIndex(firstSubmittedIdx >= 0 ? firstSubmittedIdx : 0);
     } catch (err) {
       console.error('Failed to load submissions for mass grader:', err);
     } finally {
@@ -209,6 +247,12 @@ export function useMassGrader(initialAssignmentId?: string) {
   const saveCurrentGrade = useCallback(
     async (goToNext: boolean = true) => {
       if (!selectedAssignmentId || !activeSubmission) return;
+
+      if (activeSubmission.status === 'unsubmitted') {
+        setSaveSuccessNotice('Peserta didik belum mengumpulkan tugas secara digital.');
+        setTimeout(() => setSaveSuccessNotice(null), 3500);
+        return;
+      }
 
       const numericScore = typeof score === 'number' ? score : Number(score) || 0;
       setIsSaving(true);

@@ -17,6 +17,8 @@ export interface GraderSubmissionItem {
   feedback?: string | null;
   answers_count: number;
   has_essay: boolean;
+  content?: string | null;
+  file_url?: string | null;
 }
 
 export interface GraderQuestionAnswer {
