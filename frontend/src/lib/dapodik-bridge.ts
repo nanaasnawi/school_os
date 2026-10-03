@@ -326,6 +326,8 @@ export async function pullDataFromDapodik(config?: PullDapodikConfig): Promise<{
     if (bridgeRes.ok) {
       const bridgeJson = await bridgeRes.json();
       if (bridgeJson.success && bridgeJson.data) {
+        // Beri jeda 2 detik agar cloud worker menyelesaikan commit transaksi di latar belakang
+        await new Promise((resolve) => setTimeout(resolve, 2000));
         const freshRecords = await getDapodikSyncRecords();
         if (typeof window !== 'undefined') {
           window.dispatchEvent(
