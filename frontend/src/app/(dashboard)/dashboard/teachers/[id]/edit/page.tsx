@@ -93,7 +93,7 @@ export default function EditTeacherPage() {
     try {
       const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
       const res = await fetch(getApiUrl(`/api/v1/teachers/${id}`), {
-        method: 'PUT',
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {})
@@ -102,6 +102,13 @@ export default function EditTeacherPage() {
           full_name: formData.full_name,
           nip: formData.nip,
           nuptk: formData.nuptk,
+          jk: formData.jk,
+          tempat_lahir: formData.tempat_lahir,
+          tanggal_lahir: formData.tanggal_lahir,
+          status_kepegawaian: formData.status_kepegawaian,
+          jenis_ptk: formData.jenis_ptk,
+          agama: formData.agama,
+          alamat_jalan: formData.alamat_jalan,
           subject: formData.subject,
           no_hp: formData.no_hp,
           email: formData.email,
