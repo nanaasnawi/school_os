@@ -297,130 +297,292 @@
 .fillPaketA { background: linear-gradient(90deg, #f59e0b, #d97706); }
 
 /* ── Gender Widget ── */
-.genderWidget {
+/* ── Redesigned Padat: Gender Section ── */
+.genderCardCompact {
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
-  height: 100%;
-  justify-content: center;
-}
-
-.genderDualBar {
-  display: flex;
-  width: 100%;
-  height: 14px;
-  border-radius: 9999px;
-  overflow: hidden;
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
-}
-
-.barMale {
-  background: linear-gradient(90deg, #2563eb, #3b82f6);
-  transition: width 0.6s ease;
-}
-
-.barFemale {
-  background: linear-gradient(90deg, #ec4899, #f43f5e);
-  transition: width 0.6s ease;
-}
-
-.genderStatsGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
-}
-
-.genderCard {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-md);
-  padding: 0.75rem;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  transition: transform var(--dur-fast) ease;
-}
-.genderCard:hover { transform: translateY(-2px); }
-
-.genderAvatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.2rem;
-  flex-shrink: 0;
-}
-
-.avatarMale { background: rgba(37, 99, 235, 0.12); border: 1px solid rgba(37, 99, 235, 0.2); }
-.avatarFemale { background: rgba(236, 72, 153, 0.12); border: 1px solid rgba(236, 72, 153, 0.2); }
-
-.genderLabel { font-size: 0.7rem; font-weight: 600; color: var(--text-muted); }
-.genderValue { font-size: 1.15rem; font-weight: 800; color: var(--text-primary); line-height: 1.2; }
-.genderShare { font-size: 0.68rem; font-weight: 700; }
-.shareMale { color: #2563eb; }
-.shareFemale { color: #ec4899; }
-
-/* ── Digital Ecosystem Grid ── */
-.ecosystemGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
   gap: 0.65rem;
 }
 
-.ecoTile {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-md);
-  padding: 0.8rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  transition: all var(--dur-base) ease;
-  position: relative;
-  overflow: hidden;
-}
-
-.ecoTile:hover {
-  background: var(--bg-hover);
-  border-color: var(--accent);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-sm);
-}
-
-.ecoTileTop {
+.genderTopRow {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 0.75rem;
 }
 
-.ecoIcon {
-  font-size: 1.25rem;
+.genderChartWrap {
+  flex-shrink: 0;
+  position: relative;
+  width: 110px;
+  height: 110px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.ecoTag {
-  font-size: 0.64rem;
-  font-weight: 700;
-  padding: 0.1rem 0.4rem;
-  border-radius: 9999px;
-  background: rgba(16, 185, 129, 0.12);
-  color: #059669;
-  border: 1px solid rgba(16, 185, 129, 0.2);
+.genderCenterLabel {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  pointer-events: none;
 }
 
-.ecoValue {
-  font-size: 1.35rem;
+.genderCenterCount {
+  font-size: 1.15rem;
   font-weight: 800;
   color: var(--text-primary);
   line-height: 1;
 }
 
-.ecoLabel {
-  font-size: 0.69rem;
+.genderCenterSub {
+  font-size: 0.62rem;
+  color: var(--text-muted);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  margin-top: 1px;
+}
+
+.genderLegendWrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.genderRowItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.genderItemHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.genderItemBar {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--bg-hover);
+  overflow: hidden;
+}
+
+.genderBarFillMale {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6, #2563eb);
+  border-radius: 999px;
+  transition: width 0.6s ease;
+}
+
+.genderBarFillFemale {
+  height: 100%;
+  background: linear-gradient(90deg, #ec4899, #db2777);
+  border-radius: 999px;
+  transition: width 0.6s ease;
+}
+
+/* 3-Column Compact KPI Strip */
+.genderKpiGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.45rem;
+  padding: 0.55rem 0.65rem;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+}
+
+.genderKpiItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.genderKpiLabel {
+  font-size: 0.62rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.genderKpiVal {
+  font-size: 0.86rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  display: flex;
+  align-items: baseline;
+  gap: 0.2rem;
+}
+
+.genderKpiSub {
+  font-size: 0.62rem;
   font-weight: 600;
   color: var(--text-secondary);
-  line-height: 1.3;
+}
+
+/* Dual Segmented Strip */
+.genderRatioBar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding-top: 0.1rem;
+}
+
+.genderSegmentTrack {
+  display: flex;
+  width: 100%;
+  height: 7px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--bg-hover);
+}
+
+.segmentMale {
+  background: #3b82f6;
+  height: 100%;
+  transition: width 0.5s ease;
+}
+
+.segmentFemale {
+  background: #ec4899;
+  height: 100%;
+  transition: width 0.5s ease;
+}
+
+.genderSegmentLabels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.64rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+/* ── Redesigned Padat: Digital Ecosystem ── */
+.ecosystemGridCompact {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.55rem;
+}
+
+.ecoTileCompact {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-light);
+  border-radius: 11px;
+  padding: 0.7rem 0.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  transition: all var(--dur-fast) cubic-bezier(0.16, 1, 0.3, 1);
+  text-decoration: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.ecoTileCompact:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-medium);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.ecoTileCompact::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 100%;
+  background: transparent;
+  transition: background 0.2s ease;
+}
+
+.ecoTileCompact:hover::before {
+  background: var(--accent);
+}
+
+.ecoTileTopCompact {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ecoIconCompact {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ecoTagCompact {
+  font-size: 0.58rem;
+  font-weight: 800;
+  padding: 0.1rem 0.4rem;
+  border-radius: 9999px;
+  letter-spacing: 0.02em;
+}
+
+.ecoValCompact {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1.1;
+  margin-top: 0.05rem;
+}
+
+.ecoLabelCompact {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.ecoSubCompact {
+  font-size: 0.62rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Telemetry Service Status Ribbon */
+.ecoTelemetryStrip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.45rem 0.7rem;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-light);
+  border-radius: 9px;
+  font-size: 0.65rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.telemetryItem {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.telemetryDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #10b981;
+  display: inline-block;
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.4);
 }
 
 /* ══════════════════════
