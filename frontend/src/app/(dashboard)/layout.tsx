@@ -756,8 +756,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Sidebar Footer — user card + collapse toggle */}
         <div className={styles.sidebarFooter}>
           <div className={styles.sidebarUserCard}>
-            <div className={styles.sidebarAvatarBadge}>
-              {user?.full_name
+            <div className={styles.sidebarAvatarBadge} style={user?.avatar_url ? { overflow: 'hidden', padding: 0 } : undefined}>
+              {user?.avatar_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={user.avatar_url.startsWith('http') ? user.avatar_url : getApiUrl(user.avatar_url)}
+                  alt="Foto profil"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'inherit' }}
+                />
+              ) : user?.full_name
                 ? user.full_name.trim().charAt(0).toUpperCase()
                 : (user?.email ? user.email.trim().charAt(0).toUpperCase() : 'A')}
             </div>
