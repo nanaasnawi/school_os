@@ -382,81 +382,153 @@ export default function CreateQuizPage() {
         </div>
       )}
 
-      {/* Header & Navigation */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-          <Link href="/dashboard" style={{ color: 'var(--text-muted)' }}>Dashboard</Link>
-          <span>/</span>
-          <Link href="/dashboard/learning" style={{ color: 'var(--text-muted)' }}>Pembelajaran</Link>
-          <span>/</span>
-          <Link href="/dashboard/learning/quizzes" style={{ color: 'var(--text-muted)' }}>Kuis CBT</Link>
-          <span>/</span>
-          <span style={{ color: 'var(--accent)', fontWeight: 700 }}>Buat Kuis Baru</span>
+      {/* Top Nav Row */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+          <Link
+            href="/dashboard/learning/quizzes"
+            className="btn btn-secondary btn-sm"
+            style={{
+              borderRadius: '8px',
+              padding: '0.35rem 0.75rem',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              fontSize: '0.82rem',
+              fontWeight: 600,
+              color: 'var(--text-secondary)',
+              background: 'var(--bg-card)',
+              border: '1px solid var(--border-light)',
+            }}
+          >
+            <span>←</span> Kembali
+          </Link>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+            <Link href="/dashboard" style={{ color: 'var(--text-muted)' }}>Dashboard</Link>
+            <span>/</span>
+            <Link href="/dashboard/learning" style={{ color: 'var(--text-muted)' }}>Pembelajaran</Link>
+            <span>/</span>
+            <Link href="/dashboard/learning/quizzes" style={{ color: 'var(--text-muted)' }}>Kuis CBT</Link>
+            <span>/</span>
+            <span style={{ color: 'var(--accent)', fontWeight: 600 }}>Buat Baru</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Header & Actions */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '1rem',
+          paddingBottom: '0.75rem',
+          borderBottom: '1px solid var(--border-light)',
+        }}
+      >
+        <div style={{ maxWidth: '640px' }}>
+          <h1
+            style={{
+              margin: 0,
+              fontSize: '1.5rem',
+              fontWeight: 800,
+              letterSpacing: '-0.02em',
+              color: 'var(--text-primary)',
+            }}
+          >
+            Buat Kuis &amp; Ujian CBT Baru
+          </h1>
+          <p style={{ margin: '0.3rem 0 0 0', fontSize: '0.84rem', color: 'var(--text-muted)', lineHeight: 1.45 }}>
+            Susun parameter evaluasi ujian CBT online beserta butir-butir soal pilihan ganda dan uraian secara leluasa.
+          </p>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem', marginTop: '0.25rem' }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <Link
-                href="/dashboard/learning/quizzes"
-                className="btn btn-secondary btn-sm"
-                style={{ borderRadius: '10px', padding: '0.4rem 0.75rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
-              >
-                <span>←</span> Kembali
-              </Link>
-              <h1 style={{ margin: 0, fontSize: '1.65rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>
-                Buat Kuis &amp; Ujian CBT Baru
-              </h1>
-            </div>
-            <p style={{ margin: '0.35rem 0 0 0', fontSize: '0.84rem', color: 'var(--text-muted)' }}>
-              Susun parameter evaluasi ujian CBT online beserta butir-butir soal pilihan ganda dan uraian secara leluasa.
-            </p>
-          </div>
-
-          <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center' }}>
-            <button
-              type="button"
-              onClick={() => setIsAutoModalOpen(true)}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '9px 16px',
-                borderRadius: '10px',
-                backgroundColor: '#F59E0B',
-                backgroundImage: 'linear-gradient(135deg, #F59E0B, #EA580C)',
-                color: '#0F172A',
-                fontWeight: 800,
-                fontSize: '0.86rem',
-                border: 'none',
-                cursor: 'pointer',
-                boxShadow: '0 4px 14px rgba(245, 158, 11, 0.35)',
-              }}
-            >
-              <Sparkles size={16} /> ✨ Generate Kuis / Ujian Otomatis (Termasuk Rangkum 1 Bulan)
-            </button>
-            <Link href="/dashboard/learning/quizzes" className="btn btn-secondary">
-              Batal
-            </Link>
-            <button
-              onClick={handleSubmit}
-              disabled={isSubmitting}
-              className="btn btn-primary"
-              style={{ padding: '0.6rem 1.4rem', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '0.45rem' }}
-            >
-              {isSubmitting ? (
-                <>
-                  <span style={{ display: 'inline-block', width: '14px', height: '14px', border: '2px solid #fff', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-                  <span>Menerbitkan Kuis...</span>
-                </>
-              ) : (
-                <>
-                  <span>🚀</span>
-                  <span>Terbitkan Kuis Sekarang</span>
-                </>
-              )}
-            </button>
-          </div>
+        <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            onClick={() => setIsAutoModalOpen(true)}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '8px 14px',
+              borderRadius: '9px',
+              background: 'rgba(245, 158, 11, 0.12)',
+              color: 'var(--warning)',
+              fontWeight: 700,
+              fontSize: '0.84rem',
+              border: '1px solid rgba(245, 158, 11, 0.3)',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.background = 'var(--warning)';
+              e.currentTarget.style.color = '#FFFFFF';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.background = 'rgba(245, 158, 11, 0.12)';
+              e.currentTarget.style.color = 'var(--warning)';
+            }}
+          >
+            <Sparkles size={15} />
+            <span>✨ Generate Kuis / Ujian Otomatis</span>
+          </button>
+          <Link
+            href="/dashboard/learning/quizzes"
+            className="btn btn-secondary"
+            style={{
+              padding: '8px 14px',
+              fontSize: '0.84rem',
+              borderRadius: '9px',
+              border: '1px solid var(--border-light)',
+              background: 'var(--bg-card)',
+              color: 'var(--text-secondary)',
+            }}
+          >
+            Batal
+          </Link>
+          <button
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            className="btn btn-primary"
+            style={{
+              padding: '8px 18px',
+              fontWeight: 700,
+              fontSize: '0.84rem',
+              borderRadius: '9px',
+              background: 'var(--accent-gradient)',
+              color: '#FFFFFF',
+              border: 'none',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.45rem',
+              boxShadow: 'var(--shadow-sm)',
+              cursor: isSubmitting ? 'not-allowed' : 'pointer',
+            }}
+          >
+            {isSubmitting ? (
+              <>
+                <span
+                  style={{
+                    display: 'inline-block',
+                    width: '14px',
+                    height: '14px',
+                    border: '2px solid #fff',
+                    borderTopColor: 'transparent',
+                    borderRadius: '50%',
+                    animation: 'spin 1s linear infinite',
+                  }}
+                />
+                <span>Menerbitkan...</span>
+              </>
+            ) : (
+              <>
+                <span>🚀</span>
+                <span>Terbitkan Kuis Sekarang</span>
+              </>
+            )}
+          </button>
         </div>
       </div>
 

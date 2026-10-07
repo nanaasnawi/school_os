@@ -399,7 +399,7 @@ export async function awardXpToStudent(params: {
   tenantId?: string;
 }): Promise<void> {
   try {
-    const res = await fetch('/api/v1/gamification', {
+    let res = await fetch('/api/gamification', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -411,8 +411,23 @@ export async function awardXpToStudent(params: {
       }),
     });
 
+    if (!res.ok && res.status === 404) {
+      res = await fetch('/api/v1/gamification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          student_id: params.studentId,
+          action_type: params.actionType,
+          reference_id: params.referenceId,
+          description: params.description,
+          tenant_id: params.tenantId,
+        }),
+      });
+    }
+
     if (res.ok) {
-      const json = await res.json();
+      const text = await res.text();
+      const json = text ? JSON.parse(text) : null;
       if (json.success && json.awarded) {
         window.dispatchEvent(
           new CustomEvent('schoolos:xp-earned', {

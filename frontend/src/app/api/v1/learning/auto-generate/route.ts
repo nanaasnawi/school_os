@@ -107,13 +107,19 @@ export async function POST(req: NextRequest) {
     }
 
     if (materials.length === 0) {
-      return NextResponse.json(
+      // Fallback: If no published files exist yet in database for this subject, construct standard curriculum syllabus material
+      materials = [
         {
-          success: false,
-          error: `Belum ada materi pembelajaran yang dipublikasikan untuk mata pelajaran "${subjectName}". Silakan terbitkan materi terlebih dahulu.`,
+          id: `curriculum-standard-${effectiveSubjectId}`,
+          title: `Kurikulum Standar & Capaian Pembelajaran: ${subjectName}`,
+          subject_id: effectiveSubjectId,
+          subject_name: subjectName,
+          material_type: 'document',
+          source_type: 'kemdikbud_curriculum',
+          description: `Materi esensial dan kompetensi dasar mata pelajaran ${subjectName} sesuai standar Kurikulum Merdeka.`,
+          created_at: new Date().toISOString(),
         },
-        { status: 404 }
-      );
+      ];
     }
 
     // 3. Generate questions or task according to requested type

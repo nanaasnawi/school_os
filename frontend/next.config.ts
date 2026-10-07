@@ -22,12 +22,16 @@ const nextConfig: NextConfig = {
     }
     backendUrl = backendUrl.replace(/\/api\/v1\/?$/, '').replace(/\/+$/, '');
 
-    return [
-      {
-        source: '/api/v1/:path*',
-        destination: `${backendUrl}/api/v1/:path*`,
-      },
-    ];
+    return {
+      beforeFiles: [],
+      afterFiles: [],
+      fallback: [
+        {
+          source: '/api/v1/:path*',
+          destination: `${backendUrl}/api/v1/:path*`,
+        },
+      ],
+    };
   },
 };
 

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { AcademicSubject } from '@/features/material';
-import { Sparkles, CheckCircle2, Calendar, BookOpen, Layers, AlertCircle, Loader2 } from 'lucide-react';
+import { Sparkles, CheckCircle2, Calendar, BookOpen, Layers, AlertCircle, Loader2, X } from 'lucide-react';
 
 interface AutoGenerateQuizModalProps {
   isOpen: boolean;
@@ -67,20 +67,37 @@ export function AutoGenerateQuizModal({
         source_mode: isMonthly ? 'PAST_MONTH' : 'LATEST_PUBLISHED',
       };
 
-      const res = await fetch('/api/v1/learning/auto-generate', {
+      // Try /api/learning/auto-generate first, then fallback to /api/v1/learning/auto-generate
+      let res = await fetch('/api/learning/auto-generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
 
-      const json = await res.json();
-      if (!res.ok || !json.success) {
-        throw new Error(json?.error || 'Gagal membuat soal ujian otomatis.');
+      if (!res.ok && res.status === 404) {
+        res = await fetch('/api/v1/learning/auto-generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+      }
+
+      const rawText = await res.text();
+      let json: any = null;
+      try {
+        json = rawText ? JSON.parse(rawText) : null;
+      } catch {
+        // Not JSON
+      }
+
+      if (!res.ok || !json?.success) {
+        const message = json?.error || (res.status === 404 ? 'Materi belum tersedia untuk mata pelajaran ini.' : `Gagal menghubungi server pembuatan otomatis (${res.status}).`);
+        throw new Error(message);
       }
 
       setGeneratedResult(json.data);
     } catch (err: any) {
-      setErrorMsg(err.message || 'Terjadi kesalahan sistem.');
+      setErrorMsg(err.message || 'Terjadi kendala saat menyusun soal kuis otomatis.');
     } finally {
       setIsGenerating(false);
     }
@@ -115,8 +132,8 @@ export function AutoGenerateQuizModal({
         position: 'fixed',
         inset: 0,
         zIndex: 9999,
-        backgroundColor: 'rgba(0, 0, 0, 0.75)',
-        backdropFilter: 'blur(6px)',
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+        backdropFilter: 'blur(5px)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -125,96 +142,126 @@ export function AutoGenerateQuizModal({
     >
       <div
         style={{
-          backgroundColor: '#0F172A',
-          border: '1px solid #334155',
-          borderRadius: '20px',
+          backgroundColor: 'var(--bg-surface)',
+          border: '1px solid var(--border-light)',
+          borderRadius: '16px',
           width: '100%',
-          maxWidth: '780px',
+          maxWidth: '720px',
           maxHeight: '90vh',
           display: 'flex',
           flexDirection: 'column',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
+          boxShadow: 'var(--shadow-xl)',
           overflow: 'hidden',
-          color: '#F8FAFC',
+          color: 'var(--text-primary)',
         }}
       >
         {/* Modal Header */}
         <div
           style={{
-            padding: '20px 24px',
-            borderBottom: '1px solid #1E293B',
+            padding: '18px 24px',
+            borderBottom: '1px solid var(--border-light)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            background: 'linear-gradient(90deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%)',
+            backgroundColor: 'var(--bg-surface)',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div
               style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '12px',
-                background: 'linear-gradient(135deg, #F59E0B, #EA580C)',
+                width: '38px',
+                height: '38px',
+                borderRadius: '10px',
+                background: 'linear-gradient(135deg, #F59E0B 0%, #EA580C 100%)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: '0 0 15px rgba(245, 158, 11, 0.4)',
+                boxShadow: '0 2px 8px rgba(245, 158, 11, 0.3)',
+                flexShrink: 0,
               }}
             >
-              <Sparkles size={20} color="#FFFFFF" />
+              <Sparkles size={18} color="#FFFFFF" />
             </div>
             <div>
-              <h2 style={{ fontSize: '18px', fontWeight: 700, margin: 0 }}>
-                Generate Kuis & Ujian CBT Otomatis
+              <h2
+                style={{
+                  fontSize: '1.15rem',
+                  fontWeight: 700,
+                  margin: 0,
+                  color: 'var(--text-primary)',
+                  letterSpacing: '-0.01em',
+                }}
+              >
+                Generate Kuis / Ujian CBT Otomatis
               </h2>
-              <p style={{ fontSize: '13px', color: '#94A3B8', margin: '2px 0 0 0' }}>
-                Rangkum materi 1 bulan sebelumnya untuk ujian berkala atau buat kuis cepat per bab
+              <p
+                style={{
+                  fontSize: '0.82rem',
+                  color: 'var(--text-muted)',
+                  margin: '2px 0 0 0',
+                }}
+              >
+                Otomatisasi pembuatan paket soal kuis atau ujian bulanan terisolasi per mata pelajaran
               </p>
             </div>
           </div>
 
           <button
+            type="button"
             onClick={onClose}
+            aria-label="Tutup"
             style={{
               background: 'transparent',
               border: 'none',
-              color: '#94A3B8',
-              fontSize: '20px',
+              color: 'var(--text-muted)',
+              borderRadius: '8px',
+              padding: '6px',
               cursor: 'pointer',
-              padding: '4px 8px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'background-color 0.15s ease',
             }}
+            onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--bg-hover)')}
+            onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
           >
-            ✕
+            <X size={20} />
           </button>
         </div>
 
         {/* Modal Body */}
-        <div style={{ padding: '24px', overflowY: 'auto', flex: 1 }}>
+        <div style={{ padding: '20px 24px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '18px' }}>
           {errorMsg && (
             <div
               style={{
-                backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                border: '1px solid rgba(239, 68, 68, 0.3)',
-                borderRadius: '12px',
-                padding: '12px 16px',
-                marginBottom: '18px',
+                backgroundColor: 'rgba(239, 68, 68, 0.08)',
+                border: '1px solid rgba(239, 68, 68, 0.25)',
+                borderRadius: '10px',
+                padding: '12px 14px',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '10px',
-                color: '#FCA5A5',
-                fontSize: '13px',
+                color: 'var(--danger)',
+                fontSize: '0.84rem',
               }}
             >
-              <AlertCircle size={18} />
+              <AlertCircle size={18} style={{ flexShrink: 0 }} />
               <span>{errorMsg}</span>
             </div>
           )}
 
           {/* 1. Subject Selector */}
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#CBD5E1', marginBottom: '8px' }}>
-              Mata Pelajaran (Mapel) <span style={{ color: '#F59E0B', fontSize: '12px' }}>*Terkunci, soal 100% spesifik mapel</span>
+          <div>
+            <label
+              style={{
+                display: 'block',
+                fontSize: '0.82rem',
+                fontWeight: 600,
+                color: 'var(--text-secondary)',
+                marginBottom: '6px',
+              }}
+            >
+              Mata Pelajaran (Mapel) <span style={{ color: 'var(--accent)', fontSize: '0.78rem' }}>*Terkunci, isolasi penuh</span>
             </label>
             <select
               value={selectedSubject}
@@ -224,12 +271,12 @@ export function AutoGenerateQuizModal({
               }}
               style={{
                 width: '100%',
-                padding: '10px 14px',
-                backgroundColor: '#1E293B',
-                border: '1px solid #334155',
-                borderRadius: '10px',
-                color: '#F8FAFC',
-                fontSize: '14px',
+                padding: '9px 12px',
+                backgroundColor: 'var(--bg-surface)',
+                border: '1px solid var(--border-medium)',
+                borderRadius: '8px',
+                color: 'var(--text-primary)',
+                fontSize: '0.88rem',
                 outline: 'none',
               }}
             >
@@ -241,34 +288,42 @@ export function AutoGenerateQuizModal({
             </select>
           </div>
 
-          {/* 2. Scope: Monthly 1-month summary vs Single module */}
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#CBD5E1', marginBottom: '8px' }}>
-              Cakupan Pembuatan Soal
+          {/* 2. Scope Selector: Bulanan vs 1 Materi */}
+          <div>
+            <label
+              style={{
+                display: 'block',
+                fontSize: '0.82rem',
+                fontWeight: 600,
+                color: 'var(--text-secondary)',
+                marginBottom: '6px',
+              }}
+            >
+              Cakupan Evaluasi Ujian
             </label>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
               <div
                 onClick={() => {
                   setExamScope('MONTHLY_SUMMARY');
                   setGeneratedResult(null);
                 }}
                 style={{
-                  padding: '14px',
-                  borderRadius: '12px',
-                  border: `2px solid ${examScope === 'MONTHLY_SUMMARY' ? '#F59E0B' : '#334155'}`,
-                  backgroundColor: examScope === 'MONTHLY_SUMMARY' ? 'rgba(245, 158, 11, 0.12)' : '#1E293B',
+                  padding: '12px 14px',
+                  borderRadius: '10px',
+                  border: `2px solid ${examScope === 'MONTHLY_SUMMARY' ? 'var(--warning)' : 'var(--border-light)'}`,
+                  backgroundColor: examScope === 'MONTHLY_SUMMARY' ? 'rgba(245, 158, 11, 0.08)' : 'var(--bg-surface)',
                   cursor: 'pointer',
-                  transition: 'all 0.2s ease',
+                  transition: 'all 0.15s ease',
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                  <Calendar size={18} color={examScope === 'MONTHLY_SUMMARY' ? '#FBBF24' : '#94A3B8'} />
-                  <strong style={{ fontSize: '14px', color: examScope === 'MONTHLY_SUMMARY' ? '#FBBF24' : '#E2E8F0' }}>
-                    🗓️ Ujian Bulanan (Rangkuman 1 Bulan)
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                  <Calendar size={17} color={examScope === 'MONTHLY_SUMMARY' ? 'var(--warning)' : 'var(--text-muted)'} />
+                  <strong style={{ fontSize: '0.88rem', color: examScope === 'MONTHLY_SUMMARY' ? 'var(--warning)' : 'var(--text-primary)' }}>
+                    Ujian Bulanan (Rangkum 30 Hari)
                   </strong>
                 </div>
-                <p style={{ fontSize: '12px', color: '#94A3B8', margin: 0, lineHeight: 1.4 }}>
-                  Otomatis merangkum seluruh materi yang pernah di-publish selama 30 hari terakhir pada mapel ini untuk dijadikan soal ujian berkala komprehensif.
+                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0, lineHeight: 1.4 }}>
+                  Merangkum seluruh materi 1 bulan sebelumnya untuk dijadikan paket soal komprehensif.
                 </p>
               </div>
 
@@ -278,33 +333,41 @@ export function AutoGenerateQuizModal({
                   setGeneratedResult(null);
                 }}
                 style={{
-                  padding: '14px',
-                  borderRadius: '12px',
-                  border: `2px solid ${examScope === 'SINGLE_MODULE' ? '#3B82F6' : '#334155'}`,
-                  backgroundColor: examScope === 'SINGLE_MODULE' ? 'rgba(59, 130, 246, 0.12)' : '#1E293B',
+                  padding: '12px 14px',
+                  borderRadius: '10px',
+                  border: `2px solid ${examScope === 'SINGLE_MODULE' ? 'var(--accent)' : 'var(--border-light)'}`,
+                  backgroundColor: examScope === 'SINGLE_MODULE' ? 'var(--accent-light)' : 'var(--bg-surface)',
                   cursor: 'pointer',
-                  transition: 'all 0.2s ease',
+                  transition: 'all 0.15s ease',
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                  <BookOpen size={18} color={examScope === 'SINGLE_MODULE' ? '#38BDF8' : '#94A3B8'} />
-                  <strong style={{ fontSize: '14px', color: examScope === 'SINGLE_MODULE' ? '#38BDF8' : '#E2E8F0' }}>
-                    📖 Kuis Bab / Materi Terakhir
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                  <BookOpen size={17} color={examScope === 'SINGLE_MODULE' ? 'var(--accent)' : 'var(--text-muted)'} />
+                  <strong style={{ fontSize: '0.88rem', color: examScope === 'SINGLE_MODULE' ? 'var(--accent)' : 'var(--text-primary)' }}>
+                    Kuis Materi Terakhir
                   </strong>
                 </div>
-                <p style={{ fontSize: '12px', color: '#94A3B8', margin: 0, lineHeight: 1.4 }}>
-                  Fokus membuat soal evaluasi harian dari materi pembelajaran yang baru saja di-publish pada mapel ini.
+                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0, lineHeight: 1.4 }}>
+                  Menyusun kuis cepat berbasis materi yang baru saja diterbitkan di kelas.
                 </p>
               </div>
             </div>
           </div>
 
-          {/* 3. Question Format Selector */}
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#CBD5E1', marginBottom: '8px' }}>
-              Format Butir Soal
+          {/* 3. Format Selector */}
+          <div>
+            <label
+              style={{
+                display: 'block',
+                fontSize: '0.82rem',
+                fontWeight: 600,
+                color: 'var(--text-secondary)',
+                marginBottom: '6px',
+              }}
+            >
+              Komposisi Soal Ujian
             </label>
-            <div style={{ display: 'flex', gap: '10px' }}>
+            <div style={{ display: 'flex', gap: '8px' }}>
               <button
                 type="button"
                 onClick={() => {
@@ -313,17 +376,18 @@ export function AutoGenerateQuizModal({
                 }}
                 style={{
                   flex: 1,
-                  padding: '11px 14px',
-                  borderRadius: '10px',
-                  fontSize: '13px',
+                  padding: '8px 12px',
+                  borderRadius: '8px',
+                  fontSize: '0.82rem',
                   fontWeight: 600,
-                  border: `1px solid ${quizFormat === 'MCQ_ONLY' ? '#F59E0B' : '#334155'}`,
-                  backgroundColor: quizFormat === 'MCQ_ONLY' ? '#D97706' : '#1E293B',
-                  color: '#FFFFFF',
+                  border: `1px solid ${quizFormat === 'MCQ_ONLY' ? 'var(--accent)' : 'var(--border-medium)'}`,
+                  backgroundColor: quizFormat === 'MCQ_ONLY' ? 'var(--accent)' : 'var(--bg-surface)',
+                  color: quizFormat === 'MCQ_ONLY' ? '#FFFFFF' : 'var(--text-secondary)',
                   cursor: 'pointer',
+                  transition: 'all 0.15s ease',
                 }}
               >
-                Pilihan Ganda (PG) Saja
+                Hanya Pilihan Ganda (PG)
               </button>
               <button
                 type="button"
@@ -333,50 +397,59 @@ export function AutoGenerateQuizModal({
                 }}
                 style={{
                   flex: 1,
-                  padding: '11px 14px',
-                  borderRadius: '10px',
-                  fontSize: '13px',
+                  padding: '8px 12px',
+                  borderRadius: '8px',
+                  fontSize: '0.82rem',
                   fontWeight: 600,
-                  border: `1px solid ${quizFormat === 'MCQ_AND_ESSAY' ? '#F59E0B' : '#334155'}`,
-                  backgroundColor: quizFormat === 'MCQ_AND_ESSAY' ? '#D97706' : '#1E293B',
-                  color: '#FFFFFF',
+                  border: `1px solid ${quizFormat === 'MCQ_AND_ESSAY' ? 'var(--accent)' : 'var(--border-medium)'}`,
+                  backgroundColor: quizFormat === 'MCQ_AND_ESSAY' ? 'var(--accent)' : 'var(--bg-surface)',
+                  color: quizFormat === 'MCQ_AND_ESSAY' ? '#FFFFFF' : 'var(--text-secondary)',
                   cursor: 'pointer',
+                  transition: 'all 0.15s ease',
                 }}
               >
-                Pilihan Ganda (PG) & Essay
+                Kombinasi PG &amp; Essay Analitis
               </button>
             </div>
           </div>
 
           {/* Action Generate Button */}
           {!generatedResult && (
-            <div style={{ textAlign: 'center', marginTop: '16px' }}>
+            <div style={{ textAlign: 'center', paddingTop: '4px' }}>
               <button
+                type="button"
                 onClick={handleGenerate}
                 disabled={isGenerating}
                 style={{
-                  padding: '12px 28px',
-                  borderRadius: '12px',
-                  backgroundColor: '#F59E0B',
-                  backgroundImage: 'linear-gradient(135deg, #F59E0B, #EA580C)',
+                  padding: '11px 26px',
+                  borderRadius: '10px',
+                  background: 'linear-gradient(135deg, #F59E0B 0%, #EA580C 100%)',
                   color: '#FFFFFF',
                   fontWeight: 700,
-                  fontSize: '14px',
+                  fontSize: '0.88rem',
                   border: 'none',
                   cursor: isGenerating ? 'not-allowed' : 'pointer',
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '8px',
-                  boxShadow: '0 4px 15px rgba(245, 158, 11, 0.4)',
+                  boxShadow: 'var(--shadow-md)',
+                  opacity: isGenerating ? 0.8 : 1,
+                  transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+                }}
+                onMouseEnter={e => {
+                  if (!isGenerating) e.currentTarget.style.transform = 'translateY(-1px)';
+                }}
+                onMouseLeave={e => {
+                  if (!isGenerating) e.currentTarget.style.transform = 'translateY(0)';
                 }}
               >
                 {isGenerating ? (
                   <>
-                    <Loader2 size={18} className="animate-spin" /> Sedang Menghimpun & Merangkum Materi...
+                    <Loader2 size={17} className="animate-spin" /> Sedang Menganalisis &amp; Menyusun Paket Ujian...
                   </>
                 ) : (
                   <>
-                    <Sparkles size={18} /> Generate Soal Otomatis Sekarang
+                    <Sparkles size={17} /> Generate Paket Ujian Sekarang
                   </>
                 )}
               </button>
@@ -387,111 +460,92 @@ export function AutoGenerateQuizModal({
           {generatedResult && (
             <div
               style={{
-                marginTop: '20px',
-                backgroundColor: '#1E293B',
-                border: '1px solid rgba(245, 158, 11, 0.4)',
-                borderRadius: '14px',
-                padding: '20px',
+                backgroundColor: 'var(--bg-elevated)',
+                border: '1px solid var(--border-light)',
+                borderRadius: '12px',
+                padding: '16px',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
                 <span
                   style={{
-                    backgroundColor: 'rgba(245, 158, 11, 0.2)',
-                    color: '#FBBF24',
-                    fontSize: '12px',
+                    backgroundColor: 'rgba(245, 158, 11, 0.15)',
+                    color: 'var(--warning)',
+                    fontSize: '0.78rem',
                     fontWeight: 700,
-                    padding: '4px 10px',
+                    padding: '3px 10px',
                     borderRadius: '999px',
                   }}
                 >
-                  ✓ Berhasil Disusun Otomatis ({generatedResult.questions?.length || 0} Soal)
+                  ✓ Paket Soal Berhasil Disusun
                 </span>
-                <span style={{ fontSize: '12px', color: '#94A3B8' }}>
-                  Waktu: {generatedResult.time_limit_minutes} Menit • KKM: {generatedResult.passing_score}
+                <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                  Durasi {generatedResult.time_limit_minutes || 60} menit • KKM {generatedResult.passing_score || 75}
                 </span>
               </div>
 
-              <h4 style={{ fontSize: '16px', fontWeight: 700, color: '#F8FAFC', margin: '0 0 8px 0' }}>
+              <h4 style={{ fontSize: '0.98rem', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 8px 0' }}>
                 {generatedResult.title}
               </h4>
 
-              <p style={{ fontSize: '13px', color: '#94A3B8', margin: '0 0 16px 0' }}>
+              <div
+                style={{
+                  fontSize: '0.82rem',
+                  color: 'var(--text-secondary)',
+                  backgroundColor: 'var(--bg-surface)',
+                  padding: '10px 12px',
+                  borderRadius: '8px',
+                  whiteSpace: 'pre-wrap',
+                  maxHeight: '120px',
+                  overflowY: 'auto',
+                  border: '1px solid var(--border-light)',
+                  marginBottom: '14px',
+                }}
+              >
                 {generatedResult.description}
-              </p>
-
-              {generatedResult.source_materials?.length > 0 && (
-                <div style={{ marginBottom: '16px', fontSize: '12px', color: '#CBD5E1' }}>
-                  <strong>Materi Rujukan ({generatedResult.source_materials.length} Modul Terbit):</strong>
-                  <ul style={{ margin: '4px 0 0 16px', padding: 0 }}>
-                    {generatedResult.source_materials.slice(0, 4).map((m: any) => (
-                      <li key={m.id}>
-                        [{m.type?.toUpperCase()}] {m.title}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+              </div>
 
               {generatedResult.questions?.length > 0 && (
-                <div style={{ marginBottom: '16px' }}>
-                  <span style={{ fontSize: '13px', fontWeight: 600, color: '#94A3B8' }}>
-                    Preview Butir Soal:
+                <div style={{ marginBottom: '14px' }}>
+                  <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                    Daftar Butir Soal CBT ({generatedResult.questions.length} Soal):
                   </span>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px', maxHeight: '200px', overflowY: 'auto' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '6px' }}>
                     {generatedResult.questions.map((q: any, idx: number) => (
                       <div
                         key={q.id || idx}
                         style={{
-                          backgroundColor: '#0F172A',
-                          border: '1px solid #334155',
+                          backgroundColor: 'var(--bg-surface)',
+                          border: '1px solid var(--border-light)',
                           borderRadius: '8px',
-                          padding: '10px 12px',
-                          fontSize: '12px',
+                          padding: '8px 10px',
+                          fontSize: '0.8rem',
                         }}
                       >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                          <span style={{ fontWeight: 700, color: '#FBBF24' }}>
-                            Soal {idx + 1} ({q.question_type === 'MULTIPLE_CHOICE' ? 'PG' : 'Essay'})
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
+                          <span style={{ fontWeight: 700, color: 'var(--accent)' }}>
+                            Soal #{idx + 1} ({q.question_type === 'MULTIPLE_CHOICE' ? 'Pilihan Ganda' : 'Essay'})
                           </span>
-                          <span style={{ color: '#38BDF8' }}>{q.points} Poin</span>
+                          <span style={{ color: 'var(--warning)', fontWeight: 600 }}>{q.points} Poin</span>
                         </div>
-                        <div style={{ color: '#E2E8F0', marginBottom: '6px' }}>{q.question_text}</div>
-                        {q.choices?.length > 0 && (
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px', fontSize: '11px', color: '#94A3B8' }}>
-                            {q.choices.map((c: any, cIdx: number) => (
-                              <div
-                                key={cIdx}
-                                style={{
-                                  padding: '2px 6px',
-                                  borderRadius: '4px',
-                                  backgroundColor: c.is_correct ? 'rgba(16, 185, 129, 0.2)' : 'transparent',
-                                  color: c.is_correct ? '#34D399' : '#94A3B8',
-                                  border: c.is_correct ? '1px solid rgba(16, 185, 129, 0.4)' : 'none',
-                                }}
-                              >
-                                {String.fromCharCode(65 + cIdx)}. {c.choice_text.substring(0, 45)}...
-                              </div>
-                            ))}
-                          </div>
-                        )}
+                        <div style={{ color: 'var(--text-primary)' }}>{q.question_text}</div>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
 
-              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '16px' }}>
+              <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '12px' }}>
                 <button
                   type="button"
                   onClick={handleGenerate}
                   style={{
-                    padding: '8px 16px',
+                    padding: '7px 14px',
                     borderRadius: '8px',
-                    backgroundColor: '#334155',
-                    color: '#E2E8F0',
-                    border: 'none',
-                    fontSize: '13px',
+                    backgroundColor: 'var(--bg-surface)',
+                    color: 'var(--text-secondary)',
+                    border: '1px solid var(--border-medium)',
+                    fontSize: '0.82rem',
                     cursor: 'pointer',
                   }}
                 >
@@ -501,20 +555,20 @@ export function AutoGenerateQuizModal({
                   type="button"
                   onClick={handleApplyToForm}
                   style={{
-                    padding: '8px 20px',
+                    padding: '7px 18px',
                     borderRadius: '8px',
-                    backgroundColor: '#F59E0B',
-                    color: '#0F172A',
-                    fontWeight: 800,
+                    backgroundColor: 'var(--success)',
+                    color: '#FFFFFF',
+                    fontWeight: 700,
                     border: 'none',
-                    fontSize: '13px',
+                    fontSize: '0.82rem',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '6px',
                   }}
                 >
-                  <CheckCircle2 size={16} /> Terapkan ke Formulir Kuis
+                  <CheckCircle2 size={15} /> Terapkan ke Formulir Ujian CBT
                 </button>
               </div>
             </div>
