@@ -306,14 +306,22 @@ export default function CreateAssignmentPage() {
       const computedMaxScore = totalQuestionsPoints > 0 ? totalQuestionsPoints : 100;
       const effectiveTeacherName = (isTeacher && user?.full_name) ? user.full_name : (teacherName || user?.full_name || 'Guru Pengampu');
 
+      const targetClassObj = classesList.find(c => 
+        c.name.toLowerCase().replace(/\s+/g, '') === (className || '').toLowerCase().replace(/\s+/g, '') || c.id === className
+      );
+      const targetSubjectObj = subjectsList.find(s => 
+        s.name.toLowerCase() === (subjectName || '').toLowerCase() || s.id === subjectName
+      );
+
       const payload = {
         title: title.trim(),
-        description: `${subjectName || 'Umum'} • ${className || 'Semua Rombel'} • ${effectiveTeacherName} • ${instructions.slice(0, 100) || 'Tugas Pembelajaran Terstruktur'}`,
+        description: `${subjectName || 'Umum'} • ${targetClassObj?.name || className || 'Semua Rombel'} • ${effectiveTeacherName} • ${instructions.slice(0, 100) || 'Tugas Pembelajaran Terstruktur'}`,
         instructions: instructions.trim() || undefined,
         max_score: computedMaxScore,
         due_at: `${dueDate}T${dueTime}:00Z`,
         assignment_type: assignmentFormat === 'HOMEWORK_PR' ? 'HOMEWORK' : 'QUIZ',
-        class_id: className,
+        class_id: targetClassObj?.id || className,
+        subject_id: targetSubjectObj?.id || undefined,
         questions: payloadQuestions.length > 0 ? payloadQuestions : undefined,
       };
 

@@ -577,7 +577,7 @@ export default function AssignmentsPage() {
                       fontSize: '0.75rem',
                       fontWeight: 800
                     }}>
-                      📥 {submissions.length} Terkumpul
+                      📥 {submissions.filter(s => s.status !== 'Belum Mengumpulkan').length} / {submissions.length} Terkumpul
                     </span>
                   </div>
                 </div>
