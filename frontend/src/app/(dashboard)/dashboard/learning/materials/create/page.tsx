@@ -7,6 +7,7 @@ import { listTeachers, listClasses } from '@/lib/sdk/sdk.gen';
 import { getApiUrl } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLibraryBooks, useSubjects, LibraryBook, AcademicSubject } from '@/features/material';
+import { Sparkles } from 'lucide-react';
 
 const YOUTUBE_API_KEY = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY || '';
 
@@ -95,10 +96,24 @@ export default function CreateMaterialPage() {
   // UI state
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'error' | 'warning' } | null>(null);
+  const [publishedPrompt, setPublishedPrompt] = useState<{
+    title: string;
+    subjectName: string;
+    format: string;
+  } | null>(null);
 
   const showToast = (text: string, type: 'success' | 'error' | 'warning' = 'success') => {
     setToastMessage({ text, type });
     setTimeout(() => setToastMessage(null), 4000);
+  };
+
+  const handlePublishSuccess = (finalTitle: string, finalSubjectName: string, format: string) => {
+    showToast('✓ Materi pembelajaran berhasil diterbitkan & disinkronkan ke mobile!', 'success');
+    setPublishedPrompt({
+      title: finalTitle,
+      subjectName: finalSubjectName || subject || 'Umum',
+      format,
+    });
   };
 
   useEffect(() => {
@@ -372,8 +387,7 @@ export default function CreateMaterialPage() {
         });
 
         if (res.ok) {
-          showToast('✓ Modul buku kurikulum resmi berhasil diterbitkan & disinkronkan ke mobile!', 'success');
-          setTimeout(() => router.push('/dashboard/learning/materials'), 800);
+          handlePublishSuccess(finalTitle, targetSubjectObj?.name || currentSubject, 'SIBI Buku Kurikulum');
         } else {
           const errData = await res.json().catch(() => null);
           showToast(errData?.error?.message || '⚠️ Gagal menugaskan buku perpustakaan', 'error');
@@ -428,8 +442,7 @@ export default function CreateMaterialPage() {
         });
 
         if (res.ok) {
-          showToast('✓ Modul berkas PDF berhasil diterbitkan!', 'success');
-          setTimeout(() => router.push('/dashboard/learning/materials'), 800);
+          handlePublishSuccess(title.trim(), targetSubjectObj?.name || subject, 'Modul PDF');
         } else {
           const errData = await res.json().catch(() => null);
           showToast(errData?.error?.message || '⚠️ Gagal menerbitkan modul PDF', 'error');
@@ -465,8 +478,7 @@ export default function CreateMaterialPage() {
         });
 
         if (res.ok) {
-          showToast('✓ Video pembelajaran YouTube berhasil diterbitkan ke siswa!', 'success');
-          setTimeout(() => router.push('/dashboard/learning/materials'), 800);
+          handlePublishSuccess(title.trim(), targetSubjectObj?.name || subject, 'Video YouTube');
         } else {
           const errData = await res.json().catch(() => null);
           showToast(errData?.error?.message || '⚠️ Gagal menerbitkan modul video', 'error');
@@ -504,8 +516,7 @@ export default function CreateMaterialPage() {
         });
 
         if (res.ok) {
-          showToast('✓ Modul infografis interaktif berhasil diterbitkan!', 'success');
-          setTimeout(() => router.push('/dashboard/learning/materials'), 800);
+          handlePublishSuccess(title.trim(), targetSubjectObj?.name || subject, 'Infografis');
         } else {
           const errData = await res.json().catch(() => null);
           showToast(errData?.error?.message || '⚠️ Gagal menerbitkan infografis', 'error');
@@ -541,8 +552,7 @@ export default function CreateMaterialPage() {
         });
 
         if (res.ok) {
-          showToast('✓ Artikel materi pembelajaran berhasil diterbitkan!', 'success');
-          setTimeout(() => router.push('/dashboard/learning/materials'), 800);
+          handlePublishSuccess(title.trim(), targetSubjectObj?.name || subject, 'Artikel Teks');
         } else {
           const errData = await res.json().catch(() => null);
           showToast(errData?.error?.message || '⚠️ Gagal menerbitkan artikel', 'error');
@@ -1982,6 +1992,139 @@ export default function CreateMaterialPage() {
         </div>
 
       </div>
+
+      {/* Post-Publish Prompt Modal: Automated Assignment & Quiz Option */}
+      {publishedPrompt && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9999,
+            backgroundColor: 'rgba(5, 7, 15, 0.85)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px',
+            animation: 'fadeIn 0.2s ease-out',
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: '#0F172A',
+              border: '1px solid rgba(59, 130, 246, 0.4)',
+              borderRadius: '24px',
+              padding: '36px 32px',
+              maxWidth: '540px',
+              width: '100%',
+              textAlign: 'center',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 40px rgba(59, 130, 246, 0.2)',
+              color: '#F8FAFC',
+            }}
+          >
+            <div
+              style={{
+                width: '64px',
+                height: '64px',
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, #10B981, #059669)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '32px',
+                marginBottom: '16px',
+                boxShadow: '0 0 25px rgba(16, 185, 129, 0.4)',
+              }}
+            >
+              🎉
+            </div>
+
+            <h3 style={{ fontSize: '20px', fontWeight: 800, color: '#F8FAFC', margin: '0 0 8px 0' }}>
+              Materi Berhasil Diterbitkan!
+            </h3>
+
+            <p style={{ fontSize: '13px', color: '#94A3B8', margin: '0 0 24px 0', lineHeight: 1.5 }}>
+              Materi <strong>"{publishedPrompt.title}"</strong> ({publishedPrompt.subjectName}) telah aktif dan dapat dibaca oleh siswa.
+              Ingin langsung membuatkan tugas atau kuis otomatis dari materi ini?
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>
+              <button
+                type="button"
+                onClick={() =>
+                  router.push(
+                    `/dashboard/learning/assignments/create?autoGenerate=true&sourceSubject=${encodeURIComponent(
+                      publishedPrompt.subjectName
+                    )}&sourceTitle=${encodeURIComponent(publishedPrompt.title)}`
+                  )
+                }
+                style={{
+                  width: '100%',
+                  padding: '14px',
+                  borderRadius: '12px',
+                  background: 'linear-gradient(135deg, #2563EB, #4F46E5)',
+                  color: '#FFFFFF',
+                  fontWeight: 700,
+                  fontSize: '14px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  boxShadow: '0 4px 14px rgba(37, 99, 235, 0.4)',
+                }}
+              >
+                <Sparkles size={18} /> ✨ Buat Tugas Otomatis (PG & Essay / Tugas Mandiri)
+              </button>
+
+              <button
+                type="button"
+                onClick={() =>
+                  router.push(
+                    `/dashboard/learning/quizzes/create?autoGenerate=true&sourceSubject=${encodeURIComponent(
+                      publishedPrompt.subjectName
+                    )}&sourceTitle=${encodeURIComponent(publishedPrompt.title)}`
+                  )
+                }
+                style={{
+                  width: '100%',
+                  padding: '14px',
+                  borderRadius: '12px',
+                  background: 'linear-gradient(135deg, #D97706, #EA580C)',
+                  color: '#FFFFFF',
+                  fontWeight: 700,
+                  fontSize: '14px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  boxShadow: '0 4px 14px rgba(217, 119, 6, 0.4)',
+                }}
+              >
+                <Sparkles size={18} /> ✨ Buat Kuis / Ujian CBT Otomatis
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => router.push('/dashboard/learning/materials')}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: '#94A3B8',
+                fontSize: '13px',
+                cursor: 'pointer',
+                textDecoration: 'underline',
+              }}
+            >
+              Nanti Saja (Kembali ke Daftar Materi)
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -15,6 +15,7 @@ import {
   getNotificationVisual,
   RealNotification,
 } from '@/lib/notifications';
+import { ConfettiCelebration } from '@/components/gamification/ConfettiCelebration';
 import styles from './layout.module.css';
 
 /* ── Icon Component ── */
@@ -967,6 +968,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {children}
         </div>
       </div>
+      <ConfettiCelebration />
     </div>
   );
 }
