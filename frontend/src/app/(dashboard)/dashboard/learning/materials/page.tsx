@@ -26,6 +26,9 @@ type MaterialItem = {
   startPage?: number;
   endPage?: number;
   sourceType?: string;
+  class_id?: string;
+  class_name?: string;
+  subject_id?: string;
 };
 
 type StudentCompletion = {
@@ -130,6 +133,9 @@ export default function MaterialsPage() {
         startPage: m.start_page,
         endPage: m.end_page,
         sourceType: m.source_type,
+        class_id: m.class_id,
+        class_name: m.class_name,
+        subject_id: (m as any).subject_id,
       };
     });
   }, [materialsData, isTeacher, user?.full_name, user?.id]);
@@ -158,15 +164,19 @@ export default function MaterialsPage() {
   const [loadingCompletions, setLoadingCompletions] = useState(false);
   const [completionFilterTab, setCompletionFilterTab] = useState<'ALL' | 'COMPLETED' | 'READING' | 'UNREAD'>('ALL');
   const [completionSearch, setCompletionSearch] = useState('');
+  const [completionClassFilter, setCompletionClassFilter] = useState<string>('ALL');
 
-  const handleOpenCompletions = async (m: MaterialItem) => {
+  const handleOpenCompletions = async (m: MaterialItem, classIdFilter?: string) => {
     setCompletionModalMaterial(m);
     setLoadingCompletions(true);
     setCompletionFilterTab('ALL');
     setCompletionSearch('');
+    const effectiveClassId = classIdFilter !== undefined ? classIdFilter : (m.class_id || 'ALL');
+    setCompletionClassFilter(effectiveClassId);
     try {
       const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
-      const res = await fetch(getApiUrl(`/api/v1/learning/materials/${m.id}/completions`), {
+      const queryParam = effectiveClassId && effectiveClassId !== 'ALL' ? `?class_id=${effectiveClassId}` : '';
+      const res = await fetch(getApiUrl(`/api/v1/learning/materials/${m.id}/completions${queryParam}`), {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (res.ok) {
@@ -1421,16 +1431,47 @@ startxref
                 ))}
               </div>
 
-              {/* Search Box */}
-              <div style={{ flex: 1, minWidth: '200px', maxWidth: '320px' }}>
-                <input
-                  type="text"
-                  placeholder="Cari nama siswa / NISN..."
-                  value={completionSearch}
-                  onChange={e => setCompletionSearch(e.target.value)}
-                  className="input"
-                  style={{ width: '100%', height: '34px', fontSize: '0.78rem', padding: '0 0.75rem' }}
-                />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                {/* Rombel Selector */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <span style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-muted)' }}>Rombel:</span>
+                  <select
+                    value={completionClassFilter}
+                    onChange={e => {
+                      const newCid = e.target.value;
+                      setCompletionClassFilter(newCid);
+                      if (completionModalMaterial) {
+                        handleOpenCompletions(completionModalMaterial, newCid);
+                      }
+                    }}
+                    className="input"
+                    style={{
+                      height: '34px',
+                      fontSize: '0.78rem',
+                      padding: '0 0.6rem',
+                      borderRadius: '8px',
+                      fontWeight: 700,
+                      minWidth: '130px'
+                    }}
+                  >
+                    <option value="ALL">Rombel Terkait ({completionModalMaterial.grade})</option>
+                    {classesList.map(c => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Search Box */}
+                <div style={{ minWidth: '180px', maxWidth: '280px', flex: 1 }}>
+                  <input
+                    type="text"
+                    placeholder="Cari nama siswa / NISN..."
+                    value={completionSearch}
+                    onChange={e => setCompletionSearch(e.target.value)}
+                    className="input"
+                    style={{ width: '100%', height: '34px', fontSize: '0.78rem', padding: '0 0.75rem' }}
+                  />
+                </div>
               </div>
             </div>
 

@@ -34,4 +34,8 @@ export interface LearningMaterial {
   start_page?: number;
   end_page?: number;
   source_type?: string;
+  class_id?: string;
+  subject_id?: string;
+  teacher_id?: string;
+  created_by?: string;
 }

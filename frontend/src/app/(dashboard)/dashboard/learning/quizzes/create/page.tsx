@@ -419,7 +419,7 @@ export default function CreateQuizPage() {
       <div
         style={{
           display: 'flex',
-          alignItems: 'flex-start',
+          alignItems: 'center',
           justifyContent: 'space-between',
           flexWrap: 'wrap',
           gap: '1rem',
@@ -428,57 +428,42 @@ export default function CreateQuizPage() {
         }}
       >
         <div style={{ maxWidth: '640px' }}>
-          <h1
-            style={{
-              margin: 0,
-              fontSize: '1.5rem',
-              fontWeight: 800,
-              letterSpacing: '-0.02em',
-              color: 'var(--text-primary)',
-            }}
-          >
-            Buat Kuis &amp; Ujian CBT Baru
-          </h1>
-          <p style={{ margin: '0.3rem 0 0 0', fontSize: '0.84rem', color: 'var(--text-muted)', lineHeight: 1.45 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+            <h1
+              style={{
+                margin: 0,
+                fontSize: '1.5rem',
+                fontWeight: 800,
+                letterSpacing: '-0.02em',
+                color: 'var(--text-primary)',
+              }}
+            >
+              Buat Kuis &amp; Ujian CBT Baru
+            </h1>
+            <span
+              style={{
+                fontSize: '0.7rem',
+                fontWeight: 700,
+                padding: '0.2rem 0.5rem',
+                borderRadius: '6px',
+                background: 'rgba(245, 158, 11, 0.12)',
+                color: '#d97706',
+              }}
+            >
+              Evaluasi Online CBT
+            </span>
+          </div>
+          <p style={{ margin: 0, fontSize: '0.84rem', color: 'var(--text-muted)', lineHeight: 1.45 }}>
             Susun parameter evaluasi ujian CBT online beserta butir-butir soal pilihan ganda dan uraian secara leluasa.
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap' }}>
-          <button
-            type="button"
-            onClick={() => setIsAutoModalOpen(true)}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '8px 14px',
-              borderRadius: '9px',
-              background: 'rgba(245, 158, 11, 0.12)',
-              color: 'var(--warning)',
-              fontWeight: 700,
-              fontSize: '0.84rem',
-              border: '1px solid rgba(245, 158, 11, 0.3)',
-              cursor: 'pointer',
-              transition: 'all 0.15s ease',
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.background = 'var(--warning)';
-              e.currentTarget.style.color = '#FFFFFF';
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.background = 'rgba(245, 158, 11, 0.12)';
-              e.currentTarget.style.color = 'var(--warning)';
-            }}
-          >
-            <Sparkles size={15} />
-            <span>✨ Generate Kuis / Ujian Otomatis</span>
-          </button>
+        <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center' }}>
           <Link
             href="/dashboard/learning/quizzes"
             className="btn btn-secondary"
             style={{
-              padding: '8px 14px',
+              padding: '8px 16px',
               fontSize: '0.84rem',
               borderRadius: '9px',
               border: '1px solid var(--border-light)',
@@ -493,17 +478,17 @@ export default function CreateQuizPage() {
             disabled={isSubmitting}
             className="btn btn-primary"
             style={{
-              padding: '8px 18px',
+              padding: '8px 20px',
               fontWeight: 700,
               fontSize: '0.84rem',
               borderRadius: '9px',
-              background: 'var(--accent-gradient)',
+              background: 'linear-gradient(135deg, #d97706, #ea580c)',
               color: '#FFFFFF',
               border: 'none',
               display: 'inline-flex',
               alignItems: 'center',
               gap: '0.45rem',
-              boxShadow: 'var(--shadow-sm)',
+              boxShadow: '0 4px 12px rgba(217, 119, 6, 0.25)',
               cursor: isSubmitting ? 'not-allowed' : 'pointer',
             }}
           >
@@ -525,11 +510,83 @@ export default function CreateQuizPage() {
             ) : (
               <>
                 <span>🚀</span>
-                <span>Terbitkan Kuis Sekarang</span>
+                <span>Terbitkan Kuis CBT</span>
               </>
             )}
           </button>
         </div>
+      </div>
+
+      {/* AI Curriculum Generator Banner Card */}
+      <div
+        style={{
+          background: 'var(--bg-card)',
+          border: '1px solid var(--border-light)',
+          borderRadius: '14px',
+          padding: '1rem 1.25rem',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '1rem',
+          boxShadow: 'var(--shadow-sm)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+          <div
+            style={{
+              width: '42px',
+              height: '42px',
+              borderRadius: '10px',
+              background: 'linear-gradient(135deg, #d97706, #ea580c)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 4px 12px rgba(217, 119, 6, 0.3)',
+            }}
+          >
+            <Sparkles size={20} color="#FFFFFF" />
+          </div>
+          <div>
+            <div style={{ fontSize: '0.92rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+              Pembuat Kuis &amp; Ujian Otomatis (AI Engine)
+            </div>
+            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+              Generate paket soal evaluasi (Kuis Harian, Ujian Tengah/Akhir Semester) otomatis berbasis modul kurikulum mapel terpilih.
+            </div>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setIsAutoModalOpen(true)}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '9px 18px',
+            borderRadius: '10px',
+            background: 'rgba(245, 158, 11, 0.12)',
+            color: '#d97706',
+            fontWeight: 800,
+            fontSize: '0.84rem',
+            border: '1px solid rgba(245, 158, 11, 0.35)',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.background = '#d97706';
+            e.currentTarget.style.color = '#FFFFFF';
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.background = 'rgba(245, 158, 11, 0.12)';
+            e.currentTarget.style.color = '#d97706';
+          }}
+        >
+          <Sparkles size={16} />
+          <span>✨ Generate Kuis / Ujian Otomatis</span>
+        </button>
       </div>
 
       {/* Main Workspace Layout */}

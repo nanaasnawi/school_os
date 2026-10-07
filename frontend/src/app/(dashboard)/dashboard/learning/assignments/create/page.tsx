@@ -406,7 +406,7 @@ export default function CreateAssignmentPage() {
       <div
         style={{
           display: 'flex',
-          alignItems: 'flex-start',
+          alignItems: 'center',
           justifyContent: 'space-between',
           flexWrap: 'wrap',
           gap: '1rem',
@@ -415,57 +415,42 @@ export default function CreateAssignmentPage() {
         }}
       >
         <div style={{ maxWidth: '640px' }}>
-          <h1
-            style={{
-              margin: 0,
-              fontSize: '1.5rem',
-              fontWeight: 800,
-              letterSpacing: '-0.02em',
-              color: 'var(--text-primary)',
-            }}
-          >
-            Buat Tugas Terstruktur Baru
-          </h1>
-          <p style={{ margin: '0.3rem 0 0 0', fontSize: '0.84rem', color: 'var(--text-muted)', lineHeight: 1.45 }}>
-            Susun tugas latihan soal terstruktur (PG &amp; Essay) atau tugas mandiri yang langsung tersinkronisasi ke aplikasi mobile siswa.
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+            <h1
+              style={{
+                margin: 0,
+                fontSize: '1.5rem',
+                fontWeight: 800,
+                letterSpacing: '-0.02em',
+                color: 'var(--text-primary)',
+              }}
+            >
+              Buat Tugas Terstruktur Baru
+            </h1>
+            <span
+              style={{
+                fontSize: '0.7rem',
+                fontWeight: 700,
+                padding: '0.2rem 0.5rem',
+                borderRadius: '6px',
+                background: 'var(--accent-light)',
+                color: 'var(--accent)',
+              }}
+            >
+              {assignmentFormat === 'HOMEWORK_PR' ? 'Tugas PR Mandiri' : 'Tugas PG &amp; Esai'}
+            </span>
+          </div>
+          <p style={{ margin: 0, fontSize: '0.84rem', color: 'var(--text-muted)', lineHeight: 1.45 }}>
+            Susun butir soal terstruktur atau tugas mandiri yang langsung tersinkronisasi ke aplikasi mobile siswa.
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap' }}>
-          <button
-            type="button"
-            onClick={() => setIsAutoModalOpen(true)}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '8px 14px',
-              borderRadius: '9px',
-              background: 'var(--accent-light)',
-              color: 'var(--accent)',
-              fontWeight: 700,
-              fontSize: '0.84rem',
-              border: '1px solid var(--border-subtle)',
-              cursor: 'pointer',
-              transition: 'all 0.15s ease',
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.background = 'var(--accent)';
-              e.currentTarget.style.color = '#FFFFFF';
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.background = 'var(--accent-light)';
-              e.currentTarget.style.color = 'var(--accent)';
-            }}
-          >
-            <Sparkles size={15} />
-            <span>✨ Generate Otomatis dari Materi</span>
-          </button>
+        <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center' }}>
           <Link
             href="/dashboard/learning/assignments"
             className="btn btn-secondary"
             style={{
-              padding: '8px 14px',
+              padding: '8px 16px',
               fontSize: '0.84rem',
               borderRadius: '9px',
               border: '1px solid var(--border-light)',
@@ -480,7 +465,7 @@ export default function CreateAssignmentPage() {
             disabled={isSubmitting}
             className="btn btn-primary"
             style={{
-              padding: '8px 18px',
+              padding: '8px 20px',
               fontWeight: 700,
               fontSize: '0.84rem',
               borderRadius: '9px',
@@ -512,11 +497,83 @@ export default function CreateAssignmentPage() {
             ) : (
               <>
                 <span>🚀</span>
-                <span>Terbitkan Tugas Sekarang</span>
+                <span>Terbitkan Tugas</span>
               </>
             )}
           </button>
         </div>
+      </div>
+
+      {/* AI Curriculum Generator Banner Card */}
+      <div
+        style={{
+          background: 'var(--bg-card)',
+          border: '1px solid var(--border-light)',
+          borderRadius: '14px',
+          padding: '1rem 1.25rem',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '1rem',
+          boxShadow: 'var(--shadow-sm)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+          <div
+            style={{
+              width: '42px',
+              height: '42px',
+              borderRadius: '10px',
+              background: 'var(--accent-gradient)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 4px 12px var(--accent-glow)',
+            }}
+          >
+            <Sparkles size={20} color="#FFFFFF" />
+          </div>
+          <div>
+            <div style={{ fontSize: '0.92rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+              Pembuat Tugas Otomatis (AI Engine)
+            </div>
+            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+              Sintesis butir soal PG, esai &amp; rubrik secara instan dari modul materi yang telah diterbitkan untuk mapel ini.
+            </div>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setIsAutoModalOpen(true)}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '9px 18px',
+            borderRadius: '10px',
+            background: 'var(--accent-light)',
+            color: 'var(--accent)',
+            fontWeight: 800,
+            fontSize: '0.84rem',
+            border: '1px solid var(--border-medium)',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.background = 'var(--accent)';
+            e.currentTarget.style.color = '#FFFFFF';
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.background = 'var(--accent-light)';
+            e.currentTarget.style.color = 'var(--accent)';
+          }}
+        >
+          <Sparkles size={16} />
+          <span>✨ Generate Otomatis dari Materi</span>
+        </button>
       </div>
 
       {/* Format Selector Bar */}

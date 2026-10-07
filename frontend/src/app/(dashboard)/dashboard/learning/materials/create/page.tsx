@@ -122,22 +122,31 @@ export default function CreateMaterialPage() {
       try {
         const [teacherRes, classRes] = await Promise.all([
           listTeachers({ query: { page_size: 100 } as any }).catch(() => null),
-          listClasses({ query: { page_size: 100 } as any }).catch(() => null),
+          listClasses({ query: { page_size: 100, all: true } as any }).catch(() => null),
         ]);
 
-        if (teacherRes?.data?.data) {
-          const list = teacherRes.data.data;
-          setTeachers(list);
+        const tList = Array.isArray(teacherRes?.data?.data)
+          ? teacherRes.data.data
+          : Array.isArray(teacherRes?.data)
+            ? teacherRes.data
+            : [];
+        if (tList.length > 0) {
+          setTeachers(tList);
           if (isTeacher && user?.full_name) {
             setAuthor(user.full_name);
-          } else if (list.length > 0) {
-            setAuthor(list[0].full_name);
+          } else {
+            setAuthor(tList[0].full_name);
           }
         }
-        if (classRes?.data?.data) {
-          const list = classRes.data.data;
-          setClassesList(list);
-          if (list.length > 0) setTargetGrade(list[0].name);
+
+        const cList = Array.isArray(classRes?.data?.data)
+          ? classRes.data.data
+          : Array.isArray(classRes?.data)
+            ? classRes.data
+            : [];
+        if (cList.length > 0) {
+          setClassesList(cList);
+          setTargetGrade(prev => prev || cList[0].name);
         }
       } catch (err) {
         console.error('Error loading SDK master data:', err);
@@ -341,9 +350,9 @@ export default function CreateMaterialPage() {
     e.preventDefault();
     const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
     const effectiveAuthor = (isTeacher && user?.full_name) ? user.full_name : author;
-    const targetClassObj = classesList.find(c => c.name === targetGrade) || classesList[0];
+    const targetClassObj = classesList.find(c => c.name === targetGrade || c.id === targetGrade) || classesList[0];
     const targetTeacherObj = teachers.find(t => t.full_name === effectiveAuthor || (isTeacher && (t.user_id === user?.id || t.id === user?.id))) || (isTeacher ? null : teachers[0]);
-    const targetSubjectObj = subjectsList.find(s => s.name === currentSubject);
+    const targetSubjectObj = subjectsList.find(s => s.name === currentSubject || s.id === currentSubject) || subjectsList[0];
 
     // Form Validations
     if (!title.trim()) {
@@ -423,12 +432,13 @@ export default function CreateMaterialPage() {
         const payload = {
           material_type: 'document',
           title: title.trim(),
-          description: `${subject || 'Umum'} • ${targetGrade || 'Semua Rombel'} • ${effectiveAuthor || 'Guru Pengampu'} • ${description || 'Modul PDF Mandiri'}`,
+          description: `${targetSubjectObj?.name || subject || 'Umum'} • ${targetClassObj?.name || targetGrade || 'Semua Rombel'} • ${effectiveAuthor || 'Guru Pengampu'} • ${description || 'Modul PDF Mandiri'}`,
           storage_key: storageKey || 'Modul Digital',
           external_url: externalUrl,
           order_index: 0,
           visibility: 'published',
           class_id: targetClassObj?.id || null,
+          subject_id: targetSubjectObj?.id || null,
           teacher_id: targetTeacherObj?.id || null,
         };
 
@@ -459,12 +469,13 @@ export default function CreateMaterialPage() {
         const payload = {
           material_type: 'video',
           title: title.trim(),
-          description: `${subject || 'Umum'} • ${targetGrade || 'Semua Rombel'} • ${effectiveAuthor || 'Guru Pengampu'} • ${description || 'Video Pembelajaran YouTube'}`,
+          description: `${targetSubjectObj?.name || subject || 'Umum'} • ${targetClassObj?.name || targetGrade || 'Semua Rombel'} • ${effectiveAuthor || 'Guru Pengampu'} • ${description || 'Video Pembelajaran YouTube'}`,
           storage_key: 'YouTube',
           external_url: youtubeUrl.trim(),
           order_index: 0,
           visibility: 'published',
           class_id: targetClassObj?.id || null,
+          subject_id: targetSubjectObj?.id || null,
           teacher_id: targetTeacherObj?.id || null,
         };
 
@@ -503,6 +514,7 @@ export default function CreateMaterialPage() {
           order_index: 0,
           visibility: 'published',
           class_id: targetClassObj?.id || null,
+          subject_id: targetSubjectObj?.id || null,
           teacher_id: targetTeacherObj?.id || null,
         };
 
@@ -539,6 +551,7 @@ export default function CreateMaterialPage() {
           order_index: 0,
           visibility: 'published',
           class_id: targetClassObj?.id || null,
+          subject_id: targetSubjectObj?.id || null,
           teacher_id: targetTeacherObj?.id || null,
         };
 
@@ -2000,7 +2013,7 @@ export default function CreateMaterialPage() {
             position: 'fixed',
             inset: 0,
             zIndex: 9999,
-            backgroundColor: 'rgba(5, 7, 15, 0.85)',
+            backgroundColor: 'rgba(0, 0, 0, 0.65)',
             backdropFilter: 'blur(8px)',
             display: 'flex',
             alignItems: 'center',
@@ -2011,15 +2024,15 @@ export default function CreateMaterialPage() {
         >
           <div
             style={{
-              backgroundColor: '#0F172A',
-              border: '1px solid rgba(59, 130, 246, 0.4)',
+              backgroundColor: 'var(--bg-card)',
+              border: '1px solid var(--border-light)',
               borderRadius: '24px',
               padding: '36px 32px',
               maxWidth: '540px',
               width: '100%',
               textAlign: 'center',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 40px rgba(59, 130, 246, 0.2)',
-              color: '#F8FAFC',
+              boxShadow: 'var(--shadow-xl)',
+              color: 'var(--text-primary)',
             }}
           >
             <div
@@ -2033,17 +2046,17 @@ export default function CreateMaterialPage() {
                 justifyContent: 'center',
                 fontSize: '32px',
                 marginBottom: '16px',
-                boxShadow: '0 0 25px rgba(16, 185, 129, 0.4)',
+                boxShadow: '0 4px 20px rgba(16, 185, 129, 0.35)',
               }}
             >
               🎉
             </div>
 
-            <h3 style={{ fontSize: '20px', fontWeight: 800, color: '#F8FAFC', margin: '0 0 8px 0' }}>
+            <h3 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 8px 0' }}>
               Materi Berhasil Diterbitkan!
             </h3>
 
-            <p style={{ fontSize: '13px', color: '#94A3B8', margin: '0 0 24px 0', lineHeight: 1.5 }}>
+            <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '0 0 24px 0', lineHeight: 1.5 }}>
               Materi <strong>"{publishedPrompt.title}"</strong> ({publishedPrompt.subjectName}) telah aktif dan dapat dibaca oleh siswa.
               Ingin langsung membuatkan tugas atau kuis otomatis dari materi ini?
             </p>
@@ -2072,10 +2085,10 @@ export default function CreateMaterialPage() {
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: '8px',
-                  boxShadow: '0 4px 14px rgba(37, 99, 235, 0.4)',
+                  boxShadow: '0 4px 14px rgba(37, 99, 235, 0.35)',
                 }}
               >
-                <Sparkles size={18} /> ✨ Buat Tugas Otomatis (PG & Essay / Tugas Mandiri)
+                <Sparkles size={18} /> ✨ Buat Tugas Otomatis (PG &amp; Essay / Mandiri)
               </button>
 
               <button
@@ -2101,7 +2114,7 @@ export default function CreateMaterialPage() {
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: '8px',
-                  boxShadow: '0 4px 14px rgba(217, 119, 6, 0.4)',
+                  boxShadow: '0 4px 14px rgba(217, 119, 6, 0.35)',
                 }}
               >
                 <Sparkles size={18} /> ✨ Buat Kuis / Ujian CBT Otomatis
@@ -2114,7 +2127,7 @@ export default function CreateMaterialPage() {
               style={{
                 background: 'transparent',
                 border: 'none',
-                color: '#94A3B8',
+                color: 'var(--text-muted)',
                 fontSize: '13px',
                 cursor: 'pointer',
                 textDecoration: 'underline',
