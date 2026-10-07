@@ -234,6 +234,13 @@ export default function ClassesPage() {
     if (!editClass || !formData.name) return;
 
     try {
+      const selectedTeacher = teachersList.find(t => 
+        t.name === formData.homeroom_teacher || 
+        t.id === formData.homeroom_teacher ||
+        t.name.trim().toLowerCase() === formData.homeroom_teacher.trim().toLowerCase()
+      );
+      const teacherId = selectedTeacher?.id;
+
       const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
       if (editClass.id && token && !editClass.id.startsWith('cls-')) {
         await fetch(`/api/v1/academic/classes/${editClass.id}`, {
@@ -244,6 +251,7 @@ export default function ClassesPage() {
           },
           body: JSON.stringify({
             name: formData.name,
+            homeroom_teacher_id: teacherId,
           }),
         }).catch(() => null);
       }

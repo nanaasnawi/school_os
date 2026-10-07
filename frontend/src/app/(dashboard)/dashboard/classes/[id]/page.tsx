@@ -179,7 +179,11 @@ function ClassDetailContent() {
     setSavingEdit(true);
 
     try {
-      const selectedTeacher = teachersList.find(t => t.name === editFormData.homeroom_teacher);
+      const selectedTeacher = teachersList.find(t => 
+        t.name === editFormData.homeroom_teacher || 
+        t.id === editFormData.homeroom_teacher ||
+        t.name.trim().toLowerCase() === editFormData.homeroom_teacher.trim().toLowerCase()
+      );
       const teacherId = selectedTeacher?.id;
 
       // Update in backend API if accessible
@@ -203,7 +207,7 @@ function ClassDetailContent() {
         ...prev,
         name: editFormData.name,
         grade_level: editFormData.grade_level,
-        homeroom_teacher: editFormData.homeroom_teacher,
+        homeroom_teacher: selectedTeacher?.name || editFormData.homeroom_teacher,
         room: editFormData.room,
       }));
 

@@ -8,7 +8,7 @@ import { getApiUrl } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLibraryBooks, useSubjects, LibraryBook, AcademicSubject } from '@/features/material';
 
-const YOUTUBE_API_KEY = 'AIzaSyDOPhowqK1I3toqkpIhCQXUNikPqzd2IZI';
+const YOUTUBE_API_KEY = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY || '';
 
 interface YouTubeVideoItem {
   id: string;

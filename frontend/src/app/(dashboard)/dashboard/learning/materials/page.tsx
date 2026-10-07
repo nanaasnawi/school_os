@@ -28,6 +28,18 @@ type MaterialItem = {
   sourceType?: string;
 };
 
+type StudentCompletion = {
+  student_id: string;
+  student_name: string;
+  nisn: string;
+  gender?: string;
+  class_name?: string;
+  is_completed: boolean;
+  completed_at?: string;
+  current_page?: number;
+  last_read_at?: string;
+};
+
 function getEmbedUrl(url: string): string {
   if (!url) return '';
   if (url.includes('embed/')) return url;
@@ -139,6 +151,61 @@ export default function MaterialsPage() {
 
   // Selected Material Modal Preview
   const [previewMaterial, setPreviewMaterial] = useState<MaterialItem | null>(null);
+
+  // Student Completions Roster Modal State
+  const [completionModalMaterial, setCompletionModalMaterial] = useState<MaterialItem | null>(null);
+  const [completionsList, setCompletionsList] = useState<StudentCompletion[]>([]);
+  const [loadingCompletions, setLoadingCompletions] = useState(false);
+  const [completionFilterTab, setCompletionFilterTab] = useState<'ALL' | 'COMPLETED' | 'READING' | 'UNREAD'>('ALL');
+  const [completionSearch, setCompletionSearch] = useState('');
+
+  const handleOpenCompletions = async (m: MaterialItem) => {
+    setCompletionModalMaterial(m);
+    setLoadingCompletions(true);
+    setCompletionFilterTab('ALL');
+    setCompletionSearch('');
+    try {
+      const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
+      const res = await fetch(getApiUrl(`/api/v1/learning/materials/${m.id}/completions`), {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (res.ok) {
+        const json = await res.json();
+        const list: StudentCompletion[] = Array.isArray(json?.data) ? json.data : [];
+        setCompletionsList(list);
+      } else {
+        setCompletionsList([]);
+      }
+    } catch (err) {
+      console.error('Failed to load material completions:', err);
+      setCompletionsList([]);
+    } finally {
+      setLoadingCompletions(false);
+    }
+  };
+
+  const filteredCompletions = useMemo(() => {
+    let list = completionsList;
+    if (completionFilterTab === 'COMPLETED') {
+      list = list.filter(c => c.is_completed);
+    } else if (completionFilterTab === 'READING') {
+      list = list.filter(c => !c.is_completed && Boolean(c.current_page || c.last_read_at));
+    } else if (completionFilterTab === 'UNREAD') {
+      list = list.filter(c => !c.is_completed && !c.current_page && !c.last_read_at);
+    }
+    if (completionSearch.trim()) {
+      const q = completionSearch.toLowerCase().trim();
+      list = list.filter(c =>
+        (c.student_name && c.student_name.toLowerCase().includes(q)) ||
+        (c.nisn && c.nisn.toLowerCase().includes(q))
+      );
+    }
+    return list;
+  }, [completionsList, completionFilterTab, completionSearch]);
+
+  const completedTotal = useMemo(() => completionsList.filter(c => c.is_completed).length, [completionsList]);
+  const readingTotal = useMemo(() => completionsList.filter(c => !c.is_completed && Boolean(c.current_page || c.last_read_at)).length, [completionsList]);
+  const unreadTotal = useMemo(() => completionsList.filter(c => !c.is_completed && !c.current_page && !c.last_read_at).length, [completionsList]);
 
   // Toast
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -619,16 +686,42 @@ startxref
                       )}
                     </td>
                     <td style={{ padding: '0.85rem 1rem' }}>
-                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', background: m.completedCount > 0 ? '#dcfce7' : 'var(--bg-elevated)', padding: '0.2rem 0.55rem', borderRadius: '8px', border: `1px solid ${m.completedCount > 0 ? '#86efac' : 'var(--border-light)'}` }}>
+                      <button
+                        type="button"
+                        onClick={() => handleOpenCompletions(m)}
+                        title="Klik untuk melihat rincian nama-nama siswa yang telah membaca"
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.35rem',
+                          background: m.completedCount > 0 ? '#dcfce7' : 'var(--bg-elevated)',
+                          padding: '0.25rem 0.6rem',
+                          borderRadius: '8px',
+                          border: `1px solid ${m.completedCount > 0 ? '#86efac' : 'var(--border-light)'}`,
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease',
+                        }}
+                      >
                         <span style={{ fontSize: '0.8rem' }}>{m.completedCount > 0 ? '✅' : '⏳'}</span>
                         <span style={{ fontWeight: 800, fontSize: '0.78rem', color: m.completedCount > 0 ? '#15803d' : 'var(--text-muted)' }}>
                           {m.completedCount} Siswa
                         </span>
-                      </div>
+                        <span style={{ fontSize: '0.68rem', color: '#2563eb', fontWeight: 800, marginLeft: '2px', background: '#eff6ff', padding: '1px 5px', borderRadius: '4px' }}>
+                          👥 Roster
+                        </span>
+                      </button>
                     </td>
                     <td style={{ padding: '0.85rem 1rem', fontSize: '0.76rem', color: 'var(--text-muted)' }}>{m.date}</td>
                     <td style={{ padding: '0.85rem 1rem', textAlign: 'right' }}>
                       <div style={{ display: 'inline-flex', gap: '0.4rem', alignItems: 'center' }}>
+                        <button
+                          className="btn btn-secondary btn-sm"
+                          title="Lihat Keterbacaan Nama-Nama Siswa"
+                          onClick={() => handleOpenCompletions(m)}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                        >
+                          👥 Siswa
+                        </button>
                         <button className="btn btn-secondary btn-sm" onClick={() => setPreviewMaterial(m)}>
                           👁️ Pratinjau
                         </button>
@@ -1174,6 +1267,326 @@ startxref
             </div>
             <div style={{ padding: '0.875rem 1.25rem', borderTop: '1px solid var(--border-light)', background: 'var(--bg-elevated)', display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
               <button className="btn btn-secondary btn-sm" onClick={() => setPreviewMaterial(null)}>Tutup</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal Laporan Keterbacaan & Daftar Nama Siswa ── */}
+      {completionModalMaterial && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.75)',
+            backdropFilter: 'blur(5px)',
+            zIndex: 999999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1rem',
+          }}
+          onClick={() => setCompletionModalMaterial(null)}
+        >
+          <div
+            style={{
+              background: 'var(--bg-card)',
+              borderRadius: '16px',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+              maxWidth: '840px',
+              width: '100%',
+              overflow: 'hidden',
+              border: '1px solid var(--border-light)',
+              maxHeight: '90vh',
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div
+              style={{
+                padding: '1.1rem 1.4rem',
+                borderBottom: '1px solid var(--border-light)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                background: 'var(--bg-card)',
+              }}
+            >
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{ fontSize: '1.25rem' }}>📖</span>
+                  <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                    Keterbacaan Siswa — {completionModalMaterial.title}
+                  </h3>
+                </div>
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '4px', display: 'flex', gap: '0.75rem' }}>
+                  <span>🏫 {completionModalMaterial.grade}</span>
+                  <span>•</span>
+                  <span>📚 {completionModalMaterial.subject}</span>
+                  <span>•</span>
+                  <span>👨‍🏫 {completionModalMaterial.author}</span>
+                </div>
+              </div>
+              <button
+                style={{
+                  border: 'none',
+                  background: 'none',
+                  fontSize: '1.4rem',
+                  cursor: 'pointer',
+                  color: 'var(--text-muted)',
+                  padding: '4px 8px',
+                  borderRadius: '6px',
+                }}
+                onClick={() => setCompletionModalMaterial(null)}
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Quick Stats Badges */}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(4, 1fr)',
+                gap: '0.75rem',
+                padding: '1rem 1.4rem',
+                background: 'var(--bg-elevated)',
+                borderBottom: '1px solid var(--border-light)',
+              }}
+            >
+              <div style={{ background: 'var(--bg-card)', padding: '0.65rem 0.9rem', borderRadius: '10px', border: '1px solid var(--border-light)' }}>
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 700 }}>Total Siswa Terdata</div>
+                <div style={{ fontSize: '1.15rem', fontWeight: 900, color: 'var(--text-primary)' }}>{completionsList.length} Siswa</div>
+              </div>
+              <div style={{ background: '#f0fdf4', padding: '0.65rem 0.9rem', borderRadius: '10px', border: '1px solid #bbf7d0' }}>
+                <div style={{ fontSize: '0.72rem', color: '#166534', fontWeight: 700 }}>✅ Selesai Membaca</div>
+                <div style={{ fontSize: '1.15rem', fontWeight: 900, color: '#15803d' }}>
+                  {completedTotal} Siswa
+                  <span style={{ fontSize: '0.72rem', marginLeft: '4px', fontWeight: 700, color: '#166534' }}>
+                    ({completionsList.length > 0 ? Math.round((completedTotal / completionsList.length) * 100) : 0}%)
+                  </span>
+                </div>
+              </div>
+              <div style={{ background: '#fefce8', padding: '0.65rem 0.9rem', borderRadius: '10px', border: '1px solid #fef08a' }}>
+                <div style={{ fontSize: '0.72rem', color: '#854d0e', fontWeight: 700 }}>📖 Sedang Membaca</div>
+                <div style={{ fontSize: '1.15rem', fontWeight: 900, color: '#a16207' }}>{readingTotal} Siswa</div>
+              </div>
+              <div style={{ background: '#f8fafc', padding: '0.65rem 0.9rem', borderRadius: '10px', border: '1px solid var(--border-light)' }}>
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 700 }}>⏳ Belum Membaca</div>
+                <div style={{ fontSize: '1.15rem', fontWeight: 900, color: '#64748b' }}>{unreadTotal} Siswa</div>
+              </div>
+            </div>
+
+            {/* Filter Controls */}
+            <div
+              style={{
+                padding: '0.75rem 1.4rem',
+                borderBottom: '1px solid var(--border-light)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '1rem',
+                flexWrap: 'wrap',
+              }}
+            >
+              {/* Filter Tabs */}
+              <div style={{ display: 'inline-flex', background: 'var(--bg-elevated)', borderRadius: '8px', padding: '2px', border: '1px solid var(--border-light)' }}>
+                {(['ALL', 'COMPLETED', 'READING', 'UNREAD'] as const).map(tab => (
+                  <button
+                    key={tab}
+                    type="button"
+                    onClick={() => setCompletionFilterTab(tab)}
+                    style={{
+                      border: 'none',
+                      background: completionFilterTab === tab ? '#2563eb' : 'transparent',
+                      color: completionFilterTab === tab ? '#ffffff' : 'var(--text-secondary)',
+                      padding: '0.35rem 0.75rem',
+                      borderRadius: '6px',
+                      fontSize: '0.74rem',
+                      fontWeight: 800,
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    {tab === 'ALL' && `Semua (${completionsList.length})`}
+                    {tab === 'COMPLETED' && `✓ Selesai (${completedTotal})`}
+                    {tab === 'READING' && `📖 Sedang Baca (${readingTotal})`}
+                    {tab === 'UNREAD' && `⏳ Belum (${unreadTotal})`}
+                  </button>
+                ))}
+              </div>
+
+              {/* Search Box */}
+              <div style={{ flex: 1, minWidth: '200px', maxWidth: '320px' }}>
+                <input
+                  type="text"
+                  placeholder="Cari nama siswa / NISN..."
+                  value={completionSearch}
+                  onChange={e => setCompletionSearch(e.target.value)}
+                  className="input"
+                  style={{ width: '100%', height: '34px', fontSize: '0.78rem', padding: '0 0.75rem' }}
+                />
+              </div>
+            </div>
+
+            {/* Student Table / List */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '0' }}>
+              {loadingCompletions ? (
+                <div style={{ padding: '3rem 1rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                  <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>⏳</div>
+                  <div style={{ fontWeight: 700, fontSize: '0.85rem' }}>Memuat data keterbacaan siswa...</div>
+                </div>
+              ) : filteredCompletions.length === 0 ? (
+                <div style={{ padding: '3rem 1rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+                  <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>🔍</div>
+                  <div style={{ fontWeight: 700, fontSize: '0.85rem' }}>
+                    {completionsList.length === 0
+                      ? 'Belum ada data siswa terdaftar untuk rombel materi ini atau belum ada aktivitas membaca.'
+                      : 'Tidak ada data siswa yang cocok dengan filter pencarian.'}
+                  </div>
+                </div>
+              ) : (
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.82rem' }}>
+                  <thead>
+                    <tr style={{ background: 'var(--bg-elevated)', borderBottom: '1px solid var(--border-light)' }}>
+                      <th style={{ padding: '0.65rem 1rem', width: '40px', color: 'var(--text-muted)', fontWeight: 800 }}>#</th>
+                      <th style={{ padding: '0.65rem 1rem', color: 'var(--text-muted)', fontWeight: 800 }}>Nama Siswa</th>
+                      <th style={{ padding: '0.65rem 1rem', color: 'var(--text-muted)', fontWeight: 800 }}>NISN</th>
+                      <th style={{ padding: '0.65rem 1rem', color: 'var(--text-muted)', fontWeight: 800 }}>Status Keterbacaan</th>
+                      <th style={{ padding: '0.65rem 1rem', color: 'var(--text-muted)', fontWeight: 800 }}>Progres / Halaman</th>
+                      <th style={{ padding: '0.65rem 1rem', color: 'var(--text-muted)', fontWeight: 800, textAlign: 'right' }}>Waktu Selesai / Terakhir</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredCompletions.map((st, idx) => (
+                      <tr key={st.student_id || idx} style={{ borderBottom: '1px solid var(--border-light)' }}>
+                        <td style={{ padding: '0.75rem 1rem', color: 'var(--text-muted)', fontWeight: 700 }}>{idx + 1}</td>
+                        <td style={{ padding: '0.75rem 1rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                          <div>{st.student_name}</div>
+                          {st.class_name && (
+                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>{st.class_name}</div>
+                          )}
+                        </td>
+                        <td style={{ padding: '0.75rem 1rem', fontFamily: 'monospace', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                          {st.nisn || '-'}
+                        </td>
+                        <td style={{ padding: '0.75rem 1rem' }}>
+                          {st.is_completed ? (
+                            <span
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                background: '#dcfce7',
+                                color: '#15803d',
+                                border: '1px solid #86efac',
+                                padding: '0.2rem 0.55rem',
+                                borderRadius: '6px',
+                                fontWeight: 800,
+                                fontSize: '0.74rem',
+                              }}
+                            >
+                              ✅ Selesai Membaca
+                            </span>
+                          ) : st.current_page || st.last_read_at ? (
+                            <span
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                background: '#fef9c3',
+                                color: '#a16207',
+                                border: '1px solid #fde047',
+                                padding: '0.2rem 0.55rem',
+                                borderRadius: '6px',
+                                fontWeight: 800,
+                                fontSize: '0.74rem',
+                              }}
+                            >
+                              📖 Sedang Membaca
+                            </span>
+                          ) : (
+                            <span
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                background: 'var(--bg-elevated)',
+                                color: 'var(--text-muted)',
+                                border: '1px solid var(--border-light)',
+                                padding: '0.2rem 0.55rem',
+                                borderRadius: '6px',
+                                fontWeight: 700,
+                                fontSize: '0.74rem',
+                              }}
+                            >
+                              ⏳ Belum Membaca
+                            </span>
+                          )}
+                        </td>
+                        <td style={{ padding: '0.75rem 1rem', color: 'var(--text-secondary)', fontWeight: 700 }}>
+                          {st.is_completed ? (
+                            <span style={{ color: '#15803d' }}>100% Selesai</span>
+                          ) : st.current_page ? (
+                            <span>Halaman {st.current_page}</span>
+                          ) : (
+                            <span style={{ color: 'var(--text-muted)' }}>0%</span>
+                          )}
+                        </td>
+                        <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontSize: '0.76rem', color: 'var(--text-muted)' }}>
+                          {st.completed_at ? (
+                            <span style={{ color: '#15803d', fontWeight: 700 }}>
+                              {new Date(st.completed_at).toLocaleString('id-ID', {
+                                day: 'numeric',
+                                month: 'short',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}
+                            </span>
+                          ) : st.last_read_at ? (
+                            <span>
+                              {new Date(st.last_read_at).toLocaleString('id-ID', {
+                                day: 'numeric',
+                                month: 'short',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}
+                            </span>
+                          ) : (
+                            <span style={{ color: 'var(--text-muted)' }}>Belum dibuka</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div
+              style={{
+                padding: '0.85rem 1.4rem',
+                borderTop: '1px solid var(--border-light)',
+                background: 'var(--bg-elevated)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}
+            >
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                Sinkronisasi data langsung dengan progres membaca siswa di SchoolOS Android App.
+              </div>
+              <button className="btn btn-secondary btn-sm" onClick={() => setCompletionModalMaterial(null)}>
+                Tutup
+              </button>
             </div>
           </div>
         </div>
