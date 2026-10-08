@@ -10,7 +10,6 @@ import { decodeJwtPayload } from '@/lib/jwt';
 import {
   RefreshCw,
   Clock,
-  CheckCircle2,
   Mail,
   KeyRound,
   Eye,
@@ -329,17 +328,11 @@ export default function LoginPage() {
             &ldquo;{maintenance.message}&rdquo;
           </div>
 
-          <div className={styles.maintenanceStatusBar}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.76rem', color: 'var(--text-muted, #6b7280)' }}>
-              <span>Pemeriksaan otomatis</span>
-              <span>{countdown}s</span>
-            </div>
-            <div className={styles.countdownTrack}>
-              <div
-                className={styles.countdownProgress}
-                style={{ width: `${Math.max(4, ((15 - countdown) / 15) * 100)}%` }}
-              />
-            </div>
+          <div className={styles.countdownTrack}>
+            <div
+              className={styles.countdownProgress}
+              style={{ width: `${Math.max(4, ((15 - countdown) / 15) * 100)}%` }}
+            />
           </div>
 
           <button
@@ -394,14 +387,29 @@ export default function LoginPage() {
 
   return (
     <div className={styles.root}>
-      <div className={styles.container}>
-        {/* ══════════════════════════════════════════════════════════
-            LEFT PANEL — QUIET, ELEGANT INSTITUTIONAL SHOWCASE
-            ══════════════════════════════════════════════════════════ */}
-        <div className={styles.brandPanel}>
-          {/* Top School Header */}
-          <div className={styles.brandHeader}>
-            <div className={styles.schoolLogoWrapper}>
+      {/* ── Top Bar ── */}
+      <header className={styles.topBar}>
+        <div className={styles.accreditationBadge}>
+          <span className={styles.accreditationDot} />
+          <span>Dapodik Kemendikdasmen Terhubung</span>
+        </div>
+        <button
+          type="button"
+          onClick={toggleTheme}
+          className={styles.themeBtn}
+          aria-label={theme === 'dark' ? 'Mode Terang' : 'Mode Gelap'}
+          title={theme === 'dark' ? 'Mode Terang' : 'Mode Gelap'}
+        >
+          {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
+        </button>
+      </header>
+
+      {/* ── Center Authentication Gateway ── */}
+      <main className={styles.mainContainer}>
+        <div className={styles.authCard}>
+          {/* School Identity Header */}
+          <div className={styles.schoolHeader}>
+            <div className={styles.schoolLogoFrame}>
               {schoolLogoUrl ? (
                 <img
                   src={schoolLogoUrl}
@@ -417,229 +425,155 @@ export default function LoginPage() {
                 />
               )}
             </div>
-            <div className={styles.brandTitles}>
-              <h1 className={styles.schoolTitle}>{schoolName}</h1>
-              <div className={styles.schoolBadgeRow}>
-                <span>Dapodik Terintegrasi</span>
-                <span className={styles.badgeDot}>•</span>
-                <span>T.A. 2026/2027</span>
-              </div>
+            <div className={styles.schoolInfo}>
+              <h1 className={styles.schoolName}>{schoolName}</h1>
+              <p className={styles.portalTitle}>Sistem Informasi Akademik • Akselerasi-Edu</p>
             </div>
           </div>
 
-          {/* Center: Single Clean Tagline + Concise Pill Badges */}
-          <div className={styles.heroSection}>
-            <h2 className={styles.heroTagline}>
-              Portal Akademik &amp; <span className={styles.heroTaglineAccent}>Layanan Sekolah</span>
-            </h2>
-            <p className={styles.heroSub}>
-              Satu akses terpadu untuk administrasi, kurikulum merdeka, presensi, dan e-rapor.
-            </p>
-
-            <div className={styles.featurePills}>
-              <span className={styles.featurePill}>
-                <CheckCircle2 size={13} className={styles.featurePillIcon} />
-                Kurikulum Merdeka
-              </span>
-              <span className={styles.featurePill}>
-                <CheckCircle2 size={13} className={styles.featurePillIcon} />
-                Dapodik &amp; e-Rapor
-              </span>
-              <span className={styles.featurePill}>
-                <CheckCircle2 size={13} className={styles.featurePillIcon} />
-                Presensi &amp; CBT
-              </span>
-            </div>
-          </div>
-
-          {/* Footer */}
-          <div className={styles.brandFooter}>
-            <span>Standar Kemendikdasmen RI</span>
-            <span>Akselerasi-Edu v2.4</span>
-          </div>
-        </div>
-
-        {/* ══════════════════════════════════════════════════════════
-            RIGHT PANEL — FOCUSED AUTHENTICATION FORM
-            ══════════════════════════════════════════════════════════ */}
-        <div className={styles.formPanel}>
-          {/* Top Navigation: Theme Toggle only */}
-          <div className={styles.formTopNav}>
+          {/* Segmented Role Switcher */}
+          <div className={styles.roleSegment} role="tablist" aria-label="Pilih Peran">
             <button
               type="button"
-              onClick={toggleTheme}
-              className={styles.iconControlBtn}
-              aria-label={theme === 'dark' ? 'Mode Terang' : 'Mode Gelap'}
-              title={theme === 'dark' ? 'Mode Terang' : 'Mode Gelap'}
+              role="tab"
+              aria-selected={selectedRole === 'admin'}
+              className={`${styles.roleBtn} ${selectedRole === 'admin' ? styles.roleBtnActive : ''}`}
+              onClick={() => setSelectedRole('admin')}
             >
-              {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+              Admin &amp; TU
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={selectedRole === 'guru'}
+              className={`${styles.roleBtn} ${selectedRole === 'guru' ? styles.roleBtnActive : ''}`}
+              onClick={() => setSelectedRole('guru')}
+            >
+              Guru &amp; Tendik
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={selectedRole === 'kepsek'}
+              className={`${styles.roleBtn} ${selectedRole === 'kepsek' ? styles.roleBtnActive : ''}`}
+              onClick={() => setSelectedRole('kepsek')}
+            >
+              Kepala Sekolah
             </button>
           </div>
 
-          {/* Form Content Wrapper */}
-          <div className={styles.formContentWrapper}>
-            {/* Mobile Header (Hidden on Desktop) */}
-            <div className={styles.mobileBrandHeader}>
-              <div className={styles.mobileLogoWrapper}>
-                {schoolLogoUrl ? (
-                  <img src={schoolLogoUrl} alt={schoolName} className={styles.schoolLogoImg} />
-                ) : (
-                  <GraduationCap size={20} color="var(--accent-dark, #0284c7)" />
+          {error && (
+            <div className={styles.errorBanner} role="alert">
+              <Info size={15} style={{ flexShrink: 0 }} />
+              <span>{error}</span>
+            </div>
+          )}
+
+          {/* Form Fields */}
+          <form onSubmit={handleSubmit} className={styles.form}>
+            <div className={styles.fieldGroup}>
+              <div className={styles.fieldLabelRow}>
+                <label htmlFor="auth-email" className={styles.fieldLabel}>
+                  {selectedRole === 'guru' ? 'Email atau Username / NIP' : 'Email Akun'}
+                </label>
+              </div>
+              <div className={styles.fieldInputWrapper}>
+                <span className={styles.fieldIcon}>
+                  <Mail size={15} />
+                </span>
+                <input
+                  id="auth-email"
+                  type="text"
+                  required
+                  placeholder={getRolePlaceholder()}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className={styles.fieldInput}
+                  autoComplete="username"
+                />
+              </div>
+            </div>
+
+            <div className={styles.fieldGroup}>
+              <div className={styles.fieldLabelRow}>
+                <label htmlFor="auth-password" className={styles.fieldLabel}>
+                  Kata Sandi
+                </label>
+                {capsLockActive && (
+                  <span className={styles.capsLockBadge}>Caps Lock Aktif</span>
                 )}
               </div>
-              <h3 className={styles.mobileSchoolTitle}>{schoolName}</h3>
-            </div>
-
-            <div className={styles.formHeader}>
-              <h2 className={styles.formMainTitle}>Masuk</h2>
-              <p className={styles.formSubTitle}>
-                Pilih peran dan masukkan kredensial akun Anda.
-              </p>
-            </div>
-
-            {/* Compact Role Switcher */}
-            <div className={styles.rolePresetBar} role="tablist" aria-label="Pilih Peran Akun">
-              <button
-                type="button"
-                role="tab"
-                aria-selected={selectedRole === 'admin'}
-                className={`${styles.rolePresetBtn} ${selectedRole === 'admin' ? styles.rolePresetBtnActive : ''}`}
-                onClick={() => setSelectedRole('admin')}
-              >
-                Admin &amp; TU
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={selectedRole === 'guru'}
-                className={`${styles.rolePresetBtn} ${selectedRole === 'guru' ? styles.rolePresetBtnActive : ''}`}
-                onClick={() => setSelectedRole('guru')}
-              >
-                Guru &amp; Tendik
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={selectedRole === 'kepsek'}
-                className={`${styles.rolePresetBtn} ${selectedRole === 'kepsek' ? styles.rolePresetBtnActive : ''}`}
-                onClick={() => setSelectedRole('kepsek')}
-              >
-                Kepala Sekolah
-              </button>
-            </div>
-
-            {error && (
-              <div className={styles.errorBanner} role="alert">
-                <Info size={15} style={{ flexShrink: 0 }} />
-                <span>{error}</span>
+              <div className={styles.fieldInputWrapper}>
+                <span className={styles.fieldIcon}>
+                  <KeyRound size={15} />
+                </span>
+                <input
+                  id="auth-password"
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  placeholder="Masukkan kata sandi"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onKeyDown={handleKeyModifierCheck}
+                  onKeyUp={handleKeyModifierCheck}
+                  className={styles.fieldInput}
+                  autoComplete="current-password"
+                  style={{ paddingRight: '38px' }}
+                />
+                <button
+                  type="button"
+                  className={styles.eyeBtn}
+                  onClick={() => setShowPassword(!showPassword)}
+                  tabIndex={-1}
+                  aria-label={showPassword ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'}
+                >
+                  {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                </button>
               </div>
-            )}
-
-            <form onSubmit={handleSubmit} className={styles.form}>
-              <div className={styles.inputGroup}>
-                <div className={styles.labelRow}>
-                  <label htmlFor="auth-email" className={styles.label}>
-                    {selectedRole === 'guru' ? 'Email atau Username / NIP' : 'Email Akun'}
-                  </label>
-                </div>
-                <div className={styles.inputWrapper}>
-                  <span className={styles.inputIcon}>
-                    <Mail size={15} />
-                  </span>
-                  <input
-                    id="auth-email"
-                    type="text"
-                    required
-                    placeholder={getRolePlaceholder()}
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className={styles.formInput}
-                    autoComplete="username"
-                  />
-                </div>
-              </div>
-
-              <div className={styles.inputGroup}>
-                <div className={styles.labelRow}>
-                  <label htmlFor="auth-password" className={styles.label}>
-                    Kata Sandi
-                  </label>
-                  {capsLockActive && (
-                    <span className={styles.capsLockBadge}>Caps Lock Aktif</span>
-                  )}
-                </div>
-                <div className={styles.inputWrapper}>
-                  <span className={styles.inputIcon}>
-                    <KeyRound size={15} />
-                  </span>
-                  <input
-                    id="auth-password"
-                    type={showPassword ? 'text' : 'password'}
-                    required
-                    placeholder="Masukkan kata sandi"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    onKeyDown={handleKeyModifierCheck}
-                    onKeyUp={handleKeyModifierCheck}
-                    className={styles.formInput}
-                    autoComplete="current-password"
-                    style={{ paddingRight: '38px' }}
-                  />
-                  <button
-                    type="button"
-                    className={styles.eyeBtn}
-                    onClick={() => setShowPassword(!showPassword)}
-                    tabIndex={-1}
-                    aria-label={showPassword ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'}
-                  >
-                    {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
-                  </button>
-                </div>
-              </div>
-
-              <button type="submit" disabled={loading} className={styles.submitBtn}>
-                {loading ? (
-                  <>
-                    <RefreshCw size={14} style={{ animation: 'spin 1s linear infinite' }} />
-                    <span>Memverifikasi...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Masuk ke Dashboard</span>
-                    <ArrowRight size={14} />
-                  </>
-                )}
-              </button>
-            </form>
-
-            {/* Minimalist 1-line Android Notice */}
-            <div className={styles.mobileNoticeLine}>
-              <span>Siswa &amp; Orang Tua? Gunakan</span>
-              <Smartphone size={13} style={{ marginLeft: 2, marginRight: 2 }} />
-              <strong>Aplikasi Android Akselerasi-Edu</strong>
             </div>
-          </div>
 
-          {/* Form Bottom Bar */}
-          <div className={styles.formBottomBar}>
-            <span>Butuh bantuan? Hubungi Admin Sekolah</span>
-            <span
-              className={styles.sysAdminSecretLink}
-              title="Akses Sistem"
-              onClick={() => {
-                const next = adminTriggerCount + 1;
-                if (next >= 5) {
-                  router.push('/system-admin/login');
-                } else {
-                  setAdminTriggerCount(next);
-                }
-              }}
-            >
-              v2.4.0
-            </span>
+            <button type="submit" disabled={loading} className={styles.submitBtn}>
+              {loading ? (
+                <>
+                  <RefreshCw size={14} style={{ animation: 'spin 1s linear infinite' }} />
+                  <span>Memverifikasi...</span>
+                </>
+              ) : (
+                <>
+                  <span>Masuk ke Sistem</span>
+                  <ArrowRight size={14} />
+                </>
+              )}
+            </button>
+          </form>
+
+          {/* Clean Mobile App Reference */}
+          <div className={styles.mobileNotice}>
+            <span>Akses Siswa &amp; Orang Tua:</span>
+            <Smartphone size={13} style={{ marginLeft: 2, marginRight: 2 }} />
+            <strong>Aplikasi Android Akselerasi-Edu</strong>
           </div>
         </div>
-      </div>
+      </main>
+
+      {/* ── Bottom Footer ── */}
+      <footer className={styles.footer}>
+        <span>Standar Kurikulum Merdeka Kemendikdasmen RI</span>
+        <span
+          className={styles.sysAdminSecretLink}
+          title="Akses Sistem"
+          onClick={() => {
+            const next = adminTriggerCount + 1;
+            if (next >= 5) {
+              router.push('/system-admin/login');
+            } else {
+              setAdminTriggerCount(next);
+            }
+          }}
+        >
+          v2.4.0
+        </span>
+      </footer>
 
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>

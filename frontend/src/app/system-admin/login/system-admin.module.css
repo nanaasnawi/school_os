@@ -1,6 +1,6 @@
 /* ============================================================
-   Akselerasi-Edu — Minimalist Super Admin Platform Login
-   Clean, Direct, Restrained Typography & Dark Theme Synced
+   Akselerasi-Edu — Super Admin Gateway Design System
+   Focused, High-Security National Platform Console Gateway
    ============================================================ */
 
 .root {
@@ -8,48 +8,24 @@
   min-height: 100dvh;
   width: 100%;
   display: flex;
-  background-color: var(--bg-base, #000000);
-  color: var(--text-primary, #ffffff);
-  position: relative;
-  overflow-x: hidden;
-  font-family: var(--font-body, 'Inter', -apple-system, BlinkMacSystemFont, sans-serif);
-}
-
-.container {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  min-height: 100vh;
-  min-height: 100dvh;
-  width: 100%;
-  position: relative;
-  z-index: 1;
-}
-
-@media (min-width: 1280px) {
-  .container {
-    grid-template-columns: 1.05fr 1fr;
-  }
-}
-
-/* ══════════════════════════════════════════════════════════
-   LEFT PANEL — CLEAN PLATFORM IDENTITY (NO WALLS OF TEXT)
-   ══════════════════════════════════════════════════════════ */
-.terminalPanel {
-  min-height: 100vh;
-  min-height: 100dvh;
-  display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: clamp(40px, 6vh, 72px) clamp(40px, 5vw, 80px);
-  background: var(--bg-card, #0d0d0f);
-  border-right: 1px solid var(--border-light, rgba(255, 255, 255, 0.08));
+  background-color: var(--bg-base, #000000);
+  color: var(--text-primary, #ffffff);
+  font-family: var(--font-body, 'Inter', -apple-system, BlinkMacSystemFont, sans-serif);
+  padding: 20px 16px;
   box-sizing: border-box;
 }
 
-.panelHeader {
+/* ── Top Bar ── */
+.topBar {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  max-width: 1000px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 4px 8px;
 }
 
 .backLink {
@@ -73,93 +49,6 @@
   color: var(--text-primary, #ffffff);
 }
 
-.rootTag {
-  font-size: 0.7rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  padding: 2px 7px;
-  border-radius: var(--radius-xs, 3px);
-  background: rgba(220, 38, 38, 0.15);
-  color: var(--danger, #f87171);
-  border: 1px solid rgba(248, 113, 113, 0.25);
-}
-
-/* Center Statement */
-.heroSection {
-  margin: auto 0;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  max-width: 460px;
-}
-
-.heroTagline {
-  font-size: clamp(1.65rem, 2.4vw, 2.2rem);
-  font-weight: 700;
-  letter-spacing: -0.03em;
-  line-height: 1.25;
-  color: var(--text-primary, #ffffff);
-  margin: 0;
-}
-
-.heroTaglineAccent {
-  color: var(--accent, #38bdf8);
-}
-
-.heroSub {
-  font-size: 0.95rem;
-  line-height: 1.6;
-  color: var(--text-muted, #9ca3af);
-  margin: 0;
-}
-
-.statusIndicator {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 0.78rem;
-  color: var(--success, #4ade80);
-  font-weight: 500;
-}
-
-.statusDot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--success, #4ade80);
-}
-
-.auditFooter {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-top: 20px;
-  border-top: 1px solid var(--border-light, rgba(255, 255, 255, 0.08));
-  font-size: 0.78rem;
-  color: var(--text-muted, #9ca3af);
-}
-
-/* ══════════════════════════════════════════════════════════
-   RIGHT PANEL — MINIMALIST FORM
-   ══════════════════════════════════════════════════════════ */
-.formPanel {
-  min-height: 100vh;
-  min-height: 100dvh;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: clamp(32px, 5vh, 60px) clamp(28px, 5vw, 64px);
-  background: var(--bg-base, #000000);
-  box-sizing: border-box;
-}
-
-.formTopNav {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  width: 100%;
-}
-
 .escNotice {
   font-size: 0.74rem;
   color: var(--text-muted, #9ca3af);
@@ -173,33 +62,68 @@
   color: var(--text-primary, #ffffff);
 }
 
-/* Center Form Box */
-.formContentWrapper {
-  margin: auto 0;
-  max-width: 380px;
+/* ── Center Container & Card ── */
+.mainContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   width: 100%;
-  align-self: center;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+  padding: 24px 0;
+  margin: auto 0;
 }
 
-.formHeader {
+.authCard {
+  width: 100%;
+  max-width: 420px;
+  background: var(--bg-card, #0d0d0f);
+  border: 1px solid var(--border-light, rgba(255, 255, 255, 0.08));
+  border-radius: var(--radius-xl, 16px);
+  padding: 36px 32px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 22px;
+  box-sizing: border-box;
 }
 
-.formTitle {
-  font-size: 1.6rem;
+/* Header inside card */
+.headerGroup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+}
+
+.logoFrame {
+  width: 54px;
+  height: 54px;
+  border-radius: var(--radius-lg, 12px);
+  background: var(--bg-elevated, #121214);
+  border: 1px solid var(--border-medium, rgba(255, 255, 255, 0.16));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent, #38bdf8);
+}
+
+.titleGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.consoleTitle {
+  font-size: 1.25rem;
   font-weight: 700;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.02em;
   color: var(--text-primary, #ffffff);
   margin: 0;
 }
 
-.formSubTitle {
-  font-size: 0.85rem;
+.consoleSubtitle {
+  font-size: 0.82rem;
   color: var(--text-muted, #9ca3af);
   margin: 0;
 }
@@ -228,28 +152,28 @@
 .form {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 16px;
 }
 
-.inputGroup {
+.fieldGroup {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.labelRow {
+.fieldLabelRow {
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
-.label {
+.fieldLabel {
   font-size: 0.8125rem;
   font-weight: 600;
   color: var(--text-secondary, #d1d5db);
 }
 
-.capsLockTag {
+.capsLockBadge {
   font-size: 0.68rem;
   font-weight: 600;
   color: var(--warning, #fbbf24);
@@ -258,13 +182,13 @@
   border-radius: var(--radius-xs, 3px);
 }
 
-.inputWrapper {
+.fieldInputWrapper {
   position: relative;
   display: flex;
   align-items: center;
 }
 
-.inputIcon {
+.fieldIcon {
   position: absolute;
   left: 12px;
   color: var(--text-muted, #9ca3af);
@@ -274,7 +198,7 @@
   transition: color var(--dur-fast, 120ms) var(--ease-out, ease);
 }
 
-.formInput {
+.fieldInput {
   width: 100%;
   height: 42px;
   padding: 0 12px 0 38px;
@@ -290,16 +214,16 @@
   box-sizing: border-box;
 }
 
-.formInput::placeholder {
+.fieldInput::placeholder {
   color: var(--text-disabled, #6b7280);
 }
 
-.formInput:focus {
+.fieldInput:focus {
   border-color: var(--accent, #38bdf8);
   box-shadow: 0 0 0 3px var(--accent-glow, rgba(56, 189, 248, 0.25));
 }
 
-.inputWrapper:focus-within .inputIcon {
+.fieldInputWrapper:focus-within .fieldIcon {
   color: var(--accent, #38bdf8);
 }
 
@@ -353,35 +277,15 @@
   cursor: not-allowed;
 }
 
-/* Bottom status bar */
-.formBottomBar {
+/* ── Bottom Footer ── */
+.footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-top: 16px;
-  border-top: 1px solid var(--border-light, rgba(255, 255, 255, 0.08));
-  font-size: 0.74rem;
+  max-width: 1000px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 12px 8px;
+  font-size: 0.75rem;
   color: var(--text-muted, #9ca3af);
-}
-
-/* ══════════════════════════════════════════════════════════
-   RESPONSIVE LAYOUT
-   ══════════════════════════════════════════════════════════ */
-@media (max-width: 960px) {
-  .container {
-    grid-template-columns: 1fr;
-  }
-
-  .terminalPanel {
-    display: none;
-  }
-
-  .formPanel {
-    min-height: 100vh;
-    padding: 24px 20px;
-  }
-
-  .formContentWrapper {
-    margin: 20px auto;
-  }
 }

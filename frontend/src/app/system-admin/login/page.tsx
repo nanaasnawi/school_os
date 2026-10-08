@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { getApiUrl } from '@/lib/api';
 import {
+  ShieldCheck,
   KeyRound,
   Mail,
   Eye,
@@ -76,146 +77,120 @@ export default function SystemAdminLogin() {
 
   return (
     <div className={styles.root}>
-      <div className={styles.container}>
-        {/* ══════════════════════════════════════════════════════════
-            LEFT PANEL — QUIET, ELEGANT PLATFORM IDENTITY
-            ══════════════════════════════════════════════════════════ */}
-        <div className={styles.terminalPanel}>
-          <div className={styles.panelHeader}>
-            <Link href="/login" className={styles.backLink} title="Kembali ke Portal Sekolah">
-              <ArrowLeft size={14} />
-              <span>Portal Sekolah</span>
-            </Link>
-            <span className={styles.rootTag}>SUPER ADMIN</span>
-          </div>
+      {/* ── Top Bar ── */}
+      <header className={styles.topBar}>
+        <Link href="/login" className={styles.backLink} title="Kembali ke Portal Sekolah">
+          <ArrowLeft size={14} />
+          <span>Kembali ke Portal Sekolah</span>
+        </Link>
+        <span className={styles.escNotice}>
+          Tekan <kbd>Esc</kbd> untuk kembali
+        </span>
+      </header>
 
-          <div className={styles.heroSection}>
-            <h1 className={styles.heroTagline}>
-              Konsol Pengelola <span className={styles.heroTaglineAccent}>Pusat</span>
-            </h1>
-            <p className={styles.heroSub}>
-              Pusat kendali multi-instansi sekolah dan tata kelola infrastruktur platform.
-            </p>
-            <div className={styles.statusIndicator}>
-              <span className={styles.statusDot} />
-              <span>Sesi Aman Terenkripsi</span>
+      {/* ── Center Gateway Card ── */}
+      <main className={styles.mainContainer}>
+        <div className={styles.authCard}>
+          <div className={styles.headerGroup}>
+            <div className={styles.logoFrame}>
+              <ShieldCheck size={26} />
+            </div>
+            <div className={styles.titleGroup}>
+              <h1 className={styles.consoleTitle}>Konsol Pengelola Pusat</h1>
+              <p className={styles.consoleSubtitle}>Akselerasi-Edu • Super Administrator</p>
             </div>
           </div>
 
-          <div className={styles.auditFooter}>
-            <span>Audit Trail Aktif</span>
-            <span>Akselerasi-Edu v2.4</span>
-          </div>
-        </div>
+          {error && (
+            <div className={styles.errorBanner} role="alert">
+              <AlertTriangle size={15} style={{ flexShrink: 0 }} />
+              <span>{error}</span>
+            </div>
+          )}
 
-        {/* ══════════════════════════════════════════════════════════
-            RIGHT PANEL — FOCUSED AUTHENTICATION FORM
-            ══════════════════════════════════════════════════════════ */}
-        <div className={styles.formPanel}>
-          <div className={styles.formTopNav}>
-            <span className={styles.escNotice}>
-              Tekan <kbd>Esc</kbd> untuk kembali
-            </span>
-          </div>
-
-          <div className={styles.formContentWrapper}>
-            <div className={styles.formHeader}>
-              <h2 className={styles.formTitle}>Masuk Super Admin</h2>
-              <p className={styles.formSubTitle}>
-                Masukkan akun master operator platform.
-              </p>
+          <form onSubmit={handleSubmit} className={styles.form}>
+            <div className={styles.fieldGroup}>
+              <div className={styles.fieldLabelRow}>
+                <label htmlFor="sys-email" className={styles.fieldLabel}>
+                  Email Master
+                </label>
+              </div>
+              <div className={styles.fieldInputWrapper}>
+                <span className={styles.fieldIcon}>
+                  <Mail size={15} />
+                </span>
+                <input
+                  id="sys-email"
+                  type="email"
+                  required
+                  placeholder="sysadmin@akselerasi-edu.id"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className={styles.fieldInput}
+                  autoComplete="email"
+                  spellCheck={false}
+                />
+              </div>
             </div>
 
-            {error && (
-              <div className={styles.errorBanner} role="alert">
-                <AlertTriangle size={15} style={{ flexShrink: 0 }} />
-                <span>{error}</span>
+            <div className={styles.fieldGroup}>
+              <div className={styles.fieldLabelRow}>
+                <label htmlFor="sys-password" className={styles.fieldLabel}>
+                  Kata Sandi Master
+                </label>
+                {capsLockActive && <span className={styles.capsLockBadge}>CAPS LOCK</span>}
               </div>
-            )}
-
-            <form onSubmit={handleSubmit} className={styles.form}>
-              <div className={styles.inputGroup}>
-                <div className={styles.labelRow}>
-                  <label htmlFor="sys-email" className={styles.label}>
-                    Email Master
-                  </label>
-                </div>
-                <div className={styles.inputWrapper}>
-                  <span className={styles.inputIcon}>
-                    <Mail size={15} />
-                  </span>
-                  <input
-                    id="sys-email"
-                    type="email"
-                    required
-                    placeholder="sysadmin@akselerasi-edu.id"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className={styles.formInput}
-                    autoComplete="email"
-                    spellCheck={false}
-                  />
-                </div>
+              <div className={styles.fieldInputWrapper}>
+                <span className={styles.fieldIcon}>
+                  <KeyRound size={15} />
+                </span>
+                <input
+                  id="sys-password"
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  placeholder="Masukkan kata sandi master"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onKeyDown={handleKeyModifierCheck}
+                  onKeyUp={handleKeyModifierCheck}
+                  className={styles.fieldInput}
+                  autoComplete="current-password"
+                  style={{ paddingRight: '38px' }}
+                />
+                <button
+                  type="button"
+                  className={styles.eyeBtn}
+                  onClick={() => setShowPassword(!showPassword)}
+                  tabIndex={-1}
+                  aria-label={showPassword ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'}
+                >
+                  {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                </button>
               </div>
+            </div>
 
-              <div className={styles.inputGroup}>
-                <div className={styles.labelRow}>
-                  <label htmlFor="sys-password" className={styles.label}>
-                    Kata Sandi Master
-                  </label>
-                  {capsLockActive && <span className={styles.capsLockTag}>CAPS LOCK</span>}
-                </div>
-                <div className={styles.inputWrapper}>
-                  <span className={styles.inputIcon}>
-                    <KeyRound size={15} />
-                  </span>
-                  <input
-                    id="sys-password"
-                    type={showPassword ? 'text' : 'password'}
-                    required
-                    placeholder="Masukkan kata sandi master"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    onKeyDown={handleKeyModifierCheck}
-                    onKeyUp={handleKeyModifierCheck}
-                    className={styles.formInput}
-                    autoComplete="current-password"
-                    style={{ paddingRight: '38px' }}
-                  />
-                  <button
-                    type="button"
-                    className={styles.eyeBtn}
-                    onClick={() => setShowPassword(!showPassword)}
-                    tabIndex={-1}
-                    aria-label={showPassword ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'}
-                  >
-                    {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
-                  </button>
-                </div>
-              </div>
-
-              <button type="submit" disabled={loading} className={styles.submitBtn}>
-                {loading ? (
-                  <>
-                    <RefreshCw size={14} style={{ animation: 'spin 1s linear infinite' }} />
-                    <span>Memverifikasi...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Buka Konsol</span>
-                    <ArrowRight size={14} />
-                  </>
-                )}
-              </button>
-            </form>
-          </div>
-
-          <div className={styles.formBottomBar}>
-            <span>Akselerasi-Edu Platform</span>
-            <span>Akses Terlindungi TLS 1.3</span>
-          </div>
+            <button type="submit" disabled={loading} className={styles.submitBtn}>
+              {loading ? (
+                <>
+                  <RefreshCw size={14} style={{ animation: 'spin 1s linear infinite' }} />
+                  <span>Memverifikasi...</span>
+                </>
+              ) : (
+                <>
+                  <span>Buka Konsol Pengelola</span>
+                  <ArrowRight size={14} />
+                </>
+              )}
+            </button>
+          </form>
         </div>
-      </div>
+      </main>
+
+      {/* ── Footer ── */}
+      <footer className={styles.footer}>
+        <span>Sesi Aman Terenkripsi TLS 1.3</span>
+        <span>Akselerasi-Edu v2.4</span>
+      </footer>
 
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
