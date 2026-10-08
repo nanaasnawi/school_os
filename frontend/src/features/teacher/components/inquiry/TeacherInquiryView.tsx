@@ -114,11 +114,11 @@ export function TeacherInquiryView() {
         align: 'center',
         render: (item) => {
           const s = item.status?.toUpperCase() || 'OPEN';
-          if (s === 'ANSWERED' || s === 'TERJAWAB') {
-            return <StatusBadge status="Paid" label="Terjawab" />;
+          if (s === 'ANSWERED' || s === 'TERJAWAB' || s === 'DIJAWAB') {
+            return <StatusBadge status="Paid" label="Dijawab" />;
           }
-          if (s === 'OPEN' || s === 'MENUNGGU') {
-            return <StatusBadge status="Pending" label="Menunggu Balasan" />;
+          if (s === 'OPEN' || s === 'MENUNGGU' || s === 'WAITING_REPLY') {
+            return <StatusBadge status="Pending" label="Menunggu Jawaban" />;
           }
           return <StatusBadge status="Cancelled" label="Ditutup" />;
         },
@@ -215,7 +215,7 @@ export function TeacherInquiryView() {
             </div>
           </div>
           <div className={styles.metricBottom}>
-            <span>Menunggu Balasan</span>
+            <span>Menunggu Jawaban</span>
             <svg className={styles.metricArrow} viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
             </svg>
@@ -236,7 +236,7 @@ export function TeacherInquiryView() {
             </div>
           </div>
           <div className={styles.metricBottom}>
-            <span>Sudah Terjawab</span>
+            <span>Dijawab</span>
             <svg className={styles.metricArrow} viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
             </svg>
@@ -299,14 +299,14 @@ export function TeacherInquiryView() {
             onClick={() => setStatusFilter('OPEN')}
             className={`${styles.statusPillBtn} ${statusFilter === 'OPEN' ? styles.statusPillBtnActive : ''}`}
           >
-            Menunggu ({metrics.open_inquiries})
+            Menunggu Jawaban ({metrics.open_inquiries})
           </button>
           <button
             type="button"
             onClick={() => setStatusFilter('ANSWERED')}
             className={`${styles.statusPillBtn} ${statusFilter === 'ANSWERED' ? styles.statusPillBtnActive : ''}`}
           >
-            Terjawab ({metrics.answered_inquiries})
+            Dijawab ({metrics.answered_inquiries})
           </button>
           <button
             type="button"

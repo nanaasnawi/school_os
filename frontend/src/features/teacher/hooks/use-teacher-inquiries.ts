@@ -59,7 +59,15 @@ export function useTeacherInquiries() {
     return threads.filter((t) => {
       if (statusFilter !== 'ALL') {
         const s = t.status?.toUpperCase() || 'OPEN';
-        if (s !== statusFilter) return false;
+        if (statusFilter === 'OPEN') {
+          if (!(s === 'OPEN' || s === 'MENUNGGU' || s === 'WAITING_REPLY')) return false;
+        } else if (statusFilter === 'ANSWERED') {
+          if (!(s === 'ANSWERED' || s === 'TERJAWAB' || s === 'DIJAWAB')) return false;
+        } else if (statusFilter === 'RESOLVED') {
+          if (!(s === 'RESOLVED' || s === 'SELESAI')) return false;
+        } else if (s !== statusFilter) {
+          return false;
+        }
       }
       if (classFilter !== 'ALL' && t.student_class !== classFilter) {
         return false;
@@ -76,8 +84,8 @@ export function useTeacherInquiries() {
 
     threads.forEach((t) => {
       const s = t.status?.toUpperCase() || 'OPEN';
-      if (s === 'OPEN' || s === 'MENUNGGU') openCount++;
-      else if (s === 'ANSWERED' || s === 'TERJAWAB') answeredCount++;
+      if (s === 'OPEN' || s === 'MENUNGGU' || s === 'WAITING_REPLY') openCount++;
+      else if (s === 'ANSWERED' || s === 'TERJAWAB' || s === 'DIJAWAB') answeredCount++;
       else if (s === 'RESOLVED' || s === 'SELESAI') resolvedCount++;
     });
 
