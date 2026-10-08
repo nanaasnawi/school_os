@@ -19,7 +19,8 @@ import {
   Smartphone,
   Info,
   Sun,
-  Moon
+  Moon,
+  GraduationCap
 } from 'lucide-react';
 import styles from './login.module.css';
 
@@ -505,6 +506,29 @@ export default function LoginPage() {
           </button>
 
           <div className={styles.formContent}>
+            {/* Mobile-only School Brand Header */}
+            <div className={styles.mobileBrandHeader}>
+              <div className={styles.mobileLogoMark}>
+                {schoolLogoUrl ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={schoolLogoUrl}
+                    alt={schoolName}
+                    className={styles.mobileLogoImg}
+                    onError={(e) => {
+                      (e.target as HTMLElement).style.display = 'none';
+                    }}
+                  />
+                ) : (
+                  <GraduationCap size={22} className="text-sky-500" />
+                )}
+              </div>
+              <div>
+                <h1 className={styles.mobileSchoolTitle}>{schoolName}</h1>
+                <p className={styles.mobileSchoolSubtitle}>Sistem Operasi Akademik Terpadu</p>
+              </div>
+            </div>
+
             {/* Header */}
             <div className={styles.formHeader}>
               <div className={styles.formBadge}>
