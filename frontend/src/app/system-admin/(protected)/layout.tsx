@@ -6,7 +6,6 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   Building2,
   ShieldCheck,
-  Server,
   Settings,
   LogOut,
   PanelLeftClose,
@@ -14,59 +13,35 @@ import {
   Sun,
   Moon,
   Shield,
-  CreditCard,
-  Archive,
   Activity,
 } from 'lucide-react';
 import styles from './shell.module.css';
 
-const NAV_GROUPS = [
+const NAV_ITEMS = [
   {
-    label: 'OPERASIONAL TENANT',
-    items: [
-      {
-        href: '/system-admin/dashboard',
-        label: 'Direktori Tenant',
-        icon: Building2,
-      },
-      {
-        href: '/system-admin/licenses',
-        label: 'Lisensi & Kuota Modul',
-        icon: CreditCard,
-      },
-      {
-        href: '/system-admin/backups',
-        label: 'Cadangan & Pemulihan',
-        icon: Archive,
-      },
-    ],
+    href: '/system-admin/dashboard',
+    label: 'Direktori Tenant',
+    icon: Building2,
   },
   {
-    label: 'KEAMANAN & SISTEM',
-    items: [
-      {
-        href: '/system-admin/audit',
-        label: 'Jejak Audit & Keamanan',
-        icon: ShieldCheck,
-      },
-      {
-        href: '/system-admin/server',
-        label: 'Diagnostik Server',
-        icon: Activity,
-      },
-      {
-        href: '/system-admin/settings',
-        label: 'Konfigurasi Global',
-        icon: Settings,
-      },
-    ],
+    href: '/system-admin/audit',
+    label: 'Jejak Audit & Keamanan',
+    icon: ShieldCheck,
+  },
+  {
+    href: '/system-admin/server',
+    label: 'Diagnostik Server',
+    icon: Activity,
+  },
+  {
+    href: '/system-admin/settings',
+    label: 'Konfigurasi Global',
+    icon: Settings,
   },
 ];
 
 const BREADCRUMB_MAP: Record<string, string> = {
   '/system-admin/dashboard': 'Direktori Tenant & Metrik',
-  '/system-admin/licenses': 'Alokasi Lisensi & Kuota Modul',
-  '/system-admin/backups': 'Cadangan & Pemulihan Basis Data',
   '/system-admin/audit': 'Jejak Audit & Keamanan Sistem',
   '/system-admin/server': 'Diagnostik Server & Basis Data',
   '/system-admin/settings': 'Konfigurasi Global Platform',
@@ -131,26 +106,24 @@ export default function SystemAdminLayout({ children }: { children: React.ReactN
         </Link>
 
         <nav className={styles.nav}>
-          {NAV_GROUPS.map((group) => (
-            <div key={group.label} className={styles.navGroup}>
-              <span className={styles.navGroupLabel}>{group.label}</span>
-              {group.items.map((item) => {
-                const Icon = item.icon;
-                const isActive = pathname === item.href;
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`${styles.navItem} ${isActive ? styles.navItemActive : ''}`}
-                    title={item.label}
-                  >
-                    <Icon size={16} strokeWidth={isActive ? 2.2 : 1.8} />
-                    <span className={styles.navLabel}>{item.label}</span>
-                  </Link>
-                );
-              })}
-            </div>
-          ))}
+          <div className={styles.navGroup}>
+            <span className={styles.navGroupLabel}>SISTEM OPERASIONAL</span>
+            {NAV_ITEMS.map((item) => {
+              const Icon = item.icon;
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`${styles.navItem} ${isActive ? styles.navItemActive : ''}`}
+                  title={item.label}
+                >
+                  <Icon size={16} strokeWidth={isActive ? 2.2 : 1.8} />
+                  <span className={styles.navLabel}>{item.label}</span>
+                </Link>
+              );
+            })}
+          </div>
         </nav>
 
         <div className={styles.sidebarFooter}>

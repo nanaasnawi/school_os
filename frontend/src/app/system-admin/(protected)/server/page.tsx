@@ -5,7 +5,6 @@ import { getApiUrl } from '@/lib/api';
 import styles from '../dashboard/system.module.css';
 import serverStyles from './server.module.css';
 import {
-  Server,
   Activity,
   Database,
   Cpu,
@@ -14,7 +13,6 @@ import {
   CheckCircle2,
   XCircle,
   ShieldCheck,
-  Zap,
   TrendingUp,
 } from 'lucide-react';
 import {
@@ -55,7 +53,10 @@ const LatencyTooltip = ({ active, payload, label }: any) => {
         <div className={styles.chartTooltipTitle}>Waktu: {label}</div>
         <div className={styles.chartTooltipRow}>
           <span className={styles.chartTooltipLabel}>API Latency:</span>
-          <span className={styles.chartTooltipValue} style={{ color: val < 20 ? '#10b981' : val < 100 ? '#f59e0b' : '#ef4444' }}>
+          <span
+            className={styles.chartTooltipValue}
+            style={{ color: val < 100 ? '#10b981' : val < 350 ? '#3b82f6' : '#f59e0b' }}
+          >
             {val} ms
           </span>
         </div>
@@ -76,9 +77,9 @@ export default function ServerHealthPage() {
 
   const getLatencyStatus = (ms: number | null) => {
     if (ms === null) return { label: 'Terputus (Offline)', color: '#ef4444', bg: 'rgba(239,68,68,0.1)' };
-    if (ms < 20) return { label: 'Optimal (< 20ms)', color: '#10b981', bg: 'rgba(16,185,129,0.1)' };
-    if (ms < 100) return { label: 'Normal (< 100ms)', color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' };
-    return { label: 'Latensi Tinggi', color: '#ef4444', bg: 'rgba(239,68,68,0.1)' };
+    if (ms < 100) return { label: 'Optimal (< 100ms)', color: '#10b981', bg: 'rgba(16,185,129,0.1)' };
+    if (ms < 350) return { label: 'Normal (Cloud WAN)', color: '#3b82f6', bg: 'rgba(59,130,246,0.1)' };
+    return { label: 'Latensi Tinggi', color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' };
   };
 
   const checkHealth = useCallback(async () => {
@@ -135,11 +136,19 @@ export default function ServerHealthPage() {
   const maxLatency = latencyHistory.length > 0 ? Math.max(...latencyHistory.map((p) => p.latency)) : null;
 
   const areaColor =
-    latency !== null && latency < 20
+    latency !== null && latency < 100
       ? '#10b981'
-      : latency !== null && latency < 100
-      ? '#f59e0b'
-      : '#ef4444';
+      : latency !== null && latency < 350
+      ? '#3b82f6'
+      : '#f59e0b';
+
+  const chartData =
+    latencyHistory.length === 1
+      ? [
+          { time: 'T-1', latency: latencyHistory[0].latency, label: 'Start' },
+          latencyHistory[0],
+        ]
+      : latencyHistory;
 
   const getCloudBaseUrl = () => {
     return typeof window !== 'undefined' ? window.location.origin : 'http://localhost:8000';
@@ -189,7 +198,7 @@ export default function ServerHealthPage() {
             <div className={styles.kpiValue} style={{ color: status.color }}>
               {latency !== null ? `${latency} ms` : 'Offline'}
             </div>
-            <div className={styles.kpiSub}>{status.label} • Target: &lt; 20ms</div>
+            <div className={styles.kpiSub}>{status.label} • Target Cloud WAN</div>
           </div>
         </div>
 
@@ -201,7 +210,9 @@ export default function ServerHealthPage() {
             </div>
           </div>
           <div className={styles.kpiBody}>
-            <div className={styles.kpiValue} style={{ fontSize: '18px' }}>PostgreSQL 16</div>
+            <div className={styles.kpiValue} style={{ fontSize: '18px' }}>
+              {overview?.database_status || 'PostgreSQL 16'}
+            </div>
             <div className={styles.kpiSub}>Multi-Tenant RLS • Active Pool</div>
           </div>
         </div>
@@ -214,8 +225,12 @@ export default function ServerHealthPage() {
             </div>
           </div>
           <div className={styles.kpiBody}>
-            <div className={styles.kpiValue} style={{ fontSize: '18px' }}>Rust Axum</div>
-            <div className={styles.kpiSub}>Zero Memory Leak • Multi-Threaded</div>
+            <div className={styles.kpiValue} style={{ fontSize: '18px' }}>
+              {overview?.server_engine || 'Rust Axum'}
+            </div>
+            <div className={styles.kpiSub}>
+              {overview?.rust_version || '1.82.0 (Stable Edition)'}
+            </div>
           </div>
         </div>
 
@@ -255,14 +270,14 @@ export default function ServerHealthPage() {
             <div className={serverStyles.latencyStatDivider} />
             <div className={serverStyles.latencyStatItem}>
               <span className={serverStyles.latencyStatLabel}>Avg</span>
-              <span className={serverStyles.latencyStatVal} style={{ color: '#f59e0b' }}>
+              <span className={serverStyles.latencyStatVal} style={{ color: '#3b82f6' }}>
                 {avgLatency !== null ? `${avgLatency}ms` : '—'}
               </span>
             </div>
             <div className={serverStyles.latencyStatDivider} />
             <div className={serverStyles.latencyStatItem}>
               <span className={serverStyles.latencyStatLabel}>Max</span>
-              <span className={serverStyles.latencyStatVal} style={{ color: '#ef4444' }}>
+              <span className={serverStyles.latencyStatVal} style={{ color: '#f59e0b' }}>
                 {maxLatency !== null ? `${maxLatency}ms` : '—'}
               </span>
             </div>
@@ -270,14 +285,14 @@ export default function ServerHealthPage() {
         </div>
 
         <div className={serverStyles.latencyChartWrap}>
-          {latencyHistory.length < 2 ? (
+          {latencyHistory.length === 0 ? (
             <div className={serverStyles.latencyLoading}>
               <div className={styles.spinner} />
               <span>Mengumpulkan telemetri latensi…</span>
             </div>
           ) : (
             <ResponsiveContainer width="100%" height={220}>
-              <AreaChart data={latencyHistory} margin={{ top: 8, right: 16, left: -20, bottom: 8 }}>
+              <AreaChart data={chartData} margin={{ top: 8, right: 16, left: -20, bottom: 8 }}>
                 <defs>
                   <linearGradient id="latencyGrad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor={areaColor} stopOpacity={0.25} />
@@ -300,10 +315,10 @@ export default function ServerHealthPage() {
                 />
                 <Tooltip content={<LatencyTooltip />} />
                 <ReferenceLine
-                  y={20}
-                  stroke="rgba(16,185,129,0.5)"
+                  y={150}
+                  stroke="rgba(59,130,246,0.35)"
                   strokeDasharray="3 3"
-                  label={{ value: '20ms target', fill: '#10b981', fontSize: 10 }}
+                  label={{ value: 'Target Cloud (150ms)', fill: '#3b82f6', fontSize: 10 }}
                 />
                 <Area
                   type="monotone"
@@ -342,10 +357,6 @@ export default function ServerHealthPage() {
             <div className={serverStyles.diagRow}>
               <span className={serverStyles.diagLabel}>Base Endpoint API:</span>
               <code className={serverStyles.diagCode} style={{ color: '#2563eb' }}>{getCloudBaseUrl()}</code>
-            </div>
-            <div className={serverStyles.diagRow}>
-              <span className={serverStyles.diagLabel}>Gateway Dapodik:</span>
-              <code className={serverStyles.diagCode} style={{ color: '#16a34a' }}>localhost:5774 (Active)</code>
             </div>
             <div className={serverStyles.diagRow}>
               <span className={serverStyles.diagLabel}>Pemeriksaan Terakhir:</span>
@@ -442,16 +453,6 @@ export default function ServerHealthPage() {
               <div>
                 <div className={serverStyles.statusCheckLabel}>JWT Auth &amp; RBAC</div>
                 <div className={serverStyles.statusCheckSub}>Validasi tanda tangan token aktif</div>
-              </div>
-            </div>
-
-            <div className={`${serverStyles.statusCheckItem} ${serverStyles.statusOk}`}>
-              <span className={serverStyles.statusCheckIcon}>
-                <CheckCircle2 size={16} color="#10b981" />
-              </span>
-              <div>
-                <div className={serverStyles.statusCheckLabel}>Dapodik WebService</div>
-                <div className={serverStyles.statusCheckSub}>Bridge gateway port 5774 standby</div>
               </div>
             </div>
           </div>
