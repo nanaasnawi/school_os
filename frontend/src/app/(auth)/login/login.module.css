@@ -291,6 +291,39 @@
   background: var(--bg-card, #0a0a0a);
 }
 
+.themeToggleBtn {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  border: 1px solid var(--border-medium, #e2e8f0);
+  background: var(--bg-surface, #ffffff);
+  color: var(--text-primary, #0f172a);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 10;
+}
+
+[data-theme="dark"] .themeToggleBtn {
+  background: rgba(30, 41, 59, 0.85);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #f1f5f9;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.themeToggleBtn:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent, #0ea5e9);
+  color: var(--accent, #0ea5e9);
+  box-shadow: 0 4px 14px rgba(14, 165, 233, 0.2);
+}
+
 .formContent {
   width: 100%;
   max-width: 420px;
@@ -386,6 +419,30 @@
   font-size: 13px;
   font-weight: 600;
   color: var(--text-secondary, #374151);
+}
+
+.inputHint {
+  font-size: 11.5px;
+  color: var(--text-muted, #64748b);
+  margin-top: 4px;
+  display: block;
+  line-height: 1.4;
+}
+
+.inputHint code {
+  font-family: var(--font-mono, monospace);
+  font-size: 11px;
+  background: var(--bg-elevated, #f1f5f9);
+  color: var(--accent, #0284c7);
+  padding: 1px 5px;
+  border-radius: 4px;
+  border: 1px solid var(--border-light, #e2e8f0);
+}
+
+[data-theme="dark"] .inputHint code {
+  background: rgba(14, 165, 233, 0.12);
+  color: #38bdf8;
+  border-color: rgba(14, 165, 233, 0.25);
 }
 
 .inputWrapper {
@@ -504,6 +561,27 @@
 [data-theme="dark"] .androidNoticeBox {
   background: rgba(15, 23, 42, 0.45);
   border-color: rgba(255, 255, 255, 0.06);
+}
+
+.androidNoticeHeader {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary, #0f172a);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.androidNoticeIcon {
+  color: var(--accent, #0ea5e9);
+  flex-shrink: 0;
+}
+
+.androidNoticeText {
+  font-size: 12px;
+  color: var(--text-muted, #64748b);
+  margin: 0;
+  line-height: 1.5;
 }
 
 .androidInfoBtn {

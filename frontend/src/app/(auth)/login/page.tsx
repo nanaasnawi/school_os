@@ -17,7 +17,9 @@ import {
   Eye,
   EyeOff,
   Smartphone,
-  Info
+  Info,
+  Sun,
+  Moon
 } from 'lucide-react';
 import styles from './login.module.css';
 
@@ -34,6 +36,7 @@ export default function LoginPage() {
   const [countdown, setCountdown] = useState(15);
   const [checkFeedback, setCheckFeedback] = useState<string | null>(null);
   const [adminTriggerCount, setAdminTriggerCount] = useState(0);
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
   const router = useRouter();
   const { login, user, isAuthenticated, isLoading } = useAuth();
@@ -42,13 +45,28 @@ export default function LoginPage() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const savedTheme = localStorage.getItem('school_os_theme');
-      if (savedTheme === 'dark') {
+      const isDark = savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      if (isDark) {
+        setTheme('dark');
         document.documentElement.setAttribute('data-theme', 'dark');
       } else {
+        setTheme('light');
         document.documentElement.removeAttribute('data-theme');
       }
     }
   }, []);
+
+  const toggleTheme = () => {
+    const nextTheme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(nextTheme);
+    if (nextTheme === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      localStorage.setItem('school_os_theme', 'dark');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+      localStorage.setItem('school_os_theme', 'light');
+    }
+  };
 
   const checkMaintenanceStatus = async (isManual = false) => {
     if (isManual) {
@@ -475,6 +493,17 @@ export default function LoginPage() {
             RIGHT FORM PANEL
             ══════════════════════════════════════════════════════════ */}
         <div className={styles.formPanel}>
+          {/* Theme Toggle Button */}
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className={styles.themeToggleBtn}
+            aria-label={theme === 'dark' ? 'Beralih ke Mode Terang' : 'Beralih ke Mode Gelap'}
+            title={theme === 'dark' ? 'Mode Terang' : 'Mode Gelap'}
+          >
+            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
+
           <div className={styles.formContent}>
             {/* Header */}
             <div className={styles.formHeader}>
@@ -515,7 +544,7 @@ export default function LoginPage() {
                     autoComplete="username"
                   />
                 </div>
-                <span style={{ fontSize: '0.73rem', color: '#94a3b8', marginTop: '0.28rem', display: 'block', lineHeight: 1.35 }}>
+                <span className={styles.inputHint}>
                   Admin/Kepala Sekolah wajib menggunakan Email. Guru, Siswa, &amp; Wali dapat menggunakan Username (cth: <code>surafatih</code>, <code>ikin.baihaki</code>) atau Email.
                 </span>
               </div>
@@ -568,27 +597,11 @@ export default function LoginPage() {
 
             {/* Android Mobile Notice Card */}
             <div className={styles.androidNoticeBox}>
-              <div
-                style={{
-                  fontSize: '0.82rem',
-                  fontWeight: 700,
-                  color: 'var(--text-primary, #0f172a)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                }}
-              >
-                <Smartphone size={15} color="var(--accent, #0ea5e9)" />
+              <div className={styles.androidNoticeHeader}>
+                <Smartphone size={16} className={styles.androidNoticeIcon} />
                 <span>Siswa, Guru, atau Orang Tua?</span>
               </div>
-              <p
-                style={{
-                  fontSize: '0.75rem',
-                  color: 'var(--text-muted, #64748b)',
-                  margin: 0,
-                  lineHeight: 1.5,
-                }}
-              >
+              <p className={styles.androidNoticeText}>
                 Gunakan <strong>Aplikasi Android School OS</strong> untuk jadwal, tugas, absensi, dan
                 e-rapor langsung dari smartphone.
               </p>
