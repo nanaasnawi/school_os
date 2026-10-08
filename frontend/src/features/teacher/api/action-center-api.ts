@@ -1,5 +1,5 @@
 import { getApiUrl, apiClient } from '@/lib/api';
-import type { AtRiskStudent, PendingGradingTask, ActiveCbtSummary } from '../types';
+import type { AtRiskStudent, PendingGradingTask, ActiveCbtSummary, TeacherRecentMaterial } from '../types';
 import { fetchCurrentTeacherProfile } from './teacher-api';
 
 function getAuthHeaders(): HeadersInit {
@@ -231,3 +231,77 @@ export async function fetchActiveCbts(): Promise<ActiveCbtSummary[]> {
     return [];
   }
 }
+
+/**
+ * Fetch recent learning materials, sorted by newest first
+ */
+export async function fetchRecentMaterials(classId?: string, existingProfile?: any): Promise<TeacherRecentMaterial[]> {
+  try {
+    const res = await fetch(getApiUrl('/api/v1/learning/materials'), {
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok) return [];
+
+    const json = await res.json();
+    const raw: any[] = json?.data?.items || json?.data || [];
+
+    const profile = existingProfile || await fetchCurrentTeacherProfile().catch(() => null);
+    const currentTeacherId = profile?.id;
+    const currentUserId = profile?.user_id;
+
+    let teacherMaterials = raw.filter((m) => {
+      if (!currentTeacherId && !currentUserId && !profile?.full_name) return true;
+      return (
+        m.teacher_id === currentTeacherId ||
+        m.created_by === currentTeacherId ||
+        (currentUserId && (m.teacher_id === currentUserId || m.created_by === currentUserId)) ||
+        (profile?.full_name && m.teacher_name && m.teacher_name.trim().toLowerCase() === profile.full_name.trim().toLowerCase())
+      );
+    });
+
+    if (teacherMaterials.length === 0 && raw.length > 0) {
+      teacherMaterials = raw;
+    }
+
+    if (classId && classId !== 'ALL') {
+      teacherMaterials = teacherMaterials.filter((m) => !m.class_id || m.class_id === classId);
+    }
+
+    teacherMaterials.sort((a, b) => {
+      const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
+      if (timeB !== timeA) return timeB - timeA;
+      return (b.id || '').localeCompare(a.id || '');
+    });
+
+    return teacherMaterials.map((m) => {
+      const start = m.start_page ?? 1;
+      const end = m.end_page ?? 15;
+      const totalPages = Math.max(1, (end - start) + 1);
+      const completed = Number(m.completed_count || 0);
+      const assigned = Number(m.total_students || m.student_count || 0) || (completed > 0 ? completed : 0);
+      const avgProgress = assigned > 0 ? Math.min(100, Math.round((completed / assigned) * 100)) : (completed > 0 ? 100 : 0);
+
+      return {
+        id: m.id,
+        title: m.title || 'Materi Pembelajaran',
+        subject_name: m.subject_name || 'Umum',
+        class_name: m.class_name || 'Semua Rombel',
+        class_id: m.class_id || undefined,
+        material_type: m.material_type || 'document',
+        created_at: m.created_at || new Date().toISOString(),
+        description: m.description || '',
+        start_page: start,
+        end_page: end,
+        total_pages: totalPages,
+        completed_count: completed,
+        total_students: assigned,
+        reading_progress: avgProgress,
+      };
+    });
+  } catch (err) {
+    console.error('Failed to fetch recent materials:', err);
+    return [];
+  }
+}
+

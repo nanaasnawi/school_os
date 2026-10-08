@@ -50,3 +50,21 @@ export interface ActiveCbtSummary {
   in_progress_count: number;
   completed_count: number;
 }
+
+export interface TeacherRecentMaterial {
+  id: string;
+  title: string;
+  subject_name?: string;
+  class_name?: string;
+  class_id?: string;
+  material_type?: string;
+  created_at?: string;
+  description?: string;
+  start_page?: number;
+  end_page?: number;
+  total_pages?: number;
+  completed_count?: number;
+  total_students?: number;
+  reading_progress?: number;
+}
+

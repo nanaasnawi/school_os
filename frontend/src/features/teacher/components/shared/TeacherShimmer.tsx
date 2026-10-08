@@ -113,6 +113,26 @@ export function ActionCenterSkeleton() {
               ))}
             </div>
           </div>
+
+          {/* Materials Card Skeleton */}
+          <div className={styles.widgetCard}>
+            <div className={styles.widgetHeader}>
+              <div className={`${styles.shimmer} ${styles.widgetTitleSkeleton}`} />
+              <div className={`${styles.shimmer} ${styles.widgetBadgeSkeleton}`} />
+            </div>
+            <div className={styles.widgetBody}>
+              {[1, 2, 3].map((i) => (
+                <div key={i} className={styles.riskItemSkeleton}>
+                  <div className={`${styles.shimmer} ${styles.riskIconSkeleton}`} />
+                  <div className={styles.riskContentSkeleton}>
+                    <div className={`${styles.shimmer} ${styles.riskNameSkeleton}`} />
+                    <div className={`${styles.shimmer} ${styles.riskDescSkeleton}`} />
+                  </div>
+                  <div className={`${styles.shimmer} ${styles.riskBtnSkeleton}`} />
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </div>

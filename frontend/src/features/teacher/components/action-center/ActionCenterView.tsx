@@ -20,7 +20,7 @@ export function ActionCenterView() {
     stats,
     atRiskStudents,
     pendingGrading,
-    activeCbts,
+    materials,
     handleResolveRisk,
   } = useTeacherActionCenter();
 
@@ -87,14 +87,14 @@ export function ActionCenterView() {
           <PendingGradingWidget tasks={pendingGrading} />
         </div>
 
-        {/* Right Column: Class filter & Today's Schedule & Active CBTs */}
+        {/* Right Column: Class filter & Today's Schedule & Recent Materials */}
         <div className={styles.rightCol}>
           <TodayScheduleWidget
             classes={classes}
             selectedClassId={selectedClassId}
             onSelectClass={setSelectedClassId}
             schedules={todaySchedule}
-            activeCbts={activeCbts}
+            materials={materials}
           />
         </div>
       </div>

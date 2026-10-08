@@ -9,6 +9,7 @@ import {
   fetchAtRiskStudents,
   fetchPendingGradingTasks,
   fetchActiveCbts,
+  fetchRecentMaterials,
 } from '../api';
 import type {
   TeacherProfile,
@@ -18,6 +19,7 @@ import type {
   AtRiskStudent,
   PendingGradingTask,
   ActiveCbtSummary,
+  TeacherRecentMaterial,
 } from '../types';
 
 export function useTeacherActionCenter() {
@@ -37,20 +39,23 @@ export function useTeacherActionCenter() {
   const [atRiskStudents, setAtRiskStudents] = useState<AtRiskStudent[]>([]);
   const [pendingGrading, setPendingGrading] = useState<PendingGradingTask[]>([]);
   const [activeCbts, setActiveCbts] = useState<ActiveCbtSummary[]>([]);
+  const [materials, setMaterials] = useState<TeacherRecentMaterial[]>([]);
 
   const loadData = useCallback(async () => {
     setIsLoading(true);
     try {
-      // 1. Fetch core profile, schedule, and active CBTs in parallel
-      const [prof, sched, cbts] = await Promise.all([
+      // 1. Fetch core profile, schedule, materials, and active CBTs in parallel
+      const [prof, sched, cbts, mats] = await Promise.all([
         fetchCurrentTeacherProfile(),
         fetchTodaySchedule(),
         fetchActiveCbts(),
+        fetchRecentMaterials(selectedClassId === 'ALL' ? undefined : selectedClassId),
       ]);
 
       setProfile(prof);
       setTodaySchedule(sched);
       setActiveCbts(cbts);
+      setMaterials(mats);
 
       // 2. Fetch classes & workstation stats reusing the already resolved profile
       const cls = await fetchTeacherClasses(prof || undefined);
@@ -99,6 +104,7 @@ export function useTeacherActionCenter() {
     atRiskStudents,
     pendingGrading,
     activeCbts,
+    materials,
     refresh: loadData,
     handleResolveRisk,
   };
