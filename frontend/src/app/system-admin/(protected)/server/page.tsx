@@ -117,16 +117,7 @@ export default function ServerHealthPage() {
   }, []);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      void checkHealth();
-    }, 0);
-    intervalRef.current = setInterval(() => {
-      void checkHealth();
-    }, 10000); // check every 10s
-    return () => {
-      clearTimeout(timer);
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
+    void checkHealth();
   }, [checkHealth]);
 
   const status = getLatencyStatus(latency);

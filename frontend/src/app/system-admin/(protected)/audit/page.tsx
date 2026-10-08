@@ -103,12 +103,6 @@ export default function SystemAuditPage() {
 
   useEffect(() => { fetchAuditLogs(); }, [fetchAuditLogs]);
 
-  // Auto-refresh every 30s
-  useEffect(() => {
-    const iv = setInterval(() => fetchAuditLogs(true), 30000);
-    return () => clearInterval(iv);
-  }, [fetchAuditLogs]);
-
   const filteredLogs = logs.filter(l => {
     const matchSearch =
       l.tenant_name.toLowerCase().includes(search.toLowerCase()) ||

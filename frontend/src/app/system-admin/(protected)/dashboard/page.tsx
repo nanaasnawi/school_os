@@ -257,8 +257,6 @@ export default function SystemAdminPage() {
 
   useEffect(() => {
     fetchDashboardData();
-    const interval = setInterval(fetchDashboardData, 30000);
-    return () => clearInterval(interval);
   }, []);
 
   const handleOpenMasterModal = (t: TenantItem) => {
@@ -505,7 +503,7 @@ export default function SystemAdminPage() {
           <div className={styles.liveIndicator}>
             <span className={styles.liveDot} />
             <span className={styles.liveText}>
-              Sinkronisasi • {lastRefreshed.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+              Terakhir diperbarui {lastRefreshed.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
             </span>
           </div>
 
