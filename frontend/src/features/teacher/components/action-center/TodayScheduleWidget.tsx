@@ -21,22 +21,21 @@ export function TodayScheduleWidget({
   activeCbts,
 }: TodayScheduleWidgetProps) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+    <div className={styles.todayScheduleColumn}>
       {/* ── Rombel Filter Selector ── */}
-      <div className={styles.widgetCard} style={{ padding: '0.75rem 1rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.45rem' }}>
-          <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-primary, #0f172a)' }}>
+      <div className={`${styles.widgetCard} ${styles.classSelectCard}`}>
+        <div className={styles.classSelectHeader}>
+          <span className={styles.classSelectLabel}>
             Pilih Rombel / Kelas:
           </span>
-          <span style={{ fontSize: '0.68rem', color: '#64748b' }}>
+          <span className={styles.classSelectCount}>
             {classes.length} Rombel Diampu
           </span>
         </div>
         <select
           value={selectedClassId}
           onChange={(e) => onSelectClass(e.target.value)}
-          className="entriesSelect"
-          style={{ width: '100%', fontWeight: 600, fontSize: '0.78rem', padding: '0.42rem 0.65rem', borderRadius: '6px' }}
+          className={styles.classSelectInput}
         >
           <option value="ALL">Semua Rombel Diampu</option>
           {classes.map((c) => (
@@ -57,15 +56,16 @@ export function TodayScheduleWidget({
             </svg>
             <span>Jadwal Mengajar Hari Ini</span>
           </h3>
-          <Link href="/dashboard/attendance" style={{ fontSize: '0.72rem', fontWeight: 700, color: '#0284c7', textDecoration: 'none' }}>
-            Presensi &rarr;
+          <Link href="/dashboard/attendance" className={styles.headerActionLink}>
+            <span>Presensi</span>
+            <span>&rarr;</span>
           </Link>
         </div>
 
         {schedules.length === 0 ? (
-          <div className={styles.emptyState} style={{ padding: '1.25rem 1rem' }}>
+          <div className={styles.emptyState}>
             <span className={styles.emptyStateTitle}>Tidak Ada Sesi Mengajar</span>
-            <span style={{ fontSize: '0.72rem' }}>Jadwal hari ini bebas dari sesi tatap muka langsung.</span>
+            <span>Jadwal hari ini bebas dari sesi tatap muka langsung.</span>
           </div>
         ) : (
           <div className={styles.scheduleList}>
@@ -81,7 +81,10 @@ export function TodayScheduleWidget({
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   {s.is_current ? (
-                    <span className={`${styles.scheduleStatusBadge} ${styles.badgeLive}`}>● Berlangsung</span>
+                    <span className={`${styles.scheduleStatusBadge} ${styles.badgeLive}`}>
+                      <span className={styles.liveDot} />
+                      <span>Berlangsung</span>
+                    </span>
                   ) : (
                     <span className={`${styles.scheduleStatusBadge} ${styles.badgeUpcoming}`}>Mendatang</span>
                   )}
@@ -89,7 +92,6 @@ export function TodayScheduleWidget({
                     href={`/dashboard/attendance?class_id=${s.class_id || ''}`}
                     className={styles.actionBtnSmall}
                     title="Buka Lembar Presensi Kelas Ini"
-                    style={{ padding: '0.25rem 0.5rem', fontSize: '0.68rem' }}
                   >
                     Presensi
                   </Link>
@@ -110,8 +112,9 @@ export function TodayScheduleWidget({
               </svg>
               <span>Kuis &amp; CBT Aktif</span>
             </h3>
-            <Link href="/dashboard/learning/quizzes" style={{ fontSize: '0.72rem', fontWeight: 700, color: '#0284c7', textDecoration: 'none' }}>
-              Lihat Semua
+            <Link href="/dashboard/learning/quizzes" className={styles.headerActionLink}>
+              <span>Lihat Semua</span>
+              <span>&rarr;</span>
             </Link>
           </div>
 
@@ -126,7 +129,8 @@ export function TodayScheduleWidget({
                 </div>
                 <div>
                   <span className={`${styles.scheduleStatusBadge} ${styles.badgeLive}`}>
-                    Aktif
+                    <span className={styles.liveDot} />
+                    <span>Aktif</span>
                   </span>
                 </div>
               </div>

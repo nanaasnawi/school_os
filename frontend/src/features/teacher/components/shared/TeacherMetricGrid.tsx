@@ -158,11 +158,11 @@ export function TeacherMetricGrid({ stats }: TeacherMetricGridProps) {
           <Link
             href={card.href}
             className={styles.metricCta}
-            style={{ background: card.gradient }}
           >
             <span>{card.cta}</span>
-            <svg className={styles.metricCtaArrow} viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
+            <svg className={styles.metricCtaArrow} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M5 12h14" />
+              <path d="m12 5 7 7-7 7" />
             </svg>
           </Link>
         </div>

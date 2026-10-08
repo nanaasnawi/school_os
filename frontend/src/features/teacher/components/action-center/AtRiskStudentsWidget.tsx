@@ -343,8 +343,13 @@ export function AtRiskStudentsWidget({ students, onResolve }: AtRiskStudentsWidg
                               {d.count} Siswa Berisiko
                             </div>
                             <div className={styles.chartTooltipMeta}>{d.desc}</div>
-                            <div style={{ fontSize: '0.62rem', color: '#0284c7', marginTop: 3, fontWeight: 600 }}>
-                              💡 {d.actionHint}
+                            <div className={styles.chartTooltipHint}>
+                              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                                <circle cx="12" cy="12" r="10" />
+                                <line x1="12" y1="16" x2="12" y2="12" />
+                                <line x1="12" y1="8" x2="12.01" y2="8" />
+                              </svg>
+                              <span>{d.actionHint}</span>
                             </div>
                           </div>
                         );

@@ -78,8 +78,7 @@ export function PendingGradingWidget({ tasks }: PendingGradingWidgetProps) {
         {gradingStats.totalPending > 0 && (
           <Link
             href="/dashboard/teacher/grading"
-            className={styles.actionBtnSmall}
-            style={{ background: '#ea580c', color: '#ffffff', borderColor: '#c2410c' }}
+            className={styles.actionBtnOrange}
           >
             <span>Koreksi Semua ({gradingStats.totalPending}) &rarr;</span>
           </Link>
@@ -90,7 +89,7 @@ export function PendingGradingWidget({ tasks }: PendingGradingWidgetProps) {
       {tasks.length > 0 && (
         <div className={styles.insightStrip}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.72rem', fontWeight: 700 }}>
-            <span style={{ color: '#0f172a' }}>
+            <span style={{ color: 'var(--text-primary, #0f172a)' }}>
               Progres Koreksi: {gradingStats.gradedCount} dari {gradingStats.totalSubmissions} pengumpulan ({gradingStats.completionRate}%)
             </span>
             <span style={{ color: '#ea580c' }}>
@@ -145,10 +144,15 @@ export function PendingGradingWidget({ tasks }: PendingGradingWidgetProps) {
             />
             {searchQuery && (
               <button
+                type="button"
                 onClick={() => setSearchQuery('')}
-                style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#94a3b8', fontSize: '0.75rem', padding: 0 }}
+                className={styles.clearSearchBtn}
+                aria-label="Hapus filter pencarian"
               >
-                ✕
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
               </button>
             )}
           </div>
@@ -165,18 +169,18 @@ export function PendingGradingWidget({ tasks }: PendingGradingWidgetProps) {
           <span>Tidak ada antrean koreksi tugas siswa saat ini.</span>
         </div>
       ) : filteredTasks.length === 0 ? (
-        <div className={styles.emptyState} style={{ padding: '1.5rem 1rem' }}>
+        <div className={styles.emptyState}>
           <span>Tidak ditemukan tugas yang sesuai filter.</span>
         </div>
       ) : (
-        <div className={styles.scrollableList} style={{ maxHeight: '280px' }}>
+        <div className={styles.scrollableList}>
           {filteredTasks.map((task) => (
             <div key={task.assignment_id} className={styles.riskItem}>
               <div className={styles.riskItemLeft}>
                 <div className={styles.riskItemMeta}>
                   <span className={styles.studentName}>{task.assignment_title}</span>
                   <span className={styles.classBadge}>{task.class_name}</span>
-                  <span style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 600 }}>
+                  <span className={styles.taskSubject}>
                     {task.subject_name}
                   </span>
                 </div>
@@ -208,7 +212,7 @@ export function PendingGradingWidget({ tasks }: PendingGradingWidgetProps) {
           <span>
             Menampilkan <strong>{filteredTasks.length}</strong> tugas • Total <strong>{gradingStats.totalPending}</strong> berkas menunggu koreksi
           </span>
-          <Link href="/dashboard/teacher/grading" style={{ color: '#ea580c', textDecoration: 'none', fontWeight: 700 }}>
+          <Link href="/dashboard/teacher/grading" className={styles.massGraderLink}>
             Buka Mass Grader &rarr;
           </Link>
         </div>

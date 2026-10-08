@@ -604,6 +604,9 @@
 }
 
 .presetBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   background: #f1f5f9;
   border: 1px solid #cbd5e1;
   border-radius: 999px;

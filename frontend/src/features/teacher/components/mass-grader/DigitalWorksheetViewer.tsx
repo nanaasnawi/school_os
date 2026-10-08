@@ -90,11 +90,11 @@ export function DigitalWorksheetViewer({
             className={styles.navBtn}
             onClick={onPrev}
             disabled={currentIndex <= 0}
-            title="Siswa Sebelumnya (Alt + 🠔)"
+            title="Siswa Sebelumnya (Alt + ←)"
           >
             &larr; Prev
           </button>
-          <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#0f172a' }}>
+          <span style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-primary, #0f172a)', fontVariantNumeric: 'tabular-nums' }}>
             {currentIndex + 1} / {totalCount}
           </span>
           <button
@@ -102,7 +102,7 @@ export function DigitalWorksheetViewer({
             className={styles.navBtn}
             onClick={onNext}
             disabled={currentIndex >= totalCount - 1}
-            title="Siswa Berikutnya (Alt + 🠖)"
+            title="Siswa Berikutnya (Alt + →)"
           >
             Next &rarr;
           </button>
@@ -156,8 +156,18 @@ export function DigitalWorksheetViewer({
                     <div className={styles.answerLabel}>Jawaban Siswa:</div>
                     <div className={styles.answerText}>
                       {ans.selected_choice_text ? (
-                        <span>
-                          {ans.is_choice_correct ? '✅' : '❌'} {ans.selected_choice_text}
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                          {ans.is_choice_correct ? (
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                          ) : (
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <line x1="18" y1="6" x2="6" y2="18" />
+                              <line x1="6" y1="6" x2="18" y2="18" />
+                            </svg>
+                          )}
+                          <span>{ans.selected_choice_text}</span>
                         </span>
                       ) : (
                         <span style={{ color: '#94a3b8' }}>Tidak memilih opsi</span>
@@ -326,7 +336,11 @@ export function DigitalWorksheetViewer({
             alignItems: 'center',
             gap: '0.5rem',
           }}>
-            <span>⚠️</span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+              <line x1="12" y1="9" x2="12" y2="13" />
+              <line x1="12" y1="17" x2="12.01" y2="17" />
+            </svg>
             <span>Peserta didik belum mengumpulkan tugas secara digital. Penilaian dinonaktifkan untuk data ini.</span>
           </div>
         )}
@@ -386,7 +400,12 @@ export function DigitalWorksheetViewer({
                 onClick={() => onScorePreset(100)}
                 disabled={submission.status === 'unsubmitted'}
               >
-                100 🌟
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                  <span>100</span>
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" strokeWidth="1">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                  </svg>
+                </span>
               </button>
             </div>
           </div>
@@ -408,7 +427,7 @@ export function DigitalWorksheetViewer({
               disabled={isSaving || submission.status === 'unsubmitted'}
               title={submission.status === 'unsubmitted' ? 'Siswa belum mengumpulkan' : 'Simpan nilai dan langsung buka siswa berikutnya (Ctrl + Enter)'}
             >
-              {isSaving ? 'Menyimpan...' : 'Simpan & Lanjut ➔'}
+              {isSaving ? 'Menyimpan...' : 'Simpan & Lanjut →'}
             </button>
           </div>
         </div>
@@ -426,10 +445,10 @@ export function DigitalWorksheetViewer({
         <div className={styles.actionRow}>
           <div className={styles.keyboardHint}>
             <span>Shortcut:</span>
-            <kbd className={styles.kbd}>Alt + 🠔</kbd>
+            <kbd className={styles.kbd}>Alt + ←</kbd>
             <span>Prev</span>
             <span>&bull;</span>
-            <kbd className={styles.kbd}>Alt + 🠖</kbd>
+            <kbd className={styles.kbd}>Alt + →</kbd>
             <span>Next</span>
             <span>&bull;</span>
             <kbd className={styles.kbd}>Ctrl + Enter</kbd>
