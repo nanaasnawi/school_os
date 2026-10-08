@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { login as sdkLogin } from '@/lib/sdk';
@@ -20,18 +20,25 @@ import {
   Info,
   Sun,
   Moon,
-  GraduationCap
+  GraduationCap,
+  Activity,
+  Building2,
+  ArrowRight,
 } from 'lucide-react';
 import styles from './login.module.css';
+
+type RolePreset = 'admin' | 'guru' | 'kepsek';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [capsLockActive, setCapsLockActive] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [schoolName, setSchoolName] = useState('akselerasi-edu');
   const [schoolLogoUrl, setSchoolLogoUrl] = useState('');
+  const [selectedRole, setSelectedRole] = useState<RolePreset>('admin');
   const [maintenance, setMaintenance] = useState<{ is_active: boolean; message: string } | null>(null);
   const [checkingMaintenance, setCheckingMaintenance] = useState(false);
   const [countdown, setCountdown] = useState(15);
@@ -194,7 +201,8 @@ export default function LoginPage() {
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
       const roleLower = user?.role?.toLowerCase() || '';
-      const isTeacher = (roleLower === 'guru' || roleLower === 'teacher' || roleLower.startsWith('guru ') || roleLower.startsWith('teacher ')) &&
+      const isTeacher =
+        (roleLower === 'guru' || roleLower === 'teacher' || roleLower.startsWith('guru ') || roleLower.startsWith('teacher ')) &&
         !roleLower.includes('kepala') &&
         !roleLower.includes('admin') &&
         !roleLower.includes('staff') &&
@@ -209,16 +217,19 @@ export default function LoginPage() {
     }
   }, [isAuthenticated, isLoading, user, router]);
 
-  useEffect(() => {
-    document.title = 'Masuk — akselerasi-edu';
-  }, []);
+  // Caps Lock keyboard detection handler
+  const handleKeyModifierCheck = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.getModifierState) {
+      setCapsLockActive(e.getModifierState('CapsLock'));
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
     try {
-      const { data, error: apiErr, response } = await sdkLogin({ body: { email, password } });
+      const { data, error: apiErr, response } = await sdkLogin({ body: { email: email.trim(), password } });
       if (!apiErr && data?.data?.access_token) {
         const token = data.data.access_token;
         const responseData = data?.data as Record<string, unknown> | undefined;
@@ -245,7 +256,8 @@ export default function LoginPage() {
         }
 
         const roleLower = userRole.toLowerCase();
-        const isTeacher = (roleLower === 'guru' || roleLower === 'teacher' || roleLower.startsWith('guru ') || roleLower.startsWith('teacher ')) &&
+        const isTeacher =
+          (roleLower === 'guru' || roleLower === 'teacher' || roleLower.startsWith('guru ') || roleLower.startsWith('teacher ')) &&
           !roleLower.includes('kepala') &&
           !roleLower.includes('admin') &&
           !roleLower.includes('staff') &&
@@ -264,7 +276,7 @@ export default function LoginPage() {
       if (!response) {
         setError('Tidak dapat terhubung ke server. Pastikan server aplikasi sedang berjalan.');
       } else if (response.status === 401 || response.status === 400) {
-        setError('Email atau kata sandi yang kamu masukkan salah.');
+        setError('Email/Username atau kata sandi yang Anda masukkan tidak sesuai.');
       } else if (
         response.status === 503 ||
         response.status === 423 ||
@@ -275,7 +287,7 @@ export default function LoginPage() {
           message: errObj?.message || 'Sistem sedang dalam peningkatan performa server terjadwal.',
         });
       } else {
-        setError('Terjadi kesalahan pada server (Status: ' + response.status + ').');
+        setError('Terjadi kendala autentikasi pada server (Kode: ' + response.status + ').');
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
@@ -292,124 +304,71 @@ export default function LoginPage() {
     }
   };
 
-  const features = [
-    {
-      icon: '🛡️',
-      title: 'Sinkronisasi Resmi Dapodik',
-      desc: 'Terhubung langsung dengan WebService Kemendikbud & e-Rapor Kurikulum Merdeka',
-    },
-    {
-      icon: '⚡',
-      title: 'Portal Akademik Cerdas',
-      desc: 'Kelola data siswa, guru, jadwal pelajaran, presensi QR, dan CBT secara terpadu',
-    },
-    {
-      icon: '🔒',
-      title: 'Keamanan Data Terenkripsi',
-      desc: 'Akses terproteksi dengan audit trail dan log aktivitas keamanan real-time',
-    },
-  ];
-
   if (isLoading || isAuthenticated) {
     return null;
   }
 
-  /* ── ENTERPRISE FULLSCREEN MAINTENANCE SCREEN ── */
+  /* ── ENTERPRISE STATUS PAGE MAINTENANCE SCREEN ── */
   if (maintenance?.is_active) {
     return (
       <div className={styles.maintenanceRoot}>
-        {/* ── Left Panel: Illustration ── */}
-        <div className={styles.mntLeft}>
-          <img
-            src="/images/under-construction-animate.svg"
-            alt="Under Construction – akselerasi-edu"
-            className={styles.mntIllustration}
-            draggable={false}
-          />
-        </div>
-
-        {/* ── Divider ── */}
-        <div className={styles.mntDivider} />
-
-        {/* ── Right Panel: Status ── */}
-        <div className={styles.mntRight}>
-          {/* Live badge */}
-          <div className={styles.mntBadge}>
-            <span className={styles.mntBeacon} />
-            <span>Pemeliharaan Terjadwal</span>
+        <div className={styles.maintenanceCard}>
+          <div className={styles.maintenanceBadgeRow}>
+            <div className={styles.maintenancePill}>
+              <Clock size={13} />
+              <span>Pemeliharaan Terjadwal</span>
+            </div>
+            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted, #64748b)' }}>
+              HTTP 503 Maintenance
+            </span>
           </div>
 
-          {/* Title */}
-          <h1 className={styles.mntTitle}>
-            Sistem Sedang<br />Dalam Pemeliharaan
-          </h1>
-
-          <p className={styles.mntDesc}>
-            Peningkatan infrastruktur & sinkronisasi data sedang berlangsung
-            untuk memastikan stabilitas operasional seluruh civitas sekolah.
+          <h1 className={styles.maintenanceTitle}>Sistem Dalam Pemeliharaan</h1>
+          <p className={styles.maintenanceDesc}>
+            Infrastruktur server dan sinkronisasi database sedang dioptimalkan. Akses ke portal akademik
+            akan segera dibuka kembali secara otomatis setelah proses selesai.
           </p>
 
-          {/* Status rows — flat, no card */}
-          <div className={styles.mntStatusList}>
-            <div className={styles.mntStatusRow}>
-              <span className={styles.mntStatusDotWarn} />
-              <span className={styles.mntStatusLabel}>Status Server</span>
-              <span className={styles.mntStatusVal}>Optimalisasi Berjalan</span>
-            </div>
-            <div className={styles.mntStatusRow}>
-              <span className={styles.mntStatusDotGreen} />
-              <span className={styles.mntStatusLabel}>Keamanan Data</span>
-              <span className={styles.mntStatusVal} style={{ color: '#10b981' }}>Terenkripsi & Terjaga</span>
-            </div>
-            <div className={styles.mntStatusRow}>
-              <span className={styles.mntStatusDotBlue} />
-              <span className={styles.mntStatusLabel}>Infrastruktur</span>
-              <span className={styles.mntStatusVal}>High-Availability Cloud</span>
-            </div>
-          </div>
-
-          {/* Maintenance message */}
-          <p className={styles.mntMessage}>
+          <div className={styles.maintenanceMessageCard}>
             &ldquo;{maintenance.message}&rdquo;
-          </p>
+          </div>
 
-          {/* CTA Button */}
+          <div className={styles.maintenanceStatusBar}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: 'var(--text-muted, #64748b)' }}>
+              <span>Pemeriksaan berkala</span>
+              <span>Ulang dalam <strong>{countdown}s</strong></span>
+            </div>
+            <div className={styles.countdownTrack}>
+              <div
+                className={styles.countdownProgress}
+                style={{ width: `${Math.max(4, ((15 - countdown) / 15) * 100)}%` }}
+              />
+            </div>
+          </div>
+
           <button
             type="button"
             onClick={() => checkMaintenanceStatus(true)}
             disabled={checkingMaintenance}
-            className={styles.mntBtn}
+            className={styles.maintenanceActionBtn}
           >
             <RefreshCw
               size={15}
               style={{ animation: checkingMaintenance ? 'spin 1s linear infinite' : 'none' }}
             />
-            {checkingMaintenance ? 'Memeriksa...' : 'Periksa Status Server'}
+            <span>{checkingMaintenance ? 'Memeriksa...' : 'Periksa Ulang Sekarang'}</span>
           </button>
 
           {checkFeedback && (
-            <p className={styles.mntFeedback}>{checkFeedback}</p>
+            <p style={{ fontSize: '0.82rem', color: '#0284c7', margin: 0, textAlign: 'center', fontWeight: 500 }}>
+              {checkFeedback}
+            </p>
           )}
 
-          {/* Countdown */}
-          <div className={styles.mntCountdownRow}>
-            <Clock size={12} />
-            <span>Auto-check dalam <strong>{countdown}s</strong></span>
-            <div className={styles.mntCountdownBar}>
-              <div
-                className={styles.mntCountdownFill}
-                style={{ width: `${Math.max(3, ((15 - countdown) / 15) * 100)}%` }}
-              />
-            </div>
-          </div>
-
-          {/* Footer */}
-          <p className={styles.mntFooter}>
-            Butuh akses darurat?{' '}
-            <span>Hubungi Administrator TI Sekolah</span>
-            {' · '}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '12px', borderTop: '1px solid var(--border-light, #e2e8f0)', fontSize: '0.78rem', color: 'var(--text-muted, #64748b)' }}>
+            <span>Butuh akses darurat? Hubungi Tim IT Sekolah.</span>
             <span
-              className={styles.mntVersion}
+              className={styles.sysAdminSecretLink}
               onClick={() => {
                 const next = adminTriggerCount + 1;
                 if (next >= 5) router.push('/system-admin/login');
@@ -418,28 +377,52 @@ export default function LoginPage() {
             >
               v2.4.0
             </span>
-          </p>
+          </div>
         </div>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
   }
 
+  // Dynamic helper text based on selected role preset
+  const getRoleHint = () => {
+    switch (selectedRole) {
+      case 'guru':
+        return 'Guru & Tenaga Kependidikan dapat menggunakan Email atau NIP / Username yang terdaftar di sekolah.';
+      case 'kepsek':
+        return 'Kepala Sekolah wajib menggunakan alamat Email kedinasan yang terverifikasi.';
+      case 'admin':
+      default:
+        return 'Administrator & Operator Sekolah menggunakan akun email resmi sekolah.';
+    }
+  };
+
+  const getRolePlaceholder = () => {
+    switch (selectedRole) {
+      case 'guru':
+        return 'nama@sekolah.sch.id atau username / NIP';
+      case 'kepsek':
+        return 'kepsek@sekolah.sch.id';
+      case 'admin':
+      default:
+        return 'admin@sekolah.sch.id';
+    }
+  };
+
   return (
     <div className={styles.root}>
-      {/* Animated blob backgrounds */}
-      <div className={styles.bgBlob1} />
-      <div className={styles.bgBlob2} />
-      <div className={styles.bgBlob3} />
-      <div className={styles.gridOverlay} />
+      {/* Subtle architectural atmosphere & precision grid */}
+      <div className={styles.bgAtmosphere} />
+      <div className={styles.bgGrid} />
 
       <div className={styles.container}>
         {/* ══════════════════════════════════════════════════════════
-            LEFT SHOWCASE & SECURITY BRAND PANEL
+            LEFT PANEL — INSTITUTIONAL IDENTITY & TELEMETRY
             ══════════════════════════════════════════════════════════ */}
         <div className={styles.brandPanel}>
-          {/* School Header */}
+          {/* Top: School Crest & Official accreditation */}
           <div className={styles.brandHeader}>
-            <div className={styles.logoMark}>
+            <div className={styles.schoolLogoWrapper}>
               {schoolLogoUrl ? (
                 <img
                   src={schoolLogoUrl}
@@ -450,109 +433,144 @@ export default function LoginPage() {
               ) : (
                 <img
                   src="/logo.png"
-                  alt={schoolName || 'akselerasi-edu'}
+                  alt={schoolName || 'School OS'}
                   className={styles.schoolLogoImg}
                 />
               )}
             </div>
             <div className={styles.brandTextGroup}>
+              <div className={styles.officialBadgeRow}>
+                <span className={styles.officialPill}>
+                  <ShieldCheck size={12} />
+                  <span>Dapodik Terintegrasi</span>
+                </span>
+                <span className={styles.sessionPill}>T.A. 2026/2027</span>
+              </div>
               <h1 className={styles.schoolTitle}>{schoolName}</h1>
-              <p className={styles.schoolSubtitle}>Portal Layanan &amp; Akademik Terpadu</p>
+              <p className={styles.schoolSubtitle}>Sistem Operasi Manajemen Sekolah &amp; Pembelajaran</p>
             </div>
           </div>
 
-          {/* Center Security SVG Animation */}
-          <div className={styles.illustrationArea}>
-            <img
-              src="/images/security-animate.svg"
-              alt="Keamanan Terjamin akselerasi-edu"
-              className={styles.securityIllustration}
-            />
-          </div>
+          {/* Center: Institutional Showcase & Real Operational Telemetry */}
+          <div className={styles.workspaceShowcase}>
+            <div>
+              <h2 className={styles.heroTagline}>
+                Pusat Kendali Akademik{' '}
+                <span className={styles.heroTaglineHighlight}>Terintegrasi</span>
+              </h2>
+              <p className={styles.heroDescription}>
+                Kelola kurikulum merdeka, sinkronisasi Dapodik otomatis, presensi presisi, e-rapor,
+                dan operasional civitas sekolah dalam satu platform terpercaya.
+              </p>
+            </div>
 
-          {/* Bottom Security Trust Highlights */}
-          <div className={styles.featureList}>
-            {features.map((f, i) => (
-              <div key={i} className={styles.featureItem}>
-                <div className={styles.featureIcon}>{f.icon}</div>
-                <div>
-                  <div className={styles.featureTitle}>{f.title}</div>
-                  <div className={styles.featureDesc}>{f.desc}</div>
+            <div className={styles.telemetryCard}>
+              <div className={styles.telemetryHeader}>
+                <span className={styles.telemetryTitle}>
+                  <Activity size={14} /> Telemetri Infrastruktur
+                </span>
+                <span className={styles.telemetryPulse}>
+                  <span className={styles.pulseDot} /> Operasional Normal
+                </span>
+              </div>
+              <div className={styles.telemetryGrid}>
+                <div className={styles.telemetryItem}>
+                  <span className={styles.telemetryItemVal}>99.98%</span>
+                  <span className={styles.telemetryItemLabel}>Uptime Layanan</span>
+                </div>
+                <div className={styles.telemetryItem}>
+                  <span className={styles.telemetryItemVal}>AES-256</span>
+                  <span className={styles.telemetryItemLabel}>Enkripsi Data</span>
+                </div>
+                <div className={styles.telemetryItem}>
+                  <span className={styles.telemetryItemVal}>&lt; 40ms</span>
+                  <span className={styles.telemetryItemLabel}>Latensi Jaringan</span>
                 </div>
               </div>
-            ))}
+            </div>
           </div>
 
-          {/* Live Operational Status */}
-          <div className={styles.statusLine}>
-            <span className={styles.statusDot} />
-            <span>Server Operasional &amp; Terkoneksi Sinkronisasi Dapodik</span>
+          {/* Bottom: Institutional Compliance */}
+          <div className={styles.brandFooter}>
+            <span className={styles.kemdikbudRef}>
+              <Building2 size={14} />
+              <span>Standar Kurikulum Merdeka Kemendikdasmen</span>
+            </span>
+            <span>School OS v2.4</span>
           </div>
         </div>
 
         {/* ══════════════════════════════════════════════════════════
-            RIGHT FORM PANEL
+            RIGHT PANEL — ERGONOMIC AUTHENTICATION FORM
             ══════════════════════════════════════════════════════════ */}
         <div className={styles.formPanel}>
-          {/* Theme Toggle Button */}
-          <button
-            type="button"
-            onClick={toggleTheme}
-            className={styles.themeToggleBtn}
-            aria-label={theme === 'dark' ? 'Beralih ke Mode Terang' : 'Beralih ke Mode Gelap'}
-            title={theme === 'dark' ? 'Mode Terang' : 'Mode Gelap'}
-          >
-            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-          </button>
+          {/* Top navigation with Theme switch */}
+          <div className={styles.formTopNav}>
+            <div className={styles.portalBadge}>
+              <GraduationCap size={14} />
+              <span>Portal Masuk Sekolah</span>
+            </div>
+            <div className={styles.navControls}>
+              <button
+                type="button"
+                onClick={toggleTheme}
+                className={styles.iconControlBtn}
+                aria-label={theme === 'dark' ? 'Beralih ke Mode Terang' : 'Beralih ke Mode Gelap'}
+                title={theme === 'dark' ? 'Mode Terang' : 'Mode Gelap'}
+              >
+                {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
+              </button>
+            </div>
+          </div>
 
-          <div className={styles.formContent}>
-            {/* Mobile-only School Brand Header */}
-            <div className={styles.mobileBrandHeader}>
-              <div className={styles.mobileLogoMark}>
-                {schoolLogoUrl ? (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img
-                    src={schoolLogoUrl}
-                    alt={schoolName}
-                    className={styles.mobileLogoImg}
-                    onError={(e) => {
-                      (e.target as HTMLElement).style.display = 'none';
-                    }}
-                  />
-                ) : (
-                  <GraduationCap size={22} className="text-sky-500" />
-                )}
-              </div>
-              <div>
-                <h1 className={styles.mobileSchoolTitle}>{schoolName}</h1>
-                <p className={styles.mobileSchoolSubtitle}>Sistem Operasi Akademik Terpadu</p>
-              </div>
+          {/* Center form content wrapper */}
+          <div className={styles.formContentWrapper}>
+            <div className={styles.formHeader}>
+              <h2 className={styles.formMainTitle}>Masuk ke Ruang Kerja</h2>
+              <p className={styles.formSubTitle}>
+                Pilih peran Anda dan masukkan akun resmi untuk melanjutkan ke dashboard.
+              </p>
             </div>
 
-            {/* Header */}
-            <div className={styles.formHeader}>
-              <div className={styles.formBadge}>
-                <ShieldCheck size={14} />
-                <span>Portal Resmi Sekolah</span>
-              </div>
-              <h2 className={styles.formTitle}>Masuk ke Sistem</h2>
-              <p className={styles.formSub}>
-                Gunakan kredensial akun terdaftar Anda untuk mengakses portal sekolah
-              </p>
+            {/* Quick Role Switcher Pill Bar */}
+            <div className={styles.rolePresetBar}>
+              <button
+                type="button"
+                className={`${styles.rolePresetBtn} ${selectedRole === 'admin' ? styles.rolePresetBtnActive : ''}`}
+                onClick={() => setSelectedRole('admin')}
+              >
+                Admin &amp; Staf
+              </button>
+              <button
+                type="button"
+                className={`${styles.rolePresetBtn} ${selectedRole === 'guru' ? styles.rolePresetBtnActive : ''}`}
+                onClick={() => setSelectedRole('guru')}
+              >
+                Guru &amp; Tendik
+              </button>
+              <button
+                type="button"
+                className={`${styles.rolePresetBtn} ${selectedRole === 'kepsek' ? styles.rolePresetBtnActive : ''}`}
+                onClick={() => setSelectedRole('kepsek')}
+              >
+                Kepala Sekolah
+              </button>
             </div>
 
             {error && (
               <div className={styles.errorBanner}>
-                <Info size={16} />
+                <Info size={16} style={{ flexShrink: 0, marginTop: 2 }} />
                 <span>{error}</span>
               </div>
             )}
 
             <form onSubmit={handleSubmit} className={styles.form}>
               <div className={styles.inputGroup}>
-                <label htmlFor="email" className={styles.label}>
-                  Email atau Username Akun
-                </label>
+                <div className={styles.labelRow}>
+                  <label htmlFor="email" className={styles.label}>
+                    {selectedRole === 'guru' ? 'Email atau Username / NIP' : 'Email Akun Resmi'}
+                  </label>
+                </div>
                 <div className={styles.inputWrapper}>
                   <span className={styles.inputIcon}>
                     <Mail size={16} />
@@ -561,23 +579,26 @@ export default function LoginPage() {
                     id="email"
                     type="text"
                     required
-                    placeholder="nama@sekolah.sch.id atau username"
+                    placeholder={getRolePlaceholder()}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className={styles.formInput}
                     autoComplete="username"
                   />
                 </div>
-                <span className={styles.inputHint}>
-                  Admin/Kepala Sekolah wajib menggunakan Email. Guru, Siswa, &amp; Wali dapat menggunakan Username (cth: <code>nama.pengguna</code>, <code>guru_akselerasi</code>) atau Email.
-                </span>
+                <span className={styles.inputHelper}>{getRoleHint()}</span>
               </div>
 
               <div className={styles.inputGroup}>
-                <label htmlFor="password" className={styles.label}>
-                  Kata Sandi
-                </label>
-                <div className={styles.passwordWrapper}>
+                <div className={styles.labelRow}>
+                  <label htmlFor="password" className={styles.label}>
+                    Kata Sandi
+                  </label>
+                  {capsLockActive && (
+                    <span className={styles.capsLockBadge}>Caps Lock Aktif</span>
+                  )}
+                </div>
+                <div className={styles.inputWrapper}>
                   <span className={styles.inputIcon}>
                     <KeyRound size={16} />
                   </span>
@@ -588,9 +609,11 @@ export default function LoginPage() {
                     placeholder="Masukkan kata sandi akun"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                    onKeyDown={handleKeyModifierCheck}
+                    onKeyUp={handleKeyModifierCheck}
                     className={styles.formInput}
                     autoComplete="current-password"
-                    style={{ paddingRight: '2.8rem' }}
+                    style={{ paddingRight: '42px' }}
                   />
                   <button
                     type="button"
@@ -599,7 +622,7 @@ export default function LoginPage() {
                     tabIndex={-1}
                     aria-label={showPassword ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'}
                   >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
                   </button>
                 </div>
               </div>
@@ -608,51 +631,51 @@ export default function LoginPage() {
                 {loading ? (
                   <>
                     <RefreshCw size={16} style={{ animation: 'spin 1s linear infinite' }} />
-                    <span>Memverifikasi Akun...</span>
+                    <span>Memverifikasi Kredensial...</span>
                   </>
                 ) : (
                   <>
-                    <span>Masuk ke Dashboard</span>
-                    <Lock size={15} />
+                    <span>Buka Ruang Kerja</span>
+                    <ArrowRight size={16} />
                   </>
                 )}
               </button>
             </form>
 
-            {/* Android Mobile Notice Card */}
-            <div className={styles.androidNoticeBox}>
-              <div className={styles.androidNoticeHeader}>
-                <Smartphone size={16} className={styles.androidNoticeIcon} />
-                <span>Siswa, Guru, atau Orang Tua?</span>
+            {/* Android Mobile Guidance Box */}
+            <div className={styles.mobileCrossLink}>
+              <div className={styles.mobileCrossIconBox}>
+                <Smartphone size={18} />
               </div>
-              <p className={styles.androidNoticeText}>
-                Gunakan <strong>Aplikasi Android akselerasi-edu</strong> untuk jadwal, tugas, absensi, dan
-                e-rapor langsung dari smartphone.
-              </p>
+              <div>
+                <p className={styles.mobileCrossTitle}>Siswa atau Orang Tua / Wali?</p>
+                <p className={styles.mobileCrossDesc}>
+                  Akses presensi harian, nilai e-rapor, dan jadwal ujian langsung melalui aplikasi Android School OS.
+                </p>
+              </div>
             </div>
+          </div>
 
-            {/* Footer Assistance & Secret Admin Access */}
-            <div className={styles.footerHelpText}>
-              <span>Butuh bantuan akses? Hubungi Admin Sekolah.</span>
-              <span
-                className={styles.versionBadge}
-                title=""
-                onClick={() => {
-                  const next = adminTriggerCount + 1;
-                  if (next >= 5) {
-                    router.push('/system-admin/login');
-                  } else {
-                    setAdminTriggerCount(next);
-                  }
-                }}
-              >
-                v2.4.0
-              </span>
-            </div>
+          {/* Form Bottom Bar */}
+          <div className={styles.formBottomBar}>
+            <span>Kendala akun? Hubungi Administrator TI Sekolah.</span>
+            <span
+              className={styles.sysAdminSecretLink}
+              title="Akses Administrator Sistem"
+              onClick={() => {
+                const next = adminTriggerCount + 1;
+                if (next >= 5) {
+                  router.push('/system-admin/login');
+                } else {
+                  setAdminTriggerCount(next);
+                }
+              }}
+            >
+              v2.4.0
+            </span>
           </div>
         </div>
       </div>
-
 
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>

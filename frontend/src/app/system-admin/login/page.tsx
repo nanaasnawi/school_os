@@ -1,17 +1,55 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { getApiUrl } from '@/lib/api';
-import styles from '@/app/(auth)/login/login.module.css';
+import {
+  ShieldAlert,
+  Terminal,
+  KeyRound,
+  Mail,
+  Eye,
+  EyeOff,
+  ArrowLeft,
+  Activity,
+  Server,
+  Lock,
+  RefreshCw,
+  AlertTriangle,
+  ChevronRight,
+} from 'lucide-react';
+import styles from './system-admin.module.css';
 
 export default function SystemAdminLogin() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [capsLockActive, setCapsLockActive] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
+
+  // Return to School Portal on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        router.push('/login');
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [router]);
+
+  useEffect(() => {
+    document.title = 'Root Command Center — School OS';
+  }, []);
+
+  const handleKeyModifierCheck = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.getModifierState) {
+      setCapsLockActive(e.getModifierState('CapsLock'));
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,19 +60,20 @@ export default function SystemAdminLogin() {
       const res = await fetch(getApiUrl('/api/v1/system/login'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim(), password: password.trim() })
+        body: JSON.stringify({ email: email.trim(), password }),
       });
 
       if (res.ok) {
         const data = await res.json();
-        // Save the special sysAdminToken
+        // Save the privileged sysAdminToken
         localStorage.setItem('sysAdminToken', data.data.token);
         router.push('/system-admin/dashboard');
       } else {
-        setError('Kredensial System Admin tidak valid.');
+        const json = await res.json().catch(() => null);
+        setError(json?.message || 'Autentikasi gagal: Kredensial Root Administrator tidak sah.');
       }
-    } catch (err) {
-      setError('Koneksi ke server terputus.');
+    } catch {
+      setError('Koneksi ke gateway autentikasi terputus atau ditolak.');
     } finally {
       setLoading(false);
     }
@@ -42,151 +81,221 @@ export default function SystemAdminLogin() {
 
   return (
     <div className={styles.root}>
-      {/* Animated blob backgrounds */}
-      <div className={styles.bgBlob1} />
-      <div className={styles.bgBlob2} />
-      <div className={styles.bgBlob3} />
-      <div className={styles.gridOverlay} />
+      {/* Background space and grid */}
+      <div className={styles.bgAtmosphere} />
+      <div className={styles.bgGrid} />
 
       <div className={styles.container}>
-        {/* LEFT BRAND PANEL (Customized for System Admin) */}
-        <div className={styles.brandPanel} style={{ background: 'linear-gradient(150deg, rgba(14,165,233,0.04) 0%, rgba(2,132,199,0.02) 50%, rgba(56,189,248,0.01) 100%)' }}>
-          <div className={styles.brandContent}>
-            {/* Logo */}
-            <div className={styles.logoMark} style={{ padding: '4px', background: 'linear-gradient(135deg, rgba(239,68,68,0.25), rgba(220,38,38,0.15))', borderColor: 'rgba(239,68,68,0.35)' }}>
-              <img
-                src="/logo.png"
-                alt="School OS"
-                style={{ width: '48px', height: '48px', objectFit: 'contain' }}
-              />
-            </div>
+        {/* ══════════════════════════════════════════════════════════
+            LEFT PANEL — CLUSTER MISSION CONTROL & NODE TELEMETRY
+            ══════════════════════════════════════════════════════════ */}
+        <div className={styles.terminalPanel}>
+          {/* Top Panel Header */}
+          <div className={styles.panelHeader}>
+            <Link href="/login" className={styles.backLink} title="Kembali ke Portal Sekolah">
+              <ArrowLeft size={14} />
+              <span>Portal Sekolah</span>
+            </Link>
 
-            {/* Brand heading */}
-            <div className={styles.brandHeading}>
-              <h1 className={styles.brandName} style={{ color: '#fca5a5' }}>Command Center</h1>
-              <p className={styles.brandTagline}>School OS Super Admin Portal</p>
-            </div>
-
-            <div className={styles.featureList}>
-              <div className={styles.featureItem}>
-                <div className={styles.featureIcon}>👑</div>
-                <div>
-                  <div className={styles.featureTitle}>Akses Penuh</div>
-                  <div className={styles.featureDesc}>Kelola semua tenant dan sekolah secara sentral.</div>
-                </div>
+            <div className={styles.brandIdentity}>
+              <div className={styles.brandLogoBox}>
+                <ShieldAlert size={24} color="#f87171" />
               </div>
-              <div className={styles.featureItem}>
-                <div className={styles.featureIcon}>🔑</div>
-                <div>
-                  <div className={styles.featureTitle}>Aktivasi Master</div>
-                  <div className={styles.featureDesc}>Buat dan aktivasikan akun Kepala Sekolah instan.</div>
+              <div className={styles.brandTitles}>
+                <div className={styles.systemBadgeRow}>
+                  <span className={styles.rootBadge}>ROOT PRIVILEGE</span>
+                  <span className={styles.envBadge}>CLUSTER-AP-ID</span>
                 </div>
+                <h1 className={styles.systemTitle}>Command Center</h1>
+                <p className={styles.systemSubtitle}>School OS Platform Control &amp; Provisioning</p>
               </div>
             </div>
-            
-            <div className={styles.statusLine}>
-              <span className={styles.statusDot} style={{ background: '#f87171', boxShadow: '0 0 8px #f87171' }} />
-              <span style={{ color: '#f87171' }}>System Admin Access — Restricted Area</span>
+          </div>
+
+          {/* Center Telemetry & Hardware Node Status */}
+          <div className={styles.telemetrySection}>
+            <div>
+              <h2 className={styles.missionTagline}>
+                Operasional Multi-Tenant{' '}
+                <span className={styles.missionTaglineRed}>Tingkat Pusat</span>
+              </h2>
+              <p className={styles.missionDesc}>
+                Akses level sistem terdistribusi untuk pengawasan master instance sekolah, aktivasi tenant,
+                pemantauan throughput API, dan manajemen infrastruktur database.
+              </p>
             </div>
+
+            {/* Simulated Live Terminal Cluster Status Box */}
+            <div className={styles.terminalCard}>
+              <div className={styles.terminalBar}>
+                <div className={styles.terminalLights}>
+                  <span className={styles.termLightRed} />
+                  <span className={styles.termLightYellow} />
+                  <span className={styles.termLightGreen} />
+                </div>
+                <span>sys_cluster_diagnostics.sh</span>
+                <span>TCP:443</span>
+              </div>
+              <div className={styles.terminalContent}>
+                <div className={styles.terminalRow}>
+                  <span className={styles.termKey}>TARGET_ZONE</span>
+                  <span className={styles.termVal}>AP-SOUTHEAST-3 (ID)</span>
+                </div>
+                <div className={styles.terminalRow}>
+                  <span className={styles.termKey}>CLUSTER_HEALTH</span>
+                  <span className={styles.termValSuccess}>
+                    <span className={styles.liveDot} /> ALL NODES SYNCHRONIZED
+                  </span>
+                </div>
+                <div className={styles.terminalRow}>
+                  <span className={styles.termKey}>DATA_ISOLATION</span>
+                  <span className={styles.termVal}>ROW-LEVEL + TENANT SCHEMAS</span>
+                </div>
+                <div className={styles.terminalRow}>
+                  <span className={styles.termKey}>HARDWARE_RNG</span>
+                  <span className={styles.termVal}>CHACHA20-POLY1305 / TLS 1.3</span>
+                </div>
+                <div className={styles.terminalRow}>
+                  <span className={styles.termKey}>AUDIT_TRAIL</span>
+                  <span className={styles.termValAlert}>IMMUTABLE JOURNALING ENFORCED</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Audit Footer */}
+          <div className={styles.auditNoticeFooter}>
+            <div className={styles.auditItem}>
+              <Activity size={13} />
+              <span>LOGGING: IP &amp; GEO-SIGNATURE LOGGED</span>
+            </div>
+            <span>REV: 2.4.0-CORE</span>
           </div>
         </div>
 
-        {/* RIGHT FORM PANEL */}
+        {/* ══════════════════════════════════════════════════════════
+            RIGHT PANEL — MASTER ROOT AUTHENTICATION FORM
+            ══════════════════════════════════════════════════════════ */}
         <div className={styles.formPanel}>
-          <div className={styles.formCard}>
+          <div className={styles.formTopBar}>
+            <div className={styles.securityShieldBadge}>
+              <Lock size={12} />
+              <span>SUPER ADMIN CONSOLE</span>
+            </div>
+            <span className={styles.escNotice}>
+              Tekan <kbd>Esc</kbd> untuk kembali
+            </span>
+          </div>
 
-            {/* Header */}
-            <div className={styles.formHeader}>
-              <div className={styles.formBadge} style={{ color: '#f87171', background: 'rgba(248,113,113,0.1)', borderColor: 'rgba(248,113,113,0.2)' }}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                </svg>
-                Super Admin
-              </div>
-              <h2 className={styles.formTitle}>System Login</h2>
-              <p className={styles.formSub}>Masuk menggunakan kredensial master administrator</p>
+          <div className={styles.formContentWrapper}>
+            <div className={styles.formHeading}>
+              <h2 className={styles.formTitle}>Otorisasi Sistem</h2>
+              <p className={styles.formDesc}>
+                Masukkan kredensial operator master untuk membuka sesi root platform.
+              </p>
             </div>
 
-            {error && <div className={styles.errorBanner}>{error}</div>}
+            <div className={styles.warningPill}>
+              <AlertTriangle size={16} style={{ flexShrink: 0, marginTop: 2, color: '#f87171' }} />
+              <span>
+                <strong>Akses Terbatas:</strong> Seluruh aktivitas dan perubahan konfigurasi sistem
+                dicatat secara permanen dalam audit trail pengawas platform.
+              </span>
+            </div>
+
+            {error && (
+              <div className={styles.errorBanner}>
+                <AlertTriangle size={15} style={{ flexShrink: 0 }} />
+                <span>{error}</span>
+              </div>
+            )}
 
             <form onSubmit={handleSubmit} className={styles.form}>
               <div className={styles.inputGroup}>
-                <label htmlFor="email" className={styles.label}>Email Admin</label>
+                <div className={styles.labelRow}>
+                  <label htmlFor="sys-email" className={styles.label}>
+                    SYS_ADMIN_IDENTITY
+                  </label>
+                </div>
                 <div className={styles.inputWrapper}>
                   <span className={styles.inputIcon}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
-                    </svg>
+                    <Mail size={16} />
                   </span>
                   <input
-                    id="email"
+                    id="sys-email"
                     type="email"
                     required
-                    placeholder="sysadmin@schoolos.com"
+                    placeholder="sysadmin@schoolos.id"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className={styles.formInput}
                     autoComplete="email"
+                    spellCheck={false}
                   />
                 </div>
               </div>
 
               <div className={styles.inputGroup}>
-                <label htmlFor="password" className={styles.label}>Master Password</label>
-                <div className={styles.passwordWrapper}>
+                <div className={styles.labelRow}>
+                  <label htmlFor="sys-password" className={styles.label}>
+                    SYS_SECRET_KEY
+                  </label>
+                  {capsLockActive && <span className={styles.capsLockTag}>CAPS LOCK</span>}
+                </div>
+                <div className={styles.inputWrapper}>
                   <span className={styles.inputIcon}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                    </svg>
+                    <KeyRound size={16} />
                   </span>
                   <input
-                    id="password"
+                    id="sys-password"
                     type={showPassword ? 'text' : 'password'}
                     required
-                    placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;"
+                    placeholder="••••••••••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                    onKeyDown={handleKeyModifierCheck}
+                    onKeyUp={handleKeyModifierCheck}
                     className={styles.formInput}
                     autoComplete="current-password"
-                    style={{ paddingLeft: '2.75rem' }}
+                    style={{ paddingRight: '42px' }}
                   />
                   <button
                     type="button"
                     className={styles.eyeBtn}
                     onClick={() => setShowPassword(!showPassword)}
                     tabIndex={-1}
+                    aria-label={showPassword ? 'Sembunyikan secret' : 'Tampilkan secret'}
                   >
-                    {showPassword ? (
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>
-                      </svg>
-                    ) : (
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
-                      </svg>
-                    )}
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
               </div>
 
-              <button type="submit" disabled={loading} className={styles.submitBtn} style={{ background: '#b91c1c', color: 'white' }}>
+              <button type="submit" disabled={loading} className={styles.submitBtn}>
                 {loading ? (
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
-                    Memverifikasi...
-                  </span>
+                  <>
+                    <RefreshCw size={15} style={{ animation: 'spin 1s linear infinite' }} />
+                    <span>MENGOTENTIKASI KUNCI...</span>
+                  </>
                 ) : (
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
-                    Masuk Command Center
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
-                    </svg>
-                  </span>
+                  <>
+                    <Terminal size={15} />
+                    <span>BUKA KONSOL UTAMA</span>
+                    <ChevronRight size={15} />
+                  </>
                 )}
               </button>
             </form>
           </div>
+
+          <div className={styles.formBottomBar}>
+            <span>ENDPOINT: /api/v1/system/login</span>
+            <span>TLSv1.3 AES-256-GCM</span>
+          </div>
         </div>
       </div>
+
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }
