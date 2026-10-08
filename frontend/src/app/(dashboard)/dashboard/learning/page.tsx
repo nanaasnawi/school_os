@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import styles from './learning.module.css';
 import { listTeachers, listClasses } from '@/lib/sdk/sdk.gen';
+import { Calendar, School, X, Eye, BookOpen, Settings, FileText, Video, UploadCloud, CheckCircle2, AlertCircle, Image as ImageIcon, Send } from 'lucide-react';
 
 type MaterialItem = {
   id: string;
@@ -219,7 +220,7 @@ function LearningPageContent() {
     const file = e.target.files?.[0];
     if (file) {
       setNewMaterial(prev => ({ ...prev, pdfFileName: file.name }));
-      showToast(`📄 File PDF "${file.name}" terpilih dari perangkat!`);
+      showToast(`File PDF "${file.name}" terpilih dari perangkat!`);
     }
   };
 
@@ -229,7 +230,7 @@ function LearningPageContent() {
     if (file) {
       const imageUrl = URL.createObjectURL(file);
       setNewMaterial(prev => ({ ...prev, imagePreviewUrl: imageUrl }));
-      showToast(`🖼️ Gambar penjelas "${file.name}" terpilih dari perangkat!`);
+      showToast(`Gambar penjelas "${file.name}" terpilih dari perangkat!`);
     }
   };
 
@@ -238,11 +239,11 @@ function LearningPageContent() {
     if (!newMaterial.chapterTitle) return;
 
     if (newMaterial.contentType === 'VIDEO' && !newMaterial.youtubeUrl) {
-      showToast('⚠️ Mohon masukkan link URL YouTube video pembelajaran!');
+      showToast('Mohon masukkan link URL YouTube video pembelajaran!');
       return;
     }
     if (newMaterial.contentType === 'PDF' && !newMaterial.pdfFileName) {
-      showToast('⚠️ Mohon pilih file PDF dari perangkat!');
+      showToast('Mohon pilih file PDF dari perangkat!');
       return;
     }
 
@@ -288,12 +289,12 @@ function LearningPageContent() {
 
         setMaterials(prev => [item, ...prev]);
         setShowAddModal(false);
-        showToast(`✓ Materi "${newMaterial.chapterTitle}" dipublish ke Android App Siswa Rombel ${newMaterial.className}!`);
+        showToast(`Materi "${newMaterial.chapterTitle}" dipublish ke Android App Siswa Rombel ${newMaterial.className}!`);
       } else {
-        showToast('⚠️ Gagal mempublish materi');
+        showToast('Gagal mempublish materi');
       }
     } catch {
-      showToast('⚠️ Terjadi kendala koneksi');
+      showToast('Terjadi kendala koneksi');
     }
   };
 
@@ -358,7 +359,7 @@ startxref
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-    showToast('✓ Berkas PDF berhasil diunduh ke perangkat');
+    showToast('Berkas PDF berhasil diunduh ke perangkat');
   };
 
   const filteredMaterials = materials.filter(m => {
@@ -386,8 +387,9 @@ startxref
         </div>
 
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-          <Link href="/dashboard/subjects" className="btn btn-secondary btn-sm">
-            📅 Plotting Jadwal Rombel
+          <Link href="/dashboard/subjects" className="btn btn-secondary btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+            <Calendar size={13} />
+            <span>Plotting Jadwal Rombel</span>
           </Link>
           <button className="btn btn-primary btn-sm" onClick={() => {
             if (selectedClassFilter !== 'ALL') setNewMaterial(prev => ({ ...prev, className: selectedClassFilter }));
@@ -414,15 +416,16 @@ startxref
           gap: '0.75rem'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem' }}>
-            <span>🏫 Filter Aktif Rombel: <strong>{selectedClassFilter}</strong></span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><School size={14} /> Filter Aktif Rombel: <strong>{selectedClassFilter}</strong></span>
             {selectedSubjectFilter !== 'ALL' && <span>| Mapel: <strong>{selectedSubjectFilter}</strong></span>}
           </div>
           <button 
             className="btn btn-ghost btn-sm" 
-            style={{ color: '#a5b4fc', fontSize: '0.78rem' }}
+            style={{ color: '#a5b4fc', fontSize: '0.78rem', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
             onClick={() => { setUserClassFilter('ALL'); setUserSubjectFilter('ALL'); }}
           >
-            ✕ Reset Filter
+            <X size={12} />
+            <span>Reset Filter</span>
           </button>
         </div>
       )}
@@ -440,21 +443,21 @@ startxref
         gap: '0.75rem'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <span style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-secondary)' }}>👁️ Mode Pandang:</span>
+          <span style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}><Eye size={13} /> Mode Pandang:</span>
           <div style={{ display: 'flex', gap: '4px', background: 'var(--bg-elevated)', padding: '3px', borderRadius: '8px' }}>
             <button
               className={`btn btn-sm ${viewRole === 'teacher' ? 'btn-primary' : 'btn-ghost'}`}
               style={{ fontSize: '0.75rem', padding: '0.25rem 0.65rem' }}
               onClick={() => setViewRole('teacher')}
             >
-              🏫 Guru Workspace (Upload Materi)
+              Guru Workspace (Upload Materi)
             </button>
             <button
               className={`btn btn-sm ${viewRole === 'admin' ? 'btn-primary' : 'btn-ghost'}`}
               style={{ fontSize: '0.75rem', padding: '0.25rem 0.65rem' }}
               onClick={() => setViewRole('admin')}
             >
-              ⚙️ Admin & Kepsek (Pantau Materi Rombel)
+              Admin &amp; Kepsek (Pantau Materi Rombel)
             </button>
           </div>
         </div>
@@ -499,7 +502,7 @@ startxref
                   {m.className} · {m.subjectName}
                 </span>
                 <span className={`badge ${m.contentType === 'PDF' ? 'badge-info' : m.contentType === 'VIDEO' ? 'badge-warning' : 'badge-active'}`}>
-                  {m.contentType === 'VIDEO' ? '🎥 Video' : m.contentType === 'PDF' ? '📄 Buku / PDF' : '📝 Modul Ajar'}
+                  {m.contentType === 'VIDEO' ? 'Video' : m.contentType === 'PDF' ? 'Buku / PDF' : 'Modul Ajar'}
                 </span>
               </div>
 
@@ -600,9 +603,9 @@ startxref
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          gap: '1rem'
+          gap: '0.75rem'
         }}>
-          <div style={{ fontSize: '2.5rem' }}>📚</div>
+          <BookOpen size={36} color="var(--accent)" />
           <div>
             <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800 }}>
               Belum Ada Modul Materi untuk {selectedClassFilter !== 'ALL' ? selectedClassFilter : 'Rombel Ini'}
@@ -659,7 +662,7 @@ startxref
           }} onClick={e => e.stopPropagation()}>
             <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid var(--border-light)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                🏫 Publish Materi Pembelajaran ke Android App Siswa
+                Publish Materi Pembelajaran ke Android App Siswa
               </h3>
               <button style={{ border: 'none', background: 'none', fontSize: '1.4rem', cursor: 'pointer', color: 'var(--text-muted)' }} onClick={() => setShowAddModal(false)}>×</button>
             </div>
@@ -734,7 +737,7 @@ startxref
                 {newMaterial.contentType === 'PDF' && (
                   <div style={{ background: 'var(--bg-elevated)', padding: '0.85rem', borderRadius: '10px', border: '1px dashed #3b82f6' }}>
                     <label style={{ fontSize: '0.76rem', fontWeight: 700, color: '#2563eb', display: 'block', marginBottom: '0.4rem' }}>
-                      📄 Form Upload Dokumen PDF / Modul:
+                      Form Upload Dokumen PDF / Modul:
                     </label>
                     <label style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.3rem' }}>
                       Pilih File PDF dari Komputer / Perangkat *
@@ -748,7 +751,7 @@ startxref
                     />
                     {newMaterial.pdfFileName && (
                       <div style={{ marginTop: '0.4rem', fontSize: '0.74rem', color: '#16a34a', fontWeight: 700 }}>
-                        ✓ File Siap: {newMaterial.pdfFileName}
+                        File Siap: {newMaterial.pdfFileName}
                       </div>
                     )}
                   </div>
@@ -757,7 +760,7 @@ startxref
                 {newMaterial.contentType === 'VIDEO' && (
                   <div style={{ background: 'var(--bg-elevated)', padding: '0.85rem', borderRadius: '10px', border: '1px dashed #eab308' }}>
                     <label style={{ fontSize: '0.76rem', fontWeight: 700, color: '#ca8a04', display: 'block', marginBottom: '0.4rem' }}>
-                      🎥 Form Embed Video YouTube Pembelajaran:
+                      Form Embed Video YouTube Pembelajaran:
                     </label>
                     <input
                       type="url"
@@ -772,7 +775,7 @@ startxref
                 {newMaterial.contentType === 'TEXT' && (
                   <div style={{ background: 'var(--bg-elevated)', padding: '0.85rem', borderRadius: '10px', border: '1px dashed #22c55e' }}>
                     <label style={{ fontSize: '0.76rem', fontWeight: 700, color: '#16a34a', display: 'block', marginBottom: '0.4rem' }}>
-                      🖼️ Upload Gambar Penjelas Modul (Opsional):
+                      Upload Gambar Penjelas Modul (Opsional):
                     </label>
                     <input
                       type="file"
@@ -800,7 +803,10 @@ startxref
 
               <div style={{ padding: '1rem 1.25rem', background: 'var(--bg-elevated)', borderTop: '1px solid var(--border-light)', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
                 <button type="button" className="btn btn-secondary" onClick={() => setShowAddModal(false)}>Batal</button>
-                <button type="submit" className="btn btn-primary">🚀 Publish ke Android App Siswa</button>
+                <button type="submit" className="btn btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                  <Send size={13} />
+                  <span>Publish ke Android App Siswa</span>
+                </button>
               </div>
             </form>
           </div>
@@ -845,7 +851,7 @@ startxref
               {previewMaterial.pdfFileName && (
                 <div style={{ background: 'var(--bg-elevated)', padding: '1rem', borderRadius: '10px', border: '1px solid #3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span style={{ fontSize: '1.5rem' }}>📄</span>
+                    <FileText size={20} color="#2563eb" />
                     <div>
                       <div style={{ fontSize: '0.82rem', fontWeight: 700 }}>{previewMaterial.pdfFileName}</div>
                       <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Dokumen Modul PDF Digital</div>
@@ -867,8 +873,9 @@ startxref
               )}
 
               {previewMaterial.youtubeUrl && (
-                <div style={{ background: '#000000', borderRadius: '10px', overflow: 'hidden', height: '220px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff' }}>
-                  🎥 YouTube Video Player ({previewMaterial.youtubeUrl})
+                <div style={{ background: '#000000', borderRadius: '10px', overflow: 'hidden', height: '220px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff', gap: '6px' }}>
+                  <Video size={16} />
+                  <span>YouTube Video Player ({previewMaterial.youtubeUrl})</span>
                 </div>
               )}
             </div>

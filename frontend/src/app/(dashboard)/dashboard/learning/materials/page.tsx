@@ -6,6 +6,7 @@ import { listTeachers, listClasses } from '@/lib/sdk/sdk.gen';
 import { getApiUrl } from '@/lib/api';
 import { useMaterials, useLibraryBooks, useSubjects, LibraryBook } from '@/features/material';
 import { useAuth } from '@/contexts/AuthContext';
+import styles from './materials.module.css';
 
 type MaterialItem = {
   id: string;
@@ -63,7 +64,8 @@ export default function MaterialsPage() {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSubject, setSelectedSubject] = useState('ALL');
-  
+  const [selectedFormatFilter, setSelectedFormatFilter] = useState<'ALL' | 'PDF' | 'VIDEO' | 'TEXT'>('ALL');
+
   // TanStack Query integration
   const { data: libraryBooks = [] } = useLibraryBooks();
   const { data: subjectsList = [] } = useSubjects();
@@ -89,8 +91,8 @@ export default function MaterialsPage() {
   const filteredBooks = useMemo(() => {
     if (!bookSearchQuery.trim()) return libraryBooks;
     const q = bookSearchQuery.toLowerCase();
-    return libraryBooks.filter((b) => 
-      (b.title && b.title.toLowerCase().includes(q)) || 
+    return libraryBooks.filter((b) =>
+      (b.title && b.title.toLowerCase().includes(q)) ||
       (b.subject_name && b.subject_name.toLowerCase().includes(q)) ||
       (b.grade_level_name && b.grade_level_name.toLowerCase().includes(q)) ||
       (b.author && b.author.toLowerCase().includes(q))
@@ -120,8 +122,8 @@ export default function MaterialsPage() {
         grade: m.class_name || descParts[1] || 'Semua Rombel',
         author: m.teacher_name || descParts[2] || 'Guru Pengampu',
         format: formatType,
-        size: m.start_page && m.end_page 
-          ? `Hal. ${m.start_page}–${m.end_page}` 
+        size: m.start_page && m.end_page
+          ? `Hal. ${m.start_page}–${m.end_page}`
           : m.storage_key || (isVideo ? 'Video Online' : '1.8 MB'),
         downloads: 12,
         completedCount: m.completed_count || 0,
@@ -262,7 +264,7 @@ export default function MaterialsPage() {
       }
     }
     loadMetadata();
-  }, []);
+  }, [isTeacher, user?.full_name]);
 
   useEffect(() => {
     if (subjectsList.length > 0 && !newMaterial.subject) {
@@ -275,7 +277,7 @@ export default function MaterialsPage() {
     if (file) {
       setSelectedFile(file);
       setNewMaterial(prev => ({ ...prev, pdfFileName: file.name }));
-      showToast('✓ File PDF dipilih: ' + file.name);
+      showToast('File PDF dipilih: ' + file.name);
     }
   };
 
@@ -284,7 +286,7 @@ export default function MaterialsPage() {
     if (file) {
       const imageUrl = URL.createObjectURL(file);
       setNewMaterial(prev => ({ ...prev, imagePreviewUrl: imageUrl }));
-      showToast('✓ Gambar dipilih');
+      showToast('Gambar dipilih');
     }
   };
 
@@ -293,11 +295,11 @@ export default function MaterialsPage() {
     if (!newMaterial.title) return;
 
     if (newMaterial.format === 'VIDEO' && !newMaterial.youtubeUrl) {
-      showToast('⚠️ Masukkan link YouTube');
+      showToast('Silakan masukkan link URL YouTube');
       return;
     }
     if (newMaterial.format === 'PDF' && !newMaterial.pdfFileName && !selectedFile) {
-      showToast('⚠️ Pilih file PDF');
+      showToast('Silakan pilih berkas PDF');
       return;
     }
 
@@ -309,7 +311,6 @@ export default function MaterialsPage() {
       let storageKey = newMaterial.format === 'PDF' ? newMaterial.pdfFileName : null;
       let externalUrl = newMaterial.format === 'VIDEO' ? newMaterial.youtubeUrl : null;
 
-      // If a real PDF file was selected, upload it to the server upload endpoint
       if (newMaterial.format === 'PDF' && selectedFile) {
         try {
           const formData = new FormData();
@@ -360,24 +361,24 @@ export default function MaterialsPage() {
         await refetchMaterials();
         setShowAddModal(false);
         setSelectedFile(null);
-        showToast('✓ Materi berhasil dipublish');
+        showToast('Materi berhasil dipublish');
       } else {
-        showToast('⚠️ Gagal mempublish materi');
+        showToast('Gagal mempublish materi');
       }
     } catch {
-      showToast('⚠️ Terjadi kendala koneksi');
+      showToast('Terjadi kendala koneksi server');
     }
   };
 
   const handleAssignLibraryBook = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedBook) {
-      showToast('⚠️ Silakan pilih buku dari katalog perpustakaan');
+      showToast('Silakan pilih buku dari katalog perpustakaan');
       return;
     }
     const targetClass = classesList.find(c => c.name === newMaterial.grade) || classesList[0];
     if (!targetClass) {
-      showToast('⚠️ Silakan pilih rombel target');
+      showToast('Silakan pilih rombel target');
       return;
     }
     const targetSubject = subjectsList.find(s => s.name === newMaterial.subject);
@@ -410,12 +411,12 @@ export default function MaterialsPage() {
       if (res.ok) {
         await refetchMaterials();
         setShowAddModal(false);
-        showToast('✓ Tugas materi bacaan buku perpustakaan berhasil diterbitkan');
+        showToast('Tugas materi bacaan buku perpustakaan berhasil diterbitkan');
       } else {
-        showToast('⚠️ Gagal menugaskan materi buku');
+        showToast('Gagal menugaskan materi buku');
       }
     } catch {
-      showToast('⚠️ Terjadi kendala koneksi');
+      showToast('Terjadi kendala koneksi server');
     }
   };
 
@@ -429,87 +430,33 @@ export default function MaterialsPage() {
       });
       if (res.ok) {
         await refetchMaterials();
-        showToast('✓ Materi berhasil dihapus');
+        showToast('Materi berhasil dihapus');
       } else {
-        showToast('⚠️ Gagal menghapus materi');
+        showToast('Gagal menghapus materi');
       }
     } catch {
-      showToast('⚠️ Gagal menghapus materi');
+      showToast('Gagal menghapus materi');
     }
   };
 
-  const handleDownloadPdf = (fileName: string, title: string, subject: string, teacher: string, description: string) => {
-    const safeTitle = (title || 'Modul Pembelajaran').replace(/[()\\]/g, '');
-    const safeSubject = (subject || 'Umum').replace(/[()\\]/g, '');
-    const safeTeacher = (teacher || 'Guru').replace(/[()\\]/g, '');
-    const safeDesc = (description || 'Modul Ajar').replace(/[()\\]/g, '').slice(0, 150);
-
-    const pdfData = `%PDF-1.4
-1 0 obj
-<< /Type /Catalog /Pages 2 0 R >>
-endobj
-2 0 obj
-<< /Type /Pages /Kids [3 0 R] /Count 1 >>
-endobj
-3 0 obj
-<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>
-endobj
-4 0 obj
-<< /Length 250 >>
-stream
-BT
-/F1 18 Tf
-50 720 Td
-(${safeTitle}) Tj
-/F1 12 Tf
-0 -32 Td
-(Mata Pelajaran: ${safeSubject}) Tj
-0 -22 Td
-(Guru Pengampu: ${safeTeacher}) Tj
-0 -30 Td
-(Ringkasan Modul:) Tj
-0 -22 Td
-(${safeDesc}) Tj
-ET
-endstream
-endobj
-5 0 obj
-<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
-endobj
-xref
-0 6
-0000000000 65535 f 
-0000000009 00000 n 
-0000000058 00000 n 
-0000000115 00000 n 
-0000000234 00000 n 
-0000000535 00000 n 
-trailer
-<< /Size 6 /Root 1 0 R >>
-startxref
-610
-%%EOF`;
-
-    const blob = new Blob([pdfData], { type: 'application/pdf' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = fileName.endsWith('.pdf') ? fileName : `${fileName}.pdf`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    showToast('✓ Berkas PDF berhasil diunduh ke perangkat');
-  };
-
-  const filtered = materials.filter(m => 
-    (selectedSubject === 'ALL' || m.subject === selectedSubject) &&
-    (m.title.toLowerCase().includes(searchTerm.toLowerCase()) || m.author.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const filtered = useMemo(() => {
+    return materials.filter(m => {
+      if (selectedSubject !== 'ALL' && m.subject !== selectedSubject) return false;
+      if (selectedFormatFilter !== 'ALL' && m.format !== selectedFormatFilter) return false;
+      if (searchTerm.trim()) {
+        const q = searchTerm.toLowerCase();
+        const matchesTitle = m.title.toLowerCase().includes(q);
+        const matchesAuthor = m.author.toLowerCase().includes(q);
+        const matchesGrade = m.grade.toLowerCase().includes(q);
+        if (!matchesTitle && !matchesAuthor && !matchesGrade) return false;
+      }
+      return true;
+    });
+  }, [materials, selectedSubject, selectedFormatFilter, searchTerm]);
 
   type MaterialSortField = 'title' | 'subject' | 'author' | 'format' | 'completedCount' | 'date';
-  const [sortField, setSortField] = useState<MaterialSortField>('title');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [sortField, setSortField] = useState<MaterialSortField>('date');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   const handleSetSort = (field: MaterialSortField) => {
     if (sortField === field) {
@@ -540,20 +487,24 @@ startxref
     });
   }, [filtered, sortField, sortOrder]);
 
-  // --- Client-Side Pagination ---
+  // Total student completions summary across all materials
+  const totalCompletedReaders = useMemo(() => {
+    return materials.reduce((acc, m) => acc + (m.completedCount || 0), 0);
+  }, [materials]);
+
+  // Client-Side Pagination
   const [currentPage, setCurrentPage] = React.useState(1);
   const itemsPerPage = 10;
-  
-  React.useEffect(() => { 
-    setCurrentPage(1); 
+
+  React.useEffect(() => {
+    setCurrentPage(1);
   }, [sortedMaterials.length]);
 
   const totalPages = Math.ceil(sortedMaterials.length / itemsPerPage) || 1;
   const paginated = sortedMaterials.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-  // ------------------------------
 
   return (
-    <div style={{ padding: '1.5rem', maxWidth: '1400px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+    <div className={styles.container}>
       {/* Toast Notification */}
       {toastMessage && (
         <div className="toastContainer">
@@ -563,185 +514,433 @@ startxref
         </div>
       )}
 
-      {/* Header Bar */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-card)', padding: '1.25rem 1.75rem', borderRadius: '18px', border: '1px solid var(--border-light)', boxShadow: '0 4px 20px rgba(15,23,42,0.04)', flexWrap: 'wrap', gap: '1rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'var(--accent-dim)', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', fontWeight: 800 }}>📚</div>
-          <div>
-            
-            <h1 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Materi Pembelajaran &amp; Modul Digital</h1>
+      {/* ── 1. Page Header ── */}
+      <div className={styles.header}>
+        <div className={styles.headerLeft}>
+          <div className={styles.headerIconBox}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+            </svg>
+          </div>
+          <div className={styles.headerTextGroup}>
+            <h1 className={styles.headerTitle}>Materi Pembelajaran &amp; Modul Digital</h1>
+            <p className={styles.headerSubtitle}>
+              Pusat kelola modul ajar, buku kurikulum SIBI Kemendikbudristek, dan video edukasi.
+            </p>
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-          <Link href="/dashboard/learning" className="btn btn-secondary btn-sm">
-            ← Kembali ke Workspace
+        <div className={styles.headerActions}>
+          <Link href="/dashboard/learning" className={styles.btnSecondary} title="Kembali ke Workspace Pembelajaran">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12" />
+              <polyline points="12 19 5 12 12 5" />
+            </svg>
+            <span>Workspace</span>
           </Link>
+
           <Link
             href="/dashboard/learning/materials/create"
-            className="btn btn-secondary btn-sm"
-            style={{ background: 'var(--accent-dim)', color: '#2563eb', fontWeight: 800, border: '1px solid rgba(37,99,235,0.3)', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
+            className={styles.btnLibrary}
+            title="Buka Katalog Buku Resmi Kemendikbudristek SIBI"
           >
-            📚 Katalog Buku Perpustakaan ({libraryBooks.length})
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+            </svg>
+            <span>Katalog Perpustakaan ({libraryBooks.length})</span>
           </Link>
+
           <Link
             href="/dashboard/learning/materials/create"
-            className="btn btn-primary btn-sm"
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
+            className={styles.btnPrimary}
+            title="Unggah atau buat modul ajar baru"
           >
-            + Unggah Modul Ajar Baru
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            <span>Unggah Modul Baru</span>
           </Link>
         </div>
       </div>
 
-      {/* Top Stat Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
-        <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: '16px', padding: '1.1rem' }}>
-          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 700 }}>Total Modul Dipublish</div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '0.2rem' }}>{materials.length} Modul</div>
+      {/* ── 2. Executive KPI Cards (4 Balanced Columns) ── */}
+      <div className={styles.kpiGrid}>
+        {/* KPI 1: Total Modul */}
+        <div className={styles.kpiCard} style={{ '--kpi-accent': '#0284c7' } as React.CSSProperties}>
+          <div className={styles.kpiTopRow}>
+            <span className={styles.kpiLabel}>Total Modul Ajar</span>
+            <div className={styles.kpiIconBox} style={{ background: '#e0f2fe', color: '#0284c7' }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+              </svg>
+            </div>
+          </div>
+          <div className={styles.kpiValueRow}>
+            <span className={styles.kpiValue}>{materials.length}</span>
+            <span className={styles.kpiUnit}>modul</span>
+          </div>
+          <span className={styles.kpiSub}>Materi aktif terbit</span>
         </div>
-        <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: '16px', padding: '1.1rem' }}>
-          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 700 }}>Status Android Sync</div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#16a34a', marginTop: '0.2rem' }}>100% Synced</div>
+
+        {/* KPI 2: Buku Kurikulum SIBI */}
+        <div className={styles.kpiCard} style={{ '--kpi-accent': '#7c3aed' } as React.CSSProperties}>
+          <div className={styles.kpiTopRow}>
+            <span className={styles.kpiLabel}>Buku Teks Kurikulum</span>
+            <div className={styles.kpiIconBox} style={{ background: '#ede9fe', color: '#7c3aed' }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+              </svg>
+            </div>
+          </div>
+          <div className={styles.kpiValueRow}>
+            <span className={styles.kpiValue}>{libraryBooks.length}</span>
+            <span className={styles.kpiUnit}>buku</span>
+          </div>
+          <span className={styles.kpiSub}>Katalog SIBI resmi Kemdikbud</span>
         </div>
-        <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: '16px', padding: '1.1rem' }}>
-          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 700 }}>Tipe Format</div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#2563eb', marginTop: '0.2rem' }}>PDF / Video / Teks</div>
+
+        {/* KPI 3: Aktivitas Keterbacaan */}
+        <div className={styles.kpiCard} style={{ '--kpi-accent': '#059669' } as React.CSSProperties}>
+          <div className={styles.kpiTopRow}>
+            <span className={styles.kpiLabel}>Total Keterbacaan</span>
+            <div className={styles.kpiIconBox} style={{ background: '#ecfdf5', color: '#059669' }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+              </svg>
+            </div>
+          </div>
+          <div className={styles.kpiValueRow}>
+            <span className={styles.kpiValue}>{totalCompletedReaders}</span>
+            <span className={styles.kpiUnit}>siswa tuntas</span>
+          </div>
+          <span className={styles.kpiSub}>Aktivitas literasi terbaca</span>
+        </div>
+
+        {/* KPI 4: Mobile App Sync */}
+        <div className={styles.kpiCard} style={{ '--kpi-accent': '#10b981' } as React.CSSProperties}>
+          <div className={styles.kpiTopRow}>
+            <span className={styles.kpiLabel}>Sinkronisasi Mobile</span>
+            <div className={styles.kpiIconBox} style={{ background: '#ecfdf5', color: '#10b981' }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
+                <line x1="12" y1="18" x2="12.01" y2="18" />
+              </svg>
+            </div>
+          </div>
+          <div className={styles.kpiValueRow}>
+            <span className={styles.kpiValue}>100%</span>
+            <span className={styles.kpiUnit} style={{ color: '#059669' }}>Synced</span>
+          </div>
+          <span className={styles.kpiSub}>
+            <span className={styles.liveDot} />
+            <span>SchoolOS Android Aktif</span>
+          </span>
         </div>
       </div>
 
-      {/* Main Table Card */}
-      <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: '20px', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
-          <input 
-            type="text" 
-            placeholder="🔍 Cari judul modul atau nama guru..." 
-            value={searchTerm} 
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="input" 
-            style={{ maxWidth: '380px' }}
-          />
-          <select value={selectedSubject} onChange={(e) => setSelectedSubject(e.target.value)} className="input" style={{ width: '220px' }}>
-            <option value="ALL">Semua Mata Pelajaran</option>
-            {subjectsList.map((s: any) => (
-              <option key={s.id || s.code} value={s.name}>{s.name}</option>
-            ))}
-          </select>
+      {/* ── 3. Main Data Card & Table ── */}
+      <div className={styles.dataCard}>
+        {/* Toolbar: Search, Subject, Format Switcher */}
+        <div className={styles.toolbar}>
+          <div className={styles.toolbarLeft}>
+            <div className={styles.searchBox}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2.2">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+              <input
+                type="text"
+                placeholder="Cari judul modul atau nama guru..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className={styles.searchInput}
+              />
+              {searchTerm && (
+                <button
+                  type="button"
+                  onClick={() => setSearchTerm('')}
+                  style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#94a3b8', display: 'flex', alignItems: 'center', padding: 0 }}
+                  aria-label="Hapus pencarian"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="18" x2="18" y2="6" />
+                  </svg>
+                </button>
+              )}
+            </div>
+
+            <select
+              value={selectedSubject}
+              onChange={(e) => setSelectedSubject(e.target.value)}
+              className={styles.selectInput}
+            >
+              <option value="ALL">Semua Mata Pelajaran</option>
+              {subjectsList.map((s: any) => (
+                <option key={s.id || s.code} value={s.name}>{s.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Format filter pills */}
+          <div className={styles.formatTabGroup}>
+            <button
+              type="button"
+              onClick={() => setSelectedFormatFilter('ALL')}
+              className={`${styles.formatTabBtn} ${selectedFormatFilter === 'ALL' ? styles.formatTabBtnActive : ''}`}
+            >
+              Semua
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedFormatFilter('PDF')}
+              className={`${styles.formatTabBtn} ${selectedFormatFilter === 'PDF' ? styles.formatTabBtnActive : ''}`}
+            >
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+              </svg>
+              <span>PDF / Buku</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedFormatFilter('VIDEO')}
+              className={`${styles.formatTabBtn} ${selectedFormatFilter === 'VIDEO' ? styles.formatTabBtnActive : ''}`}
+            >
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                <polygon points="23 7 16 12 23 17 23 7" />
+                <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+              </svg>
+              <span>Video</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedFormatFilter('TEXT')}
+              className={`${styles.formatTabBtn} ${selectedFormatFilter === 'TEXT' ? styles.formatTabBtnActive : ''}`}
+            >
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                <line x1="18" y1="2" x2="22" y2="6" />
+                <path d="M7.5 20.5 19 9l-4-4L3.5 16.5 2 22z" />
+              </svg>
+              <span>Teks</span>
+            </button>
+          </div>
         </div>
 
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.82rem' }}>
+        {/* Compact Table */}
+        <div className={styles.tableWrapper}>
+          <table className={styles.table}>
             <thead>
-              <tr style={{ background: 'var(--bg-elevated)', borderBottom: '2px solid var(--border-light)' }}>
-                <th className="thSortable" onClick={() => handleSetSort('title')}>
-                  <div className="thSortContent">
+              <tr>
+                <th className={`${styles.th} ${styles.thSortable}`} onClick={() => handleSetSort('title')}>
+                  <div className={styles.thSortContent}>
                     <span>Judul Modul</span>
-                    <span className="sortArrows">{sortField === 'title' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                    <span>{sortField === 'title' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕'}</span>
                   </div>
                 </th>
-                <th className="thSortable" onClick={() => handleSetSort('subject')}>
-                  <div className="thSortContent">
+                <th className={`${styles.th} ${styles.thSortable}`} onClick={() => handleSetSort('subject')}>
+                  <div className={styles.thSortContent}>
                     <span>Mapel &amp; Rombel</span>
-                    <span className="sortArrows">{sortField === 'subject' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                    <span>{sortField === 'subject' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕'}</span>
                   </div>
                 </th>
-                <th className="thSortable" onClick={() => handleSetSort('author')}>
-                  <div className="thSortContent">
+                <th className={`${styles.th} ${styles.thSortable}`} onClick={() => handleSetSort('author')}>
+                  <div className={styles.thSortContent}>
                     <span>Guru Pengampu</span>
-                    <span className="sortArrows">{sortField === 'author' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                    <span>{sortField === 'author' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕'}</span>
                   </div>
                 </th>
-                <th className="thSortable" onClick={() => handleSetSort('format')}>
-                  <div className="thSortContent">
+                <th className={`${styles.th} ${styles.thSortable}`} onClick={() => handleSetSort('format')}>
+                  <div className={styles.thSortContent}>
                     <span>Format &amp; Media</span>
-                    <span className="sortArrows">{sortField === 'format' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                    <span>{sortField === 'format' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕'}</span>
                   </div>
                 </th>
-                <th className="thSortable" onClick={() => handleSetSort('completedCount')}>
-                  <div className="thSortContent">
-                    <span>Penyelesaian Siswa</span>
-                    <span className="sortArrows">{sortField === 'completedCount' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                <th className={`${styles.th} ${styles.thSortable}`} onClick={() => handleSetSort('completedCount')}>
+                  <div className={styles.thSortContent}>
+                    <span>Keterbacaan Siswa</span>
+                    <span>{sortField === 'completedCount' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕'}</span>
                   </div>
                 </th>
-                <th className="thSortable" onClick={() => handleSetSort('date')}>
-                  <div className="thSortContent">
+                <th className={`${styles.th} ${styles.thSortable}`} onClick={() => handleSetSort('date')}>
+                  <div className={styles.thSortContent}>
                     <span>Tanggal Tayang</span>
-                    <span className="sortArrows">{sortField === 'date' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}</span>
+                    <span>{sortField === 'date' ? (sortOrder === 'asc' ? '▲' : '▼') : '↕'}</span>
                   </div>
                 </th>
-                <th style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 800, color: 'var(--text-muted)' }}>Aksi</th>
+                <th className={styles.th} style={{ textAlign: 'right' }}>Aksi</th>
               </tr>
             </thead>
             <tbody>
               {paginated.length > 0 ? (
                 paginated.map((m) => (
-                  <tr key={m.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                    <td style={{ padding: '0.85rem 1rem', fontWeight: 800, color: 'var(--text-primary)' }}>{m.title}</td>
-                    <td style={{ padding: '0.85rem 1rem' }}>
-                      <span className="badge badge-info" style={{ fontWeight: 800 }}>{m.subject}</span>
-                      <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 700, marginTop: '2px' }}>{m.grade}</div>
+                  <tr key={m.id} className={styles.tr}>
+                    {/* Judul Modul */}
+                    <td className={styles.td}>
+                      <div className={styles.materialTitleCell}>
+                        <div
+                          className={styles.materialIconMini}
+                          style={{
+                            background: m.format === 'PDF' ? '#eff6ff' : m.format === 'VIDEO' ? '#fff7ed' : '#f0fdf4',
+                            color: m.format === 'PDF' ? '#1d4ed8' : m.format === 'VIDEO' ? '#ea580c' : '#15803d',
+                          }}
+                        >
+                          {m.format === 'PDF' ? (
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                              <polyline points="14 2 14 8 20 8" />
+                            </svg>
+                          ) : m.format === 'VIDEO' ? (
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                              <polygon points="23 7 16 12 23 17 23 7" />
+                              <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+                            </svg>
+                          ) : (
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                              <line x1="18" y1="2" x2="22" y2="6" />
+                              <path d="M7.5 20.5 19 9l-4-4L3.5 16.5 2 22z" />
+                            </svg>
+                          )}
+                        </div>
+                        <span className={styles.materialTitleText} title={m.title}>
+                          {m.title}
+                        </span>
+                      </div>
                     </td>
-                    <td style={{ padding: '0.85rem 1rem', fontWeight: 700, color: 'var(--text-primary)' }}>{m.author}</td>
-                    <td style={{ padding: '0.85rem 1rem' }}>
-                      <span className={`badge ${m.format === 'PDF' ? 'badge-info' : m.format === 'VIDEO' ? 'badge-warning' : 'badge-active'}`}>
-                        {m.format === 'VIDEO' ? '🎥 Video' : m.format === 'PDF' ? '📄 Buku / PDF' : '📝 Teks'}
+
+                    {/* Mapel & Rombel */}
+                    <td className={styles.td}>
+                      <span className={styles.badgeSubject}>{m.subject}</span>
+                      <div className={styles.classSubtitle}>{m.grade}</div>
+                    </td>
+
+                    {/* Guru Pengampu */}
+                    <td className={styles.td} style={{ fontWeight: 600 }}>
+                      {m.author}
+                    </td>
+
+                    {/* Format & Media */}
+                    <td className={styles.td}>
+                      <span className={`${styles.badgeFormat} ${m.format === 'PDF' ? styles.badgeFormatPdf : m.format === 'VIDEO' ? styles.badgeFormatVideo : styles.badgeFormatText}`}>
+                        {m.format === 'VIDEO' ? (
+                          <>
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                              <polygon points="23 7 16 12 23 17 23 7" />
+                              <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+                            </svg>
+                            <span>Video</span>
+                          </>
+                        ) : m.format === 'PDF' ? (
+                          <>
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                              <polyline points="14 2 14 8 20 8" />
+                            </svg>
+                            <span>Buku / PDF</span>
+                          </>
+                        ) : (
+                          <>
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                              <line x1="18" y1="2" x2="22" y2="6" />
+                              <path d="M7.5 20.5 19 9l-4-4L3.5 16.5 2 22z" />
+                            </svg>
+                            <span>Teks</span>
+                          </>
+                        )}
                       </span>
                       {m.format === 'PDF' && (m.startPage ? (
-                        <div style={{ fontSize: '0.7rem', color: '#2563eb', fontWeight: 700, marginTop: '2px' }}>Hal. {m.startPage} — {m.endPage}</div>
+                        <div style={{ fontSize: '0.68rem', color: '#0284c7', fontWeight: 600, marginTop: '2px' }}>
+                          Hal. {m.startPage} — {m.endPage}
+                        </div>
                       ) : m.pdfFileName ? (
-                        <div style={{ fontSize: '0.7rem', color: '#2563eb', fontWeight: 700, marginTop: '2px' }}>{m.pdfFileName}</div>
+                        <div style={{ fontSize: '0.68rem', color: '#0284c7', fontWeight: 600, marginTop: '2px' }}>
+                          {m.pdfFileName}
+                        </div>
                       ) : null)}
                       {m.format === 'VIDEO' && m.youtubeUrl && (
-                        <div style={{ fontSize: '0.7rem', color: '#dc2626', fontWeight: 700, marginTop: '2px' }}>Link Video</div>
+                        <div style={{ fontSize: '0.68rem', color: '#ea580c', fontWeight: 600, marginTop: '2px' }}>
+                          YouTube Link
+                        </div>
                       )}
                     </td>
-                    <td style={{ padding: '0.85rem 1rem' }}>
+
+                    {/* Keterbacaan Siswa */}
+                    <td className={styles.td}>
                       <button
                         type="button"
                         onClick={() => handleOpenCompletions(m)}
-                        title="Klik untuk melihat rincian nama-nama siswa yang telah membaca"
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '0.35rem',
-                          background: m.completedCount > 0 ? '#dcfce7' : 'var(--bg-elevated)',
-                          padding: '0.25rem 0.6rem',
-                          borderRadius: '8px',
-                          border: `1px solid ${m.completedCount > 0 ? '#86efac' : 'var(--border-light)'}`,
-                          cursor: 'pointer',
-                          transition: 'all 0.15s ease',
-                        }}
+                        title="Klik untuk melihat rincian nama siswa yang telah membaca"
+                        className={`${styles.rosterBtn} ${m.completedCount > 0 ? styles.rosterBtnCompleted : ''}`}
                       >
-                        <span style={{ fontSize: '0.8rem' }}>{m.completedCount > 0 ? '✅' : '⏳'}</span>
-                        <span style={{ fontWeight: 800, fontSize: '0.78rem', color: m.completedCount > 0 ? '#15803d' : 'var(--text-muted)' }}>
-                          {m.completedCount} Siswa
-                        </span>
-                        <span style={{ fontSize: '0.68rem', color: '#2563eb', fontWeight: 800, marginLeft: '2px', background: '#eff6ff', padding: '1px 5px', borderRadius: '4px' }}>
-                          👥 Roster
+                        {m.completedCount > 0 ? (
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                        ) : (
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <circle cx="12" cy="12" r="10" />
+                            <polyline points="12 6 12 12 16 14" />
+                          </svg>
+                        )}
+                        <span>{m.completedCount} Siswa</span>
+                        <span style={{ fontSize: '0.64rem', color: '#0284c7', background: 'rgba(2,132,199,0.08)', padding: '1px 4px', borderRadius: '3px' }}>
+                          Roster
                         </span>
                       </button>
                     </td>
-                    <td style={{ padding: '0.85rem 1rem', fontSize: '0.76rem', color: 'var(--text-muted)' }}>{m.date}</td>
-                    <td style={{ padding: '0.85rem 1rem', textAlign: 'right' }}>
-                      <div style={{ display: 'inline-flex', gap: '0.4rem', alignItems: 'center' }}>
+
+                    {/* Tanggal Tayang */}
+                    <td className={styles.td} style={{ fontSize: '0.72rem', color: 'var(--text-secondary, #64748b)', fontVariantNumeric: 'tabular-nums' }}>
+                      {m.date}
+                    </td>
+
+                    {/* Aksi */}
+                    <td className={styles.td} style={{ textAlign: 'right' }}>
+                      <div className={styles.actionGroup}>
                         <button
-                          className="btn btn-secondary btn-sm"
+                          type="button"
+                          className={styles.actionBtn}
                           title="Lihat Keterbacaan Nama-Nama Siswa"
                           onClick={() => handleOpenCompletions(m)}
-                          style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                         >
-                          👥 Siswa
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                            <circle cx="9" cy="7" r="4" />
+                          </svg>
+                          <span>Roster</span>
                         </button>
-                        <button className="btn btn-secondary btn-sm" onClick={() => setPreviewMaterial(m)}>
-                          👁️ Pratinjau
-                        </button>
+
                         <button
-                          className="btn btn-sm"
-                          style={{ background: '#fee2e2', color: '#b91c1c', border: '1px solid #fca5a5', padding: '0.25rem 0.5rem' }}
+                          type="button"
+                          className={styles.actionBtn}
+                          title="Pratinjau Modul Ajar"
+                          onClick={() => setPreviewMaterial(m)}
+                        >
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                            <circle cx="12" cy="12" r="3" />
+                          </svg>
+                          <span>Lihat</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          className={`${styles.actionBtn} ${styles.actionBtnDanger}`}
                           title="Hapus Modul"
                           onClick={() => handleDeleteMaterial(m.id, m.title)}
                         >
-                          🗑️
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <polyline points="3 6 5 6 21 6" />
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                          </svg>
                         </button>
                       </div>
                     </td>
@@ -749,49 +948,73 @@ startxref
                 ))
               ) : (
                 <tr>
-                  <td colSpan={6} style={{ padding: '2.5rem 1rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                    📚 Belum ada modul pembelajaran yang diunggah. Klik tombol <strong>+ Unggah Modul Ajar Baru</strong> untuk mempublish materi.
+                  <td colSpan={7} className={styles.emptyState}>
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                    </svg>
+                    <span className={styles.emptyStateTitle}>Belum Ada Modul Pembelajaran</span>
+                    <span>Klik tombol Unggah Modul Baru atau pilih buku dari katalog perpustakaan untuk menerbitkan materi.</span>
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
+
+        {/* Pagination Footer */}
+        {sortedMaterials.length > 0 && (
+          <div className={styles.paginationFooter}>
+            <div>
+              Menampilkan <strong>{(currentPage - 1) * itemsPerPage + 1}</strong>–<strong>{Math.min(currentPage * itemsPerPage, sortedMaterials.length)}</strong> dari <strong>{sortedMaterials.length}</strong> modul
+            </div>
+            <div className={styles.paginationNav}>
+              <button
+                type="button"
+                className={styles.pageBtn}
+                disabled={currentPage <= 1}
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              >
+                &larr; Prev
+              </button>
+              <span style={{ padding: '0 6px', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
+                Hal {currentPage} / {totalPages}
+              </span>
+              <button
+                type="button"
+                className={styles.pageBtn}
+                disabled={currentPage >= totalPages}
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              >
+                Next &rarr;
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── Modal Input Modul Baru ── */}
       {showAddModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(15, 23, 42, 0.75)',
-          backdropFilter: 'blur(5px)',
-          zIndex: 999999,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '1rem',
-        }} onClick={() => setShowAddModal(false)}>
-          <div style={{
-            background: 'var(--bg-card)',
-            borderRadius: '16px',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-            maxWidth: '540px',
-            width: '100%',
-            overflow: 'hidden',
-            border: '1px solid var(--border-light)',
-            maxHeight: '90vh',
-            display: 'flex',
-            flexDirection: 'column'
-          }} onClick={e => e.stopPropagation()}>
-            <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid var(--border-light)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                {creationMode === 'LIBRARY' ? '📚 Pilih Buku dari Katalog Perpustakaan' : '✍️ Unggah Modul Ajar Mandiri'}
-              </h3>
-              <button style={{ border: 'none', background: 'none', fontSize: '1.4rem', cursor: 'pointer', color: 'var(--text-muted)' }} onClick={() => setShowAddModal(false)}>×</button>
+        <div className={styles.modalOverlay} onClick={() => setShowAddModal(false)}>
+          <div className={styles.modalCard} style={{ maxWidth: '540px' }} onClick={e => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <div className={styles.modalTitleGroup}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0284c7" strokeWidth="2.2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <line x1="12" y1="18" x2="12" y2="12" />
+                  <line x1="9" y1="15" x2="15" y2="15" />
+                </svg>
+                <h3 className={styles.modalTitle}>
+                  {creationMode === 'LIBRARY' ? 'Pilih Buku dari Katalog Perpustakaan' : 'Unggah Modul Ajar Mandiri'}
+                </h3>
+              </div>
+              <button className={styles.modalCloseBtn} onClick={() => setShowAddModal(false)} aria-label="Tutup">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="18" x2="18" y2="6" />
+                </svg>
+              </button>
             </div>
 
             {/* Mode Switcher Tabs */}
@@ -800,66 +1023,81 @@ startxref
                 type="button"
                 onClick={() => setCreationMode('LIBRARY')}
                 style={{
-                  padding: '0.75rem',
-                  fontWeight: 800,
-                  fontSize: '0.82rem',
+                  padding: '0.65rem',
+                  fontWeight: 700,
+                  fontSize: '0.75rem',
                   border: 'none',
                   background: creationMode === 'LIBRARY' ? 'var(--bg-card)' : 'transparent',
-                  color: creationMode === 'LIBRARY' ? '#2563eb' : 'var(--text-muted)',
-                  borderBottom: creationMode === 'LIBRARY' ? '2px solid #2563eb' : 'none',
+                  color: creationMode === 'LIBRARY' ? '#0284c7' : 'var(--text-secondary)',
+                  borderBottom: creationMode === 'LIBRARY' ? '2px solid #0284c7' : 'none',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '0.4rem'
+                  gap: '6px'
                 }}
               >
-                <span>📚</span> Katalog Buku ({libraryBooks.length})
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                </svg>
+                <span>Katalog Buku ({libraryBooks.length})</span>
               </button>
               <button
                 type="button"
                 onClick={() => setCreationMode('MANUAL')}
                 style={{
-                  padding: '0.75rem',
-                  fontWeight: 800,
-                  fontSize: '0.82rem',
+                  padding: '0.65rem',
+                  fontWeight: 700,
+                  fontSize: '0.75rem',
                   border: 'none',
                   background: creationMode === 'MANUAL' ? 'var(--bg-card)' : 'transparent',
-                  color: creationMode === 'MANUAL' ? '#2563eb' : 'var(--text-muted)',
-                  borderBottom: creationMode === 'MANUAL' ? '2px solid #2563eb' : 'none',
+                  color: creationMode === 'MANUAL' ? '#0284c7' : 'var(--text-secondary)',
+                  borderBottom: creationMode === 'MANUAL' ? '2px solid #0284c7' : 'none',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '0.4rem'
+                  gap: '6px'
                 }}
               >
-                <span>✍️</span> Input Modul Manual
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                </svg>
+                <span>Input Modul Manual</span>
               </button>
             </div>
 
             {creationMode === 'LIBRARY' ? (
               <form onSubmit={handleAssignLibraryBook} style={{ overflowY: 'auto' }}>
-                <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  <div style={{ background: 'var(--accent-dim)', border: '1px solid rgba(37,99,235,0.25)', borderRadius: '12px', padding: '0.85rem', fontSize: '0.78rem', color: 'var(--text-primary)' }}>
-                    💡 <strong>Perpustakaan Guru:</strong> Pilih buku teks resmi Kemendikbudristek yang tersedia dan tentukan halaman yang wajib dipelajari siswa.
+                <div className={styles.modalBody}>
+                  <div style={{ background: 'rgba(2,132,199,0.08)', border: '1px solid rgba(2,132,199,0.2)', borderRadius: '8px', padding: '0.65rem 0.85rem', fontSize: '0.74rem', color: 'var(--text-primary)', display: 'flex', gap: '6px', alignItems: 'flex-start' }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0284c7" strokeWidth="2.2" style={{ flexShrink: 0, marginTop: '2px' }}>
+                      <circle cx="12" cy="12" r="10" />
+                      <line x1="12" y1="16" x2="12" y2="12" />
+                      <line x1="12" y1="8" x2="12.01" y2="8" />
+                    </svg>
+                    <div>
+                      <strong>Perpustakaan Guru:</strong> Pilih buku teks kurikulum SIBI Kemendikbudristek dan tentukan rentang halaman bacaan siswa.
+                    </div>
                   </div>
 
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
-                      <label style={{ fontSize: '0.76rem', fontWeight: 700, margin: 0 }}>Pilih Buku Teks Kurikulum *</label>
-                      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                        {filteredBooks.length} dari {libraryBooks.length} buku tersedia
+                  <div className={styles.formGroup}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <label className={styles.formLabel}>Pilih Buku Teks Kurikulum *</label>
+                      <span style={{ fontSize: '0.68rem', color: 'var(--text-secondary)' }}>
+                        {filteredBooks.length} dari {libraryBooks.length} buku
                       </span>
                     </div>
 
                     <input
                       type="text"
-                      placeholder="🔍 Cari buku atau mapel (contoh: Matematika, Fisika, Kelas 10, dsb)..."
+                      placeholder="Cari buku atau mapel (contoh: Matematika, Fisika)..."
                       value={bookSearchQuery}
                       onChange={e => setBookSearchQuery(e.target.value)}
-                      className="input"
-                      style={{ marginBottom: '0.5rem', fontSize: '0.8rem', padding: '0.45rem 0.75rem' }}
+                      className={styles.formInput}
+                      style={{ marginBottom: '0.35rem' }}
                     />
 
                     <select
@@ -873,13 +1111,13 @@ startxref
                           }
                         }
                       }}
-                      className="input"
-                      style={{ fontWeight: 800 }}
+                      className={styles.formInput}
+                      style={{ fontWeight: 600 }}
                     >
                       {filteredBooks.length > 0 ? (
                         filteredBooks.map((b: LibraryBook) => (
                           <option key={b.id} value={b.id}>
-                            {b.title} {b.grade_level_name ? `[${b.grade_level_name}]` : ''} — {b.publisher || 'Kemendikbudristek'} ({b.total_pages} Hal.)
+                            {b.title} {b.grade_level_name ? `[${b.grade_level_name}]` : ''} — {b.publisher || 'Kemendikbud'} ({b.total_pages} Hal.)
                           </option>
                         ))
                       ) : (
@@ -889,33 +1127,43 @@ startxref
                   </div>
 
                   {selectedBook && (
-                    <div style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-light)', borderRadius: '12px', padding: '0.85rem', display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-                      <div style={{ fontSize: '2rem' }}>📕</div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: 800, fontSize: '0.84rem', color: 'var(--text-primary)' }}>{selectedBook.title}</div>
-                        <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
-                          {selectedBook.author || 'Tim Penulis'} • {selectedBook.publisher || 'Kemendikbudristek'}
+                    <div style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-light)', borderRadius: '8px', padding: '0.65rem 0.85rem', display: 'flex', gap: '0.65rem', alignItems: 'center' }}>
+                      <div style={{ width: '32px', height: '32px', borderRadius: '6px', background: '#ede9fe', color: '#7c3aed', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                        </svg>
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: 700, fontSize: '0.78rem', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {selectedBook.title}
+                        </div>
+                        <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)' }}>
+                          {selectedBook.author || 'Tim Penulis'} • {selectedBook.publisher || 'Kemendikbud'}
                           {selectedBook.grade_level_name ? ` • ${selectedBook.grade_level_name}` : ''}
                         </div>
-                        <div style={{ fontSize: '0.72rem', color: '#2563eb', fontWeight: 700, marginTop: '2px' }}>Total {selectedBook.total_pages} Halaman</div>
                       </div>
                       {selectedBook.file_url && (
                         <a
                           href={selectedBook.file_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="btn btn-secondary btn-sm"
-                          style={{ fontSize: '0.72rem', padding: '0.35rem 0.65rem', whiteSpace: 'nowrap' }}
+                          className={styles.btnSecondary}
+                          style={{ fontSize: '0.68rem', padding: '0.25rem 0.55rem', whiteSpace: 'nowrap' }}
                         >
-                          👁️ Pratinjau PDF
+                          <span>PDF</span>
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <line x1="7" y1="17" x2="17" y2="7" />
+                            <polyline points="7 7 17 7 17 17" />
+                          </svg>
                         </a>
                       )}
                     </div>
                   )}
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                    <div>
-                      <label style={{ fontSize: '0.76rem', fontWeight: 700 }}>Dari Halaman *</label>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.65rem' }}>
+                    <div className={styles.formGroup}>
+                      <label className={styles.formLabel}>Dari Halaman *</label>
                       <input
                         type="number"
                         min={1}
@@ -923,11 +1171,11 @@ startxref
                         required
                         value={bookStartPage}
                         onChange={e => setBookStartPage(Number(e.target.value))}
-                        className="input"
+                        className={styles.formInput}
                       />
                     </div>
-                    <div>
-                      <label style={{ fontSize: '0.76rem', fontWeight: 700 }}>Sampai Halaman *</label>
+                    <div className={styles.formGroup}>
+                      <label className={styles.formLabel}>Sampai Halaman *</label>
                       <input
                         type="number"
                         min={bookStartPage}
@@ -935,28 +1183,31 @@ startxref
                         required
                         value={bookEndPage}
                         onChange={e => setBookEndPage(Number(e.target.value))}
-                        className="input"
+                        className={styles.formInput}
                       />
                     </div>
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                    <div>
-                      <label style={{ fontSize: '0.76rem', fontWeight: 700 }}>Rombel Target *</label>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.65rem' }}>
+                    <div className={styles.formGroup}>
+                      <label className={styles.formLabel}>Rombel Target *</label>
                       <select
                         value={newMaterial.grade}
                         onChange={e => setNewMaterial({ ...newMaterial, grade: e.target.value })}
-                        className="input"
+                        className={styles.formInput}
                       >
-                        {classesList.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                        {classesList.map(c => (
+                          <option key={c.id} value={c.name}>{c.name}</option>
+                        ))}
                       </select>
                     </div>
-                    <div>
-                      <label style={{ fontSize: '0.76rem', fontWeight: 700 }}>Mata Pelajaran</label>
+
+                    <div className={styles.formGroup}>
+                      <label className={styles.formLabel}>Mata Pelajaran *</label>
                       <select
                         value={newMaterial.subject}
                         onChange={e => setNewMaterial({ ...newMaterial, subject: e.target.value })}
-                        className="input"
+                        className={styles.formInput}
                       >
                         {subjectsList.map((s: any) => (
                           <option key={s.id || s.code} value={s.name}>{s.name}</option>
@@ -965,273 +1216,204 @@ startxref
                     </div>
                   </div>
 
-                  <div>
-                    <label style={{ fontSize: '0.76rem', fontWeight: 700 }}>Guru Pengampu *</label>
-                    {isTeacher && user?.full_name ? (
-                      <input
-                        type="text"
-                        disabled
-                        value={user.full_name}
-                        className="input"
-                        style={{ background: 'var(--bg-elevated)', cursor: 'not-allowed', fontWeight: 700 }}
-                      />
-                    ) : (
-                      <select
-                        value={newMaterial.author}
-                        onChange={e => setNewMaterial({ ...newMaterial, author: e.target.value })}
-                        className="input"
-                        style={{ fontWeight: 600 }}
-                      >
-                        {teachers.length > 0 ? (
-                          teachers.map((t: any) => (
-                            <option key={t.id} value={t.full_name}>
-                              {t.full_name} {t.nip ? `(NIP: ${t.nip})` : ''}
-                            </option>
-                          ))
-                        ) : (
-                          <option value="">Belum ada data guru pengampu</option>
-                        )}
-                      </select>
-                    )}
+                  <div className={styles.formGroup}>
+                    <label className={styles.formLabel}>Guru Pengampu *</label>
+                    <select
+                      value={newMaterial.author}
+                      onChange={e => setNewMaterial({ ...newMaterial, author: e.target.value })}
+                      disabled={Boolean(isTeacher && user?.full_name)}
+                      className={styles.formInput}
+                    >
+                      {teachers.map(t => (
+                        <option key={t.id} value={t.full_name}>{t.full_name}</option>
+                      ))}
+                    </select>
                   </div>
 
-                  <div>
-                    <label style={{ fontSize: '0.76rem', fontWeight: 700 }}>Instruksi / Catatan Siswa (Opsional)</label>
+                  <div className={styles.formGroup}>
+                    <label className={styles.formLabel}>Petunjuk Belajar untuk Siswa</label>
                     <textarea
-                      placeholder="contoh: Silakan baca dan pelajari bab ini sebelum pertemuan tatap muka berikutnya..."
+                      rows={2}
+                      placeholder="Contoh: Baca halaman 15 sampai 28 dan catat rangkuman materi pokok..."
                       value={newMaterial.description}
                       onChange={e => setNewMaterial({ ...newMaterial, description: e.target.value })}
-                      className="input"
-                      rows={3}
+                      className={styles.formInput}
                     />
                   </div>
                 </div>
 
-                <div style={{ padding: '0.875rem 1.25rem', borderTop: '1px solid var(--border-light)', display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', background: 'var(--bg-elevated)' }}>
-                  <button type="button" className="btn btn-secondary btn-sm" onClick={() => setShowAddModal(false)}>Batal</button>
-                  <button type="submit" className="btn btn-primary btn-sm">📖 Terbitkan Tugas Bacaan Buku</button>
+                <div className={styles.modalFooter}>
+                  <button type="button" className={styles.btnSecondary} onClick={() => setShowAddModal(false)}>
+                    Batal
+                  </button>
+                  <button type="submit" className={styles.btnPrimary}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <line x1="22" y1="2" x2="11" y2="13" />
+                      <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                    </svg>
+                    <span>Terbitkan Tugas Bacaan</span>
+                  </button>
                 </div>
               </form>
             ) : (
               <form onSubmit={handleCreateMaterial} style={{ overflowY: 'auto' }}>
-                <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                    <div>
-                      <label style={{ fontSize: '0.76rem', fontWeight: 700 }}>Rombel Target *</label>
-                    <select
-                      value={newMaterial.grade}
-                      onChange={e => setNewMaterial({ ...newMaterial, grade: e.target.value })}
-                      className="input"
-                    >
-                      {classesList.length > 0 ? (
-                        classesList.map(c => <option key={c.id} value={c.name}>{c.name}</option>)
-                      ) : (
-                        <option value="">Belum ada rombel</option>
-                      )}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label style={{ fontSize: '0.76rem', fontWeight: 700 }}>Mata Pelajaran *</label>
-                    <select
-                      value={newMaterial.subject}
-                      onChange={e => setNewMaterial({ ...newMaterial, subject: e.target.value })}
-                      className="input"
-                    >
-                      {subjectsList.length > 0 ? (
-                        subjectsList.map((s: any) => (
-                          <option key={s.id || s.code} value={s.name}>{s.name}</option>
-                        ))
-                      ) : (
-                        <option value="">Belum ada mata pelajaran</option>
-                      )}
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label style={{ fontSize: '0.76rem', fontWeight: 700 }}>Guru Pengampu *</label>
-                  {isTeacher && user?.full_name ? (
+                <div className={styles.modalBody}>
+                  <div className={styles.formGroup}>
+                    <label className={styles.formLabel}>Judul Modul Ajar *</label>
                     <input
                       type="text"
-                      disabled
-                      value={user.full_name}
-                      className="input"
-                      style={{ background: 'var(--bg-elevated)', cursor: 'not-allowed', fontWeight: 700 }}
-                    />
-                  ) : (
-                    <select
-                      value={newMaterial.author}
-                      onChange={e => setNewMaterial({ ...newMaterial, author: e.target.value })}
-                      className="input"
-                    >
-                      {teachers.length > 0 ? (
-                        teachers.map((t: any) => (
-                          <option key={t.id} value={t.full_name}>
-                            {t.full_name} {t.nip ? `(NIP: ${t.nip})` : ''}
-                          </option>
-                        ))
-                      ) : (
-                        <option value="">Belum ada guru</option>
-                      )}
-                    </select>
-                  )}
-                </div>
-
-                <div>
-                  <label style={{ fontSize: '0.76rem', fontWeight: 700 }}>Judul Modul Pembelajaran *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="contoh: Modul Matematika Persamaan Linear"
-                    value={newMaterial.title}
-                    onChange={e => setNewMaterial({ ...newMaterial, title: e.target.value })}
-                    className="input"
-                  />
-                </div>
-
-                <div>
-                  <label style={{ fontSize: '0.76rem', fontWeight: 700 }}>Tipe Format Materi *</label>
-                  <select
-                    value={newMaterial.format}
-                    onChange={e => setNewMaterial({ ...newMaterial, format: e.target.value as any })}
-                    className="input"
-                    style={{ fontWeight: 800 }}
-                  >
-                    <option value="VIDEO">🎥 Video Pembelajaran YouTube (Form Link URL)</option>
-                    <option value="PDF">📄 Dokumen Modul PDF (Tombol Upload File)</option>
-                    <option value="TEXT">📝 Teks &amp; Gambar (Deskripsi + Upload Gambar Komputer)</option>
-                  </select>
-                </div>
-
-                {/* Dynamic Inputs */}
-                {newMaterial.format === 'VIDEO' && (
-                  <div style={{ background: 'rgba(220, 38, 38, 0.10)', border: '1px solid rgba(220, 38, 38, 0.25)', borderRadius: '12px', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <label style={{ fontSize: '0.74rem', fontWeight: 700, color: '#dc2626' }}>Link URL YouTube Pembelajaran *</label>
-                    <input
-                      type="url"
                       required
-                      placeholder="https://www.youtube.com/watch?v=..."
-                      value={newMaterial.youtubeUrl}
-                      onChange={e => setNewMaterial({ ...newMaterial, youtubeUrl: e.target.value })}
-                      className="input"
+                      placeholder="Contoh: Bab 2 - Struktur Teks Eksplanasi"
+                      value={newMaterial.title}
+                      onChange={e => setNewMaterial({ ...newMaterial, title: e.target.value })}
+                      className={styles.formInput}
                     />
                   </div>
-                )}
 
-                {newMaterial.format === 'PDF' && (
-                  <div style={{ background: 'var(--accent-dim)', border: '1px solid var(--border-subtle)', borderRadius: '12px', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <label style={{ fontSize: '0.74rem', fontWeight: 700, color: '#1d4ed8' }}>Pilih File PDF dari Komputer *</label>
-                    <input
-                      type="file"
-                      accept=".pdf,.doc"
-                      onChange={handlePdfFileSelect}
-                      className="input"
-                      style={{ background: 'var(--bg-card)' }}
-                    />
-                    {newMaterial.pdfFileName && <div style={{ fontSize: '0.74rem', color: 'var(--success)', fontWeight: 700 }}>✓ File: {newMaterial.pdfFileName}</div>}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.65rem' }}>
+                    <div className={styles.formGroup}>
+                      <label className={styles.formLabel}>Mata Pelajaran *</label>
+                      <select
+                        value={newMaterial.subject}
+                        onChange={e => setNewMaterial({ ...newMaterial, subject: e.target.value })}
+                        className={styles.formInput}
+                      >
+                        {subjectsList.map((s: any) => (
+                          <option key={s.id || s.code} value={s.name}>{s.name}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className={styles.formGroup}>
+                      <label className={styles.formLabel}>Rombel Target *</label>
+                      <select
+                        value={newMaterial.grade}
+                        onChange={e => setNewMaterial({ ...newMaterial, grade: e.target.value })}
+                        className={styles.formInput}
+                      >
+                        {classesList.map(c => (
+                          <option key={c.id} value={c.name}>{c.name}</option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
-                )}
 
-                {newMaterial.format === 'TEXT' && (
-                  <div style={{ background: 'rgba(22, 163, 74, 0.10)', border: '1px solid rgba(22, 163, 74, 0.25)', borderRadius: '12px', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <label style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--success)' }}>Upload Gambar Penjelas dari Komputer (Opsional)</label>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageFileSelect}
-                      className="input"
-                      style={{ background: 'var(--bg-card)' }}
-                    />
-                    {newMaterial.imagePreviewUrl && (
-                      <div style={{ width: '100%', height: '90px', borderRadius: '8px', overflow: 'hidden' }}>
-                        <img src={newMaterial.imagePreviewUrl} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      </div>
-                    )}
+                  <div className={styles.formGroup}>
+                    <label className={styles.formLabel}>Format Modul *</label>
+                    <select
+                      value={newMaterial.format}
+                      onChange={e => setNewMaterial({ ...newMaterial, format: e.target.value as any })}
+                      className={styles.formInput}
+                    >
+                      <option value="PDF">Dokumen Modul PDF</option>
+                      <option value="VIDEO">Video Pembelajaran (YouTube URL)</option>
+                      <option value="TEXT">Teks &amp; Artikel Pembelajaran</option>
+                    </select>
                   </div>
-                )}
 
-                <div>
-                  <label style={{ fontSize: '0.76rem', fontWeight: 700 }}>Deskripsi Materi *</label>
-                  <textarea
-                    required
-                    rows={3}
-                    placeholder="Uraian instruksi belajar..."
-                    value={newMaterial.description}
-                    onChange={e => setNewMaterial({ ...newMaterial, description: e.target.value })}
-                    className="input"
-                  />
+                  {newMaterial.format === 'VIDEO' && (
+                    <div className={styles.formGroup}>
+                      <label className={styles.formLabel}>URL Video YouTube *</label>
+                      <input
+                        type="url"
+                        placeholder="https://www.youtube.com/watch?v=..."
+                        value={newMaterial.youtubeUrl}
+                        onChange={e => setNewMaterial({ ...newMaterial, youtubeUrl: e.target.value })}
+                        className={styles.formInput}
+                      />
+                    </div>
+                  )}
+
+                  {newMaterial.format === 'PDF' && (
+                    <div className={styles.formGroup}>
+                      <label className={styles.formLabel}>Berkas Dokumen PDF *</label>
+                      <input
+                        type="file"
+                        accept="application/pdf"
+                        onChange={handlePdfFileSelect}
+                        className={styles.formInput}
+                      />
+                      {newMaterial.pdfFileName && (
+                        <span style={{ fontSize: '0.72rem', color: '#15803d', fontWeight: 600 }}>
+                          Berkas: {newMaterial.pdfFileName}
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  <div className={styles.formGroup}>
+                    <label className={styles.formLabel}>Deskripsi &amp; Ringkasan Materi</label>
+                    <textarea
+                      rows={2}
+                      placeholder="Tuliskan petunjuk atau rangkuman materi..."
+                      value={newMaterial.description}
+                      onChange={e => setNewMaterial({ ...newMaterial, description: e.target.value })}
+                      className={styles.formInput}
+                    />
+                  </div>
                 </div>
-              </div>
 
-              <div style={{ padding: '0.875rem 1.25rem', borderTop: '1px solid var(--border-light)', background: 'var(--bg-elevated)', display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
-                <button type="button" className="btn btn-secondary btn-sm" onClick={() => setShowAddModal(false)}>Batal</button>
-                <button type="submit" className="btn btn-primary btn-sm">🚀 Publish ke Android App</button>
-              </div>
-            </form>
-          )}
+                <div className={styles.modalFooter}>
+                  <button type="button" className={styles.btnSecondary} onClick={() => setShowAddModal(false)}>
+                    Batal
+                  </button>
+                  <button type="submit" className={styles.btnPrimary}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                    <span>Publish Modul</span>
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}
 
-      {/* ── Modal Pratinjau ── */}
+      {/* ── Modal Pratinjau Modul ── */}
       {previewMaterial && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(15, 23, 42, 0.75)',
-          backdropFilter: 'blur(6px)',
-          zIndex: 999999,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '1rem',
-        }} onClick={() => setPreviewMaterial(null)}>
-          <div style={{
-            background: 'var(--bg-card)',
-            borderRadius: '16px',
-            maxWidth: '560px',
-            width: '100%',
-            overflow: 'hidden',
-            border: '1px solid var(--border-light)',
-          }} onClick={e => e.stopPropagation()}>
-            <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid var(--border-light)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div className={styles.modalOverlay} onClick={() => setPreviewMaterial(null)}>
+          <div className={styles.modalCard} style={{ maxWidth: '580px' }} onClick={e => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
               <div>
-                <span className={`badge ${previewMaterial.format === 'PDF' ? 'badge-info' : previewMaterial.format === 'VIDEO' ? 'badge-warning' : 'badge-active'}`} style={{ fontSize: '0.7rem', marginBottom: '4px' }}>
-                  {previewMaterial.format === 'PDF' ? '📕 Buku / Modul PDF' : previewMaterial.format === 'VIDEO' ? '🎥 Video Pembelajaran' : '📝 Teks Artikel'}
+                <span className={`${styles.badgeFormat} ${previewMaterial.format === 'PDF' ? styles.badgeFormatPdf : previewMaterial.format === 'VIDEO' ? styles.badgeFormatVideo : styles.badgeFormatText}`} style={{ marginBottom: '4px' }}>
+                  {previewMaterial.format === 'PDF' ? 'Buku / Modul PDF' : previewMaterial.format === 'VIDEO' ? 'Video Pembelajaran' : 'Teks Artikel'}
                 </span>
-                <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)' }}>{previewMaterial.title}</h3>
+                <h3 className={styles.modalTitle}>{previewMaterial.title}</h3>
               </div>
-              <button style={{ border: 'none', background: 'none', fontSize: '1.4rem', cursor: 'pointer', color: 'var(--text-muted)' }} onClick={() => setPreviewMaterial(null)}>×</button>
+              <button className={styles.modalCloseBtn} onClick={() => setPreviewMaterial(null)} aria-label="Tutup">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="18" x2="18" y2="6" />
+                </svg>
+              </button>
             </div>
-            <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
-              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', fontSize: '0.76rem' }}>
-                <span style={{ background: 'var(--bg-elevated)', padding: '0.25rem 0.5rem', borderRadius: '6px', fontWeight: 700 }}>
-                  📚 {previewMaterial.subject}
+
+            <div className={styles.modalBody}>
+              <div style={{ display: 'flex', gap: '0.45rem', flexWrap: 'wrap', fontSize: '0.72rem' }}>
+                <span className={styles.badgeSubject}>{previewMaterial.subject}</span>
+                <span style={{ background: 'var(--bg-elevated)', padding: '2px 6px', borderRadius: '4px', fontWeight: 600 }}>
+                  {previewMaterial.grade}
                 </span>
-                <span style={{ background: 'var(--bg-elevated)', padding: '0.25rem 0.5rem', borderRadius: '6px', fontWeight: 700 }}>
-                  🏫 {previewMaterial.grade}
-                </span>
-                <span style={{ background: 'var(--bg-elevated)', padding: '0.25rem 0.5rem', borderRadius: '6px', fontWeight: 700 }}>
-                  👨‍🏫 {previewMaterial.author}
+                <span style={{ background: 'var(--bg-elevated)', padding: '2px 6px', borderRadius: '4px', fontWeight: 600 }}>
+                  {previewMaterial.author}
                 </span>
                 {previewMaterial.startPage && previewMaterial.endPage && (
-                  <span style={{ background: '#dbeafe', color: '#1e40af', padding: '0.25rem 0.5rem', borderRadius: '6px', fontWeight: 800 }}>
-                    📖 Halaman {previewMaterial.startPage} — {previewMaterial.endPage}
+                  <span style={{ background: '#dbeafe', color: '#1e40af', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>
+                    Halaman {previewMaterial.startPage} — {previewMaterial.endPage}
                   </span>
                 )}
               </div>
 
-              <div style={{ background: 'var(--bg-elevated)', borderRadius: '8px', padding: '0.85rem', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-                <strong>Instruksi Belajar:</strong>
-                <p style={{ margin: '4px 0 0 0', lineHeight: 1.5 }}>{previewMaterial.description}</p>
-              </div>
+              {previewMaterial.description && (
+                <div style={{ background: 'var(--bg-elevated)', borderRadius: '7px', padding: '0.65rem 0.85rem', fontSize: '0.76rem', color: 'var(--text-secondary)' }}>
+                  <strong style={{ color: 'var(--text-primary)' }}>Instruksi Belajar:</strong>
+                  <p style={{ margin: '3px 0 0 0', lineHeight: 1.45 }}>{previewMaterial.description}</p>
+                </div>
+              )}
 
               {previewMaterial.format === 'VIDEO' && previewMaterial.youtubeUrl && (
-                <div style={{ background: '#0f172a', borderRadius: '10px', overflow: 'hidden', border: '1px solid var(--border-light)' }}>
+                <div style={{ borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border-light)' }}>
                   <div style={{ position: 'relative', width: '100%', paddingBottom: '56.25%', height: 0 }}>
                     <iframe
                       src={getEmbedUrl(previewMaterial.youtubeUrl)}
@@ -1240,20 +1422,14 @@ startxref
                       allowFullScreen
                     />
                   </div>
-                  <div style={{ padding: '0.6rem 0.85rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-elevated)' }}>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)' }}>▶️ Video Pembelajaran</span>
-                    <a href={previewMaterial.youtubeUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#2563eb', fontSize: '0.75rem', fontWeight: 700 }}>
-                      Buka di YouTube ↗
-                    </a>
-                  </div>
                 </div>
               )}
 
               {previewMaterial.format === 'PDF' && (
-                <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem' }}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#1e40af' }}>📄 Berkas Buku / Dokumen PDF Resmi</div>
-                    <div style={{ fontSize: '0.72rem', color: '#3b82f6', marginTop: '2px' }}>
+                <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.65rem' }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#1e40af' }}>Berkas Buku / Modul PDF</div>
+                    <div style={{ fontSize: '0.7rem', color: '#3b82f6', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {previewMaterial.startPage ? `Fokus Halaman ${previewMaterial.startPage} sampai ${previewMaterial.endPage}` : (previewMaterial.pdfFileName || 'Buku Teks Kurikulum SIBI')}
                     </div>
                   </div>
@@ -1262,330 +1438,228 @@ startxref
                       href={previewMaterial.externalUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="btn btn-primary btn-sm"
-                      style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}
+                      className={styles.btnPrimary}
+                      style={{ whiteSpace: 'nowrap', fontSize: '0.72rem', padding: '0.3rem 0.65rem' }}
                     >
-                      📖 Buka PDF Buku ↗
+                      <span>Buka PDF</span>
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <line x1="7" y1="17" x2="17" y2="7" />
+                        <polyline points="7 7 17 7 17 17" />
+                      </svg>
                     </a>
                   ) : (
-                    <span style={{ fontSize: '0.72rem', color: '#dc2626', background: '#fee2e2', padding: '0.25rem 0.5rem', borderRadius: '6px', fontWeight: 700 }}>
-                      ⚠️ Dalam Revisi Kemendikdasmen
+                    <span style={{ fontSize: '0.68rem', color: '#dc2626', background: '#fee2e2', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>
+                      Dalam Revisi
                     </span>
                   )}
                 </div>
               )}
             </div>
-            <div style={{ padding: '0.875rem 1.25rem', borderTop: '1px solid var(--border-light)', background: 'var(--bg-elevated)', display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
-              <button className="btn btn-secondary btn-sm" onClick={() => setPreviewMaterial(null)}>Tutup</button>
+
+            <div className={styles.modalFooter}>
+              <button className={styles.btnSecondary} onClick={() => setPreviewMaterial(null)}>
+                Tutup
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* ── Modal Laporan Keterbacaan & Daftar Nama Siswa ── */}
+      {/* ── Modal Laporan Keterbacaan Siswa (Roster) ── */}
       {completionModalMaterial && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(15, 23, 42, 0.75)',
-            backdropFilter: 'blur(5px)',
-            zIndex: 999999,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '1rem',
-          }}
-          onClick={() => setCompletionModalMaterial(null)}
-        >
-          <div
-            style={{
-              background: 'var(--bg-card)',
-              borderRadius: '16px',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-              maxWidth: '840px',
-              width: '100%',
-              overflow: 'hidden',
-              border: '1px solid var(--border-light)',
-              maxHeight: '90vh',
-              display: 'flex',
-              flexDirection: 'column',
-            }}
-            onClick={e => e.stopPropagation()}
-          >
+        <div className={styles.modalOverlay} onClick={() => setCompletionModalMaterial(null)}>
+          <div className={styles.modalCard} style={{ maxWidth: '820px' }} onClick={e => e.stopPropagation()}>
             {/* Header */}
-            <div
-              style={{
-                padding: '1.1rem 1.4rem',
-                borderBottom: '1px solid var(--border-light)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                background: 'var(--bg-card)',
-              }}
-            >
+            <div className={styles.modalHeader}>
               <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <span style={{ fontSize: '1.25rem' }}>📖</span>
-                  <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0284c7" strokeWidth="2.2">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                  </svg>
+                  <h3 className={styles.modalTitle}>
                     Keterbacaan Siswa — {completionModalMaterial.title}
                   </h3>
                 </div>
-                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '4px', display: 'flex', gap: '0.75rem' }}>
-                  <span>🏫 {completionModalMaterial.grade}</span>
-                  <span>•</span>
-                  <span>📚 {completionModalMaterial.subject}</span>
-                  <span>•</span>
-                  <span>👨‍🏫 {completionModalMaterial.author}</span>
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '2px', display: 'flex', gap: '6px', alignItems: 'center' }}>
+                  <span>{completionModalMaterial.grade}</span>
+                  <span>&bull;</span>
+                  <span>{completionModalMaterial.subject}</span>
+                  <span>&bull;</span>
+                  <span>{completionModalMaterial.author}</span>
                 </div>
               </div>
-              <button
-                style={{
-                  border: 'none',
-                  background: 'none',
-                  fontSize: '1.4rem',
-                  cursor: 'pointer',
-                  color: 'var(--text-muted)',
-                  padding: '4px 8px',
-                  borderRadius: '6px',
-                }}
-                onClick={() => setCompletionModalMaterial(null)}
-              >
-                ×
+              <button className={styles.modalCloseBtn} onClick={() => setCompletionModalMaterial(null)} aria-label="Tutup">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="18" x2="18" y2="6" />
+                </svg>
               </button>
             </div>
 
             {/* Quick Stats Badges */}
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(4, 1fr)',
-                gap: '0.75rem',
-                padding: '1rem 1.4rem',
-                background: 'var(--bg-elevated)',
-                borderBottom: '1px solid var(--border-light)',
-              }}
-            >
-              <div style={{ background: 'var(--bg-card)', padding: '0.65rem 0.9rem', borderRadius: '10px', border: '1px solid var(--border-light)' }}>
-                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 700 }}>Total Siswa Terdata</div>
-                <div style={{ fontSize: '1.15rem', fontWeight: 900, color: 'var(--text-primary)' }}>{completionsList.length} Siswa</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.65rem', padding: '0.75rem 1rem', background: 'var(--bg-elevated)', borderBottom: '1px solid var(--border-light)' }}>
+              <div style={{ background: 'var(--bg-card)', padding: '0.55rem 0.75rem', borderRadius: '8px', border: '1px solid var(--border-light)' }}>
+                <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Total Siswa Terdata</div>
+                <div style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>
+                  {completionsList.length} Siswa
+                </div>
               </div>
-              <div style={{ background: '#f0fdf4', padding: '0.65rem 0.9rem', borderRadius: '10px', border: '1px solid #bbf7d0' }}>
-                <div style={{ fontSize: '0.72rem', color: '#166534', fontWeight: 700 }}>✅ Selesai Membaca</div>
-                <div style={{ fontSize: '1.15rem', fontWeight: 900, color: '#15803d' }}>
-                  {completedTotal} Siswa
-                  <span style={{ fontSize: '0.72rem', marginLeft: '4px', fontWeight: 700, color: '#166534' }}>
+              <div style={{ background: 'rgba(16, 185, 129, 0.08)', padding: '0.55rem 0.75rem', borderRadius: '8px', border: '1px solid rgba(16, 185, 129, 0.25)' }}>
+                <div style={{ fontSize: '0.68rem', color: '#15803d', fontWeight: 600 }}>Selesai Membaca</div>
+                <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#15803d', fontVariantNumeric: 'tabular-nums' }}>
+                  {completedTotal}
+                  <span style={{ fontSize: '0.68rem', marginLeft: '4px', fontWeight: 600 }}>
                     ({completionsList.length > 0 ? Math.round((completedTotal / completionsList.length) * 100) : 0}%)
                   </span>
                 </div>
               </div>
-              <div style={{ background: '#fefce8', padding: '0.65rem 0.9rem', borderRadius: '10px', border: '1px solid #fef08a' }}>
-                <div style={{ fontSize: '0.72rem', color: '#854d0e', fontWeight: 700 }}>📖 Sedang Membaca</div>
-                <div style={{ fontSize: '1.15rem', fontWeight: 900, color: '#a16207' }}>{readingTotal} Siswa</div>
+              <div style={{ background: 'rgba(245, 158, 11, 0.08)', padding: '0.55rem 0.75rem', borderRadius: '8px', border: '1px solid rgba(245, 158, 11, 0.25)' }}>
+                <div style={{ fontSize: '0.68rem', color: '#b45309', fontWeight: 600 }}>Sedang Membaca</div>
+                <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#b45309', fontVariantNumeric: 'tabular-nums' }}>
+                  {readingTotal} Siswa
+                </div>
               </div>
-              <div style={{ background: '#f8fafc', padding: '0.65rem 0.9rem', borderRadius: '10px', border: '1px solid var(--border-light)' }}>
-                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 700 }}>⏳ Belum Membaca</div>
-                <div style={{ fontSize: '1.15rem', fontWeight: 900, color: '#64748b' }}>{unreadTotal} Siswa</div>
+              <div style={{ background: 'var(--bg-card)', padding: '0.55rem 0.75rem', borderRadius: '8px', border: '1px solid var(--border-light)' }}>
+                <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Belum Membaca</div>
+                <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#64748b', fontVariantNumeric: 'tabular-nums' }}>
+                  {unreadTotal} Siswa
+                </div>
               </div>
             </div>
 
             {/* Filter Controls */}
-            <div
-              style={{
-                padding: '0.75rem 1.4rem',
-                borderBottom: '1px solid var(--border-light)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '1rem',
-                flexWrap: 'wrap',
-              }}
-            >
-              {/* Filter Tabs */}
-              <div style={{ display: 'inline-flex', background: 'var(--bg-elevated)', borderRadius: '8px', padding: '2px', border: '1px solid var(--border-light)' }}>
+            <div style={{ padding: '0.6rem 1rem', borderBottom: '1px solid var(--border-light)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.65rem', flexWrap: 'wrap' }}>
+              <div className={styles.formatTabGroup}>
                 {(['ALL', 'COMPLETED', 'READING', 'UNREAD'] as const).map(tab => (
                   <button
                     key={tab}
                     type="button"
                     onClick={() => setCompletionFilterTab(tab)}
-                    style={{
-                      border: 'none',
-                      background: completionFilterTab === tab ? '#2563eb' : 'transparent',
-                      color: completionFilterTab === tab ? '#ffffff' : 'var(--text-secondary)',
-                      padding: '0.35rem 0.75rem',
-                      borderRadius: '6px',
-                      fontSize: '0.74rem',
-                      fontWeight: 800,
-                      cursor: 'pointer',
-                      transition: 'all 0.15s ease',
-                    }}
+                    className={`${styles.formatTabBtn} ${completionFilterTab === tab ? styles.formatTabBtnActive : ''}`}
                   >
                     {tab === 'ALL' && `Semua (${completionsList.length})`}
-                    {tab === 'COMPLETED' && `✓ Selesai (${completedTotal})`}
-                    {tab === 'READING' && `📖 Sedang Baca (${readingTotal})`}
-                    {tab === 'UNREAD' && `⏳ Belum (${unreadTotal})`}
+                    {tab === 'COMPLETED' && `Selesai (${completedTotal})`}
+                    {tab === 'READING' && `Sedang Baca (${readingTotal})`}
+                    {tab === 'UNREAD' && `Belum (${unreadTotal})`}
                   </button>
                 ))}
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-                {/* Rombel Selector */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <span style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-muted)' }}>Rombel:</span>
-                  <select
-                    value={completionClassFilter}
-                    onChange={e => {
-                      const newCid = e.target.value;
-                      setCompletionClassFilter(newCid);
-                      if (completionModalMaterial) {
-                        handleOpenCompletions(completionModalMaterial, newCid);
-                      }
-                    }}
-                    className="input"
-                    style={{
-                      height: '34px',
-                      fontSize: '0.78rem',
-                      padding: '0 0.6rem',
-                      borderRadius: '8px',
-                      fontWeight: 700,
-                      minWidth: '130px'
-                    }}
-                  >
-                    <option value="ALL">Rombel Terkait ({completionModalMaterial.grade})</option>
-                    {classesList.map(c => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                  </select>
-                </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', flex: 1, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                <select
+                  value={completionClassFilter}
+                  onChange={e => {
+                    const newCid = e.target.value;
+                    setCompletionClassFilter(newCid);
+                    if (completionModalMaterial) {
+                      handleOpenCompletions(completionModalMaterial, newCid);
+                    }
+                  }}
+                  className={styles.selectInput}
+                >
+                  <option value="ALL">Rombel Terkait ({completionModalMaterial.grade})</option>
+                  {classesList.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
 
-                {/* Search Box */}
-                <div style={{ minWidth: '180px', maxWidth: '280px', flex: 1 }}>
+                <div className={styles.searchBox} style={{ maxWidth: '200px' }}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2.2">
+                    <circle cx="11" cy="11" r="8" />
+                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                  </svg>
                   <input
                     type="text"
-                    placeholder="Cari nama siswa / NISN..."
+                    placeholder="Cari siswa / NISN..."
                     value={completionSearch}
                     onChange={e => setCompletionSearch(e.target.value)}
-                    className="input"
-                    style={{ width: '100%', height: '34px', fontSize: '0.78rem', padding: '0 0.75rem' }}
+                    className={styles.searchInput}
                   />
                 </div>
               </div>
             </div>
 
-            {/* Student Table / List */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '0' }}>
+            {/* Student Table */}
+            <div style={{ flex: 1, overflowY: 'auto' }}>
               {loadingCompletions ? (
-                <div style={{ padding: '3rem 1rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                  <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>⏳</div>
-                  <div style={{ fontWeight: 700, fontSize: '0.85rem' }}>Memuat data keterbacaan siswa...</div>
+                <div style={{ padding: '2.5rem 1rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                  <div style={{ fontSize: '0.8rem', fontWeight: 700 }}>Memuat data keterbacaan siswa...</div>
                 </div>
               ) : filteredCompletions.length === 0 ? (
-                <div style={{ padding: '3rem 1rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                  <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>🔍</div>
-                  <div style={{ fontWeight: 700, fontSize: '0.85rem' }}>
+                <div style={{ padding: '2.5rem 1rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                  <div style={{ fontSize: '0.8rem', fontWeight: 600 }}>
                     {completionsList.length === 0
                       ? 'Belum ada data siswa terdaftar untuk rombel materi ini atau belum ada aktivitas membaca.'
                       : 'Tidak ada data siswa yang cocok dengan filter pencarian.'}
                   </div>
                 </div>
               ) : (
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.82rem' }}>
+                <table className={styles.table}>
                   <thead>
-                    <tr style={{ background: 'var(--bg-elevated)', borderBottom: '1px solid var(--border-light)' }}>
-                      <th style={{ padding: '0.65rem 1rem', width: '40px', color: 'var(--text-muted)', fontWeight: 800 }}>#</th>
-                      <th style={{ padding: '0.65rem 1rem', color: 'var(--text-muted)', fontWeight: 800 }}>Nama Siswa</th>
-                      <th style={{ padding: '0.65rem 1rem', color: 'var(--text-muted)', fontWeight: 800 }}>NISN</th>
-                      <th style={{ padding: '0.65rem 1rem', color: 'var(--text-muted)', fontWeight: 800 }}>Status Keterbacaan</th>
-                      <th style={{ padding: '0.65rem 1rem', color: 'var(--text-muted)', fontWeight: 800 }}>Progres / Halaman</th>
-                      <th style={{ padding: '0.65rem 1rem', color: 'var(--text-muted)', fontWeight: 800, textAlign: 'right' }}>Waktu Selesai / Terakhir</th>
+                    <tr>
+                      <th className={styles.th} style={{ width: '36px' }}>#</th>
+                      <th className={styles.th}>Nama Siswa</th>
+                      <th className={styles.th}>NISN</th>
+                      <th className={styles.th}>Status Keterbacaan</th>
+                      <th className={styles.th}>Progres / Halaman</th>
+                      <th className={styles.th} style={{ textAlign: 'right' }}>Waktu Selesai</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredCompletions.map((st, idx) => (
-                      <tr key={st.student_id || idx} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                        <td style={{ padding: '0.75rem 1rem', color: 'var(--text-muted)', fontWeight: 700 }}>{idx + 1}</td>
-                        <td style={{ padding: '0.75rem 1rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                          <div>{st.student_name}</div>
+                      <tr key={st.student_id || idx} className={styles.tr}>
+                        <td className={styles.td} style={{ color: 'var(--text-secondary)' }}>{idx + 1}</td>
+                        <td className={styles.td}>
+                          <div style={{ fontWeight: 700 }}>{st.student_name}</div>
                           {st.class_name && (
-                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>{st.class_name}</div>
+                            <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)' }}>{st.class_name}</div>
                           )}
                         </td>
-                        <td style={{ padding: '0.75rem 1rem', fontFamily: 'monospace', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                        <td className={styles.td} style={{ fontFamily: 'monospace', fontSize: '0.74rem', color: 'var(--text-secondary)' }}>
                           {st.nisn || '-'}
                         </td>
-                        <td style={{ padding: '0.75rem 1rem' }}>
+                        <td className={styles.td}>
                           {st.is_completed ? (
-                            <span
-                              style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '4px',
-                                background: '#dcfce7',
-                                color: '#15803d',
-                                border: '1px solid #86efac',
-                                padding: '0.2rem 0.55rem',
-                                borderRadius: '6px',
-                                fontWeight: 800,
-                                fontSize: '0.74rem',
-                              }}
-                            >
-                              ✅ Selesai Membaca
+                            <span className={styles.badgeFormatPdf} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.68rem', padding: '1px 6px', borderRadius: '4px', fontWeight: 700, background: '#dcfce7', color: '#15803d', borderColor: '#86efac' }}>
+                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                <polyline points="20 6 9 17 4 12" />
+                              </svg>
+                              <span>Selesai Membaca</span>
                             </span>
                           ) : st.current_page || st.last_read_at ? (
-                            <span
-                              style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '4px',
-                                background: '#fef9c3',
-                                color: '#a16207',
-                                border: '1px solid #fde047',
-                                padding: '0.2rem 0.55rem',
-                                borderRadius: '6px',
-                                fontWeight: 800,
-                                fontSize: '0.74rem',
-                              }}
-                            >
-                              📖 Sedang Membaca
+                            <span className={styles.badgeFormatVideo} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.68rem', padding: '1px 6px', borderRadius: '4px', fontWeight: 700 }}>
+                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                              </svg>
+                              <span>Sedang Membaca</span>
                             </span>
                           ) : (
-                            <span
-                              style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '4px',
-                                background: 'var(--bg-elevated)',
-                                color: 'var(--text-muted)',
-                                border: '1px solid var(--border-light)',
-                                padding: '0.2rem 0.55rem',
-                                borderRadius: '6px',
-                                fontWeight: 700,
-                                fontSize: '0.74rem',
-                              }}
-                            >
-                              ⏳ Belum Membaca
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.68rem', padding: '1px 6px', borderRadius: '4px', fontWeight: 600, background: 'var(--bg-elevated)', color: 'var(--text-secondary)', border: '1px solid var(--border-light)' }}>
+                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <circle cx="12" cy="12" r="10" />
+                                <polyline points="12 6 12 12 16 14" />
+                              </svg>
+                              <span>Belum Membaca</span>
                             </span>
                           )}
                         </td>
-                        <td style={{ padding: '0.75rem 1rem', color: 'var(--text-secondary)', fontWeight: 700 }}>
+                        <td className={styles.td} style={{ fontWeight: 600 }}>
                           {st.is_completed ? (
-                            <span style={{ color: '#15803d' }}>100% Selesai</span>
+                            <span style={{ color: '#15803d' }}>100% Tuntas</span>
                           ) : st.current_page ? (
                             <span>Halaman {st.current_page}</span>
                           ) : (
-                            <span style={{ color: 'var(--text-muted)' }}>0%</span>
+                            <span style={{ color: 'var(--text-secondary)' }}>0%</span>
                           )}
                         </td>
-                        <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontSize: '0.76rem', color: 'var(--text-muted)' }}>
+                        <td className={styles.td} style={{ textAlign: 'right', fontSize: '0.72rem', color: 'var(--text-secondary)', fontVariantNumeric: 'tabular-nums' }}>
                           {st.completed_at ? (
-                            <span style={{ color: '#15803d', fontWeight: 700 }}>
+                            <span style={{ color: '#15803d', fontWeight: 600 }}>
                               {new Date(st.completed_at).toLocaleString('id-ID', {
                                 day: 'numeric',
                                 month: 'short',
-                                year: 'numeric',
                                 hour: '2-digit',
                                 minute: '2-digit',
                               })}
@@ -1595,13 +1669,12 @@ startxref
                               {new Date(st.last_read_at).toLocaleString('id-ID', {
                                 day: 'numeric',
                                 month: 'short',
-                                year: 'numeric',
                                 hour: '2-digit',
                                 minute: '2-digit',
                               })}
                             </span>
                           ) : (
-                            <span style={{ color: 'var(--text-muted)' }}>Belum dibuka</span>
+                            <span>-</span>
                           )}
                         </td>
                       </tr>
@@ -1612,20 +1685,8 @@ startxref
             </div>
 
             {/* Footer */}
-            <div
-              style={{
-                padding: '0.85rem 1.4rem',
-                borderTop: '1px solid var(--border-light)',
-                background: 'var(--bg-elevated)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-              }}
-            >
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                Sinkronisasi data langsung dengan progres membaca siswa di SchoolOS Android App.
-              </div>
-              <button className="btn btn-secondary btn-sm" onClick={() => setCompletionModalMaterial(null)}>
+            <div className={styles.modalFooter}>
+              <button className={styles.btnSecondary} onClick={() => setCompletionModalMaterial(null)}>
                 Tutup
               </button>
             </div>

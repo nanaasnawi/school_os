@@ -6,8 +6,33 @@ import { useRouter } from 'next/navigation';
 import { listTeachers, listClasses } from '@/lib/sdk/sdk.gen';
 import { getApiUrl } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
-import { useLibraryBooks, useSubjects, LibraryBook, AcademicSubject } from '@/features/material';
-import { Sparkles } from 'lucide-react';
+import { useLibraryBooks, useSubjects, LibraryBook } from '@/features/material';
+import {
+  FileText,
+  Video,
+  Layers,
+  BookOpen,
+  UploadCloud,
+  Search,
+  Check,
+  CheckCircle2,
+  X,
+  ChevronUp,
+  ChevronDown,
+  Clipboard,
+  Sparkles,
+  Play,
+  ExternalLink,
+  Send,
+  AlertCircle,
+  Plus,
+  Book,
+  Sliders,
+  Eye,
+  Edit3,
+  Image as ImageIcon
+} from 'lucide-react';
+import styles from './create.module.css';
 
 const YOUTUBE_API_KEY = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY || '';
 
@@ -50,10 +75,10 @@ export default function CreateMaterialPage() {
 
   // Master Data via TanStack Query & SDK
   const { data: libraryBooks = [], isLoading: isLoadingBooks } = useLibraryBooks();
-  const { data: subjectsList = [], isLoading: isLoadingSubjects } = useSubjects();
+  const { data: subjectsList = [] } = useSubjects();
   const [teachers, setTeachers] = useState<any[]>([]);
   const [classesList, setClassesList] = useState<any[]>([]);
-  const [loadingInitial, setLoadingInitial] = useState(true);
+  const [, setLoadingInitial] = useState(true);
 
   // SIBI Catalog State
   const [selectedBook, setSelectedBook] = useState<LibraryBook | null>(null);
@@ -65,7 +90,7 @@ export default function CreateMaterialPage() {
 
   // Manual PDF Upload State
   const [selectedPdfFile, setSelectedPdfFile] = useState<File | null>(null);
-  const [uploadProgress, setUploadProgress] = useState(false);
+  const [, setUploadProgress] = useState(false);
 
   // YouTube Video Search & Integration State
   const [ytSearchQuery, setYtSearchQuery] = useState('');
@@ -108,7 +133,7 @@ export default function CreateMaterialPage() {
   };
 
   const handlePublishSuccess = (finalTitle: string, finalSubjectName: string, format: string) => {
-    showToast('✓ Materi pembelajaran berhasil diterbitkan & disinkronkan ke mobile!', 'success');
+    showToast('Materi pembelajaran berhasil diterbitkan & disinkronkan ke mobile!', 'success');
     setPublishedPrompt({
       title: finalTitle,
       subjectName: finalSubjectName || subject || 'Umum',
@@ -155,7 +180,7 @@ export default function CreateMaterialPage() {
       }
     }
     loadSdkData();
-  }, []);
+  }, [isTeacher, user?.full_name]);
 
   useEffect(() => {
     if (isTeacher && user?.full_name) {
@@ -235,7 +260,7 @@ export default function CreateMaterialPage() {
       if (!title) {
         setTitle(file.name.replace(/\.[^/.]+$/, ''));
       }
-      showToast(`✓ Berkas "${file.name}" siap diunggah`, 'success');
+      showToast(`Berkas "${file.name}" siap diunggah`, 'success');
     }
   };
 
@@ -283,7 +308,7 @@ export default function CreateMaterialPage() {
     setTitle(video.title);
     setDescription(video.description || `Video pembelajaran: ${video.title} oleh ${video.channelTitle}`);
     setYoutubeUrl(`https://www.youtube.com/watch?v=${video.id}`);
-    showToast(`✓ Video "${video.title.substring(0, 35)}..." berhasil dipilih! Judul & deskripsi terisi otomatis.`, 'success');
+    showToast(`Video "${video.title.substring(0, 35)}..." berhasil dipilih`, 'success');
   };
 
   // Infographic Block Helpers
@@ -326,7 +351,7 @@ export default function CreateMaterialPage() {
       const text = await navigator.clipboard.readText();
       if (text) {
         updateInfographicBlock(id, text);
-        showToast('✓ Berhasil menempelkan konten dari papan klip', 'success');
+        showToast('Berhasil menempelkan konten dari papan klip', 'success');
       }
     } catch {
       showToast('Gunakan Ctrl+V untuk menempelkan konten ke kolom ini', 'warning');
@@ -338,14 +363,14 @@ export default function CreateMaterialPage() {
       const text = await navigator.clipboard.readText();
       if (text) {
         setArticleContent(prev => prev ? `${prev}\n\n${text}` : text);
-        showToast('✓ Berhasil menempelkan teks artikel dari papan klip', 'success');
+        showToast('Berhasil menempelkan teks artikel dari papan klip', 'success');
       }
     } catch {
       showToast('Gunakan Ctrl+V untuk menempelkan teks ke editor artikel', 'warning');
     }
   };
 
-  // Form Submit Handler (Interlocking across SIBI, Manual PDF, Video, Infographic, Article)
+  // Form Submit Handler
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
@@ -356,7 +381,7 @@ export default function CreateMaterialPage() {
 
     // Form Validations
     if (!title.trim()) {
-      showToast('⚠️ Judul materi wajib diisi', 'warning');
+      showToast('Judul materi wajib diisi', 'warning');
       return;
     }
 
@@ -366,7 +391,7 @@ export default function CreateMaterialPage() {
       // 1. SIBI PDF MODE
       if (materialFormat === 'PDF' && pdfSourceMode === 'SIBI') {
         if (!currentBook) {
-          showToast('⚠️ Silakan pilih salah satu buku dari katalog buku kurikulum SIBI', 'warning');
+          showToast('Silakan pilih salah satu buku dari katalog kurikulum SIBI', 'warning');
           setIsSubmitting(false);
           return;
         }
@@ -399,7 +424,7 @@ export default function CreateMaterialPage() {
           handlePublishSuccess(finalTitle, targetSubjectObj?.name || currentSubject, 'SIBI Buku Kurikulum');
         } else {
           const errData = await res.json().catch(() => null);
-          showToast(errData?.error?.message || '⚠️ Gagal menugaskan buku perpustakaan', 'error');
+          showToast(errData?.error?.message || 'Gagal menugaskan buku perpustakaan', 'error');
         }
       } 
       // 2. MANUAL PDF MODE
@@ -455,13 +480,13 @@ export default function CreateMaterialPage() {
           handlePublishSuccess(title.trim(), targetSubjectObj?.name || subject, 'Modul PDF');
         } else {
           const errData = await res.json().catch(() => null);
-          showToast(errData?.error?.message || '⚠️ Gagal menerbitkan modul PDF', 'error');
+          showToast(errData?.error?.message || 'Gagal menerbitkan modul PDF', 'error');
         }
       }
       // 3. YOUTUBE VIDEO MODE
       else if (materialFormat === 'VIDEO') {
         if (!youtubeUrl.trim()) {
-          showToast('⚠️ Silakan cari dan pilih video pembelajaran YouTube terlebih dahulu', 'warning');
+          showToast('Silakan cari dan pilih video YouTube terlebih dahulu', 'warning');
           setIsSubmitting(false);
           return;
         }
@@ -492,14 +517,14 @@ export default function CreateMaterialPage() {
           handlePublishSuccess(title.trim(), targetSubjectObj?.name || subject, 'Video YouTube');
         } else {
           const errData = await res.json().catch(() => null);
-          showToast(errData?.error?.message || '⚠️ Gagal menerbitkan modul video', 'error');
+          showToast(errData?.error?.message || 'Gagal menerbitkan modul video', 'error');
         }
       }
       // 4. INFOGRAPHIC MODE
       else if (materialFormat === 'INFOGRAPHIC') {
         const validBlocks = infographicBlocks.filter(b => b.content.trim().length > 0);
         if (validBlocks.length === 0) {
-          showToast('⚠️ Tambahkan minimal 1 gambar atau teks pada infografis', 'warning');
+          showToast('Tambahkan minimal 1 gambar atau teks pada infografis', 'warning');
           setIsSubmitting(false);
           return;
         }
@@ -531,13 +556,13 @@ export default function CreateMaterialPage() {
           handlePublishSuccess(title.trim(), targetSubjectObj?.name || subject, 'Infografis');
         } else {
           const errData = await res.json().catch(() => null);
-          showToast(errData?.error?.message || '⚠️ Gagal menerbitkan infografis', 'error');
+          showToast(errData?.error?.message || 'Gagal menerbitkan infografis', 'error');
         }
       }
       // 5. ARTICLE MODE
       else if (materialFormat === 'ARTICLE') {
         if (!articleContent.trim()) {
-          showToast('⚠️ Isi naskah materi artikel wajib ditulis', 'warning');
+          showToast('Isi naskah materi artikel wajib ditulis', 'warning');
           setIsSubmitting(false);
           return;
         }
@@ -568,81 +593,49 @@ export default function CreateMaterialPage() {
           handlePublishSuccess(title.trim(), targetSubjectObj?.name || subject, 'Artikel Teks');
         } else {
           const errData = await res.json().catch(() => null);
-          showToast(errData?.error?.message || '⚠️ Gagal menerbitkan artikel', 'error');
+          showToast(errData?.error?.message || 'Gagal menerbitkan artikel', 'error');
         }
       }
     } catch (err: any) {
-      showToast(err?.message || '⚠️ Terjadi kesalahan jaringan', 'error');
+      showToast(err?.message || 'Terjadi kesalahan jaringan', 'error');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+    <div className={styles.container}>
       {/* Toast Notification */}
       {toastMessage && (
-        <div style={{
-          position: 'fixed',
-          top: '20px',
-          right: '20px',
-          zIndex: 99999,
-          background: toastMessage.type === 'error' ? '#ef4444' : toastMessage.type === 'warning' ? '#f59e0b' : '#10b981',
-          color: '#ffffff',
-          padding: '0.85rem 1.25rem',
-          borderRadius: '12px',
-          boxShadow: '0 10px 25px -5px rgba(0,0,0,0.3)',
-          fontWeight: 700,
-          fontSize: '0.88rem',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.5rem',
-          animation: 'fadeIn 0.2s ease-out'
-        }}>
-          {toastMessage.text}
+        <div className={`${styles.toast} ${toastMessage.type === 'error' ? styles.toastError : toastMessage.type === 'warning' ? styles.toastWarning : styles.toastSuccess}`}>
+          {toastMessage.type === 'success' ? (
+            <CheckCircle2 size={15} />
+          ) : (
+            <AlertCircle size={15} />
+          )}
+          <span>{toastMessage.text}</span>
         </div>
       )}
 
-      {/* YouTube Video Preview Modal */}
+      {/* YouTube Preview Modal */}
       {previewYtVideo && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(0,0,0,0.85)',
-          backdropFilter: 'blur(6px)',
-          zIndex: 99999,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '1rem'
-        }}>
-          <div style={{
-            background: 'var(--bg-card)',
-            border: '1px solid var(--border-light)',
-            borderRadius: '20px',
-            width: '100%',
-            maxWidth: '780px',
-            overflow: 'hidden',
-            display: 'flex',
-            flexDirection: 'column',
-            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)'
-          }}>
-            {/* Modal Header */}
-            <div style={{ padding: '1rem 1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-light)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                <span style={{ fontSize: '1.4rem' }}>🎬</span>
-                <span style={{ fontWeight: 800, fontSize: '0.98rem', color: 'var(--text-primary)' }}>Pratinjau Video YouTube</span>
-              </div>
+        <div className={styles.modalOverlay} onClick={() => setPreviewYtVideo(null)}>
+          <div className={styles.modalCard} onClick={e => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h3 className={styles.modalTitle}>
+                <Video size={16} color="#ef4444" />
+                <span>Pratinjau Video YouTube</span>
+              </h3>
               <button
                 type="button"
                 onClick={() => setPreviewYtVideo(null)}
-                style={{ background: 'transparent', border: 'none', fontSize: '1.2rem', cursor: 'pointer', color: 'var(--text-muted)' }}
+                className={styles.modalCloseBtn}
+                aria-label="Tutup"
               >
-                ✕
+                <X size={15} />
               </button>
             </div>
 
-            {/* Video Player */}
             <div style={{ position: 'relative', width: '100%', paddingBottom: '56.25%', background: '#000' }}>
               <iframe
                 src={`https://www.youtube.com/embed/${previewYtVideo.id}?autoplay=1`}
@@ -653,335 +646,209 @@ export default function CreateMaterialPage() {
               />
             </div>
 
-            {/* Modal Body */}
-            <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.4 }}>
+            <div className={styles.modalBody}>
+              <div style={{ fontWeight: 800, fontSize: '0.88rem', color: 'var(--text-primary)', lineHeight: 1.35 }}>
                 {previewYtVideo.title}
-              </h3>
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+              </div>
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
                 Channel: <strong>{previewYtVideo.channelTitle}</strong>
               </div>
               {previewYtVideo.description && (
-                <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--text-secondary)', maxHeight: '80px', overflowY: 'auto', lineHeight: 1.5 }}>
+                <p style={{ margin: 0, fontSize: '0.74rem', color: 'var(--text-secondary)', maxHeight: '70px', overflowY: 'auto', lineHeight: 1.45 }}>
                   {previewYtVideo.description}
                 </p>
               )}
+            </div>
 
-              {/* Action Buttons */}
-              <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
-                <button
-                  type="button"
-                  onClick={() => setPreviewYtVideo(null)}
-                  className="btn btn-secondary"
-                  style={{ borderRadius: '10px' }}
-                >
-                  Tutup
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleSelectYouTubeVideo(previewYtVideo)}
-                  className="btn btn-primary"
-                  style={{ borderRadius: '10px', fontWeight: 800, background: '#ef4444', borderColor: '#ef4444' }}
-                >
-                  ✓ Gunakan Video Ini Untuk Materi
-                </button>
-              </div>
+            <div className={styles.modalFooter}>
+              <button
+                type="button"
+                onClick={() => setPreviewYtVideo(null)}
+                className={styles.btnSecondary}
+              >
+                Tutup
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSelectYouTubeVideo(previewYtVideo)}
+                className={styles.btnPrimary}
+                style={{ background: '#dc2626', borderColor: '#dc2626' }}
+              >
+                <Check size={13} />
+                <span>Gunakan Video Ini</span>
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Top Header & Breadcrumbs */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-          <Link href="/dashboard" style={{ color: 'var(--text-muted)' }}>Dashboard</Link>
-          <span>/</span>
-          <Link href="/dashboard/learning" style={{ color: 'var(--text-muted)' }}>Pembelajaran</Link>
-          <span>/</span>
-          <Link href="/dashboard/learning/materials" style={{ color: 'var(--text-muted)' }}>Modul Ajar</Link>
-          <span>/</span>
-          <span style={{ color: 'var(--accent)', fontWeight: 700 }}>Tambah Baru</span>
-        </div>
+      {/* Breadcrumb */}
+      <div className={styles.breadcrumb}>
+        <Link href="/dashboard">Dashboard</Link>
+        <span>/</span>
+        <Link href="/dashboard/learning">Pembelajaran</Link>
+        <span>/</span>
+        <Link href="/dashboard/learning/materials">Modul Ajar</Link>
+        <span>/</span>
+        <span className={styles.breadcrumbCurrent}>Tambah Baru</span>
+      </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem', marginTop: '0.25rem' }}>
-          <div>
-            <h1 style={{ margin: 0, fontSize: '1.65rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>
-              Pusat Penerbitan Modul &amp; Materi Pembelajaran
-            </h1>
-            <p style={{ margin: '0.35rem 0 0 0', fontSize: '0.84rem', color: 'var(--text-muted)' }}>
-              Katalog resmi SIBI Kemdikdasmen, Video YouTube terintegrasi, Infografis interaktif kanvas, dan Artikel naskah untuk siswa.
+      {/* Header Card */}
+      <div className={styles.header}>
+        <div className={styles.headerLeft}>
+          <div className={styles.headerIconBox}>
+            <BookOpen size={18} />
+          </div>
+          <div className={styles.headerTextGroup}>
+            <h1 className={styles.headerTitle}>Pusat Penerbitan Modul &amp; Materi Pembelajaran</h1>
+            <p className={styles.headerSubtitle}>
+              Katalog resmi SIBI Kemdikdasmen, Video YouTube terintegrasi, Infografis interaktif, dan Artikel naskah untuk siswa.
             </p>
           </div>
+        </div>
 
-          <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center' }}>
-            <Link href="/dashboard/learning/materials" className="btn btn-secondary">
-              Batal
-            </Link>
-            <button
-              onClick={handleSubmit}
-              disabled={isSubmitting}
-              className="btn btn-primary"
-              style={{ padding: '0.6rem 1.4rem', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '0.45rem' }}
-            >
-              {isSubmitting ? (
-                <>
-                  <span style={{ display: 'inline-block', width: '14px', height: '14px', border: '2px solid #fff', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-                  <span>Memproses...</span>
-                </>
-              ) : (
-                <>
-                  <span>🚀</span>
-                  <span>Publikasikan Modul</span>
-                </>
-              )}
-            </button>
-          </div>
+        <div className={styles.headerActions}>
+          <Link href="/dashboard/learning/materials" className={styles.btnSecondary}>
+            Batal
+          </Link>
+          <button
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            className={styles.btnPrimary}
+          >
+            {isSubmitting ? (
+              <>
+                <span style={{ display: 'inline-block', width: '13px', height: '13px', border: '2px solid #fff', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                <span>Memproses...</span>
+              </>
+            ) : (
+              <>
+                <Send size={13} />
+                <span>Publikasikan Modul</span>
+              </>
+            )}
+          </button>
         </div>
       </div>
 
-      {/* ── TOP-LEVEL FORMAT SELECTION BAR (4 CORE LMS FORMATS) ── */}
-      <div style={{
-        background: 'var(--bg-card)',
-        border: '1px solid var(--border-light)',
-        borderRadius: '16px',
-        padding: '0.35rem',
-        display: 'grid',
-        gridTemplateColumns: 'repeat(4, 1fr)',
-        gap: '0.4rem',
-        boxShadow: 'var(--shadow-sm)'
-      }}>
-        {/* FORMAT 1: PDF */}
+      {/* ── FORMAT SELECTION BAR (4 CORE LMS FORMATS) ── */}
+      <div className={styles.formatBar}>
         <button
           type="button"
           onClick={() => setMaterialFormat('PDF')}
-          style={{
-            padding: '0.85rem 0.5rem',
-            borderRadius: '12px',
-            border: 'none',
-            background: materialFormat === 'PDF' ? 'var(--accent-gradient)' : 'transparent',
-            color: materialFormat === 'PDF' ? '#ffffff' : 'var(--text-secondary)',
-            fontWeight: 800,
-            fontSize: '0.88rem',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '0.5rem',
-            transition: 'all 0.2s ease',
-            boxShadow: materialFormat === 'PDF' ? '0 4px 12px rgba(14, 165, 233, 0.25)' : 'none'
-          }}
+          className={`${styles.formatBtn} ${materialFormat === 'PDF' ? styles.formatBtnPdfActive : ''}`}
         >
-          <span style={{ fontSize: '1.25rem' }}>📄</span>
+          <FileText size={15} />
           <span>Modul Dokumen / PDF</span>
         </button>
 
-        {/* FORMAT 2: YOUTUBE VIDEO */}
         <button
           type="button"
           onClick={() => setMaterialFormat('VIDEO')}
-          style={{
-            padding: '0.85rem 0.5rem',
-            borderRadius: '12px',
-            border: 'none',
-            background: materialFormat === 'VIDEO' ? 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)' : 'transparent',
-            color: materialFormat === 'VIDEO' ? '#ffffff' : 'var(--text-secondary)',
-            fontWeight: 800,
-            fontSize: '0.88rem',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '0.5rem',
-            transition: 'all 0.2s ease',
-            boxShadow: materialFormat === 'VIDEO' ? '0 4px 12px rgba(239, 68, 68, 0.25)' : 'none'
-          }}
+          className={`${styles.formatBtn} ${materialFormat === 'VIDEO' ? styles.formatBtnVideoActive : ''}`}
         >
-          <span style={{ fontSize: '1.25rem' }}>🎥</span>
+          <Video size={15} />
           <span>Video YouTube</span>
         </button>
 
-        {/* FORMAT 3: INFOGRAPHIC */}
         <button
           type="button"
           onClick={() => setMaterialFormat('INFOGRAPHIC')}
-          style={{
-            padding: '0.85rem 0.5rem',
-            borderRadius: '12px',
-            border: 'none',
-            background: materialFormat === 'INFOGRAPHIC' ? 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)' : 'transparent',
-            color: materialFormat === 'INFOGRAPHIC' ? '#ffffff' : 'var(--text-secondary)',
-            fontWeight: 800,
-            fontSize: '0.88rem',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '0.5rem',
-            transition: 'all 0.2s ease',
-            boxShadow: materialFormat === 'INFOGRAPHIC' ? '0 4px 12px rgba(139, 92, 246, 0.25)' : 'none'
-          }}
+          className={`${styles.formatBtn} ${materialFormat === 'INFOGRAPHIC' ? styles.formatBtnInfographicActive : ''}`}
         >
-          <span style={{ fontSize: '1.25rem' }}>🎨</span>
+          <Layers size={15} />
           <span>Infografis Interaktif</span>
         </button>
 
-        {/* FORMAT 4: ARTICLE */}
         <button
           type="button"
           onClick={() => setMaterialFormat('ARTICLE')}
-          style={{
-            padding: '0.85rem 0.5rem',
-            borderRadius: '12px',
-            border: 'none',
-            background: materialFormat === 'ARTICLE' ? 'linear-gradient(135deg, #10b981 0%, #047857 100%)' : 'transparent',
-            color: materialFormat === 'ARTICLE' ? '#ffffff' : 'var(--text-secondary)',
-            fontWeight: 800,
-            fontSize: '0.88rem',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '0.5rem',
-            transition: 'all 0.2s ease',
-            boxShadow: materialFormat === 'ARTICLE' ? '0 4px 12px rgba(16, 185, 129, 0.25)' : 'none'
-          }}
+          className={`${styles.formatBtn} ${materialFormat === 'ARTICLE' ? styles.formatBtnArticleActive : ''}`}
         >
-          <span style={{ fontSize: '1.25rem' }}>📝</span>
+          <BookOpen size={15} />
           <span>Artikel &amp; Bacaan</span>
         </button>
       </div>
 
       {/* Main Workspace Layout */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.7fr) minmax(320px, 1fr)', gap: '1.5rem', alignItems: 'start' }}>
+      <div className={styles.workspaceGrid}>
         
         {/* LEFT COLUMN: Dedicated Workspace per Selected Format */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
           
-          {/* ══════════════════════════════════════════════════════════════════════
-              FORMAT 1: MODUL DOKUMEN / PDF
-              Sub-toggle: SIBI (Katalog Kemdikdasmen) vs UPLOAD (Unggah Dokumen Mandiri)
-             ══════════════════════════════════════════════════════════════════════ */}
+          {/* FORMAT 1: MODUL DOKUMEN / PDF */}
           {materialFormat === 'PDF' && (
-            <div style={{
-              background: 'var(--bg-card)',
-              border: '1px solid var(--border-light)',
-              borderRadius: '20px',
-              padding: '1.5rem',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '1.25rem',
-              boxShadow: 'var(--shadow-sm)'
-            }}>
-              <div>
-                <h2 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                  Sumber Materi Dokumen PDF
-                </h2>
-                <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                  Pilih apakah materi bersumber dari katalog 600+ buku resmi SIBI Kemdikdasmen atau berkas PDF yang Anda unggah mandiri.
-                </p>
+            <div className={styles.card}>
+              <div className={styles.cardHeader}>
+                <div className={styles.cardTitleGroup}>
+                  <h2 className={styles.cardTitle}>
+                    <FileText size={16} color="#0284c7" />
+                    <span>Sumber Materi Dokumen PDF</span>
+                  </h2>
+                  <p className={styles.cardSubtitle}>
+                    Pilih apakah materi bersumber dari katalog buku resmi SIBI Kemdikdasmen atau berkas PDF yang Anda unggah mandiri.
+                  </p>
+                </div>
               </div>
 
-              {/* PDF Sub-source Toggle */}
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                gap: '0.4rem',
-                background: 'var(--bg-elevated)',
-                padding: '0.3rem',
-                borderRadius: '12px',
-                border: '1px solid var(--border-light)'
-              }}>
+              {/* Sub-source Toggle */}
+              <div className={styles.subToggleBar}>
                 <button
                   type="button"
                   onClick={() => setPdfSourceMode('SIBI')}
-                  style={{
-                    padding: '0.65rem 0.75rem',
-                    borderRadius: '10px',
-                    border: 'none',
-                    background: pdfSourceMode === 'SIBI' ? 'var(--accent)' : 'transparent',
-                    color: pdfSourceMode === 'SIBI' ? '#ffffff' : 'var(--text-secondary)',
-                    fontWeight: 700,
-                    fontSize: '0.82rem',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '0.4rem',
-                    transition: 'all 0.15s ease'
-                  }}
+                  className={`${styles.subToggleBtn} ${pdfSourceMode === 'SIBI' ? styles.subToggleBtnActive : ''}`}
                 >
-                  <span>📚</span>
+                  <BookOpen size={14} />
                   <span>Katalog Buku SIBI ({libraryBooks.length} Buku Resmi)</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setPdfSourceMode('UPLOAD')}
-                  style={{
-                    padding: '0.65rem 0.75rem',
-                    borderRadius: '10px',
-                    border: 'none',
-                    background: pdfSourceMode === 'UPLOAD' ? 'var(--accent)' : 'transparent',
-                    color: pdfSourceMode === 'UPLOAD' ? '#ffffff' : 'var(--text-secondary)',
-                    fontWeight: 700,
-                    fontSize: '0.82rem',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '0.4rem',
-                    transition: 'all 0.15s ease'
-                  }}
+                  className={`${styles.subToggleBtn} ${pdfSourceMode === 'UPLOAD' ? styles.subToggleBtnActive : ''}`}
                 >
-                  <span>📤</span>
+                  <UploadCloud size={14} />
                   <span>Upload Berkas PDF Mandiri</span>
                 </button>
               </div>
 
-              {/* ── SUB-FLOW A: KATALOG BUKU SIBI ── */}
+              {/* SUB-FLOW A: KATALOG BUKU SIBI */}
               {pdfSourceMode === 'SIBI' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  <div style={{
-                    background: 'rgba(14, 165, 233, 0.08)',
-                    border: '1px solid rgba(14, 165, 233, 0.25)',
-                    borderRadius: '12px',
-                    padding: '0.75rem 1rem',
-                    fontSize: '0.78rem',
-                    color: '#0284c7',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem'
-                  }}>
-                    <span>✨</span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <div className={styles.infoBanner}>
+                    <CheckCircle2 size={15} style={{ flexShrink: 0 }} />
                     <span><strong>Buku SIBI Resmi Terpilih:</strong> Pengunggahan berkas tidak diperlukan. Judul &amp; deskripsi terisi otomatis dari metadata buku resmi.</span>
                   </div>
 
                   {/* Filters */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '0.75rem', alignItems: 'center' }}>
-                    <input
-                      type="text"
-                      placeholder="🔍 Cari judul buku, mapel, atau pengarang..."
-                      value={bookSearchQuery}
-                      onChange={e => setBookSearchQuery(e.target.value)}
-                      className="input"
-                      style={{ fontSize: '0.82rem' }}
-                    />
+                  <div className={styles.filterRow}>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type="text"
+                        placeholder="Cari judul buku, mapel, atau pengarang..."
+                        value={bookSearchQuery}
+                        onChange={e => setBookSearchQuery(e.target.value)}
+                        className={styles.inputField}
+                        style={{ paddingLeft: '2rem' }}
+                      />
+                      <Search size={13} style={{ position: 'absolute', left: '0.65rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                    </div>
+
                     <select
                       value={selectedSubjectFilter}
                       onChange={e => setSelectedSubjectFilter(e.target.value)}
-                      className="input"
-                      style={{ fontSize: '0.8rem' }}
+                      className={styles.inputField}
                     >
                       <option value="ALL">Semua Mapel</option>
                       {bookSubjects.map(s => (
                         <option key={s} value={s}>{s}</option>
                       ))}
                     </select>
+
                     <select
                       value={selectedGradeFilter}
                       onChange={e => setSelectedGradeFilter(e.target.value)}
-                      className="input"
-                      style={{ fontSize: '0.8rem' }}
+                      className={styles.inputField}
                     >
                       <option value="ALL">Semua Kelas</option>
                       <option value="Kelas 7">Kelas 7</option>
@@ -994,17 +861,7 @@ export default function CreateMaterialPage() {
                   </div>
 
                   {/* Book Grid Cards */}
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))',
-                    gap: '0.75rem',
-                    maxHeight: '380px',
-                    overflowY: 'auto',
-                    padding: '0.25rem',
-                    border: '1px solid var(--border-light)',
-                    borderRadius: '14px',
-                    background: 'var(--bg-elevated)'
-                  }}>
+                  <div className={styles.bookGrid}>
                     {filteredBooks.length > 0 ? (
                       filteredBooks.map((book: LibraryBook) => {
                         const isSelected = currentBook?.id === book.id;
@@ -1012,46 +869,34 @@ export default function CreateMaterialPage() {
                           <div
                             key={book.id}
                             onClick={() => handleSelectBook(book)}
-                            style={{
-                              background: isSelected ? 'var(--bg-card)' : 'var(--bg-surface)',
-                              border: isSelected ? '2px solid var(--accent)' : '1px solid var(--border-light)',
-                              borderRadius: '12px',
-                              padding: '0.85rem',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              gap: '0.45rem',
-                              position: 'relative',
-                              boxShadow: isSelected ? '0 0 0 3px rgba(14, 165, 233, 0.2)' : 'none',
-                              transition: 'all 0.15s ease'
-                            }}
+                            className={`${styles.bookCard} ${isSelected ? styles.bookCardSelected : ''}`}
                           >
-                            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.5rem' }}>
-                              <span style={{ fontSize: '1.5rem' }}>📕</span>
-                              <span style={{
-                                fontSize: '0.66rem',
-                                fontWeight: 800,
-                                padding: '2px 6px',
-                                borderRadius: '6px',
-                                background: isSelected ? 'var(--accent)' : 'var(--bg-elevated)',
-                                color: isSelected ? '#fff' : 'var(--text-muted)'
-                              }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.4rem' }}>
+                              <Book size={16} color={isSelected ? 'var(--accent)' : 'var(--text-muted)'} />
+                              <span className={`${styles.bookGradeBadge} ${isSelected ? styles.bookGradeBadgeActive : ''}`}>
                                 {book.grade_level_name || 'Buku Teks'}
                               </span>
                             </div>
 
-                            <div style={{ fontWeight: 800, fontSize: '0.8rem', color: 'var(--text-primary)', lineHeight: 1.35, minHeight: '2.3rem' }}>
+                            <div className={styles.bookTitle}>
                               {book.title}
                             </div>
 
-                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', lineHeight: 1.3 }}>
+                            <div className={styles.bookMeta}>
                               <div>{book.subject_name || 'Mata Pelajaran Umum'}</div>
                               <div>{book.publisher || 'Kemendikbudristek'} • {book.total_pages || 100} Hal.</div>
                             </div>
 
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto', paddingTop: '0.4rem', borderTop: '1px solid var(--border-light)' }}>
-                              <span style={{ fontSize: '0.7rem', fontWeight: 800, color: isSelected ? 'var(--accent)' : 'var(--text-muted)' }}>
-                                {isSelected ? '✓ Terpilih' : 'Pilih Buku'}
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto', paddingTop: '0.35rem', borderTop: '1px solid var(--border-light)' }}>
+                              <span style={{ fontSize: '0.68rem', fontWeight: 800, color: isSelected ? 'var(--accent)' : 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                                {isSelected ? (
+                                  <>
+                                    <Check size={12} />
+                                    <span>Terpilih</span>
+                                  </>
+                                ) : (
+                                  <span>Pilih Buku</span>
+                                )}
                               </span>
                               {book.file_url && (
                                 <a
@@ -1059,9 +904,10 @@ export default function CreateMaterialPage() {
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   onClick={e => e.stopPropagation()}
-                                  style={{ fontSize: '0.68rem', color: '#2563eb', fontWeight: 700, textDecoration: 'none' }}
+                                  style={{ fontSize: '0.68rem', color: '#0284c7', fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '2px' }}
                                 >
-                                  Buka PDF ↗
+                                  <span>Buka</span>
+                                  <ExternalLink size={10} />
                                 </a>
                               )}
                             </div>
@@ -1069,31 +915,23 @@ export default function CreateMaterialPage() {
                         );
                       })
                     ) : (
-                      <div style={{ gridColumn: '1 / -1', padding: '2.5rem 1rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                        🔍 Tidak ada buku yang cocok dengan kata kunci "{bookSearchQuery}".
+                      <div style={{ gridColumn: '1 / -1', padding: '2rem 1rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.78rem' }}>
+                        Tidak ada buku yang cocok dengan kata kunci &quot;{bookSearchQuery}&quot;.
                       </div>
                     )}
                   </div>
 
                   {/* Selected Book Confirmation & Page Range Config */}
                   {currentBook && (
-                    <div style={{
-                      background: 'var(--accent-light)',
-                      border: '1.5px solid var(--accent)',
-                      borderRadius: '14px',
-                      padding: '1rem',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '0.75rem'
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                          <span style={{ fontSize: '1.4rem' }}>📖</span>
+                    <div className={styles.selectedBookBanner}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.45rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
+                          <BookOpen size={18} color="#0284c7" />
                           <div>
-                            <div style={{ fontWeight: 800, fontSize: '0.88rem', color: '#0369a1' }}>
+                            <div style={{ fontWeight: 800, fontSize: '0.82rem', color: '#0369a1' }}>
                               Buku Terpilih: {currentBook.title}
                             </div>
-                            <div style={{ fontSize: '0.74rem', color: '#0284c7' }}>
+                            <div style={{ fontSize: '0.7rem', color: '#0284c7' }}>
                               {currentBook.publisher || 'Kemendikbudristek'} • Total {currentBook.total_pages || 100} Halaman
                             </div>
                           </div>
@@ -1103,41 +941,41 @@ export default function CreateMaterialPage() {
                             href={currentBook.file_url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="btn btn-secondary btn-sm"
-                            style={{ borderRadius: '8px', fontSize: '0.74rem' }}
+                            className={`${styles.btnSecondary} ${styles.btnSm}`}
                           >
-                            Buka &amp; Baca Isi Buku ↗
+                            <span>Baca Isi Buku</span>
+                            <ExternalLink size={11} />
                           </a>
                         )}
                       </div>
 
-                      <div style={{ borderTop: '1px dashed rgba(14, 165, 233, 0.3)', paddingTop: '0.75rem', display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-                        <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#0369a1' }}>
-                          Tentukan Rentang Halaman Materi Wajib Dibaca:
+                      <div className={styles.pageRangeRow}>
+                        <span style={{ fontSize: '0.74rem', fontWeight: 800, color: '#0369a1' }}>
+                          Rentang Halaman Materi Wajib:
                         </span>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <span style={{ fontSize: '0.75rem', color: '#0284c7' }}>Dari Hal.</span>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                          <span style={{ fontSize: '0.72rem', color: '#0284c7' }}>Dari Hal.</span>
                           <input
                             type="number"
                             min={1}
                             max={currentBook.total_pages || 500}
                             value={bookStartPage}
                             onChange={e => handlePageChange(Math.max(1, parseInt(e.target.value) || 1), bookEndPage)}
-                            className="input"
-                            style={{ width: '80px', height: '34px', fontSize: '0.82rem', fontWeight: 800, textAlign: 'center' }}
+                            className={styles.inputField}
+                            style={{ width: '65px', height: '28px', fontSize: '0.76rem', fontWeight: 800, textAlign: 'center' }}
                           />
-                          <span style={{ fontSize: '0.75rem', color: '#0284c7' }}>Sampai Hal.</span>
+                          <span style={{ fontSize: '0.72rem', color: '#0284c7' }}>Sampai Hal.</span>
                           <input
                             type="number"
                             min={bookStartPage}
                             max={currentBook.total_pages || 500}
                             value={bookEndPage}
                             onChange={e => handlePageChange(bookStartPage, Math.max(bookStartPage, parseInt(e.target.value) || 1))}
-                            className="input"
-                            style={{ width: '80px', height: '34px', fontSize: '0.82rem', fontWeight: 800, textAlign: 'center' }}
+                            className={styles.inputField}
+                            style={{ width: '65px', height: '28px', fontSize: '0.76rem', fontWeight: 800, textAlign: 'center' }}
                           />
-                          <span style={{ fontSize: '0.72rem', color: '#0284c7', fontStyle: 'italic' }}>
-                            (Total {Math.max(1, bookEndPage - bookStartPage + 1)} Halaman Materi)
+                          <span style={{ fontSize: '0.7rem', color: '#0284c7' }}>
+                            (Total {Math.max(1, bookEndPage - bookStartPage + 1)} Halaman)
                           </span>
                         </div>
                       </div>
@@ -1146,33 +984,20 @@ export default function CreateMaterialPage() {
                 </div>
               )}
 
-              {/* ── SUB-FLOW B: UPLOAD BERKAS PDF MANDIRI (KATALOG BUKU TIDAK DITAMPILKAN) ── */}
+              {/* SUB-FLOW B: UPLOAD BERKAS PDF MANDIRI */}
               {pdfSourceMode === 'UPLOAD' && (
-                <div style={{
-                  border: '2px dashed var(--border-medium)',
-                  borderRadius: '16px',
-                  padding: '2.5rem 1.5rem',
-                  textAlign: 'center',
-                  background: 'var(--bg-elevated)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: '0.85rem'
-                }}>
-                  <span style={{ fontSize: '2.8rem' }}>📤</span>
+                <div className={styles.uploadDropzone}>
+                  <UploadCloud size={32} color="var(--accent)" />
                   <div>
-                    <div style={{ fontWeight: 800, fontSize: '0.98rem', color: 'var(--text-primary)' }}>
+                    <div style={{ fontWeight: 800, fontSize: '0.88rem', color: 'var(--text-primary)' }}>
                       {selectedPdfFile ? selectedPdfFile.name : 'Pilih Berkas PDF Dokumen Pembelajaran'}
                     </div>
-                    <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.3rem' }}>
-                      Mendukung handout materi, slide presentasi, atau ringkasan guru. Maksimal 25 MB.
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+                      Mendukung handout materi, slide presentasi, atau ringkasan guru (Maks. 25 MB).
                     </div>
                   </div>
 
-                  <label
-                    className="btn btn-primary"
-                    style={{ cursor: 'pointer', fontWeight: 800, borderRadius: '10px', padding: '0.55rem 1.4rem' }}
-                  >
+                  <label className={styles.btnPrimary} style={{ cursor: 'pointer' }}>
                     <span>{selectedPdfFile ? 'Ganti Berkas PDF' : 'Pilih Berkas PDF'}</span>
                     <input
                       type="file"
@@ -1183,8 +1008,9 @@ export default function CreateMaterialPage() {
                   </label>
 
                   {selectedPdfFile && (
-                    <div style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: 700 }}>
-                      ✓ Berkas siap diunggah saat formulir diterbitkan.
+                    <div style={{ fontSize: '0.72rem', color: '#059669', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <CheckCircle2 size={13} />
+                      <span>Berkas siap diunggah saat formulir diterbitkan.</span>
                     </div>
                   )}
                 </div>
@@ -1192,57 +1018,48 @@ export default function CreateMaterialPage() {
             </div>
           )}
 
-          {/* ══════════════════════════════════════════════════════════════════════
-              FORMAT 2: VIDEO YOUTUBE (TERINTEGRASI LANGSUNG YOUTUBE DATA API V3)
-              KATALOG BUKU TIDAK DITAMPILKAN (TIDAK RELEVAN)
-             ══════════════════════════════════════════════════════════════════════ */}
+          {/* FORMAT 2: VIDEO YOUTUBE */}
           {materialFormat === 'VIDEO' && (
-            <div style={{
-              background: 'var(--bg-card)',
-              border: '1px solid var(--border-light)',
-              borderRadius: '20px',
-              padding: '1.5rem',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '1.25rem',
-              boxShadow: 'var(--shadow-sm)'
-            }}>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <span style={{ fontSize: '1.4rem' }}>🎥</span>
-                  <h2 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                    Integrasi YouTube Data API v3
+            <div className={styles.card}>
+              <div className={styles.cardHeader}>
+                <div className={styles.cardTitleGroup}>
+                  <h2 className={styles.cardTitle}>
+                    <Video size={16} color="#dc2626" />
+                    <span>Integrasi YouTube Data API v3</span>
                   </h2>
+                  <p className={styles.cardSubtitle}>
+                    Cari video pembelajaran langsung tanpa keluar aplikasi. Pratinjau langsung untuk mengisi judul &amp; deskripsi secara otomatis.
+                  </p>
                 </div>
-                <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                  Cari video pembelajaran langsung tanpa keluar aplikasi. Pratinjau langsung dan gunakan video ini untuk mengisi judul &amp; deskripsi secara otomatis.
-                </p>
               </div>
 
               {/* YouTube Search Bar */}
-              <form onSubmit={handleSearchYouTube} style={{ display: 'flex', gap: '0.6rem' }}>
-                <input
-                  type="text"
-                  placeholder="Ketik topik materi (contoh: Hukum Newton Fisika Kelas 10)..."
-                  value={ytSearchQuery}
-                  onChange={e => setYtSearchQuery(e.target.value)}
-                  className="input"
-                  style={{ flex: 1, fontSize: '0.85rem' }}
-                />
+              <form onSubmit={handleSearchYouTube} style={{ display: 'flex', gap: '0.45rem' }}>
+                <div style={{ position: 'relative', flex: 1 }}>
+                  <input
+                    type="text"
+                    placeholder="Ketik topik materi (contoh: Hukum Newton Fisika Kelas 10)..."
+                    value={ytSearchQuery}
+                    onChange={e => setYtSearchQuery(e.target.value)}
+                    className={styles.inputField}
+                    style={{ paddingLeft: '2rem' }}
+                  />
+                  <Search size={13} style={{ position: 'absolute', left: '0.65rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                </div>
                 <button
                   type="submit"
                   disabled={isSearchingYt}
-                  className="btn btn-primary"
-                  style={{ background: '#ef4444', borderColor: '#ef4444', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.55rem 1.25rem' }}
+                  className={styles.btnPrimary}
+                  style={{ background: '#dc2626', borderColor: '#dc2626' }}
                 >
                   {isSearchingYt ? (
                     <>
-                      <span style={{ display: 'inline-block', width: '13px', height: '13px', border: '2px solid #fff', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                      <span style={{ display: 'inline-block', width: '12px', height: '12px', border: '2px solid #fff', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
                       <span>Mencari...</span>
                     </>
                   ) : (
                     <>
-                      <span>🔍</span>
+                      <Search size={13} />
                       <span>Cari Video</span>
                     </>
                   )}
@@ -1252,51 +1069,52 @@ export default function CreateMaterialPage() {
               {/* Selected Video Pill */}
               {selectedYtVideo && (
                 <div style={{
-                  background: 'rgba(239, 68, 68, 0.08)',
-                  border: '1.5px solid #ef4444',
-                  borderRadius: '14px',
-                  padding: '1rem',
+                  background: 'rgba(220, 38, 38, 0.05)',
+                  border: '1px solid rgba(220, 38, 38, 0.3)',
+                  borderRadius: '9px',
+                  padding: '0.75rem',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   flexWrap: 'wrap',
-                  gap: '0.75rem'
+                  gap: '0.65rem'
                 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1, minWidth: '240px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flex: 1, minWidth: '220px' }}>
                     {selectedYtVideo.thumbnailUrl && (
                       <img
                         src={selectedYtVideo.thumbnailUrl}
                         alt=""
-                        style={{ width: '80px', height: '48px', objectFit: 'cover', borderRadius: '8px', border: '1px solid rgba(239,68,68,0.3)' }}
+                        style={{ width: '70px', height: '42px', objectFit: 'cover', borderRadius: '6px', border: '1px solid rgba(220, 38, 38, 0.2)' }}
                       />
                     )}
                     <div>
-                      <div style={{ fontSize: '0.7rem', fontWeight: 800, color: '#ef4444', textTransform: 'uppercase' }}>
-                        ✓ Video Terpilih Untuk Materi Siswa
+                      <div style={{ fontSize: '0.66rem', fontWeight: 800, color: '#dc2626', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                        <CheckCircle2 size={11} />
+                        <span>Video Terpilih Untuk Materi Siswa</span>
                       </div>
-                      <div style={{ fontWeight: 800, fontSize: '0.88rem', color: 'var(--text-primary)', lineHeight: 1.3 }}>
+                      <div style={{ fontWeight: 800, fontSize: '0.8rem', color: 'var(--text-primary)', lineHeight: 1.3 }}>
                         {selectedYtVideo.title}
                       </div>
-                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                      <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
                         Channel: {selectedYtVideo.channelTitle}
                       </div>
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <div style={{ display: 'flex', gap: '0.4rem' }}>
                     <button
                       type="button"
                       onClick={() => setPreviewYtVideo(selectedYtVideo)}
-                      className="btn btn-secondary btn-sm"
-                      style={{ fontSize: '0.74rem', borderRadius: '8px' }}
+                      className={`${styles.btnSecondary} ${styles.btnSm}`}
                     >
-                      Putar Preview 🎬
+                      <Play size={11} />
+                      <span>Putar Preview</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setSelectedYtVideo(null)}
-                      className="btn btn-secondary btn-sm"
-                      style={{ fontSize: '0.74rem', borderRadius: '8px', color: '#ef4444' }}
+                      className={`${styles.btnSecondary} ${styles.btnSm}`}
+                      style={{ color: '#dc2626' }}
                     >
                       Ganti Video
                     </button>
@@ -1304,97 +1122,65 @@ export default function CreateMaterialPage() {
                 </div>
               )}
 
-              {/* Search Results Grid (Max 10 per request to save quota) */}
+              {/* Search Results Grid */}
               {ytSearchResults.length > 0 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
+                  <div style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-muted)' }}>
                     Hasil Pencarian YouTube Data API ({ytSearchResults.length} Video):
                   </div>
 
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
-                    gap: '0.75rem',
-                    maxHeight: '420px',
-                    overflowY: 'auto',
-                    padding: '0.25rem',
-                    borderRadius: '14px',
-                    border: '1px solid var(--border-light)',
-                    background: 'var(--bg-elevated)'
-                  }}>
+                  <div className={styles.videoGrid}>
                     {ytSearchResults.map(video => (
-                      <div
-                        key={video.id}
-                        style={{
-                          background: 'var(--bg-surface)',
-                          border: '1px solid var(--border-light)',
-                          borderRadius: '12px',
-                          overflow: 'hidden',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          boxShadow: 'var(--shadow-sm)',
-                          transition: 'all 0.15s ease'
-                        }}
-                      >
-                        {/* Thumbnail with quick preview badge */}
+                      <div key={video.id} className={styles.videoCard}>
                         <div
                           onClick={() => setPreviewYtVideo(video)}
-                          style={{ position: 'relative', width: '100%', paddingTop: '56.25%', cursor: 'pointer', background: '#000' }}
+                          className={styles.videoThumbnailBox}
                         >
                           <img
                             src={video.thumbnailUrl}
                             alt={video.title}
-                            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                            className={styles.videoThumbnailImg}
                           />
-                          <div style={{
-                            position: 'absolute',
-                            inset: 0,
-                            background: 'rgba(0,0,0,0.35)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                          }}>
+                          <div className={styles.videoPlayOverlay}>
                             <span style={{
                               background: 'rgba(0,0,0,0.7)',
                               color: '#fff',
                               borderRadius: '50%',
-                              width: '38px',
-                              height: '38px',
+                              width: '32px',
+                              height: '32px',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              fontSize: '1.1rem'
                             }}>
-                              ▶
+                              <Play size={14} fill="#fff" />
                             </span>
                           </div>
                         </div>
 
-                        {/* Video Info & Action */}
-                        <div style={{ padding: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.45rem', flex: 1 }}>
-                          <div style={{ fontWeight: 800, fontSize: '0.78rem', color: 'var(--text-primary)', lineHeight: 1.35, minHeight: '2.4rem' }}>
+                        <div style={{ padding: '0.65rem', display: 'flex', flexDirection: 'column', gap: '0.35rem', flex: 1 }}>
+                          <div style={{ fontWeight: 800, fontSize: '0.76rem', color: 'var(--text-primary)', lineHeight: 1.3, minHeight: '2rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                             {video.title}
                           </div>
-                          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                          <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
                             Channel: {video.channelTitle}
                           </div>
 
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem', marginTop: 'auto', paddingTop: '0.5rem', borderTop: '1px solid var(--border-light)' }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.35rem', marginTop: 'auto', paddingTop: '0.45rem', borderTop: '1px solid var(--border-light)' }}>
                             <button
                               type="button"
                               onClick={() => setPreviewYtVideo(video)}
-                              className="btn btn-secondary btn-sm"
-                              style={{ fontSize: '0.7rem', borderRadius: '8px', padding: '0.35rem' }}
+                              className={`${styles.btnSecondary} ${styles.btnSm}`}
+                              style={{ justifyContent: 'center' }}
                             >
-                              Putar Preview
+                              Pratinjau
                             </button>
                             <button
                               type="button"
                               onClick={() => handleSelectYouTubeVideo(video)}
-                              className="btn btn-primary btn-sm"
-                              style={{ fontSize: '0.7rem', borderRadius: '8px', padding: '0.35rem', background: '#ef4444', borderColor: '#ef4444', fontWeight: 800 }}
+                              className={`${styles.btnPrimary} ${styles.btnSm}`}
+                              style={{ background: '#dc2626', borderColor: '#dc2626', justifyContent: 'center' }}
                             >
-                              Gunakan Video
+                              Pilih Video
                             </button>
                           </div>
                         </div>
@@ -1404,20 +1190,19 @@ export default function CreateMaterialPage() {
                 </div>
               )}
 
-              {/* Manual URL fallback (if teacher already has specific URL) */}
-              <div style={{ borderTop: '1px solid var(--border-light)', paddingTop: '0.85rem' }}>
-                <details style={{ fontSize: '0.78rem', color: 'var(--text-muted)', cursor: 'pointer' }}>
+              {/* Manual URL fallback */}
+              <div style={{ borderTop: '1px solid var(--border-light)', paddingTop: '0.65rem' }}>
+                <details style={{ fontSize: '0.74rem', color: 'var(--text-muted)', cursor: 'pointer' }}>
                   <summary style={{ fontWeight: 700, color: 'var(--text-secondary)' }}>
                     Opsi Manual: Masukkan Tautan YouTube URL langsung
                   </summary>
-                  <div style={{ marginTop: '0.6rem', display: 'flex', gap: '0.5rem' }}>
+                  <div style={{ marginTop: '0.45rem' }}>
                     <input
                       type="url"
                       placeholder="https://www.youtube.com/watch?v=..."
                       value={youtubeUrl}
                       onChange={e => setYoutubeUrl(e.target.value)}
-                      className="input"
-                      style={{ fontSize: '0.82rem' }}
+                      className={styles.inputField}
                     />
                   </div>
                 </details>
@@ -1425,142 +1210,123 @@ export default function CreateMaterialPage() {
             </div>
           )}
 
-          {/* ══════════════════════════════════════════════════════════════════════
-              FORMAT 3: INFOGRAFIS INTERAKTIF (MULTI-BLOCK CANVAS COMPOSER)
-              KATALOG BUKU TIDAK DITAMPILKAN (TIDAK RELEVAN)
-             ══════════════════════════════════════════════════════════════════════ */}
+          {/* FORMAT 3: INFOGRAFIS INTERAKTIF */}
           {materialFormat === 'INFOGRAPHIC' && (
-            <div style={{
-              background: 'var(--bg-card)',
-              border: '1px solid var(--border-light)',
-              borderRadius: '20px',
-              padding: '1.5rem',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '1.25rem',
-              boxShadow: 'var(--shadow-sm)'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span style={{ fontSize: '1.4rem' }}>🎨</span>
-                    <h2 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                      Penyusun Lembar Infografis &amp; Visual
-                    </h2>
-                  </div>
-                  <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                    Susun materi berupa rangkaian gambar dan paragraf penjelasan layaknya dokumen Word atau Canva.
+            <div className={styles.card}>
+              <div className={styles.cardHeader}>
+                <div className={styles.cardTitleGroup}>
+                  <h2 className={styles.cardTitle}>
+                    <Layers size={16} color="#7c3aed" />
+                    <span>Penyusun Lembar Infografis &amp; Visual</span>
+                  </h2>
+                  <p className={styles.cardSubtitle}>
+                    Susun materi berupa rangkaian gambar dan paragraf penjelasan layaknya kanvas visual ringkas.
                   </p>
                 </div>
 
                 {/* Edit vs Preview Toggle */}
-                <div style={{
-                  display: 'flex',
-                  background: 'var(--bg-elevated)',
-                  borderRadius: '10px',
-                  padding: '3px',
-                  border: '1px solid var(--border-light)'
-                }}>
+                <div style={{ display: 'flex', background: 'var(--bg-elevated)', borderRadius: '8px', padding: '2px', border: '1px solid var(--border-light)' }}>
                   <button
                     type="button"
                     onClick={() => setInfographicTab('EDIT')}
+                    className={`${styles.btnSecondary} ${styles.btnSm}`}
                     style={{
-                      padding: '0.4rem 0.8rem',
-                      borderRadius: '8px',
                       border: 'none',
-                      background: infographicTab === 'EDIT' ? '#8b5cf6' : 'transparent',
-                      color: infographicTab === 'EDIT' ? '#ffffff' : 'var(--text-secondary)',
-                      fontWeight: 700,
-                      fontSize: '0.76rem',
-                      cursor: 'pointer'
+                      background: infographicTab === 'EDIT' ? '#7c3aed' : 'transparent',
+                      color: infographicTab === 'EDIT' ? '#fff' : 'var(--text-secondary)'
                     }}
                   >
-                    ✏️ Editor Blok
+                    <Edit3 size={12} />
+                    <span>Editor Blok</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setInfographicTab('PREVIEW')}
+                    className={`${styles.btnSecondary} ${styles.btnSm}`}
                     style={{
-                      padding: '0.4rem 0.8rem',
-                      borderRadius: '8px',
                       border: 'none',
-                      background: infographicTab === 'PREVIEW' ? '#8b5cf6' : 'transparent',
-                      color: infographicTab === 'PREVIEW' ? '#ffffff' : 'var(--text-secondary)',
-                      fontWeight: 700,
-                      fontSize: '0.76rem',
-                      cursor: 'pointer'
+                      background: infographicTab === 'PREVIEW' ? '#7c3aed' : 'transparent',
+                      color: infographicTab === 'PREVIEW' ? '#fff' : 'var(--text-secondary)'
                     }}
                   >
-                    👁️ Pratinjau Kanvas
+                    <Eye size={12} />
+                    <span>Pratinjau Kanvas</span>
                   </button>
                 </div>
               </div>
 
               {/* TAB 1: BLOCK EDITOR */}
               {infographicTab === 'EDIT' ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                   {infographicBlocks.map((block, index) => (
                     <div
                       key={block.id}
                       style={{
-                        background: 'var(--bg-surface)',
+                        background: 'var(--bg-elevated)',
                         border: '1px solid var(--border-light)',
-                        borderRadius: '14px',
-                        padding: '1rem',
+                        borderRadius: '9px',
+                        padding: '0.75rem',
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: '0.75rem',
-                        boxShadow: 'var(--shadow-sm)'
+                        gap: '0.55rem'
                       }}
                     >
-                      {/* Block Header Bar */}
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <span style={{
-                            fontSize: '0.72rem',
-                            fontWeight: 800,
-                            padding: '3px 8px',
-                            borderRadius: '6px',
-                            background: block.type === 'IMAGE' ? 'rgba(139, 92, 246, 0.15)' : 'rgba(16, 185, 129, 0.15)',
-                            color: block.type === 'IMAGE' ? '#8b5cf6' : '#10b981'
-                          }}>
-                            {block.type === 'IMAGE' ? `🖼️ Gambar Visual #${index + 1}` : `📝 Teks Penjelasan #${index + 1}`}
-                          </span>
-                        </div>
+                        <span style={{
+                          fontSize: '0.7rem',
+                          fontWeight: 800,
+                          padding: '2px 7px',
+                          borderRadius: '5px',
+                          background: block.type === 'IMAGE' ? 'rgba(124, 58, 237, 0.12)' : 'rgba(5, 150, 105, 0.12)',
+                          color: block.type === 'IMAGE' ? '#7c3aed' : '#059669',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}>
+                          {block.type === 'IMAGE' ? <ImageIcon size={12} /> : <FileText size={12} />}
+                          <span>{block.type === 'IMAGE' ? `Gambar Visual #${index + 1}` : `Teks Penjelasan #${index + 1}`}</span>
+                        </span>
 
-                        {/* Reorder and Delete Actions */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                           <button
                             type="button"
                             onClick={() => moveInfographicBlock(index, 'UP')}
                             disabled={index === 0}
                             style={{
-                              background: 'var(--bg-elevated)',
+                              background: 'var(--bg-card)',
                               border: '1px solid var(--border-light)',
-                              borderRadius: '6px',
-                              width: '26px',
-                              height: '26px',
+                              borderRadius: '5px',
+                              width: '24px',
+                              height: '24px',
                               cursor: index === 0 ? 'not-allowed' : 'pointer',
-                              color: 'var(--text-secondary)'
+                              color: 'var(--text-secondary)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
                             }}
+                            aria-label="Geser ke atas"
                           >
-                            ▲
+                            <ChevronUp size={13} />
                           </button>
                           <button
                             type="button"
                             onClick={() => moveInfographicBlock(index, 'DOWN')}
                             disabled={index === infographicBlocks.length - 1}
                             style={{
-                              background: 'var(--bg-elevated)',
+                              background: 'var(--bg-card)',
                               border: '1px solid var(--border-light)',
-                              borderRadius: '6px',
-                              width: '26px',
-                              height: '26px',
+                              borderRadius: '5px',
+                              width: '24px',
+                              height: '24px',
                               cursor: index === infographicBlocks.length - 1 ? 'not-allowed' : 'pointer',
-                              color: 'var(--text-secondary)'
+                              color: 'var(--text-secondary)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
                             }}
+                            aria-label="Geser ke bawah"
                           >
-                            ▼
+                            <ChevronDown size={13} />
                           </button>
                           <button
                             type="button"
@@ -1568,45 +1334,49 @@ export default function CreateMaterialPage() {
                             style={{
                               background: 'rgba(239, 68, 68, 0.1)',
                               border: '1px solid rgba(239, 68, 68, 0.25)',
-                              borderRadius: '6px',
-                              width: '26px',
-                              height: '26px',
+                              borderRadius: '5px',
+                              width: '24px',
+                              height: '24px',
                               cursor: 'pointer',
-                              color: '#ef4444'
+                              color: '#ef4444',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
                             }}
+                            aria-label="Hapus blok"
                           >
-                            ✕
+                            <X size={13} />
                           </button>
                         </div>
                       </div>
 
-                      {/* Block Input Content */}
                       {block.type === 'IMAGE' ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                          <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+                          <div style={{ display: 'flex', gap: '0.45rem' }}>
                             <input
                               type="url"
                               placeholder="Tempelkan URL Gambar Infografis (https://...)..."
                               value={block.content}
                               onChange={e => updateInfographicBlock(block.id, e.target.value)}
-                              className="input"
-                              style={{ fontSize: '0.82rem', flex: 1 }}
+                              className={styles.inputField}
+                              style={{ flex: 1 }}
                             />
                             <button
                               type="button"
                               onClick={() => handlePasteClipboardToBlock(block.id)}
-                              className="btn btn-secondary btn-sm"
-                              style={{ fontSize: '0.74rem', whiteSpace: 'nowrap' }}
+                              className={`${styles.btnSecondary} ${styles.btnSm}`}
+                              style={{ whiteSpace: 'nowrap' }}
                             >
-                              📋 Tempel URL
+                              <Clipboard size={11} />
+                              <span>Tempel URL</span>
                             </button>
                           </div>
 
                           {block.content && (
                             <div style={{
-                              maxHeight: '220px',
+                              maxHeight: '180px',
                               overflow: 'hidden',
-                              borderRadius: '10px',
+                              borderRadius: '8px',
                               border: '1px solid var(--border-light)',
                               background: '#000',
                               display: 'flex',
@@ -1616,30 +1386,29 @@ export default function CreateMaterialPage() {
                               <img
                                 src={block.content}
                                 alt="Preview Infografis"
-                                style={{ maxHeight: '220px', width: 'auto', maxWidth: '100%', objectFit: 'contain' }}
+                                style={{ maxHeight: '180px', width: 'auto', maxWidth: '100%', objectFit: 'contain' }}
                                 onError={(e) => { (e.target as any).style.display = 'none'; }}
                               />
                             </div>
                           )}
                         </div>
                       ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
                           <textarea
                             rows={3}
                             placeholder="Tuliskan keterangan bagan atau penjelasan materi..."
                             value={block.content}
                             onChange={e => updateInfographicBlock(block.id, e.target.value)}
-                            className="input"
-                            style={{ height: 'auto', padding: '0.6rem', fontSize: '0.82rem', lineHeight: 1.5 }}
+                            className={styles.textareaField}
                           />
                           <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                             <button
                               type="button"
                               onClick={() => handlePasteClipboardToBlock(block.id)}
-                              className="btn btn-secondary btn-sm"
-                              style={{ fontSize: '0.72rem' }}
+                              className={`${styles.btnSecondary} ${styles.btnSm}`}
                             >
-                              📋 Tempel Teks dari Papan Klip
+                              <Clipboard size={11} />
+                              <span>Tempel dari Papan Klip</span>
                             </button>
                           </div>
                         </div>
@@ -1648,51 +1417,50 @@ export default function CreateMaterialPage() {
                   ))}
 
                   {/* Add Block Action Bar */}
-                  <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', paddingTop: '0.5rem' }}>
+                  <div style={{ display: 'flex', gap: '0.45rem', justifyContent: 'center', paddingTop: '0.35rem' }}>
                     <button
                       type="button"
                       onClick={() => addInfographicBlock('IMAGE')}
-                      className="btn btn-secondary"
-                      style={{ borderRadius: '10px', fontWeight: 700, fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+                      className={`${styles.btnSecondary} ${styles.btnSm}`}
                     >
-                      <span>➕ Tambah Gambar Visual</span>
+                      <Plus size={13} />
+                      <span>Tambah Gambar Visual</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => addInfographicBlock('TEXT')}
-                      className="btn btn-secondary"
-                      style={{ borderRadius: '10px', fontWeight: 700, fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+                      className={`${styles.btnSecondary} ${styles.btnSm}`}
                     >
-                      <span>➕ Tambah Paragraf Teks</span>
+                      <Plus size={13} />
+                      <span>Tambah Paragraf Teks</span>
                     </button>
                   </div>
                 </div>
               ) : (
-                /* TAB 2: LIVE CANVAS PREVIEW (Docx / Canva style) */
+                /* TAB 2: LIVE CANVAS PREVIEW */
                 <div style={{
                   background: 'var(--bg-elevated)',
-                  border: '1.5px solid var(--border-light)',
-                  borderRadius: '16px',
-                  padding: '1.5rem',
+                  border: '1px solid var(--border-light)',
+                  borderRadius: '9px',
+                  padding: '1rem',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '1.25rem',
-                  boxShadow: 'var(--shadow-sm)'
+                  gap: '0.85rem'
                 }}>
-                  <div style={{ textAlign: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '0.75rem' }}>
-                    <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#8b5cf6', textTransform: 'uppercase' }}>
+                  <div style={{ textAlign: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '0.55rem' }}>
+                    <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#7c3aed', textTransform: 'uppercase' }}>
                       Pratinjau Lembar Interaktif Siswa
                     </span>
-                    <h3 style={{ margin: '0.25rem 0 0 0', fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                    <h3 style={{ margin: '0.2rem 0 0 0', fontSize: '0.98rem', fontWeight: 800, color: 'var(--text-primary)' }}>
                       {title || 'Judul Modul Infografis'}
                     </h3>
                   </div>
 
-                  {infographicBlocks.map((block, idx) => (
+                  {infographicBlocks.map((block) => (
                     <div key={block.id}>
                       {block.type === 'IMAGE' && block.content && (
                         <div style={{
-                          borderRadius: '14px',
+                          borderRadius: '8px',
                           overflow: 'hidden',
                           border: '1px solid var(--border-light)',
                           background: '#000',
@@ -1703,20 +1471,20 @@ export default function CreateMaterialPage() {
                           <img
                             src={block.content}
                             alt=""
-                            style={{ width: '100%', maxHeight: '420px', objectFit: 'contain' }}
+                            style={{ width: '100%', maxHeight: '360px', objectFit: 'contain' }}
                           />
                         </div>
                       )}
                       {block.type === 'TEXT' && block.content && (
                         <div style={{
                           background: 'var(--bg-card)',
-                          borderRadius: '12px',
-                          padding: '1rem',
+                          borderRadius: '8px',
+                          padding: '0.75rem',
                           border: '1px solid var(--border-light)',
-                          fontSize: '0.86rem',
-                          lineHeight: 1.6,
+                          fontSize: '0.8rem',
+                          lineHeight: 1.55,
                           color: 'var(--text-primary)',
-                          marginTop: '0.5rem'
+                          marginTop: '0.35rem'
                         }}>
                           {block.content}
                         </div>
@@ -1728,130 +1496,102 @@ export default function CreateMaterialPage() {
             </div>
           )}
 
-          {/* ══════════════════════════════════════════════════════════════════════
-              FORMAT 4: ARTIKEL & BACAAN TEKS
-              KATALOG BUKU TIDAK DITAMPILKAN (TIDAK RELEVAN)
-             ══════════════════════════════════════════════════════════════════════ */}
+          {/* FORMAT 4: ARTIKEL & BACAAN TEKS */}
           {materialFormat === 'ARTICLE' && (
-            <div style={{
-              background: 'var(--bg-card)',
-              border: '1px solid var(--border-light)',
-              borderRadius: '20px',
-              padding: '1.5rem',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '1.25rem',
-              boxShadow: 'var(--shadow-sm)'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span style={{ fontSize: '1.4rem' }}>📝</span>
-                    <h2 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                      Penyusun Artikel &amp; Ringkasan Materi
-                    </h2>
-                  </div>
-                  <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                    Tuliskan atau salin naskah materi lengkap untuk dibaca siswa dengan tipografi nyaman di perangkat mobile.
+            <div className={styles.card}>
+              <div className={styles.cardHeader}>
+                <div className={styles.cardTitleGroup}>
+                  <h2 className={styles.cardTitle}>
+                    <BookOpen size={16} color="#059669" />
+                    <span>Penyusun Artikel &amp; Ringkasan Materi</span>
+                  </h2>
+                  <p className={styles.cardSubtitle}>
+                    Tuliskan naskah materi lengkap untuk dibaca siswa dengan tipografi nyaman di perangkat mobile.
                   </p>
                 </div>
 
-                {/* Edit vs Preview Toggle */}
-                <div style={{
-                  display: 'flex',
-                  background: 'var(--bg-elevated)',
-                  borderRadius: '10px',
-                  padding: '3px',
-                  border: '1px solid var(--border-light)'
-                }}>
+                <div style={{ display: 'flex', background: 'var(--bg-elevated)', borderRadius: '8px', padding: '2px', border: '1px solid var(--border-light)' }}>
                   <button
                     type="button"
                     onClick={() => setArticleTab('EDIT')}
+                    className={`${styles.btnSecondary} ${styles.btnSm}`}
                     style={{
-                      padding: '0.4rem 0.8rem',
-                      borderRadius: '8px',
                       border: 'none',
-                      background: articleTab === 'EDIT' ? '#10b981' : 'transparent',
-                      color: articleTab === 'EDIT' ? '#ffffff' : 'var(--text-secondary)',
-                      fontWeight: 700,
-                      fontSize: '0.76rem',
-                      cursor: 'pointer'
+                      background: articleTab === 'EDIT' ? '#059669' : 'transparent',
+                      color: articleTab === 'EDIT' ? '#fff' : 'var(--text-secondary)'
                     }}
                   >
-                    ✏️ Tulis Artikel
+                    <Edit3 size={12} />
+                    <span>Tulis Artikel</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setArticleTab('PREVIEW')}
+                    className={`${styles.btnSecondary} ${styles.btnSm}`}
                     style={{
-                      padding: '0.4rem 0.8rem',
-                      borderRadius: '8px',
                       border: 'none',
-                      background: articleTab === 'PREVIEW' ? '#10b981' : 'transparent',
-                      color: articleTab === 'PREVIEW' ? '#ffffff' : 'var(--text-secondary)',
-                      fontWeight: 700,
-                      fontSize: '0.76rem',
-                      cursor: 'pointer'
+                      background: articleTab === 'PREVIEW' ? '#059669' : 'transparent',
+                      color: articleTab === 'PREVIEW' ? '#fff' : 'var(--text-secondary)'
                     }}
                   >
-                    👁️ Pratinjau Bacaan
+                    <Eye size={12} />
+                    <span>Pratinjau Bacaan</span>
                   </button>
                 </div>
               </div>
 
               {articleTab === 'EDIT' ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                      {articleContent.split(/\s+/).filter(Boolean).length} kata • ± {Math.max(1, Math.round(articleContent.split(/\s+/).filter(Boolean).length / 120))} menit estimasi baca
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                      {articleContent.split(/\s+/).filter(Boolean).length} kata • ± {Math.max(1, Math.round(articleContent.split(/\s+/).filter(Boolean).length / 120))} menit baca
                     </span>
                     <button
                       type="button"
                       onClick={handlePasteClipboardToArticle}
-                      className="btn btn-secondary btn-sm"
-                      style={{ fontSize: '0.74rem' }}
+                      className={`${styles.btnSecondary} ${styles.btnSm}`}
                     >
-                      📋 Tempel Naskah dari Papan Klip
+                      <Clipboard size={11} />
+                      <span>Tempel Naskah</span>
                     </button>
                   </div>
 
                   <textarea
-                    rows={12}
+                    rows={10}
                     placeholder="Tuliskan naskah materi lengkap di sini, gunakan baris baru ganda untuk memisahkan antar paragraf pembahasan..."
                     value={articleContent}
                     onChange={e => setArticleContent(e.target.value)}
-                    className="input"
-                    style={{ height: 'auto', padding: '1rem', fontSize: '0.88rem', lineHeight: 1.6 }}
+                    className={styles.textareaField}
+                    style={{ fontSize: '0.8rem', lineHeight: 1.55 }}
                   />
                 </div>
               ) : (
-                /* Article Reader Preview */
                 <div style={{
                   background: 'var(--bg-elevated)',
                   border: '1px solid var(--border-light)',
-                  borderRadius: '16px',
-                  padding: '1.5rem',
+                  borderRadius: '9px',
+                  padding: '1rem',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '1rem'
+                  gap: '0.75rem'
                 }}>
-                  <div style={{ borderBottom: '1px solid var(--border-light)', paddingBottom: '0.75rem' }}>
-                    <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#10b981', textTransform: 'uppercase' }}>
+                  <div style={{ borderBottom: '1px solid var(--border-light)', paddingBottom: '0.55rem' }}>
+                    <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#059669', textTransform: 'uppercase' }}>
                       Pratinjau Mode Bacaan Siswa
                     </span>
-                    <h3 style={{ margin: '0.25rem 0 0 0', fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                    <h3 style={{ margin: '0.2rem 0 0 0', fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)' }}>
                       {title || 'Judul Artikel Pembelajaran'}
                     </h3>
                   </div>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                     {articleContent.split('\n\n').filter(Boolean).map((p, idx) => (
-                      <p key={idx} style={{ margin: 0, fontSize: '0.88rem', lineHeight: 1.7, color: 'var(--text-primary)', textAlign: 'justify' }}>
+                      <p key={idx} style={{ margin: 0, fontSize: '0.8rem', lineHeight: 1.6, color: 'var(--text-primary)', textAlign: 'justify' }}>
                         {p}
                       </p>
                     ))}
                     {!articleContent && (
-                      <div style={{ color: 'var(--text-muted)', fontStyle: 'italic', textAlign: 'center', padding: '2rem' }}>
+                      <div style={{ color: 'var(--text-muted)', fontStyle: 'italic', textAlign: 'center', padding: '1.5rem', fontSize: '0.76rem' }}>
                         Belum ada teks artikel yang ditulis.
                       </div>
                     )}
@@ -1864,52 +1604,40 @@ export default function CreateMaterialPage() {
         </div>
 
         {/* ── RIGHT COLUMN: TARGET PENUGASAN SISWA & METADATA ── */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-          <div style={{
-            background: 'var(--bg-card)',
-            border: '1px solid var(--border-light)',
-            borderRadius: '20px',
-            padding: '1.5rem',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '1.1rem',
-            boxShadow: 'var(--shadow-sm)'
-          }}>
-            <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-              🎯 Target Penugasan Siswa
-            </h3>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+          <div className={styles.card}>
+            <div className={styles.cardHeader}>
+              <h3 className={styles.cardTitle}>
+                <Sliders size={16} color="var(--accent)" />
+                <span>Target Penugasan Siswa</span>
+              </h3>
+            </div>
 
             {/* Judul Modul */}
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
-                <label style={{ fontSize: '0.78rem', fontWeight: 700 }}>
-                  Judul Modul Pembelajaran *
-                </label>
-                {(materialFormat === 'VIDEO' && selectedYtVideo) || (materialFormat === 'PDF' && pdfSourceMode === 'SIBI' && currentBook) ? (
-                  <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#10b981', background: 'rgba(16, 185, 129, 0.1)', padding: '2px 6px', borderRadius: '4px' }}>
-                    ✨ Terisi Otomatis
-                  </span>
-                ) : null}
-              </div>
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>
+                <span>Judul Modul Pembelajaran *</span>
+                {((materialFormat === 'VIDEO' && selectedYtVideo) || (materialFormat === 'PDF' && pdfSourceMode === 'SIBI' && currentBook)) && (
+                  <span className={styles.autoBadge}>Terisi Otomatis</span>
+                )}
+              </label>
               <input
                 type="text"
                 placeholder="Contoh: Modul Fisika Besaran dan Satuan"
                 value={title}
                 onChange={e => setTitle(e.target.value)}
-                className="input"
-                style={{ fontWeight: 800 }}
+                className={styles.inputField}
+                style={{ fontWeight: 700 }}
               />
             </div>
 
             {/* Mata Pelajaran */}
-            <div>
-              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, marginBottom: '0.35rem' }}>
-                Mata Pelajaran *
-              </label>
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>Mata Pelajaran *</label>
               <select
                 value={subject}
                 onChange={e => setSubject(e.target.value)}
-                className="input"
+                className={styles.inputField}
               >
                 {subjectsList.map(s => (
                   <option key={s.id || s.code} value={s.name}>{s.name}</option>
@@ -1918,14 +1646,12 @@ export default function CreateMaterialPage() {
             </div>
 
             {/* Target Rombel / Kelas */}
-            <div>
-              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, marginBottom: '0.35rem' }}>
-                Rombel / Kelas Target *
-              </label>
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>Rombel / Kelas Target *</label>
               <select
                 value={targetGrade}
                 onChange={e => setTargetGrade(e.target.value)}
-                className="input"
+                className={styles.inputField}
               >
                 {classesList.map(c => (
                   <option key={c.id} value={c.name}>{c.name}</option>
@@ -1934,23 +1660,21 @@ export default function CreateMaterialPage() {
             </div>
 
             {/* Guru Pengampu */}
-            <div>
-              <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, marginBottom: '0.35rem' }}>
-                Guru Pengampu *
-              </label>
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>Guru Pengampu *</label>
               {isTeacher && user?.full_name ? (
                 <input
                   type="text"
                   disabled
                   value={user.full_name}
-                  className="input"
-                  style={{ width: '100%', background: 'var(--bg-elevated)', cursor: 'not-allowed', fontWeight: 700 }}
+                  className={styles.inputField}
+                  style={{ background: 'var(--bg-elevated)', cursor: 'not-allowed', fontWeight: 700 }}
                 />
               ) : (
                 <select
                   value={author}
                   onChange={e => setAuthor(e.target.value)}
-                  className="input"
+                  className={styles.inputField}
                 >
                   {teachers.map(t => (
                     <option key={t.id} value={t.full_name}>{t.full_name} ({t.nip || 'Guru'})</option>
@@ -1960,43 +1684,45 @@ export default function CreateMaterialPage() {
             </div>
 
             {/* Petunjuk / Instruksi Pembelajaran */}
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
-                <label style={{ fontSize: '0.78rem', fontWeight: 700 }}>
-                  Petunjuk / Instruksi Pembelajaran
-                </label>
-                {(materialFormat === 'VIDEO' && selectedYtVideo) || (materialFormat === 'PDF' && pdfSourceMode === 'SIBI' && currentBook) ? (
-                  <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#10b981', background: 'rgba(16, 185, 129, 0.1)', padding: '2px 6px', borderRadius: '4px' }}>
-                    ✨ Terisi Otomatis
-                  </span>
-                ) : null}
-              </div>
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>
+                <span>Petunjuk / Instruksi Pembelajaran</span>
+                {((materialFormat === 'VIDEO' && selectedYtVideo) || (materialFormat === 'PDF' && pdfSourceMode === 'SIBI' && currentBook)) && (
+                  <span className={styles.autoBadge}>Terisi Otomatis</span>
+                )}
+              </label>
               <textarea
                 rows={3}
                 placeholder="Contoh: Silakan pelajari bab ini sebelum mengikuti kuis mingguan."
                 value={description}
                 onChange={e => setDescription(e.target.value)}
-                className="input"
-                style={{ height: 'auto', padding: '0.5rem 0.75rem', fontSize: '0.8rem', lineHeight: 1.5 }}
+                className={styles.textareaField}
               />
             </div>
 
             {/* Action Buttons */}
-            <div style={{ borderTop: '1px solid var(--border-light)', paddingTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <div style={{ borderTop: '1px solid var(--border-light)', paddingTop: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
               <button
                 type="button"
                 onClick={handleSubmit}
                 disabled={isSubmitting}
-                className="btn btn-primary"
-                style={{ width: '100%', height: '44px', fontWeight: 800, fontSize: '0.9rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                className={styles.btnPrimary}
+                style={{ width: '100%', height: '38px', justifyContent: 'center' }}
               >
-                {isSubmitting ? 'Menerbitkan...' : '🚀 Terbitkan Modul Sekarang'}
+                {isSubmitting ? (
+                  <span>Menerbitkan...</span>
+                ) : (
+                  <>
+                    <Send size={14} />
+                    <span>Terbitkan Modul Sekarang</span>
+                  </>
+                )}
               </button>
 
               <Link
                 href="/dashboard/learning/materials"
-                className="btn btn-secondary"
-                style={{ width: '100%', height: '38px', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.84rem' }}
+                className={styles.btnSecondary}
+                style={{ width: '100%', height: '34px', justifyContent: 'center' }}
               >
                 Batal &amp; Kembali
               </Link>
@@ -2008,60 +1734,31 @@ export default function CreateMaterialPage() {
 
       {/* Post-Publish Prompt Modal: Automated Assignment & Quiz Option */}
       {publishedPrompt && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 9999,
-            backgroundColor: 'rgba(0, 0, 0, 0.65)',
-            backdropFilter: 'blur(8px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '16px',
-            animation: 'fadeIn 0.2s ease-out',
-          }}
-        >
-          <div
-            style={{
-              backgroundColor: 'var(--bg-card)',
-              border: '1px solid var(--border-light)',
-              borderRadius: '24px',
-              padding: '36px 32px',
-              maxWidth: '540px',
-              width: '100%',
-              textAlign: 'center',
-              boxShadow: 'var(--shadow-xl)',
-              color: 'var(--text-primary)',
-            }}
-          >
-            <div
-              style={{
-                width: '64px',
-                height: '64px',
-                borderRadius: '50%',
-                background: 'linear-gradient(135deg, #10B981, #059669)',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '32px',
-                marginBottom: '16px',
-                boxShadow: '0 4px 20px rgba(16, 185, 129, 0.35)',
-              }}
-            >
-              🎉
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalCard} style={{ maxWidth: '480px', textAlign: 'center', padding: '1.25rem' }}>
+            <div style={{
+              width: '44px',
+              height: '44px',
+              borderRadius: '50%',
+              background: 'rgba(5, 150, 105, 0.12)',
+              color: '#059669',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 0.75rem'
+            }}>
+              <CheckCircle2 size={24} />
             </div>
 
-            <h3 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 8px 0' }}>
-              Materi Berhasil Diterbitkan!
+            <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 0.35rem 0' }}>
+              Materi Berhasil Diterbitkan
             </h3>
 
-            <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '0 0 24px 0', lineHeight: 1.5 }}>
-              Materi <strong>"{publishedPrompt.title}"</strong> ({publishedPrompt.subjectName}) telah aktif dan dapat dibaca oleh siswa.
-              Ingin langsung membuatkan tugas atau kuis otomatis dari materi ini?
+            <p style={{ fontSize: '0.76rem', color: 'var(--text-muted)', margin: '0 0 1.25rem 0', lineHeight: 1.5 }}>
+              Materi <strong>&quot;{publishedPrompt.title}&quot;</strong> ({publishedPrompt.subjectName}) telah aktif dan dapat dibaca oleh siswa. Ingin langsung membuatkan tugas atau kuis otomatis dari materi ini?
             </p>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '0.85rem' }}>
               <button
                 type="button"
                 onClick={() =>
@@ -2071,24 +1768,18 @@ export default function CreateMaterialPage() {
                     )}&sourceTitle=${encodeURIComponent(publishedPrompt.title)}`
                   )
                 }
+                className={styles.btnPrimary}
                 style={{
                   width: '100%',
-                  padding: '14px',
-                  borderRadius: '12px',
-                  background: 'linear-gradient(135deg, #2563EB, #4F46E5)',
-                  color: '#FFFFFF',
-                  fontWeight: 700,
-                  fontSize: '14px',
-                  border: 'none',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  boxShadow: '0 4px 14px rgba(37, 99, 235, 0.35)',
+                  padding: '0.6rem',
+                  borderRadius: '8px',
+                  background: 'linear-gradient(135deg, #2563eb, #4f46e5)',
+                  borderColor: '#2563eb',
+                  justifyContent: 'center'
                 }}
               >
-                <Sparkles size={18} /> ✨ Buat Tugas Otomatis (PG &amp; Essay / Mandiri)
+                <Sparkles size={14} />
+                <span>Buat Tugas Otomatis (PG &amp; Essay)</span>
               </button>
 
               <button
@@ -2100,24 +1791,18 @@ export default function CreateMaterialPage() {
                     )}&sourceTitle=${encodeURIComponent(publishedPrompt.title)}`
                   )
                 }
+                className={styles.btnPrimary}
                 style={{
                   width: '100%',
-                  padding: '14px',
-                  borderRadius: '12px',
-                  background: 'linear-gradient(135deg, #D97706, #EA580C)',
-                  color: '#FFFFFF',
-                  fontWeight: 700,
-                  fontSize: '14px',
-                  border: 'none',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  boxShadow: '0 4px 14px rgba(217, 119, 6, 0.35)',
+                  padding: '0.6rem',
+                  borderRadius: '8px',
+                  background: 'linear-gradient(135deg, #d97706, #ea580c)',
+                  borderColor: '#d97706',
+                  justifyContent: 'center'
                 }}
               >
-                <Sparkles size={18} /> ✨ Buat Kuis / Ujian CBT Otomatis
+                <Sparkles size={14} />
+                <span>Buat Kuis / Ujian CBT Otomatis</span>
               </button>
             </div>
 
@@ -2128,7 +1813,7 @@ export default function CreateMaterialPage() {
                 background: 'transparent',
                 border: 'none',
                 color: 'var(--text-muted)',
-                fontSize: '13px',
+                fontSize: '0.72rem',
                 cursor: 'pointer',
                 textDecoration: 'underline',
               }}
