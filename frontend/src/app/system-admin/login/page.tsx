@@ -5,19 +5,19 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { getApiUrl } from '@/lib/api';
 import {
-  ShieldAlert,
-  Terminal,
+  ShieldCheck,
   KeyRound,
   Mail,
   Eye,
   EyeOff,
   ArrowLeft,
-  Activity,
-  Server,
   Lock,
   RefreshCw,
   AlertTriangle,
-  ChevronRight,
+  ArrowRight,
+  Building2,
+  Database,
+  Layers,
 } from 'lucide-react';
 import styles from './system-admin.module.css';
 
@@ -42,7 +42,7 @@ export default function SystemAdminLogin() {
   }, [router]);
 
   useEffect(() => {
-    document.title = 'Root Command Center — Akselerasi-Edu';
+    document.title = 'Konsol Pengelola Pusat — Akselerasi-Edu';
   }, []);
 
   const handleKeyModifierCheck = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -70,7 +70,7 @@ export default function SystemAdminLogin() {
         router.push('/system-admin/dashboard');
       } else {
         const json = await res.json().catch(() => null);
-        setError(json?.message || 'Autentikasi gagal: Kredensial Root Administrator tidak sah.');
+        setError(json?.message || 'Autentikasi gagal: Kredensial Administrator Pusat tidak sesuai.');
       }
     } catch {
       setError('Koneksi ke gateway autentikasi terputus atau ditolak.');
@@ -81,83 +81,90 @@ export default function SystemAdminLogin() {
 
   return (
     <div className={styles.root}>
-      {/* Background space and grid */}
-      <div className={styles.bgAtmosphere} />
-      <div className={styles.bgGrid} />
-
       <div className={styles.container}>
         {/* ══════════════════════════════════════════════════════════
-            LEFT PANEL — CLUSTER MISSION CONTROL & NODE TELEMETRY
+            LEFT PANEL — NATIONAL PLATFORM CONSOLE & CORE PILLARS
             ══════════════════════════════════════════════════════════ */}
         <div className={styles.terminalPanel}>
           {/* Top Panel Header */}
           <div className={styles.panelHeader}>
             <Link href="/login" className={styles.backLink} title="Kembali ke Portal Sekolah">
               <ArrowLeft size={14} />
-              <span>Portal Sekolah</span>
+              <span>Kembali ke Portal Sekolah</span>
             </Link>
 
             <div className={styles.brandIdentity}>
               <div className={styles.brandLogoBox}>
-                <ShieldAlert size={24} color="#f87171" />
+                <ShieldCheck size={26} />
               </div>
               <div className={styles.brandTitles}>
                 <div className={styles.systemBadgeRow}>
-                  <span className={styles.rootBadge}>ROOT PRIVILEGE</span>
-                  <span className={styles.envBadge}>CLUSTER-AP-ID</span>
+                  <span className={styles.rootBadge}>SUPER ADMIN</span>
+                  <span className={styles.envBadge}>PORTAL PUSAT</span>
                 </div>
-                <h1 className={styles.systemTitle}>Command Center</h1>
-                <p className={styles.systemSubtitle}>Akselerasi-Edu Platform Control &amp; Provisioning</p>
+                <h1 className={styles.systemTitle}>Konsol Pengelola Pusat</h1>
+                <p className={styles.systemSubtitle}>Akselerasi-Edu Platform Management &amp; Provisioning</p>
               </div>
             </div>
           </div>
 
-          {/* Center Telemetry & Hardware Node Status */}
+          {/* Center Pillars */}
           <div className={styles.telemetrySection}>
             <div>
               <h2 className={styles.missionTagline}>
-                Operasional Multi-Tenant{' '}
-                <span className={styles.missionTaglineRed}>Tingkat Pusat</span>
+                Pusat Kendali Ekosistem{' '}
+                <span className={styles.missionTaglineHighlight}>Pendidikan Nasional</span>
               </h2>
               <p className={styles.missionDesc}>
-                Akses level sistem terdistribusi untuk pengawasan master instance sekolah, aktivasi tenant,
-                pemantauan throughput API, dan manajemen infrastruktur database.
+                Akses administratif terpusat untuk pengawasan seluruh instansi sekolah (SD, SMP, SMA, PKBM),
+                aktivasi tenant, pengawasan integrasi Dapodik, dan tata kelola akun master.
               </p>
             </div>
 
-            {/* Simulated Live Terminal Cluster Status Box */}
+            {/* Platform Control Pillars Card */}
             <div className={styles.terminalCard}>
               <div className={styles.terminalBar}>
-                <div className={styles.terminalLights}>
-                  <span className={styles.termLightRed} />
-                  <span className={styles.termLightYellow} />
-                  <span className={styles.termLightGreen} />
-                </div>
-                <span>sys_cluster_diagnostics.sh</span>
-                <span>TCP:443</span>
+                <span>Lingkup Manajemen Platform</span>
+                <span className={styles.liveBadge}>
+                  <span className={styles.liveDot} /> Sesi Terproteksi
+                </span>
               </div>
-              <div className={styles.terminalContent}>
-                <div className={styles.terminalRow}>
-                  <span className={styles.termKey}>TARGET_ZONE</span>
-                  <span className={styles.termVal}>AP-SOUTHEAST-3 (ID)</span>
+
+              <div className={styles.pillarList}>
+                <div className={styles.pillarItem}>
+                  <div className={styles.pillarIcon}>
+                    <Building2 size={16} />
+                  </div>
+                  <div className={styles.pillarDetails}>
+                    <span className={styles.pillarTitle}>Tata Kelola Multi-Instansi Sekolah</span>
+                    <span className={styles.pillarSub}>
+                      Monitoring status operasional, lisensi, dan direktori sekolah secara terpadu.
+                    </span>
+                  </div>
                 </div>
-                <div className={styles.terminalRow}>
-                  <span className={styles.termKey}>CLUSTER_HEALTH</span>
-                  <span className={styles.termValSuccess}>
-                    <span className={styles.liveDot} /> ALL NODES SYNCHRONIZED
-                  </span>
+
+                <div className={styles.pillarItem}>
+                  <div className={styles.pillarIcon}>
+                    <Database size={16} />
+                  </div>
+                  <div className={styles.pillarDetails}>
+                    <span className={styles.pillarTitle}>Supervisi Pipeline Dapodik &amp; Rapor</span>
+                    <span className={styles.pillarSub}>
+                      Pengawasan sinkronisasi data Dapodik Kemendikdasmen dan integritas basis data.
+                    </span>
+                  </div>
                 </div>
-                <div className={styles.terminalRow}>
-                  <span className={styles.termKey}>DATA_ISOLATION</span>
-                  <span className={styles.termVal}>ROW-LEVEL + TENANT SCHEMAS</span>
-                </div>
-                <div className={styles.terminalRow}>
-                  <span className={styles.termKey}>HARDWARE_RNG</span>
-                  <span className={styles.termVal}>CHACHA20-POLY1305 / TLS 1.3</span>
-                </div>
-                <div className={styles.terminalRow}>
-                  <span className={styles.termKey}>AUDIT_TRAIL</span>
-                  <span className={styles.termValAlert}>IMMUTABLE JOURNALING ENFORCED</span>
+
+                <div className={styles.pillarItem}>
+                  <div className={styles.pillarIcon}>
+                    <Layers size={16} />
+                  </div>
+                  <div className={styles.pillarDetails}>
+                    <span className={styles.pillarTitle}>Manajemen Lisensi &amp; Akun Kepala Sekolah</span>
+                    <span className={styles.pillarSub}>
+                      Provisi akun pimpinan institusi, audit trail keamanan, dan kontrol privilege.
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -165,11 +172,8 @@ export default function SystemAdminLogin() {
 
           {/* Bottom Audit Footer */}
           <div className={styles.auditNoticeFooter}>
-            <div className={styles.auditItem}>
-              <Activity size={13} />
-              <span>LOGGING: IP &amp; GEO-SIGNATURE LOGGED</span>
-            </div>
-            <span>REV: 2.4.0-CORE</span>
+            <span>Akses Terpantau • Audit Trail Terverifikasi</span>
+            <span>Versi 2.4.0</span>
           </div>
         </div>
 
@@ -180,7 +184,7 @@ export default function SystemAdminLogin() {
           <div className={styles.formTopBar}>
             <div className={styles.securityShieldBadge}>
               <Lock size={12} />
-              <span>SUPER ADMIN CONSOLE</span>
+              <span>KONSOL SUPER ADMINISTRATOR</span>
             </div>
             <span className={styles.escNotice}>
               Tekan <kbd>Esc</kbd> untuk kembali
@@ -189,17 +193,17 @@ export default function SystemAdminLogin() {
 
           <div className={styles.formContentWrapper}>
             <div className={styles.formHeading}>
-              <h2 className={styles.formTitle}>Otorisasi Sistem</h2>
+              <h2 className={styles.formTitle}>Otorisasi Akses Pusat</h2>
               <p className={styles.formDesc}>
-                Masukkan kredensial operator master untuk membuka sesi root platform.
+                Masukkan kredensial administrator master untuk membuka sesi kerja kendali platform.
               </p>
             </div>
 
             <div className={styles.warningPill}>
-              <AlertTriangle size={16} style={{ flexShrink: 0, marginTop: 2, color: '#f87171' }} />
+              <AlertTriangle size={16} style={{ flexShrink: 0, marginTop: 1 }} />
               <span>
-                <strong>Akses Terbatas:</strong> Seluruh aktivitas dan perubahan konfigurasi sistem
-                dicatat secara permanen dalam audit trail pengawas platform.
+                <strong>Perhatian Keamanan:</strong> Seluruh interaksi dan perubahan data pada konsol ini
+                dicatat secara permanen dalam catatan audit sistem platform.
               </span>
             </div>
 
@@ -214,7 +218,7 @@ export default function SystemAdminLogin() {
               <div className={styles.inputGroup}>
                 <div className={styles.labelRow}>
                   <label htmlFor="sys-email" className={styles.label}>
-                    SYS_ADMIN_IDENTITY
+                    Email Administrator Master
                   </label>
                 </div>
                 <div className={styles.inputWrapper}>
@@ -225,7 +229,7 @@ export default function SystemAdminLogin() {
                     id="sys-email"
                     type="email"
                     required
-                    placeholder="sysadmin@schoolos.id"
+                    placeholder="sysadmin@akselerasi-edu.id"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className={styles.formInput}
@@ -238,7 +242,7 @@ export default function SystemAdminLogin() {
               <div className={styles.inputGroup}>
                 <div className={styles.labelRow}>
                   <label htmlFor="sys-password" className={styles.label}>
-                    SYS_SECRET_KEY
+                    Kata Sandi Master
                   </label>
                   {capsLockActive && <span className={styles.capsLockTag}>CAPS LOCK</span>}
                 </div>
@@ -250,21 +254,21 @@ export default function SystemAdminLogin() {
                     id="sys-password"
                     type={showPassword ? 'text' : 'password'}
                     required
-                    placeholder="••••••••••••••••"
+                    placeholder="Masukkan kata sandi master"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     onKeyDown={handleKeyModifierCheck}
                     onKeyUp={handleKeyModifierCheck}
                     className={styles.formInput}
                     autoComplete="current-password"
-                    style={{ paddingRight: '42px' }}
+                    style={{ paddingRight: '40px' }}
                   />
                   <button
                     type="button"
                     className={styles.eyeBtn}
                     onClick={() => setShowPassword(!showPassword)}
                     tabIndex={-1}
-                    aria-label={showPassword ? 'Sembunyikan secret' : 'Tampilkan secret'}
+                    aria-label={showPassword ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'}
                   >
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
@@ -275,13 +279,12 @@ export default function SystemAdminLogin() {
                 {loading ? (
                   <>
                     <RefreshCw size={15} style={{ animation: 'spin 1s linear infinite' }} />
-                    <span>MENGOTENTIKASI KUNCI...</span>
+                    <span>Memverifikasi Akses Master...</span>
                   </>
                 ) : (
                   <>
-                    <Terminal size={15} />
-                    <span>BUKA KONSOL UTAMA</span>
-                    <ChevronRight size={15} />
+                    <span>Buka Konsol Pengelola</span>
+                    <ArrowRight size={15} />
                   </>
                 )}
               </button>
@@ -289,8 +292,8 @@ export default function SystemAdminLogin() {
           </div>
 
           <div className={styles.formBottomBar}>
-            <span>ENDPOINT: /api/v1/system/login</span>
-            <span>TLSv1.3 AES-256-GCM</span>
+            <span>Akselerasi-Edu Platform Management</span>
+            <span>Akses Terlindungi TLS 1.3</span>
           </div>
         </div>
       </div>

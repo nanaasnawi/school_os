@@ -9,7 +9,6 @@ import { getTenantItem, setTenantItem } from '@/lib/tenant-storage';
 import { decodeJwtPayload } from '@/lib/jwt';
 import {
   RefreshCw,
-  Lock,
   Clock,
   ShieldCheck,
   Mail,
@@ -21,9 +20,11 @@ import {
   Sun,
   Moon,
   GraduationCap,
-  Activity,
   Building2,
   ArrowRight,
+  BookOpen,
+  Database,
+  Users,
 } from 'lucide-react';
 import styles from './login.module.css';
 
@@ -274,7 +275,7 @@ export default function LoginPage() {
       }
       const errObj = apiErr as { message?: string } | undefined;
       if (!response) {
-        setError('Tidak dapat terhubung ke server. Pastikan server aplikasi sedang berjalan.');
+        setError('Tidak dapat terhubung ke server. Pastikan koneksi internet aktif.');
       } else if (response.status === 401 || response.status === 400) {
         setError('Email/Username atau kata sandi yang Anda masukkan tidak sesuai.');
       } else if (
@@ -318,7 +319,7 @@ export default function LoginPage() {
               <Clock size={13} />
               <span>Pemeliharaan Terjadwal</span>
             </div>
-            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted, #64748b)' }}>
+            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted, #6b7280)' }}>
               HTTP 503 Maintenance
             </span>
           </div>
@@ -334,7 +335,7 @@ export default function LoginPage() {
           </div>
 
           <div className={styles.maintenanceStatusBar}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: 'var(--text-muted, #64748b)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: 'var(--text-muted, #6b7280)' }}>
               <span>Pemeriksaan berkala</span>
               <span>Ulang dalam <strong>{countdown}s</strong></span>
             </div>
@@ -360,13 +361,13 @@ export default function LoginPage() {
           </button>
 
           {checkFeedback && (
-            <p style={{ fontSize: '0.82rem', color: '#0284c7', margin: 0, textAlign: 'center', fontWeight: 500 }}>
+            <p style={{ fontSize: '0.82rem', color: 'var(--accent-dark, #0284c7)', margin: 0, textAlign: 'center', fontWeight: 500 }}>
               {checkFeedback}
             </p>
           )}
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '12px', borderTop: '1px solid var(--border-light, #e2e8f0)', fontSize: '0.78rem', color: 'var(--text-muted, #64748b)' }}>
-            <span>Butuh akses darurat? Hubungi Tim IT Sekolah.</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '12px', borderTop: '1px solid var(--border-light, #e5e7eb)', fontSize: '0.78rem', color: 'var(--text-muted, #6b7280)' }}>
+            <span>Butuh bantuan darurat? Hubungi Tim IT Sekolah.</span>
             <span
               className={styles.sysAdminSecretLink}
               onClick={() => {
@@ -388,12 +389,12 @@ export default function LoginPage() {
   const getRoleHint = () => {
     switch (selectedRole) {
       case 'guru':
-        return 'Guru & Tenaga Kependidikan dapat menggunakan Email atau NIP / Username yang terdaftar di sekolah.';
+        return 'Gunakan alamat Email atau Username / NIP yang terdaftar di sistem sekolah.';
       case 'kepsek':
-        return 'Kepala Sekolah wajib menggunakan alamat Email kedinasan yang terverifikasi.';
+        return 'Gunakan alamat Email kedinasan Kepala Sekolah yang terverifikasi.';
       case 'admin':
       default:
-        return 'Administrator & Operator Sekolah menggunakan akun email resmi sekolah.';
+        return 'Gunakan alamat Email resmi Administrator atau Operator Sekolah.';
     }
   };
 
@@ -411,13 +412,9 @@ export default function LoginPage() {
 
   return (
     <div className={styles.root}>
-      {/* Subtle architectural atmosphere & precision grid */}
-      <div className={styles.bgAtmosphere} />
-      <div className={styles.bgGrid} />
-
       <div className={styles.container}>
         {/* ══════════════════════════════════════════════════════════
-            LEFT PANEL — INSTITUTIONAL IDENTITY & TELEMETRY
+            LEFT PANEL — INSTITUTIONAL IDENTITY & EDUCATIONAL PILLARS
             ══════════════════════════════════════════════════════════ */}
         <div className={styles.brandPanel}>
           {/* Top: School Crest & Official accreditation */}
@@ -447,44 +444,69 @@ export default function LoginPage() {
                 <span className={styles.sessionPill}>T.A. 2026/2027</span>
               </div>
               <h1 className={styles.schoolTitle}>{schoolName}</h1>
-              <p className={styles.schoolSubtitle}>Sistem Operasi Manajemen Sekolah &amp; Pembelajaran</p>
+              <p className={styles.schoolSubtitle}>Sistem Manajemen Informasi &amp; Akademik Sekolah</p>
             </div>
           </div>
 
-          {/* Center: Institutional Showcase & Real Operational Telemetry */}
+          {/* Center: Educational Core Value Proposition */}
           <div className={styles.workspaceShowcase}>
             <div>
               <h2 className={styles.heroTagline}>
-                Pusat Kendali Akademik{' '}
-                <span className={styles.heroTaglineHighlight}>Terintegrasi</span>
+                Platform Manajemen Sekolah{' '}
+                <span className={styles.heroTaglineHighlight}>Terpadu &amp; Modern</span>
               </h2>
               <p className={styles.heroDescription}>
-                Kelola kurikulum merdeka, sinkronisasi Dapodik otomatis, presensi presisi, e-rapor,
-                dan operasional civitas sekolah dalam satu platform terpercaya.
+                Dirancang khusus untuk mendukung operasional SD, SMP, SMA, dan PKBM di Indonesia dengan
+                efisiensi administrasi, otomasi kurikulum, dan akuntabilitas pembelajaran.
               </p>
             </div>
 
-            <div className={styles.telemetryCard}>
-              <div className={styles.telemetryHeader}>
-                <span className={styles.telemetryTitle}>
-                  <Activity size={14} /> Telemetri Infrastruktur
+            {/* Academic Pillars Card */}
+            <div className={styles.pillarsCard}>
+              <div className={styles.pillarsHeader}>
+                <span className={styles.pillarsTitle}>
+                  <GraduationCap size={14} /> Layanan Akademik
                 </span>
-                <span className={styles.telemetryPulse}>
-                  <span className={styles.pulseDot} /> Operasional Normal
+                <span className={styles.pillarsStatus}>
+                  <span className={styles.statusDot} /> Sistem Siap Pakai
                 </span>
               </div>
-              <div className={styles.telemetryGrid}>
-                <div className={styles.telemetryItem}>
-                  <span className={styles.telemetryItemVal}>99.98%</span>
-                  <span className={styles.telemetryItemLabel}>Uptime Layanan</span>
+
+              <div className={styles.pillarList}>
+                <div className={styles.pillarItem}>
+                  <div className={styles.pillarIconBox}>
+                    <Database size={16} />
+                  </div>
+                  <div className={styles.pillarText}>
+                    <span className={styles.pillarTitle}>Sinkronisasi Resmi Dapodik &amp; e-Rapor</span>
+                    <span className={styles.pillarDesc}>
+                      Terhubung dengan database WebService Dapodik lokal dan format kurikulum nasional.
+                    </span>
+                  </div>
                 </div>
-                <div className={styles.telemetryItem}>
-                  <span className={styles.telemetryItemVal}>AES-256</span>
-                  <span className={styles.telemetryItemLabel}>Enkripsi Data</span>
+
+                <div className={styles.pillarItem}>
+                  <div className={styles.pillarIconBox}>
+                    <BookOpen size={16} />
+                  </div>
+                  <div className={styles.pillarText}>
+                    <span className={styles.pillarTitle}>Kurikulum Merdeka &amp; Modul Ajar</span>
+                    <span className={styles.pillarDesc}>
+                      Kelola jadwal pelajaran, tugas kelas, bank kuis, dan lembar capaian kompetensi.
+                    </span>
+                  </div>
                 </div>
-                <div className={styles.telemetryItem}>
-                  <span className={styles.telemetryItemVal}>&lt; 40ms</span>
-                  <span className={styles.telemetryItemLabel}>Latensi Jaringan</span>
+
+                <div className={styles.pillarItem}>
+                  <div className={styles.pillarIconBox}>
+                    <Users size={16} />
+                  </div>
+                  <div className={styles.pillarText}>
+                    <span className={styles.pillarTitle}>Portal Khusus Guru, Tendik &amp; Kepala Sekolah</span>
+                    <span className={styles.pillarDesc}>
+                      Hak akses terisolasi untuk pelaporan supervisi dan presensi harian terverifikasi.
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -494,20 +516,20 @@ export default function LoginPage() {
           <div className={styles.brandFooter}>
             <span className={styles.kemdikbudRef}>
               <Building2 size={14} />
-              <span>Standar Kurikulum Merdeka Kemendikdasmen</span>
+              <span>Standar Kurikulum Merdeka Kemendikdasmen RI</span>
             </span>
             <span>Akselerasi-Edu v2.4</span>
           </div>
         </div>
 
         {/* ══════════════════════════════════════════════════════════
-            RIGHT PANEL — ERGONOMIC AUTHENTICATION FORM
+            RIGHT PANEL — FOCUSED AUTHENTICATION FORM
             ══════════════════════════════════════════════════════════ */}
         <div className={styles.formPanel}>
           {/* Top navigation with Theme switch */}
           <div className={styles.formTopNav}>
             <div className={styles.portalBadge}>
-              <GraduationCap size={14} />
+              <GraduationCap size={13} />
               <span>Portal Masuk Sekolah</span>
             </div>
             <div className={styles.navControls}>
@@ -518,13 +540,28 @@ export default function LoginPage() {
                 aria-label={theme === 'dark' ? 'Beralih ke Mode Terang' : 'Beralih ke Mode Gelap'}
                 title={theme === 'dark' ? 'Mode Terang' : 'Mode Gelap'}
               >
-                {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
+                {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
               </button>
             </div>
           </div>
 
           {/* Center form content wrapper */}
           <div className={styles.formContentWrapper}>
+            {/* Mobile header (Only displayed on small viewports) */}
+            <div className={styles.mobileBrandHeader}>
+              <div className={styles.mobileLogoWrapper}>
+                {schoolLogoUrl ? (
+                  <img src={schoolLogoUrl} alt={schoolName} className={styles.schoolLogoImg} />
+                ) : (
+                  <GraduationCap size={22} color="var(--accent-dark, #0284c7)" />
+                )}
+              </div>
+              <div>
+                <h3 className={styles.mobileSchoolTitle}>{schoolName}</h3>
+                <p className={styles.mobileSchoolSubtitle}>Akselerasi-Edu • Portal Sekolah</p>
+              </div>
+            </div>
+
             <div className={styles.formHeader}>
               <h2 className={styles.formMainTitle}>Masuk ke Ruang Kerja</h2>
               <p className={styles.formSubTitle}>
@@ -532,17 +569,21 @@ export default function LoginPage() {
               </p>
             </div>
 
-            {/* Quick Role Switcher Pill Bar */}
-            <div className={styles.rolePresetBar}>
+            {/* Quick Role Switcher Segmented Control */}
+            <div className={styles.rolePresetBar} role="tablist" aria-label="Pilih Peran Akun">
               <button
                 type="button"
+                role="tab"
+                aria-selected={selectedRole === 'admin'}
                 className={`${styles.rolePresetBtn} ${selectedRole === 'admin' ? styles.rolePresetBtnActive : ''}`}
                 onClick={() => setSelectedRole('admin')}
               >
-                Admin &amp; Staf
+                Admin &amp; TU
               </button>
               <button
                 type="button"
+                role="tab"
+                aria-selected={selectedRole === 'guru'}
                 className={`${styles.rolePresetBtn} ${selectedRole === 'guru' ? styles.rolePresetBtnActive : ''}`}
                 onClick={() => setSelectedRole('guru')}
               >
@@ -550,6 +591,8 @@ export default function LoginPage() {
               </button>
               <button
                 type="button"
+                role="tab"
+                aria-selected={selectedRole === 'kepsek'}
                 className={`${styles.rolePresetBtn} ${selectedRole === 'kepsek' ? styles.rolePresetBtnActive : ''}`}
                 onClick={() => setSelectedRole('kepsek')}
               >
@@ -558,16 +601,16 @@ export default function LoginPage() {
             </div>
 
             {error && (
-              <div className={styles.errorBanner}>
+              <div className={styles.errorBanner} role="alert">
                 <Info size={16} style={{ flexShrink: 0, marginTop: 2 }} />
                 <span>{error}</span>
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className={styles.form}>
+            <form onSubmit={handleSubmit} className={styles.form} noValidate={false}>
               <div className={styles.inputGroup}>
                 <div className={styles.labelRow}>
-                  <label htmlFor="email" className={styles.label}>
+                  <label htmlFor="auth-email" className={styles.label}>
                     {selectedRole === 'guru' ? 'Email atau Username / NIP' : 'Email Akun Resmi'}
                   </label>
                 </div>
@@ -576,7 +619,7 @@ export default function LoginPage() {
                     <Mail size={16} />
                   </span>
                   <input
-                    id="email"
+                    id="auth-email"
                     type="text"
                     required
                     placeholder={getRolePlaceholder()}
@@ -591,7 +634,7 @@ export default function LoginPage() {
 
               <div className={styles.inputGroup}>
                 <div className={styles.labelRow}>
-                  <label htmlFor="password" className={styles.label}>
+                  <label htmlFor="auth-password" className={styles.label}>
                     Kata Sandi
                   </label>
                   {capsLockActive && (
@@ -603,7 +646,7 @@ export default function LoginPage() {
                     <KeyRound size={16} />
                   </span>
                   <input
-                    id="password"
+                    id="auth-password"
                     type={showPassword ? 'text' : 'password'}
                     required
                     placeholder="Masukkan kata sandi akun"
@@ -613,7 +656,7 @@ export default function LoginPage() {
                     onKeyUp={handleKeyModifierCheck}
                     className={styles.formInput}
                     autoComplete="current-password"
-                    style={{ paddingRight: '42px' }}
+                    style={{ paddingRight: '40px' }}
                   />
                   <button
                     type="button"
@@ -622,7 +665,7 @@ export default function LoginPage() {
                     tabIndex={-1}
                     aria-label={showPassword ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'}
                   >
-                    {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
               </div>
@@ -630,13 +673,13 @@ export default function LoginPage() {
               <button type="submit" disabled={loading} className={styles.submitBtn}>
                 {loading ? (
                   <>
-                    <RefreshCw size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                    <RefreshCw size={15} style={{ animation: 'spin 1s linear infinite' }} />
                     <span>Memverifikasi Kredensial...</span>
                   </>
                 ) : (
                   <>
-                    <span>Buka Ruang Kerja</span>
-                    <ArrowRight size={16} />
+                    <span>Masuk ke Dashboard</span>
+                    <ArrowRight size={15} />
                   </>
                 )}
               </button>
@@ -645,7 +688,7 @@ export default function LoginPage() {
             {/* Android Mobile Guidance Box */}
             <div className={styles.mobileCrossLink}>
               <div className={styles.mobileCrossIconBox}>
-                <Smartphone size={18} />
+                <Smartphone size={16} />
               </div>
               <div>
                 <p className={styles.mobileCrossTitle}>Siswa atau Orang Tua / Wali?</p>
