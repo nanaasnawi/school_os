@@ -4,6 +4,20 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { getApiUrl } from '@/lib/api';
 import styles from '../dashboard/system.module.css';
 import auditStyles from './audit.module.css';
+import {
+  ShieldCheck,
+  RefreshCw,
+  Search,
+  X,
+  List,
+  Clock,
+  KeyRound,
+  BarChart2,
+  Building2,
+  FileText,
+  Activity,
+  Layers,
+} from 'lucide-react';
 
 type AuditLog = {
   id: string;
@@ -16,21 +30,21 @@ type AuditLog = {
 type EventCategory = 'all' | 'auth' | 'data' | 'grade' | 'system' | 'security';
 
 const EVENT_COLORS: Record<string, { bg: string; text: string; dot: string }> = {
-  Login:            { bg: 'rgba(37,99,235,0.1)',   text: '#60a5fa', dot: '#3b82f6' },
-  Logout:           { bg: 'rgba(100,116,139,0.1)', text: '#94a3b8', dot: '#64748b' },
-  GradeReleased:    { bg: 'rgba(16,185,129,0.12)', text: '#34d399', dot: '#10b981' },
-  GradeUpdated:     { bg: 'rgba(16,185,129,0.12)', text: '#34d399', dot: '#10b981' },
-  MaterialCreated:  { bg: 'rgba(139,92,246,0.12)', text: '#a78bfa', dot: '#7c3aed' },
-  AssignmentPosted: { bg: 'rgba(245,158,11,0.12)', text: '#fbbf24', dot: '#f59e0b' },
-  QuizPublished:    { bg: 'rgba(239,68,68,0.12)',  text: '#f87171', dot: '#ef4444' },
-  DapodikSync:      { bg: 'rgba(6,182,212,0.12)',  text: '#22d3ee', dot: '#06b6d4' },
-  TenantCreated:    { bg: 'rgba(236,72,153,0.12)', text: '#f472b6', dot: '#ec4899' },
-  PasswordReset:    { bg: 'rgba(249,115,22,0.12)', text: '#fb923c', dot: '#f97316' },
-  Default:          { bg: 'rgba(99,102,241,0.12)', text: '#818cf8', dot: '#6366f1' },
+  Login: { bg: 'rgba(37,99,235,0.1)', text: '#2563eb', dot: '#3b82f6' },
+  Logout: { bg: 'rgba(100,116,139,0.1)', text: '#64748b', dot: '#64748b' },
+  GradeReleased: { bg: 'rgba(16,185,129,0.12)', text: '#059669', dot: '#10b981' },
+  GradeUpdated: { bg: 'rgba(16,185,129,0.12)', text: '#059669', dot: '#10b981' },
+  MaterialCreated: { bg: 'rgba(139,92,246,0.12)', text: '#7c3aed', dot: '#7c3aed' },
+  AssignmentPosted: { bg: 'rgba(245,158,11,0.12)', text: '#d97706', dot: '#f59e0b' },
+  QuizPublished: { bg: 'rgba(239,68,68,0.12)', text: '#dc2626', dot: '#ef4444' },
+  DapodikSync: { bg: 'rgba(6,182,212,0.12)', text: '#0891b2', dot: '#06b6d4' },
+  TenantCreated: { bg: 'rgba(236,72,153,0.12)', text: '#db2777', dot: '#ec4899' },
+  PasswordReset: { bg: 'rgba(249,115,22,0.12)', text: '#ea580c', dot: '#f97316' },
+  Default: { bg: 'rgba(99,102,241,0.12)', text: '#4f46e5', dot: '#6366f1' },
 };
 
 function getEventStyle(eventType: string) {
-  const key = Object.keys(EVENT_COLORS).find(k =>
+  const key = Object.keys(EVENT_COLORS).find((k) =>
     eventType.toLowerCase().includes(k.toLowerCase())
   );
   return EVENT_COLORS[key ?? 'Default'];
@@ -47,12 +61,12 @@ function classifyEvent(eventType: string): EventCategory {
 }
 
 const CATEGORY_LABELS: Record<EventCategory, string> = {
-  all:      '🌐 Semua',
-  auth:     '🔐 Autentikasi',
-  grade:    '📊 Nilai',
-  data:     '🔄 Sinkronisasi',
-  system:   '📚 Konten',
-  security: '🛡️ Keamanan',
+  all: 'Semua Event',
+  auth: 'Autentikasi',
+  grade: 'Penilaian',
+  data: 'Sinkronisasi Data',
+  system: 'Modul & Konten',
+  security: 'Keamanan Sistem',
 };
 
 function timeAgo(dateStr: string): string {
@@ -101,9 +115,11 @@ export default function SystemAuditPage() {
     }
   }, []);
 
-  useEffect(() => { fetchAuditLogs(); }, [fetchAuditLogs]);
+  useEffect(() => {
+    fetchAuditLogs();
+  }, [fetchAuditLogs]);
 
-  const filteredLogs = logs.filter(l => {
+  const filteredLogs = logs.filter((l) => {
     const matchSearch =
       l.tenant_name.toLowerCase().includes(search.toLowerCase()) ||
       l.event_type.toLowerCase().includes(search.toLowerCase()) ||
@@ -112,149 +128,202 @@ export default function SystemAuditPage() {
     return matchSearch && matchCategory;
   });
 
-  // Stats
   const stats = {
     total: logs.length,
-    authEvents: logs.filter(l => classifyEvent(l.event_type) === 'auth').length,
-    gradeEvents: logs.filter(l => classifyEvent(l.event_type) === 'grade').length,
-    tenants: [...new Set(logs.map(l => l.tenant_name))].length,
+    authEvents: logs.filter((l) => classifyEvent(l.event_type) === 'auth').length,
+    gradeEvents: logs.filter((l) => classifyEvent(l.event_type) === 'grade').length,
+    tenants: [...new Set(logs.map((l) => l.tenant_name))].length,
   };
 
   return (
     <div className={styles.container}>
-      {/* ── Header ── */}
-      <div className={styles.header}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-            <div className={auditStyles.shieldIcon}>🛡️</div>
+      {/* Header */}
+      <header className={styles.header}>
+        <div className={styles.headerLeft}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <h1 className={styles.title} style={{ margin: 0 }}>
-              Global Audit Logs & Security Stream
+              Jejak Audit &amp; Keamanan Sistem
             </h1>
             <div className={styles.liveIndicator}>
               <span className={styles.liveDot} />
-              <span className={styles.liveText}>LIVE</span>
+              <span className={styles.liveText}>Audit Trail Aktif</span>
             </div>
           </div>
           <p className={styles.subtitle}>
-            Jejak aktivitas keamanan, autentikasi, dan rekonsiliasi data seluruh tenant sekolah secara real-time.
+            Rekaman aktivitas autentikasi, mutasi data, dan kepatuhan sistem operasi institusi secara immutable.
           </p>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <div className={styles.headerActions}>
+          <div className={styles.viewToggleGroup}>
+            <button
+              className={`${styles.viewToggleBtn} ${viewMode === 'timeline' ? styles.viewToggleBtnActive : ''}`}
+              onClick={() => setViewMode('timeline')}
+              title="Tampilan Linimasa"
+            >
+              <Clock size={14} />
+            </button>
+            <button
+              className={`${styles.viewToggleBtn} ${viewMode === 'table' ? styles.viewToggleBtnActive : ''}`}
+              onClick={() => setViewMode('table')}
+              title="Tampilan Tabel"
+            >
+              <List size={14} />
+            </button>
+          </div>
+
           <button
-            className={auditStyles.viewToggle}
-            onClick={() => setViewMode(v => v === 'table' ? 'timeline' : 'table')}
-          >
-            {viewMode === 'table' ? '⏱ Timeline' : '📋 Tabel'}
-          </button>
-          <button
-            className={`btn btn-secondary ${isRefreshing ? styles.refreshingBtn : ''}`}
+            className={styles.refreshBtn}
             onClick={() => fetchAuditLogs(true)}
-            style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+            disabled={isRefreshing}
+            title="Muat ulang rekaman log"
           >
-            <span className={isRefreshing ? styles.spinIcon : ''}>🔄</span>
-            {isRefreshing ? 'Memuat...' : 'Refresh'}
+            <RefreshCw size={13} className={isRefreshing ? styles.spinIcon : ''} />
+            <span>{isRefreshing ? 'Memuat…' : 'Perbarui'}</span>
           </button>
         </div>
-      </div>
+      </header>
 
-      {/* ── KPI Stats ── */}
+      {/* KPI Stats */}
       <div className={auditStyles.statsRow}>
-        {[
-          { icon: '📋', label: 'Total Event', value: stats.total, color: '#6366f1' },
-          { icon: '🔐', label: 'Autentikasi', value: stats.authEvents, color: '#3b82f6' },
-          { icon: '📊', label: 'Event Nilai', value: stats.gradeEvents, color: '#10b981' },
-          { icon: '🏫', label: 'Tenant Aktif', value: stats.tenants, color: '#f59e0b' },
-        ].map(s => (
-          <div key={s.label} className={auditStyles.statCard}>
-            <div className={auditStyles.statIcon} style={{ background: `${s.color}18`, color: s.color }}>
-              {s.icon}
-            </div>
-            <div>
-              <div className={auditStyles.statValue} style={{ color: s.color }}>{s.value}</div>
-              <div className={auditStyles.statLabel}>{s.label}</div>
-            </div>
+        <div className={auditStyles.statCard}>
+          <div className={auditStyles.statIcon} style={{ background: 'rgba(99, 102, 241, 0.1)', color: '#4f46e5' }}>
+            <FileText size={18} />
           </div>
-        ))}
+          <div>
+            <div className={auditStyles.statValue} style={{ color: '#4f46e5' }}>{stats.total}</div>
+            <div className={auditStyles.statLabel}>Total Rekaman</div>
+          </div>
+        </div>
+
+        <div className={auditStyles.statCard}>
+          <div className={auditStyles.statIcon} style={{ background: 'rgba(37, 99, 235, 0.1)', color: '#2563eb' }}>
+            <KeyRound size={18} />
+          </div>
+          <div>
+            <div className={auditStyles.statValue} style={{ color: '#2563eb' }}>{stats.authEvents}</div>
+            <div className={auditStyles.statLabel}>Sesi &amp; Autentikasi</div>
+          </div>
+        </div>
+
+        <div className={auditStyles.statCard}>
+          <div className={auditStyles.statIcon} style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981' }}>
+            <BarChart2 size={18} />
+          </div>
+          <div>
+            <div className={auditStyles.statValue} style={{ color: '#10b981' }}>{stats.gradeEvents}</div>
+            <div className={auditStyles.statLabel}>Mutasi Akademik</div>
+          </div>
+        </div>
+
+        <div className={auditStyles.statCard}>
+          <div className={auditStyles.statIcon} style={{ background: 'rgba(245, 158, 11, 0.1)', color: '#d97706' }}>
+            <Building2 size={18} />
+          </div>
+          <div>
+            <div className={auditStyles.statValue} style={{ color: '#d97706' }}>{stats.tenants}</div>
+            <div className={auditStyles.statLabel}>Institusi Terlibat</div>
+          </div>
+        </div>
+
         <div className={auditStyles.refreshInfo}>
-          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Terakhir diperbarui</div>
-          <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-secondary)' }} suppressHydrationWarning>
+          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Sinkronisasi Terakhir</div>
+          <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary)' }} suppressHydrationWarning>
             {isMounted && lastRefresh ? lastRefresh.toLocaleTimeString('id-ID') : '-'}
           </div>
-          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 2 }}>Auto-refresh: 30 dtk</div>
         </div>
       </div>
 
-      {/* ── Category Filter Pills ── */}
+      {/* Category Filter Pills */}
       <div className={auditStyles.categoryBar}>
-        {(Object.keys(CATEGORY_LABELS) as EventCategory[]).map(cat => (
+        {(Object.keys(CATEGORY_LABELS) as EventCategory[]).map((cat) => (
           <button
             key={cat}
             className={`${auditStyles.catPill} ${category === cat ? auditStyles.catPillActive : ''}`}
             onClick={() => setCategory(cat)}
           >
-            {CATEGORY_LABELS[cat]}
+            <span>{CATEGORY_LABELS[cat]}</span>
             {cat !== 'all' && (
               <span className={auditStyles.catCount}>
-                {logs.filter(l => classifyEvent(l.event_type) === cat).length}
+                {logs.filter((l) => classifyEvent(l.event_type) === cat).length}
               </span>
             )}
           </button>
         ))}
       </div>
 
-      {/* ── Toolbar ── */}
+      {/* Toolbar */}
       <div className={styles.toolbar} style={{ marginBottom: '1rem' }}>
-        <div className={auditStyles.searchBox}>
-          <span className={auditStyles.searchIcon}>🔍</span>
+        <div className={styles.searchWrapper}>
+          <Search size={14} className={styles.searchIcon} />
           <input
             type="text"
-            placeholder="Cari aktivitas, nama tenant, atau tipe event..."
+            placeholder="Cari aktivitas, nama institusi, atau tipe event…"
             value={search}
-            onChange={e => setSearch(e.target.value)}
-            className={auditStyles.searchInput}
+            onChange={(e) => setSearch(e.target.value)}
+            className={styles.searchInput}
           />
           {search && (
-            <button className={auditStyles.clearSearch} onClick={() => setSearch('')}>✕</button>
+            <button
+              onClick={() => setSearch('')}
+              style={{
+                position: 'absolute',
+                right: '8px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: 'var(--text-muted)',
+              }}
+              title="Bersihkan pencarian"
+            >
+              <X size={12} />
+            </button>
           )}
         </div>
-        <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-          {filteredLogs.length} dari {logs.length} event
+        <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500 }}>
+          Menampilkan {filteredLogs.length} dari {logs.length} rekaman
         </div>
       </div>
 
-      {/* ── Content ── */}
+      {/* Content */}
       {isLoading ? (
-        <div className={auditStyles.loadingState}>
-          <div className={auditStyles.loadingSpinner} />
-          <p>Memuat rekaman audit log keamanan...</p>
+        <div className={styles.stateContainer}>
+          <div className={styles.spinner} />
+          <span>Memuat rekaman jejak audit keamanan…</span>
         </div>
       ) : filteredLogs.length === 0 ? (
-        <div className={auditStyles.emptyState}>
-          <div className={auditStyles.emptyIcon}>🔍</div>
-          <p>Tidak ada event yang cocok dengan filter ini.</p>
-          <button className={auditStyles.clearFiltersBtn} onClick={() => { setSearch(''); setCategory('all'); }}>
+        <div className={styles.stateContainer}>
+          <span>Tidak ada rekaman audit yang sesuai dengan filter pencarian.</span>
+          <button
+            className={styles.refreshBtn}
+            onClick={() => {
+              setSearch('');
+              setCategory('all');
+            }}
+            style={{ marginTop: '8px' }}
+          >
             Hapus Semua Filter
           </button>
         </div>
       ) : viewMode === 'timeline' ? (
-        /* ── Timeline View ── */
         <div className={auditStyles.timeline}>
           {filteredLogs.map((log, i) => {
             const evStyle = getEventStyle(log.event_type);
             return (
-              <div key={log.id} className={auditStyles.timelineItem}
-                style={{ animationDelay: `${Math.min(i * 30, 300)}ms` }}>
-                {/* Timeline Line */}
+              <div
+                key={log.id}
+                className={auditStyles.timelineItem}
+                style={{ animationDelay: `${Math.min(i * 30, 300)}ms` }}
+              >
                 <div className={auditStyles.timelineLine}>
                   <div className={auditStyles.timelineDot} style={{ background: evStyle.dot }} />
                   {i < filteredLogs.length - 1 && <div className={auditStyles.timelineConnector} />}
                 </div>
 
-                {/* Card */}
                 <div className={auditStyles.timelineCard}>
                   <div className={auditStyles.timelineCardTop}>
-                    {/* Event Badge */}
                     <span
                       className={auditStyles.eventBadge}
                       style={{ background: evStyle.bg, color: evStyle.text, borderColor: `${evStyle.dot}30` }}
@@ -262,24 +331,28 @@ export default function SystemAuditPage() {
                       {log.event_type}
                     </span>
 
-                    {/* Tenant */}
                     <span className={auditStyles.tenantChip}>
-                      🏫 {log.tenant_name}
+                      <Building2 size={12} style={{ marginRight: 4, display: 'inline-block', verticalAlign: 'middle' }} />
+                      {log.tenant_name}
                     </span>
 
                     <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       <span className={auditStyles.timeAgo} suppressHydrationWarning>
-                        {isMounted ? timeAgo(log.created_at) : '...'}
+                        {isMounted ? timeAgo(log.created_at) : '…'}
                       </span>
                       <span className={auditStyles.timestamp} suppressHydrationWarning>
-                        {isMounted ? new Date(log.created_at).toLocaleString('id-ID', {
-                          day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
-                        }) : ''}
+                        {isMounted
+                          ? new Date(log.created_at).toLocaleString('id-ID', {
+                              day: '2-digit',
+                              month: 'short',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })
+                          : ''}
                       </span>
                     </div>
                   </div>
 
-                  {/* Details */}
                   <div className={auditStyles.timelineDetails}>
                     <span className={auditStyles.detailsLabel}>Detail:</span>
                     <code className={auditStyles.detailsCode}>{log.details}</code>
@@ -290,63 +363,69 @@ export default function SystemAuditPage() {
           })}
         </div>
       ) : (
-        /* ── Table View ── */
-        <div className={styles.tableCard}>
-          <table className={auditStyles.auditTable}>
-            <thead>
-              <tr>
-                <th>WAKTU</th>
-                <th>TENANT SEKOLAH</th>
-                <th>TIPE EVENT</th>
-                <th>DETAIL RESOURCE</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredLogs.map((log, i) => {
-                const evStyle = getEventStyle(log.event_type);
-                return (
-                  <tr key={log.id} style={{ animationDelay: `${Math.min(i * 20, 400)}ms` }}
-                    className={auditStyles.tableRow}>
-                    <td>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                        <span style={{ fontWeight: 700, fontSize: '0.82rem', color: 'var(--text-primary)' }} suppressHydrationWarning>
-                          {isMounted ? new Date(log.created_at).toLocaleString('id-ID', {
-                            day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', second: '2-digit'
-                          }) : ''}
-                        </span>
-                        <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }} suppressHydrationWarning>
-                          {isMounted ? timeAgo(log.created_at) : ''}
-                        </span>
-                      </div>
-                    </td>
-                    <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                        <div className={auditStyles.tenantAvatar}>
-                          {log.tenant_name.charAt(0).toUpperCase()}
+        <div className={styles.tableContainer}>
+          <div className={styles.tableWrapper}>
+            <table className={styles.dataTable}>
+              <thead>
+                <tr>
+                  <th style={{ width: '20%' }}>Waktu</th>
+                  <th style={{ width: '25%' }}>Institusi / Tenant</th>
+                  <th style={{ width: '20%' }}>Tipe Peristiwa</th>
+                  <th style={{ width: '35%' }}>Detail Parameter</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredLogs.map((log) => {
+                  const evStyle = getEventStyle(log.event_type);
+                  return (
+                    <tr key={log.id} className={styles.tableRow}>
+                      <td>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                          <span style={{ fontWeight: 600, fontSize: '12px', color: 'var(--text-primary)' }} suppressHydrationWarning>
+                            {isMounted
+                              ? new Date(log.created_at).toLocaleString('id-ID', {
+                                  day: '2-digit',
+                                  month: 'short',
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                  second: '2-digit',
+                                })
+                              : ''}
+                          </span>
+                          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }} suppressHydrationWarning>
+                            {isMounted ? timeAgo(log.created_at) : ''}
+                          </span>
                         </div>
-                        <strong style={{ color: 'var(--text-primary)', fontSize: '0.88rem' }}>
-                          {log.tenant_name}
-                        </strong>
-                      </div>
-                    </td>
-                    <td>
-                      <span
-                        className={auditStyles.eventBadge}
-                        style={{ background: evStyle.bg, color: evStyle.text, borderColor: `${evStyle.dot}30` }}
-                      >
-                        {log.event_type}
-                      </span>
-                    </td>
-                    <td>
-                      <code className={auditStyles.detailsCode} style={{ fontSize: '0.78rem' }}>
-                        {log.details}
-                      </code>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <div className={styles.tenantAvatar} style={{ width: 28, height: 28, fontSize: '11px' }}>
+                            {log.tenant_name.charAt(0).toUpperCase()}
+                          </div>
+                          <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '12px' }}>
+                            {log.tenant_name}
+                          </span>
+                        </div>
+                      </td>
+                      <td>
+                        <span
+                          className={auditStyles.eventBadge}
+                          style={{ background: evStyle.bg, color: evStyle.text, borderColor: `${evStyle.dot}30` }}
+                        >
+                          {log.event_type}
+                        </span>
+                      </td>
+                      <td>
+                        <code className={auditStyles.detailsCode} style={{ fontSize: '11px' }}>
+                          {log.details}
+                        </code>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>
