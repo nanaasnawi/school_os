@@ -10,7 +10,7 @@ import { decodeJwtPayload } from '@/lib/jwt';
 import {
   RefreshCw,
   Clock,
-  ShieldCheck,
+  CheckCircle2,
   Mail,
   KeyRound,
   Eye,
@@ -20,11 +20,7 @@ import {
   Sun,
   Moon,
   GraduationCap,
-  Building2,
   ArrowRight,
-  BookOpen,
-  Database,
-  Users,
 } from 'lucide-react';
 import styles from './login.module.css';
 
@@ -91,15 +87,15 @@ export default function LoginPage() {
             is_active: true,
             message:
               json.data.maintenance_message ||
-              'Sistem sedang dalam peningkatan performa server terjadwal. Silakan kembali dalam beberapa menit.',
+              'Sistem sedang dalam optimalisasi server terjadwal.',
           });
           if (isManual) {
-            setCheckFeedback('Server masih dalam optimalisasi terjadwal.');
+            setCheckFeedback('Server masih dalam pemeliharaan.');
           }
         } else {
           setMaintenance({ is_active: false, message: '' });
           if (isManual) {
-            setCheckFeedback('Server telah aktif! Mengalihkan ke login...');
+            setCheckFeedback('Server aktif! Mengalihkan ke login...');
           }
         }
       } else {
@@ -144,7 +140,7 @@ export default function LoginPage() {
             is_active: true,
             message:
               json.data.maintenance_message ||
-              'Sistem sedang dalam peningkatan performa server terjadwal. Silakan kembali dalam beberapa menit.',
+              'Sistem sedang dalam optimalisasi server terjadwal.',
           });
         } else {
           setMaintenance({ is_active: false, message: '' });
@@ -275,9 +271,9 @@ export default function LoginPage() {
       }
       const errObj = apiErr as { message?: string } | undefined;
       if (!response) {
-        setError('Tidak dapat terhubung ke server. Pastikan koneksi internet aktif.');
+        setError('Tidak dapat terhubung ke server.');
       } else if (response.status === 401 || response.status === 400) {
-        setError('Email/Username atau kata sandi yang Anda masukkan tidak sesuai.');
+        setError('Email atau kata sandi tidak sesuai.');
       } else if (
         response.status === 503 ||
         response.status === 423 ||
@@ -285,10 +281,10 @@ export default function LoginPage() {
       ) {
         setMaintenance({
           is_active: true,
-          message: errObj?.message || 'Sistem sedang dalam peningkatan performa server terjadwal.',
+          message: errObj?.message || 'Sistem sedang dalam optimalisasi server terjadwal.',
         });
       } else {
-        setError('Terjadi kendala autentikasi pada server (Kode: ' + response.status + ').');
+        setError('Terjadi kendala autentikasi (Kode: ' + response.status + ').');
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
@@ -316,18 +312,17 @@ export default function LoginPage() {
         <div className={styles.maintenanceCard}>
           <div className={styles.maintenanceBadgeRow}>
             <div className={styles.maintenancePill}>
-              <Clock size={13} />
-              <span>Pemeliharaan Terjadwal</span>
+              <Clock size={12} />
+              <span>Pemeliharaan</span>
             </div>
-            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted, #6b7280)' }}>
-              HTTP 503 Maintenance
+            <span style={{ fontSize: '0.76rem', color: 'var(--text-muted, #6b7280)' }}>
+              HTTP 503
             </span>
           </div>
 
           <h1 className={styles.maintenanceTitle}>Sistem Dalam Pemeliharaan</h1>
           <p className={styles.maintenanceDesc}>
-            Infrastruktur server dan sinkronisasi database sedang dioptimalkan. Akses ke portal akademik
-            akan segera dibuka kembali secara otomatis setelah proses selesai.
+            Optimalisasi server sedang berlangsung. Portal akan dibuka kembali secara otomatis setelah proses selesai.
           </p>
 
           <div className={styles.maintenanceMessageCard}>
@@ -335,9 +330,9 @@ export default function LoginPage() {
           </div>
 
           <div className={styles.maintenanceStatusBar}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: 'var(--text-muted, #6b7280)' }}>
-              <span>Pemeriksaan berkala</span>
-              <span>Ulang dalam <strong>{countdown}s</strong></span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.76rem', color: 'var(--text-muted, #6b7280)' }}>
+              <span>Pemeriksaan otomatis</span>
+              <span>{countdown}s</span>
             </div>
             <div className={styles.countdownTrack}>
               <div
@@ -354,20 +349,20 @@ export default function LoginPage() {
             className={styles.maintenanceActionBtn}
           >
             <RefreshCw
-              size={15}
+              size={14}
               style={{ animation: checkingMaintenance ? 'spin 1s linear infinite' : 'none' }}
             />
-            <span>{checkingMaintenance ? 'Memeriksa...' : 'Periksa Ulang Sekarang'}</span>
+            <span>{checkingMaintenance ? 'Memeriksa...' : 'Periksa Status'}</span>
           </button>
 
           {checkFeedback && (
-            <p style={{ fontSize: '0.82rem', color: 'var(--accent-dark, #0284c7)', margin: 0, textAlign: 'center', fontWeight: 500 }}>
+            <p style={{ fontSize: '0.8rem', color: 'var(--accent-dark, #0284c7)', margin: 0, textAlign: 'center' }}>
               {checkFeedback}
             </p>
           )}
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '12px', borderTop: '1px solid var(--border-light, #e5e7eb)', fontSize: '0.78rem', color: 'var(--text-muted, #6b7280)' }}>
-            <span>Butuh bantuan darurat? Hubungi Tim IT Sekolah.</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '10px', borderTop: '1px solid var(--border-light, #e5e7eb)', fontSize: '0.76rem', color: 'var(--text-muted, #6b7280)' }}>
+            <span>Bantuan darurat: Hubungi Admin Sekolah</span>
             <span
               className={styles.sysAdminSecretLink}
               onClick={() => {
@@ -385,19 +380,6 @@ export default function LoginPage() {
     );
   }
 
-  // Dynamic helper text based on selected role preset
-  const getRoleHint = () => {
-    switch (selectedRole) {
-      case 'guru':
-        return 'Gunakan alamat Email atau Username / NIP yang terdaftar di sistem sekolah.';
-      case 'kepsek':
-        return 'Gunakan alamat Email kedinasan Kepala Sekolah yang terverifikasi.';
-      case 'admin':
-      default:
-        return 'Gunakan alamat Email resmi Administrator atau Operator Sekolah.';
-    }
-  };
-
   const getRolePlaceholder = () => {
     switch (selectedRole) {
       case 'guru':
@@ -414,10 +396,10 @@ export default function LoginPage() {
     <div className={styles.root}>
       <div className={styles.container}>
         {/* ══════════════════════════════════════════════════════════
-            LEFT PANEL — INSTITUTIONAL IDENTITY & EDUCATIONAL PILLARS
+            LEFT PANEL — QUIET, ELEGANT INSTITUTIONAL SHOWCASE
             ══════════════════════════════════════════════════════════ */}
         <div className={styles.brandPanel}>
-          {/* Top: School Crest & Official accreditation */}
+          {/* Top School Header */}
           <div className={styles.brandHeader}>
             <div className={styles.schoolLogoWrapper}>
               {schoolLogoUrl ? (
@@ -435,89 +417,44 @@ export default function LoginPage() {
                 />
               )}
             </div>
-            <div className={styles.brandTextGroup}>
-              <div className={styles.officialBadgeRow}>
-                <span className={styles.officialPill}>
-                  <ShieldCheck size={12} />
-                  <span>Dapodik Terintegrasi</span>
-                </span>
-                <span className={styles.sessionPill}>T.A. 2026/2027</span>
-              </div>
+            <div className={styles.brandTitles}>
               <h1 className={styles.schoolTitle}>{schoolName}</h1>
-              <p className={styles.schoolSubtitle}>Sistem Manajemen Informasi &amp; Akademik Sekolah</p>
-            </div>
-          </div>
-
-          {/* Center: Educational Core Value Proposition */}
-          <div className={styles.workspaceShowcase}>
-            <div>
-              <h2 className={styles.heroTagline}>
-                Platform Manajemen Sekolah{' '}
-                <span className={styles.heroTaglineHighlight}>Terpadu &amp; Modern</span>
-              </h2>
-              <p className={styles.heroDescription}>
-                Dirancang khusus untuk mendukung operasional SD, SMP, SMA, dan PKBM di Indonesia dengan
-                efisiensi administrasi, otomasi kurikulum, dan akuntabilitas pembelajaran.
-              </p>
-            </div>
-
-            {/* Academic Pillars Card */}
-            <div className={styles.pillarsCard}>
-              <div className={styles.pillarsHeader}>
-                <span className={styles.pillarsTitle}>
-                  <GraduationCap size={14} /> Layanan Akademik
-                </span>
-                <span className={styles.pillarsStatus}>
-                  <span className={styles.statusDot} /> Sistem Siap Pakai
-                </span>
-              </div>
-
-              <div className={styles.pillarList}>
-                <div className={styles.pillarItem}>
-                  <div className={styles.pillarIconBox}>
-                    <Database size={16} />
-                  </div>
-                  <div className={styles.pillarText}>
-                    <span className={styles.pillarTitle}>Sinkronisasi Resmi Dapodik &amp; e-Rapor</span>
-                    <span className={styles.pillarDesc}>
-                      Terhubung dengan database WebService Dapodik lokal dan format kurikulum nasional.
-                    </span>
-                  </div>
-                </div>
-
-                <div className={styles.pillarItem}>
-                  <div className={styles.pillarIconBox}>
-                    <BookOpen size={16} />
-                  </div>
-                  <div className={styles.pillarText}>
-                    <span className={styles.pillarTitle}>Kurikulum Merdeka &amp; Modul Ajar</span>
-                    <span className={styles.pillarDesc}>
-                      Kelola jadwal pelajaran, tugas kelas, bank kuis, dan lembar capaian kompetensi.
-                    </span>
-                  </div>
-                </div>
-
-                <div className={styles.pillarItem}>
-                  <div className={styles.pillarIconBox}>
-                    <Users size={16} />
-                  </div>
-                  <div className={styles.pillarText}>
-                    <span className={styles.pillarTitle}>Portal Khusus Guru, Tendik &amp; Kepala Sekolah</span>
-                    <span className={styles.pillarDesc}>
-                      Hak akses terisolasi untuk pelaporan supervisi dan presensi harian terverifikasi.
-                    </span>
-                  </div>
-                </div>
+              <div className={styles.schoolBadgeRow}>
+                <span>Dapodik Terintegrasi</span>
+                <span className={styles.badgeDot}>•</span>
+                <span>T.A. 2026/2027</span>
               </div>
             </div>
           </div>
 
-          {/* Bottom: Institutional Compliance */}
+          {/* Center: Single Clean Tagline + Concise Pill Badges */}
+          <div className={styles.heroSection}>
+            <h2 className={styles.heroTagline}>
+              Portal Akademik &amp; <span className={styles.heroTaglineAccent}>Layanan Sekolah</span>
+            </h2>
+            <p className={styles.heroSub}>
+              Satu akses terpadu untuk administrasi, kurikulum merdeka, presensi, dan e-rapor.
+            </p>
+
+            <div className={styles.featurePills}>
+              <span className={styles.featurePill}>
+                <CheckCircle2 size={13} className={styles.featurePillIcon} />
+                Kurikulum Merdeka
+              </span>
+              <span className={styles.featurePill}>
+                <CheckCircle2 size={13} className={styles.featurePillIcon} />
+                Dapodik &amp; e-Rapor
+              </span>
+              <span className={styles.featurePill}>
+                <CheckCircle2 size={13} className={styles.featurePillIcon} />
+                Presensi &amp; CBT
+              </span>
+            </div>
+          </div>
+
+          {/* Footer */}
           <div className={styles.brandFooter}>
-            <span className={styles.kemdikbudRef}>
-              <Building2 size={14} />
-              <span>Standar Kurikulum Merdeka Kemendikdasmen RI</span>
-            </span>
+            <span>Standar Kemendikdasmen RI</span>
             <span>Akselerasi-Edu v2.4</span>
           </div>
         </div>
@@ -526,50 +463,41 @@ export default function LoginPage() {
             RIGHT PANEL — FOCUSED AUTHENTICATION FORM
             ══════════════════════════════════════════════════════════ */}
         <div className={styles.formPanel}>
-          {/* Top navigation with Theme switch */}
+          {/* Top Navigation: Theme Toggle only */}
           <div className={styles.formTopNav}>
-            <div className={styles.portalBadge}>
-              <GraduationCap size={13} />
-              <span>Portal Masuk Sekolah</span>
-            </div>
-            <div className={styles.navControls}>
-              <button
-                type="button"
-                onClick={toggleTheme}
-                className={styles.iconControlBtn}
-                aria-label={theme === 'dark' ? 'Beralih ke Mode Terang' : 'Beralih ke Mode Gelap'}
-                title={theme === 'dark' ? 'Mode Terang' : 'Mode Gelap'}
-              >
-                {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className={styles.iconControlBtn}
+              aria-label={theme === 'dark' ? 'Mode Terang' : 'Mode Gelap'}
+              title={theme === 'dark' ? 'Mode Terang' : 'Mode Gelap'}
+            >
+              {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+            </button>
           </div>
 
-          {/* Center form content wrapper */}
+          {/* Form Content Wrapper */}
           <div className={styles.formContentWrapper}>
-            {/* Mobile header (Only displayed on small viewports) */}
+            {/* Mobile Header (Hidden on Desktop) */}
             <div className={styles.mobileBrandHeader}>
               <div className={styles.mobileLogoWrapper}>
                 {schoolLogoUrl ? (
                   <img src={schoolLogoUrl} alt={schoolName} className={styles.schoolLogoImg} />
                 ) : (
-                  <GraduationCap size={22} color="var(--accent-dark, #0284c7)" />
+                  <GraduationCap size={20} color="var(--accent-dark, #0284c7)" />
                 )}
               </div>
-              <div>
-                <h3 className={styles.mobileSchoolTitle}>{schoolName}</h3>
-                <p className={styles.mobileSchoolSubtitle}>Akselerasi-Edu • Portal Sekolah</p>
-              </div>
+              <h3 className={styles.mobileSchoolTitle}>{schoolName}</h3>
             </div>
 
             <div className={styles.formHeader}>
-              <h2 className={styles.formMainTitle}>Masuk ke Ruang Kerja</h2>
+              <h2 className={styles.formMainTitle}>Masuk</h2>
               <p className={styles.formSubTitle}>
-                Pilih peran Anda dan masukkan akun resmi untuk melanjutkan ke dashboard.
+                Pilih peran dan masukkan kredensial akun Anda.
               </p>
             </div>
 
-            {/* Quick Role Switcher Segmented Control */}
+            {/* Compact Role Switcher */}
             <div className={styles.rolePresetBar} role="tablist" aria-label="Pilih Peran Akun">
               <button
                 type="button"
@@ -602,21 +530,21 @@ export default function LoginPage() {
 
             {error && (
               <div className={styles.errorBanner} role="alert">
-                <Info size={16} style={{ flexShrink: 0, marginTop: 2 }} />
+                <Info size={15} style={{ flexShrink: 0 }} />
                 <span>{error}</span>
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className={styles.form} noValidate={false}>
+            <form onSubmit={handleSubmit} className={styles.form}>
               <div className={styles.inputGroup}>
                 <div className={styles.labelRow}>
                   <label htmlFor="auth-email" className={styles.label}>
-                    {selectedRole === 'guru' ? 'Email atau Username / NIP' : 'Email Akun Resmi'}
+                    {selectedRole === 'guru' ? 'Email atau Username / NIP' : 'Email Akun'}
                   </label>
                 </div>
                 <div className={styles.inputWrapper}>
                   <span className={styles.inputIcon}>
-                    <Mail size={16} />
+                    <Mail size={15} />
                   </span>
                   <input
                     id="auth-email"
@@ -629,7 +557,6 @@ export default function LoginPage() {
                     autoComplete="username"
                   />
                 </div>
-                <span className={styles.inputHelper}>{getRoleHint()}</span>
               </div>
 
               <div className={styles.inputGroup}>
@@ -643,20 +570,20 @@ export default function LoginPage() {
                 </div>
                 <div className={styles.inputWrapper}>
                   <span className={styles.inputIcon}>
-                    <KeyRound size={16} />
+                    <KeyRound size={15} />
                   </span>
                   <input
                     id="auth-password"
                     type={showPassword ? 'text' : 'password'}
                     required
-                    placeholder="Masukkan kata sandi akun"
+                    placeholder="Masukkan kata sandi"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     onKeyDown={handleKeyModifierCheck}
                     onKeyUp={handleKeyModifierCheck}
                     className={styles.formInput}
                     autoComplete="current-password"
-                    style={{ paddingRight: '40px' }}
+                    style={{ paddingRight: '38px' }}
                   />
                   <button
                     type="button"
@@ -665,7 +592,7 @@ export default function LoginPage() {
                     tabIndex={-1}
                     aria-label={showPassword ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'}
                   >
-                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                   </button>
                 </div>
               </div>
@@ -673,38 +600,32 @@ export default function LoginPage() {
               <button type="submit" disabled={loading} className={styles.submitBtn}>
                 {loading ? (
                   <>
-                    <RefreshCw size={15} style={{ animation: 'spin 1s linear infinite' }} />
-                    <span>Memverifikasi Kredensial...</span>
+                    <RefreshCw size={14} style={{ animation: 'spin 1s linear infinite' }} />
+                    <span>Memverifikasi...</span>
                   </>
                 ) : (
                   <>
                     <span>Masuk ke Dashboard</span>
-                    <ArrowRight size={15} />
+                    <ArrowRight size={14} />
                   </>
                 )}
               </button>
             </form>
 
-            {/* Android Mobile Guidance Box */}
-            <div className={styles.mobileCrossLink}>
-              <div className={styles.mobileCrossIconBox}>
-                <Smartphone size={16} />
-              </div>
-              <div>
-                <p className={styles.mobileCrossTitle}>Siswa atau Orang Tua / Wali?</p>
-                <p className={styles.mobileCrossDesc}>
-                  Akses presensi harian, nilai e-rapor, dan jadwal ujian langsung melalui aplikasi Android Akselerasi-Edu.
-                </p>
-              </div>
+            {/* Minimalist 1-line Android Notice */}
+            <div className={styles.mobileNoticeLine}>
+              <span>Siswa &amp; Orang Tua? Gunakan</span>
+              <Smartphone size={13} style={{ marginLeft: 2, marginRight: 2 }} />
+              <strong>Aplikasi Android Akselerasi-Edu</strong>
             </div>
           </div>
 
           {/* Form Bottom Bar */}
           <div className={styles.formBottomBar}>
-            <span>Kendala akun? Hubungi Administrator TI Sekolah.</span>
+            <span>Butuh bantuan? Hubungi Admin Sekolah</span>
             <span
               className={styles.sysAdminSecretLink}
-              title="Akses Administrator Sistem"
+              title="Akses Sistem"
               onClick={() => {
                 const next = adminTriggerCount + 1;
                 if (next >= 5) {

@@ -1,7 +1,6 @@
 /* ============================================================
-   Akselerasi-Edu — Super Admin Platform Console Login
-   Executive National Education Management Portal
-   Strictly synchronized with Global Design System (globals.css)
+   Akselerasi-Edu — Minimalist Super Admin Platform Login
+   Clean, Direct, Restrained Typography & Dark Theme Synced
    ============================================================ */
 
 .root {
@@ -9,7 +8,6 @@
   min-height: 100dvh;
   width: 100%;
   display: flex;
-  flex-direction: column;
   background-color: var(--bg-base, #000000);
   color: var(--text-primary, #ffffff);
   position: relative;
@@ -17,7 +15,6 @@
   font-family: var(--font-body, 'Inter', -apple-system, BlinkMacSystemFont, sans-serif);
 }
 
-/* ── Split Layout Grid ── */
 .container {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -28,14 +25,14 @@
   z-index: 1;
 }
 
-@media (min-width: 1440px) {
+@media (min-width: 1280px) {
   .container {
-    grid-template-columns: 1.1fr 1fr;
+    grid-template-columns: 1.05fr 1fr;
   }
 }
 
 /* ══════════════════════════════════════════════════════════
-   LEFT PANEL — NATIONAL PLATFORM IDENTITY & PILLARS
+   LEFT PANEL — CLEAN PLATFORM IDENTITY (NO WALLS OF TEXT)
    ══════════════════════════════════════════════════════════ */
 .terminalPanel {
   min-height: 100vh;
@@ -43,7 +40,7 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: clamp(36px, 5vh, 64px) clamp(36px, 4.5vw, 64px);
+  padding: clamp(40px, 6vh, 72px) clamp(40px, 5vw, 80px);
   background: var(--bg-card, #0d0d0f);
   border-right: 1px solid var(--border-light, rgba(255, 255, 255, 0.08));
   box-sizing: border-box;
@@ -51,23 +48,22 @@
 
 .panelHeader {
   display: flex;
-  flex-direction: column;
-  gap: 20px;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .backLink {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   font-size: 0.78rem;
   font-weight: 500;
   color: var(--text-muted, #9ca3af);
   text-decoration: none;
-  padding: 6px 12px;
+  padding: 5px 10px;
   border-radius: var(--radius-md, 8px);
   background: var(--bg-surface, #0a0a0c);
   border: 1px solid var(--border-light, rgba(255, 255, 255, 0.08));
-  width: fit-content;
   transition: all var(--dur-fast, 120ms) var(--ease-out, ease);
   cursor: pointer;
 }
@@ -75,44 +71,9 @@
 .backLink:hover {
   background: var(--bg-hover, rgba(255, 255, 255, 0.06));
   color: var(--text-primary, #ffffff);
-  border-color: var(--border-medium, rgba(255, 255, 255, 0.16));
 }
 
-.brandIdentity {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.brandLogoBox {
-  width: 48px;
-  height: 48px;
-  border-radius: var(--radius-lg, 12px);
-  background: var(--bg-elevated, #121214);
-  border: 1px solid var(--border-medium, rgba(255, 255, 255, 0.16));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  color: var(--accent, #38bdf8);
-}
-
-.brandTitles {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.systemBadgeRow {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.rootBadge {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
+.rootTag {
   font-size: 0.7rem;
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -121,154 +82,65 @@
   background: rgba(220, 38, 38, 0.15);
   color: var(--danger, #f87171);
   border: 1px solid rgba(248, 113, 113, 0.25);
-  text-transform: uppercase;
 }
 
-.envBadge {
-  font-size: 0.72rem;
-  color: var(--text-muted, #9ca3af);
-}
-
-.systemTitle {
-  font-size: clamp(1.25rem, 1.8vw, 1.55rem);
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: var(--text-primary, #ffffff);
-  margin: 0;
-}
-
-.systemSubtitle {
-  font-size: 0.82rem;
-  color: var(--text-muted, #9ca3af);
-  margin: 0;
-}
-
-/* Center Pillars */
-.telemetrySection {
+/* Center Statement */
+.heroSection {
   margin: auto 0;
-  padding: clamp(28px, 4vh, 48px) 0;
   display: flex;
   flex-direction: column;
-  gap: 26px;
+  gap: 20px;
+  max-width: 460px;
 }
 
-.missionTagline {
-  font-size: clamp(1.35rem, 2vw, 1.85rem);
+.heroTagline {
+  font-size: clamp(1.65rem, 2.4vw, 2.2rem);
   font-weight: 700;
-  letter-spacing: -0.025em;
-  line-height: 1.3;
+  letter-spacing: -0.03em;
+  line-height: 1.25;
   color: var(--text-primary, #ffffff);
   margin: 0;
 }
 
-.missionTaglineHighlight {
+.heroTaglineAccent {
   color: var(--accent, #38bdf8);
 }
 
-.missionDesc {
-  font-size: 0.9rem;
-  line-height: 1.65;
-  color: var(--text-secondary, #d1d5db);
-  margin: 8px 0 0 0;
-  max-width: 500px;
-}
-
-/* Institutional Pillars Card */
-.terminalCard {
-  background: var(--bg-surface, #0a0a0c);
-  border: 1px solid var(--border-light, rgba(255, 255, 255, 0.08));
-  border-radius: var(--radius-xl, 16px);
-  padding: 20px 22px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  max-width: 500px;
-}
-
-.terminalBar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid var(--border-light, rgba(255, 255, 255, 0.08));
-  padding-bottom: 12px;
-  font-size: 0.78rem;
-  font-weight: 600;
+.heroSub {
+  font-size: 0.95rem;
+  line-height: 1.6;
   color: var(--text-muted, #9ca3af);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  margin: 0;
 }
 
-.liveBadge {
+.statusIndicator {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-size: 0.74rem;
+  gap: 7px;
+  font-size: 0.78rem;
   color: var(--success, #4ade80);
+  font-weight: 500;
 }
 
-.liveDot {
+.statusDot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
   background: var(--success, #4ade80);
 }
 
-.pillarList {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.pillarItem {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-}
-
-.pillarIcon {
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-md, 8px);
-  background: var(--bg-elevated, #121214);
-  border: 1px solid var(--border-light, rgba(255, 255, 255, 0.08));
-  color: var(--accent, #38bdf8);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.pillarDetails {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.pillarTitle {
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--text-primary, #ffffff);
-}
-
-.pillarSub {
-  font-size: 0.75rem;
-  color: var(--text-muted, #9ca3af);
-  line-height: 1.4;
-}
-
-/* Bottom: Audit Notice */
-.auditNoticeFooter {
+.auditFooter {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-top: 18px;
+  padding-top: 20px;
   border-top: 1px solid var(--border-light, rgba(255, 255, 255, 0.08));
-  font-size: 0.76rem;
+  font-size: 0.78rem;
   color: var(--text-muted, #9ca3af);
 }
 
 /* ══════════════════════════════════════════════════════════
-   RIGHT PANEL — SECURE ROOT CONSOLE LOGIN FORM
+   RIGHT PANEL — MINIMALIST FORM
    ══════════════════════════════════════════════════════════ */
 .formPanel {
   min-height: 100vh;
@@ -276,30 +148,16 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: clamp(36px, 5vh, 64px) clamp(28px, 4.5vw, 64px);
-  position: relative;
+  padding: clamp(32px, 5vh, 60px) clamp(28px, 5vw, 64px);
   background: var(--bg-base, #000000);
   box-sizing: border-box;
 }
 
-.formTopBar {
+.formTopNav {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   width: 100%;
-}
-
-.securityShieldBadge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.74rem;
-  font-weight: 600;
-  color: var(--accent, #38bdf8);
-  background: var(--accent-dim, rgba(14, 165, 233, 0.12));
-  padding: 3.5px 9px;
-  border-radius: var(--radius-full, 9999px);
-  border: 1px solid rgba(56, 189, 248, 0.22);
 }
 
 .escNotice {
@@ -313,67 +171,52 @@
   border-radius: var(--radius-xs, 3px);
   border: 1px solid var(--border-light, rgba(255, 255, 255, 0.08));
   color: var(--text-primary, #ffffff);
-  font-family: inherit;
 }
 
 /* Center Form Box */
 .formContentWrapper {
   margin: auto 0;
-  max-width: 400px;
+  max-width: 380px;
   width: 100%;
   align-self: center;
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: 20px;
 }
 
-.formHeading {
+.formHeader {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
 .formTitle {
-  font-size: 1.55rem;
+  font-size: 1.6rem;
   font-weight: 700;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em;
   color: var(--text-primary, #ffffff);
   margin: 0;
 }
 
-.formDesc {
+.formSubTitle {
   font-size: 0.85rem;
   color: var(--text-muted, #9ca3af);
   margin: 0;
-  line-height: 1.45;
-}
-
-/* Security Notice Box */
-.warningPill {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 10px 12px;
-  border-radius: var(--radius-md, 8px);
-  background: rgba(245, 158, 11, 0.1);
-  border: 1px solid rgba(245, 158, 11, 0.22);
-  color: var(--warning, #fbbf24);
-  font-size: 0.77rem;
-  line-height: 1.45;
 }
 
 /* Error Banner */
 .errorBanner {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 11px 13px;
+  gap: 8px;
+  padding: 10px 12px;
   border-radius: var(--radius-md, 8px);
   background: rgba(220, 38, 38, 0.12);
   border: 1px solid rgba(248, 113, 113, 0.25);
   color: var(--danger, #f87171);
   font-size: 0.82rem;
-  animation: slideDownFade 0.2s ease-out;
+  line-height: 1.4;
+  animation: slideDownFade 0.18s ease-out;
 }
 
 @keyframes slideDownFade {
@@ -381,11 +224,11 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Form inputs */
+/* Form */
 .form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 15px;
 }
 
 .inputGroup {
@@ -411,7 +254,7 @@
   font-weight: 600;
   color: var(--warning, #fbbf24);
   background: rgba(245, 158, 11, 0.15);
-  padding: 1px 6px;
+  padding: 1px 5px;
   border-radius: var(--radius-xs, 3px);
 }
 
@@ -423,7 +266,7 @@
 
 .inputIcon {
   position: absolute;
-  left: 13px;
+  left: 12px;
   color: var(--text-muted, #9ca3af);
   pointer-events: none;
   display: flex;
@@ -433,8 +276,8 @@
 
 .formInput {
   width: 100%;
-  height: 44px;
-  padding: 0 14px 0 40px;
+  height: 42px;
+  padding: 0 12px 0 38px;
   border-radius: var(--radius-md, 8px);
   border: 1px solid var(--border-medium, rgba(255, 255, 255, 0.16));
   background: var(--bg-surface, #0a0a0c);
@@ -445,6 +288,10 @@
               box-shadow var(--dur-fast, 120ms) var(--ease-out, ease);
   outline: none;
   box-sizing: border-box;
+}
+
+.formInput::placeholder {
+  color: var(--text-disabled, #6b7280);
 }
 
 .formInput:focus {
@@ -458,7 +305,7 @@
 
 .eyeBtn {
   position: absolute;
-  right: 11px;
+  right: 10px;
   background: transparent;
   border: none;
   color: var(--text-muted, #9ca3af);
@@ -466,7 +313,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 5px;
+  padding: 4px;
   border-radius: var(--radius-sm, 6px);
   transition: color var(--dur-fast, 120ms) var(--ease-out, ease);
 }
@@ -475,22 +322,22 @@
   color: var(--text-primary, #ffffff);
 }
 
-/* Master Authenticate Button */
+/* Submit Action Button */
 .submitBtn {
-  height: 44px;
+  height: 42px;
   width: 100%;
   border-radius: var(--radius-md, 8px);
   border: none;
   background: var(--accent-dark, #0ea5e9);
   color: #ffffff;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   font-weight: 600;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   cursor: pointer;
-  box-shadow: 0 2px 4px rgba(14, 165, 233, 0.25);
+  box-shadow: 0 1px 3px rgba(14, 165, 233, 0.25);
   transition: all var(--dur-fast, 120ms) var(--ease-out, ease);
   margin-top: 4px;
   font-family: inherit;
@@ -499,11 +346,6 @@
 .submitBtn:hover:not(:disabled) {
   background: var(--accent, #38bdf8);
   color: #000000;
-  box-shadow: 0 4px 10px rgba(56, 189, 248, 0.35);
-}
-
-.submitBtn:active:not(:disabled) {
-  transform: translateY(1px);
 }
 
 .submitBtn:disabled {
