@@ -172,12 +172,11 @@
    ══════════════════════════════════════════════════════════════ */
 .metricsGrid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 1rem;
 }
 
-@media (max-width: 1400px) { .metricsGrid { grid-template-columns: repeat(3, 1fr); } }
-@media (max-width: 900px)  { .metricsGrid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 1200px) { .metricsGrid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 600px)  { .metricsGrid { grid-template-columns: 1fr; } }
 
 .metricCard {
@@ -729,81 +728,97 @@
 @media (max-width: 1250px) { .rowTwoGrid { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 850px)  { .rowTwoGrid { grid-template-columns: 1fr; } }
 
-/* Academic List */
-.academicList {
-  display: flex;
-  flex-direction: column;
+/* ── Learning Activity Chart (Siswa Aktif Belajar: Tugas & Materi) ── */
+.learningStatsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 0.5rem;
-}
-
-.academicItem {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.65rem 0.85rem;
+  padding: 0.55rem 0.75rem;
   background: var(--bg-elevated);
   border: 1px solid var(--border-light);
   border-radius: var(--radius-sm, 8px);
-  transition: all 0.15s ease;
 }
 
-.academicItem:hover {
-  background: var(--bg-hover);
-  border-color: var(--border-medium);
-}
-
-.academicMain {
+.learningStatItem {
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
-  min-width: 0;
-  flex: 1;
 }
 
-.academicName {
-  font-size: 0.82rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.academicSub {
+.learningStatHeader {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  font-size: 0.7rem;
+  gap: 0.35rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
   color: var(--text-muted);
 }
 
-.academicScoreBadge {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  margin-left: 0.75rem;
+.learningStatDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
   flex-shrink: 0;
 }
 
-.scoreVal {
-  font-size: 0.95rem;
+.learningStatVal {
+  font-size: 1.05rem;
   font-weight: 800;
   color: var(--text-primary);
   font-variant-numeric: tabular-nums;
+  line-height: 1.1;
 }
 
-.gradeLetter {
+.learningStatVal small {
   font-size: 0.68rem;
-  font-weight: 800;
-  padding: 0.15rem 0.45rem;
-  border-radius: 4px;
-  background: rgba(16, 185, 129, 0.12);
-  color: #059669;
-  border: 1px solid rgba(16, 185, 129, 0.25);
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-left: 2px;
 }
 
-[data-theme="dark"] .gradeLetter {
-  color: #34d399;
+.learningToggleGroup {
+  display: inline-flex;
+  align-items: center;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+  padding: 2px;
+  gap: 2px;
+}
+
+.learningToggleBtn {
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.learningToggleBtnActive {
+  background: var(--bg-card);
+  color: var(--accent);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  font-weight: 700;
+}
+
+.learningLegendStrip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.4rem 0.75rem;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm, 8px);
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+  margin-top: 0.35rem;
 }
 
 /* Announcement Cards */
@@ -880,6 +895,7 @@
   margin: 0;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
