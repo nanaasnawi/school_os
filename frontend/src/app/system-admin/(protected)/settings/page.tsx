@@ -408,7 +408,7 @@ export default function SystemSettingsPage() {
                   <div>
                     <h2 className={styles.cardTitle}>🔄 Gateway WebService Dapodik Kemendikbud</h2>
                     <p className={styles.cardSubtitle}>
-                      Parameter default bridge penghubung antara School OS dengan WebService resmi aplikasi Dapodik lokal.
+                      Parameter default bridge penghubung antara Akselerasi-Edu dengan WebService resmi aplikasi Dapodik lokal.
                     </p>
                   </div>
                   <span className="badge badge-active">Gateway Active</span>
