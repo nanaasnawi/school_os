@@ -42,7 +42,7 @@ export default function SystemAdminLogin() {
   }, [router]);
 
   useEffect(() => {
-    document.title = 'Root Command Center — School OS';
+    document.title = 'Root Command Center — Akselerasi-Edu';
   }, []);
 
   const handleKeyModifierCheck = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -107,7 +107,7 @@ export default function SystemAdminLogin() {
                   <span className={styles.envBadge}>CLUSTER-AP-ID</span>
                 </div>
                 <h1 className={styles.systemTitle}>Command Center</h1>
-                <p className={styles.systemSubtitle}>School OS Platform Control &amp; Provisioning</p>
+                <p className={styles.systemSubtitle}>Akselerasi-Edu Platform Control &amp; Provisioning</p>
               </div>
             </div>
           </div>

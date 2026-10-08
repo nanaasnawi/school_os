@@ -433,7 +433,7 @@ export default function LoginPage() {
               ) : (
                 <img
                   src="/logo.png"
-                  alt={schoolName || 'School OS'}
+                  alt={schoolName || 'Akselerasi-Edu'}
                   className={styles.schoolLogoImg}
                 />
               )}
@@ -496,7 +496,7 @@ export default function LoginPage() {
               <Building2 size={14} />
               <span>Standar Kurikulum Merdeka Kemendikdasmen</span>
             </span>
-            <span>School OS v2.4</span>
+            <span>Akselerasi-Edu v2.4</span>
           </div>
         </div>
 
@@ -650,7 +650,7 @@ export default function LoginPage() {
               <div>
                 <p className={styles.mobileCrossTitle}>Siswa atau Orang Tua / Wali?</p>
                 <p className={styles.mobileCrossDesc}>
-                  Akses presensi harian, nilai e-rapor, dan jadwal ujian langsung melalui aplikasi Android School OS.
+                  Akses presensi harian, nilai e-rapor, dan jadwal ujian langsung melalui aplikasi Android Akselerasi-Edu.
                 </p>
               </div>
             </div>

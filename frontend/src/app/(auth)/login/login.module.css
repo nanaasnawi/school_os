@@ -1,5 +1,5 @@
 /* ============================================================
-   School OS — Professional Institutional Login Design System
+   Akselerasi Edu — Professional Institutional Login Design System
    Crafted for Educational Institutions, Teachers & Administrators
    Fully Synchronized with Global Design System (Light & Dark)
    ============================================================ */
@@ -30,13 +30,13 @@
   inset: 0;
   pointer-events: none;
   z-index: 0;
-  background: 
+  background:
     radial-gradient(ellipse 80% 50% at 20% -10%, rgba(14, 165, 233, 0.08) 0%, transparent 60%),
     radial-gradient(ellipse 60% 40% at 85% 110%, rgba(2, 132, 199, 0.06) 0%, transparent 55%);
 }
 
 [data-theme="dark"] .bgAtmosphere {
-  background: 
+  background:
     radial-gradient(ellipse 80% 50% at 20% -10%, rgba(14, 165, 233, 0.12) 0%, transparent 60%),
     radial-gradient(ellipse 60% 40% at 85% 110%, rgba(56, 189, 248, 0.05) 0%, transparent 55%);
 }
@@ -45,7 +45,7 @@
   position: fixed;
   inset: 0;
   background-image: linear-gradient(to right, rgba(0, 0, 0, 0.03) 1px, transparent 1px),
-                    linear-gradient(to bottom, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
   background-size: 40px 40px;
   pointer-events: none;
   z-index: 0;
@@ -54,7 +54,7 @@
 
 [data-theme="dark"] .bgGrid {
   background-image: linear-gradient(to right, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
-                    linear-gradient(to bottom, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
 }
 
 /* ── Split Layout Grid ── */
@@ -214,6 +214,7 @@
 .heroTaglineHighlight {
   background: linear-gradient(135deg, #0284c7 0%, #0ea5e9 50%, #38bdf8 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -290,9 +291,20 @@
 }
 
 @keyframes pulseBeacon {
-  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.7); }
-  70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(22, 163, 74, 0); }
-  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(22, 163, 74, 0); }
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.7);
+  }
+
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 6px rgba(22, 163, 74, 0);
+  }
+
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(22, 163, 74, 0);
+  }
 }
 
 .telemetryGrid {
@@ -539,8 +551,15 @@
 }
 
 @keyframes slideDownFade {
-  from { opacity: 0; transform: translateY(-6px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Inputs & Form Fields */
@@ -618,7 +637,7 @@
   box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.15);
 }
 
-.formInput:focus + .inputIcon,
+.formInput:focus+.inputIcon,
 .inputWrapper:focus-within .inputIcon {
   color: #0284c7;
 }

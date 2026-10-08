@@ -26,7 +26,7 @@ interface UserAccount {
 export default function QrScanPage() {
   const [users, setUsers] = useState<UserAccount[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [schoolName, setSchoolName] = useState('School OS Education Center');
+  const [schoolName, setSchoolName] = useState('Akselerasi-Edu Education Center');
   const [schoolLogo, setSchoolLogo] = useState<string | null>(null);
 
   // Filters & Search
@@ -76,7 +76,7 @@ export default function QrScanPage() {
 
       if (typeof window !== 'undefined') {
         const storedName = getTenantItem('dapodik_nama_sekolah') || getTenantItem('school_name');
-        if (storedName && !storedName.includes('School OS Education Center')) setSchoolName(storedName);
+        if (storedName && !storedName.includes('Akselerasi-Edu Education Center')) setSchoolName(storedName);
         const storedLogo = getTenantItem('school_logo_url');
         if (storedLogo) setSchoolLogo(storedLogo);
       }
@@ -432,7 +432,7 @@ export default function QrScanPage() {
 
     ctx.fillStyle = '#94a3b8';
     ctx.font = '600 15px system-ui, -apple-system, sans-serif';
-    ctx.fillText('KARTU RESMI AKSES LOGIN ANDROID • SCHOOL OS', 145, 90);
+    ctx.fillText('KARTU RESMI AKSES LOGIN ANDROID • AKSELERASI-EDU', 145, 90);
 
     // Right Pill Badge
     ctx.fillStyle = 'rgba(99, 102, 241, 0.25)';
@@ -510,7 +510,7 @@ export default function QrScanPage() {
     ctx.fillText('Petunjuk Akses Login Mobile:', 80, 425);
     ctx.fillStyle = '#94a3b8';
     ctx.font = '14px system-ui, -apple-system, sans-serif';
-    ctx.fillText('1. Buka School OS di HP Android → Pilih "Pindai Kartu / QR Code".', 80, 455);
+    ctx.fillText('1. Buka Akselerasi-Edu di HP Android → Pilih "Pindai Kartu / QR Code".', 80, 455);
     ctx.fillText('2. Arahkan kamera ke QR ini atau pilih dari galeri untuk login instan.', 80, 480);
 
     // Card Footer Line
@@ -523,7 +523,7 @@ export default function QrScanPage() {
 
     ctx.fillStyle = '#64748b';
     ctx.font = '14px system-ui, -apple-system, sans-serif';
-    ctx.fillText('Keamanan Terenkripsi SHA-256 • Opaque Mobile Token Auth • School OS Invariant', 60, 568);
+    ctx.fillText('Keamanan Terenkripsi SHA-256 • Opaque Mobile Token Auth • Akselerasi-Edu Invariant', 60, 568);
 
     // Right Column: Render QR Code Box
     if (qrImg) {
@@ -1193,7 +1193,7 @@ Reset kartu akan MEMBATALKAN QR Code lama secara permanen sehingga kartu lama ti
                 </div>
 
                 <div className={styles.cardFooter}>
-                  <span>Scan via School OS Mobile tanpa password</span>
+                  <span>Scan via Akselerasi-Edu Mobile tanpa password</span>
                   <span>Opaque SHA-256 Auth</span>
                 </div>
               </div>
@@ -1294,7 +1294,7 @@ Reset kartu akan MEMBATALKAN QR Code lama secara permanen sehingga kartu lama ti
         <div style={{ textAlign: 'center', marginBottom: '8mm' }}>
           <h2 style={{ fontSize: '16pt', fontWeight: 'bold', margin: 0 }}>{schoolName}</h2>
           <p style={{ fontSize: '10pt', color: '#475569', margin: '2mm 0 0 0' }}>
-            Lembar Kartu Akses Login Mobile Siswa, Guru &amp; Wali Murid • School OS
+            Lembar Kartu Akses Login Mobile Siswa, Guru &amp; Wali Murid • Akselerasi-Edu
           </p>
         </div>
 
@@ -1319,7 +1319,7 @@ Reset kartu akan MEMBATALKAN QR Code lama secara permanen sehingga kartu lama ti
               </div>
 
               <div style={{ fontSize: '6pt', color: '#64748b', borderTop: '1px solid #cbd5e1', paddingTop: '1mm', display: 'flex', justifyContent: 'space-between' }}>
-                <span>Scan via HP Android School OS</span>
+                <span>Scan via HP Android Akselerasi-Edu</span>
                 <span>Opaque Token Auth</span>
               </div>
             </div>

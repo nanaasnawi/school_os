@@ -77,7 +77,7 @@ export default function ParentLayout({ children }: { children: React.ReactNode }
               </svg>
             </div>
             <div>
-              <span className={parentStyles.brandLabel}>School OS</span>
+              <span className={parentStyles.brandLabel}>Akselerasi-Edu</span>
               <p className={parentStyles.brandSub}>Parent Awareness Portal</p>
             </div>
           </div>
