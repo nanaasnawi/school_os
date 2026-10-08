@@ -1,18 +1,229 @@
 'use client';
-import { getTenantItem } from '@/lib/tenant-storage';
-import { getApiUrl } from '@/lib/api';
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { getTenantItem } from '@/lib/tenant-storage';
+import { getApiUrl } from '@/lib/api';
 import styles from './dashboard.module.css';
 import { getLiveDapodikAcademicYear } from './academic-years/page';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
-  PieChart, Pie, Legend,
+  PieChart, Pie,
 } from 'recharts';
 
+/* ── Inline Lucide SVG Icons (High performance, crisp stroke 1.8-2) ── */
+function BuildingIcon({ size = 14 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+      <rect width="16" height="20" x="4" y="2" rx="2" ry="2"/>
+      <path d="M9 22v-4h6v4"/>
+      <path d="M8 6h.01M16 6h.01M12 6h.01M12 10h.01M12 14h.01M16 10h.01M16 14h.01M8 10h.01M8 14h.01"/>
+    </svg>
+  );
+}
+
+function GraduationCapIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+      <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+    </svg>
+  );
+}
+
+function CalendarIcon({ size = 14 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+      <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+      <line x1="16" x2="16" y1="2" y2="6"/>
+      <line x1="8" x2="8" y1="2" y2="6"/>
+      <line x1="3" x2="21" y1="10" y2="10"/>
+    </svg>
+  );
+}
+
+function RefreshIcon({ size = 14, className = '' }: { size?: number; className?: string }) {
+  return (
+    <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+      <path d="M3 3v5h5"/>
+      <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
+      <path d="M16 16h5v5"/>
+    </svg>
+  );
+}
+
+function UsersIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+      <circle cx="9" cy="7" r="4"/>
+      <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+      <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+    </svg>
+  );
+}
+
+function BookOpenIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+      <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+    </svg>
+  );
+}
+
+function BriefcaseIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+      <rect width="20" height="14" x="2" y="7" rx="2" ry="2"/>
+      <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+    </svg>
+  );
+}
+
+function LayoutGridIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+      <rect width="7" height="7" x="3" y="3" rx="1"/>
+      <rect width="7" height="7" x="14" y="3" rx="1"/>
+      <rect width="7" height="7" x="14" y="14" rx="1"/>
+      <rect width="7" height="7" x="3" y="14" rx="1"/>
+    </svg>
+  );
+}
+
+function HeartHandshakeIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+    </svg>
+  );
+}
+
+function ArrowRightIcon({ size = 14, className = '' }: { size?: number; className?: string }) {
+  return (
+    <svg width={size} height={size} className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 12h14"/>
+      <path d="m12 5 7 7-7 7"/>
+    </svg>
+  );
+}
+
+function BarChart3Icon({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="18" x2="18" y1="20" y2="10"/>
+      <line x1="12" x2="12" y1="20" y2="4"/>
+      <line x1="6" x2="6" y1="20" y2="14"/>
+    </svg>
+  );
+}
+
+function ZapIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+    </svg>
+  );
+}
+
+function TrendingUpIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
+      <polyline points="16 7 22 7 22 13"/>
+    </svg>
+  );
+}
+
+function MegaphoneIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+      <path d="m3 11 18-5v12L3 14v-3z"/>
+      <path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/>
+    </svg>
+  );
+}
+
+function CompassIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10"/>
+      <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>
+    </svg>
+  );
+}
+
+function ActivityIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+    </svg>
+  );
+}
+
+function InfoIcon({ size = 15 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10"/>
+      <line x1="12" x2="12" y1="16" y2="12"/>
+      <line x1="12" x2="12.01" y1="8" y2="8"/>
+    </svg>
+  );
+}
+
+function QrCodeIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect width="18" height="18" x="3" y="3" rx="2"/>
+      <rect width="5" height="5" x="7" y="7"/>
+      <rect width="5" height="5" x="12" y="12"/>
+    </svg>
+  );
+}
+
+function FileTextIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+      <polyline points="14 2 14 8 20 8"/>
+      <line x1="16" x2="8" y1="13" y2="13"/>
+      <line x1="16" x2="8" y1="17" y2="17"/>
+    </svg>
+  );
+}
+
+function BellIcon({ size = 14 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
+      <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+    </svg>
+  );
+}
+
+function SmartphoneIcon({ size = 14 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect width="14" height="20" x="5" y="2" rx="2" ry="2"/>
+      <path d="M12 18h.01"/>
+    </svg>
+  );
+}
+
+function ShieldCheckIcon({ size = 15 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      <path d="m9 12 2 2 4-4"/>
+    </svg>
+  );
+}
+
+/* ── Types & Interfaces ── */
 interface DashboardMetrics {
   total_students: number;
   active_students: number;
@@ -110,11 +321,11 @@ export default function DashboardPage() {
   const [currentDateTime, setCurrentDateTime] = useState<string>('');
 
   // School identity
-  const [schoolName, setSchoolName] = useState<string>('');
+  const [, setSchoolName] = useState<string>('');
   const [schoolNpsn, setSchoolNpsn] = useState<string>('');
   const [activeAcademicYear, setActiveAcademicYear] = useState<string>('2026/2027 (Semester Ganjil)');
 
-  // Dashboard Data State (100% Real from Database API, No Hardcoded Mock Data)
+  // Dashboard Data State (100% Real from Database API, No Mock Data)
   const [metrics, setMetrics] = useState<DashboardMetrics>({
     total_students: 0,
     active_students: 0,
@@ -181,7 +392,7 @@ export default function DashboardPage() {
         }
       }
     } catch (err) {
-      console.warn('Fallback: Using direct state or cache for real data:', err);
+      console.warn('Dashboard data fetch notification:', err);
     } finally {
       setIsLoading(false);
     }
@@ -207,7 +418,7 @@ export default function DashboardPage() {
       try {
         const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
         if (!token) return;
-        const res = await fetch('/api/v1/schools/profile', {
+        const res = await fetch(getApiUrl('/api/v1/schools/profile'), {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (res.ok) {
@@ -217,7 +428,7 @@ export default function DashboardPage() {
             if (json.data.npsn) setSchoolNpsn(json.data.npsn);
           }
         }
-      } catch (err) {}
+      } catch {}
     }
     fetchProfile();
 
@@ -238,7 +449,7 @@ export default function DashboardPage() {
       const dateStr = now.toLocaleDateString('id-ID', {
         weekday: 'long',
         day: 'numeric',
-        month: 'long',
+        month: 'short',
         year: 'numeric',
       });
       const timeStr = now.toLocaleTimeString('id-ID', {
@@ -272,13 +483,12 @@ export default function DashboardPage() {
   const maleItem = genderData.find(g => g.gender === 'L') || { count: 0, percentage: 0 };
   const femaleItem = genderData.find(g => g.gender === 'P') || { count: 0, percentage: 0 };
 
-  // Rombel derived stats (untuk redesign distribusi rombel)
+  // Rombel derived stats
   const sortedRombel = [...rombelList].sort((a, b) => (b.student_count || 0) - (a.student_count || 0));
   const totalRombelSiswa = sortedRombel.reduce((s, r) => s + (r.student_count || 0), 0);
   const avgRombel = sortedRombel.length ? Math.round(totalRombelSiswa / sortedRombel.length) : 0;
   const maxRombel = sortedRombel[0];
   const minRombel = sortedRombel.length ? sortedRombel[sortedRombel.length - 1] : undefined;
-  const maxRombelCount = Math.max(...rombelList.map((r) => r.student_count || 0), 1);
   const rombelKecil = sortedRombel.filter((r) => (r.student_count || 0) < 12).length;
 
   if (authLoading || isTeacher) {
@@ -287,196 +497,170 @@ export default function DashboardPage() {
 
   return (
     <div className={styles.page}>
-      {/* ── Sub-Bar: Live Clock, Status Badges & Refresh Trigger ── */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-          <span className="badge badge-purple" style={{ fontWeight: 800, padding: '0.35rem 0.65rem', fontSize: '0.8rem' }}>
-            NPSN: {schoolNpsn || '-'}
-          </span>
-          <span className="badge badge-active" style={{ fontWeight: 800, padding: '0.35rem 0.65rem', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
-            T.A {activeAcademicYear || '-'}
-          </span>
+      {/* ── Sub-Bar: Institutional Context, Live Clock & Manual Refresh ── */}
+      <div className={styles.subBar}>
+        <div className={styles.subBarLeft}>
+          <div className={styles.institutionBadge}>
+            <BuildingIcon size={14} />
+            <span>NPSN: {schoolNpsn || '-'}</span>
+          </div>
+
+          <div className={styles.taBadge}>
+            <GraduationCapIcon size={14} />
+            <span>T.A {activeAcademicYear || '-'}</span>
+          </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
-          {/* Segarkan Data Button */}
+        <div className={styles.subBarRight}>
           <button
             onClick={fetchDashboardData}
             className={styles.refreshBtn}
             title="Muat Ulang Data Real-Time"
           >
-            <svg width="14" height="14" className={isLoading ? styles.spinning : ''} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
+            <RefreshIcon size={14} className={isLoading ? styles.spinning : ''} />
             <span>{isLoading ? 'Memperbarui...' : 'Segarkan Data'}</span>
           </button>
 
-          {/* Live Real-Time Clock Badge */}
-          <div style={{
-            background: 'var(--bg-elevated)',
-            border: '1px solid var(--border-medium)',
-            borderRadius: '10px',
-            padding: '0.4rem 0.85rem',
-            fontSize: '0.78rem',
-            fontWeight: 700,
-            color: 'var(--text-primary)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            boxShadow: 'var(--shadow-sm)',
-          }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-            <span>{currentDateTime || 'Memuat waktu real-time...'}</span>
-            <span className="badge badge-active" style={{ fontSize: '0.65rem', padding: '0.1rem 0.4rem', fontWeight: 800 }}>
-              LIVE ●
+          <div className={styles.clockBadge}>
+            <CalendarIcon size={14} />
+            <span>{currentDateTime || 'Memuat waktu...'}</span>
+            <span className={styles.liveDotPulse}>
+              <span className={styles.pulsingDot} />
+              LIVE
             </span>
           </div>
         </div>
       </div>
 
-      {/* ── 1. Top Metrics Bar (5 Cards — Redesigned according to Screenshot 1) ── */}
+      {/* ── 1. Top Metrics Bar (5 Executive KPI Cards) ── */}
       <div className={styles.metricsGrid}>
         {/* Card 1: Siswa Aktif */}
         <div className={`${styles.metricCard} ${styles.cardBlue}`}>
-          <div className={styles.metricTop}>
+          <div className={styles.metricCardTop}>
             <div className={styles.metricInfo}>
-              <div className={styles.metricValue}>{metrics.total_students}</div>
-              <div className={styles.metricSubtitle}>{metrics.active_students} Aktif Terdaftar</div>
+              <span className={styles.metricLabel}>Peserta Didik</span>
+              <div className={styles.metricValue}>{metrics.total_students.toLocaleString('id-ID')}</div>
+              <div className={styles.metricSubtitle}>
+                <span className={styles.metricSubDot} />
+                <span>{metrics.active_students.toLocaleString('id-ID')} Aktif Terdaftar</span>
+              </div>
             </div>
-            <div className={styles.metricWatermark} aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
-                <path d="M6 12v5c3 3 9 3 12 0v-5" />
-              </svg>
+            <div className={styles.metricIconWrap}>
+              <UsersIcon size={20} />
             </div>
           </div>
-          <Link href="/dashboard/students" className={styles.metricBottom}>
-            <span>Peserta Didik (Siswa)</span>
-            <svg className={styles.metricArrow} viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
-            </svg>
+          <Link href="/dashboard/students" className={styles.metricFooter}>
+            <span>Direktori Peserta Didik</span>
+            <ArrowRightIcon className={styles.metricFooterArrow} size={14} />
           </Link>
         </div>
 
         {/* Card 2: Guru Pengajar */}
         <div className={`${styles.metricCard} ${styles.cardIndigo}`}>
-          <div className={styles.metricTop}>
+          <div className={styles.metricCardTop}>
             <div className={styles.metricInfo}>
-              <div className={styles.metricValue}>{metrics.total_teachers}</div>
-              <div className={styles.metricSubtitle}>{metrics.active_teachers} Aktif Mengajar</div>
+              <span className={styles.metricLabel}>Tenaga Pendidik</span>
+              <div className={styles.metricValue}>{metrics.total_teachers.toLocaleString('id-ID')}</div>
+              <div className={styles.metricSubtitle}>
+                <span className={styles.metricSubDot} />
+                <span>{metrics.active_teachers.toLocaleString('id-ID')} Aktif Mengajar</span>
+              </div>
             </div>
-            <div className={styles.metricWatermark} aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z" />
-                <path d="M6 6h10" />
-                <path d="M6 10h10" />
-                <path d="M9 18l3-3 3 3" />
-              </svg>
+            <div className={styles.metricIconWrap}>
+              <BookOpenIcon size={20} />
             </div>
           </div>
-          <Link href="/dashboard/teachers" className={styles.metricBottom}>
-            <span>Guru &amp; Pendidik</span>
-            <svg className={styles.metricArrow} viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
-            </svg>
+          <Link href="/dashboard/teachers" className={styles.metricFooter}>
+            <span>Direktori Guru &amp; Pendidik</span>
+            <ArrowRightIcon className={styles.metricFooterArrow} size={14} />
           </Link>
         </div>
 
         {/* Card 3: Tenaga Kependidikan */}
         <div className={`${styles.metricCard} ${styles.cardEmerald}`}>
-          <div className={styles.metricTop}>
+          <div className={styles.metricCardTop}>
             <div className={styles.metricInfo}>
-              <div className={styles.metricValue}>{metrics.total_tendik}</div>
-              <div className={styles.metricSubtitle}>Staf &amp; Tata Usaha Sekolah</div>
+              <span className={styles.metricLabel}>Tenaga Kependidikan</span>
+              <div className={styles.metricValue}>{metrics.total_tendik.toLocaleString('id-ID')}</div>
+              <div className={styles.metricSubtitle}>
+                <span className={styles.metricSubDot} />
+                <span>Staf &amp; Tata Usaha</span>
+              </div>
             </div>
-            <div className={styles.metricWatermark} aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <rect width="18" height="18" x="3" y="3" rx="2" />
-                <path d="M7 7h10" />
-                <path d="M7 12h10" />
-                <path d="M7 17h6" />
-              </svg>
+            <div className={styles.metricIconWrap}>
+              <BriefcaseIcon size={20} />
             </div>
           </div>
-          <Link href="/dashboard/tendik" className={styles.metricBottom}>
-            <span>Tenaga Kependidikan</span>
-            <svg className={styles.metricArrow} viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
-            </svg>
+          <Link href="/dashboard/staff" className={styles.metricFooter}>
+            <span>Kelola Tenaga Kependidikan</span>
+            <ArrowRightIcon className={styles.metricFooterArrow} size={14} />
           </Link>
         </div>
 
         {/* Card 4: Rombongan Belajar */}
         <div className={`${styles.metricCard} ${styles.cardAmber}`}>
-          <div className={styles.metricTop}>
+          <div className={styles.metricCardTop}>
             <div className={styles.metricInfo}>
-              <div className={styles.metricValue}>{metrics.total_classes}</div>
-              <div className={styles.metricSubtitle}>{metrics.active_classes} Rombel Kelas Aktif</div>
+              <span className={styles.metricLabel}>Rombongan Belajar</span>
+              <div className={styles.metricValue}>{metrics.total_classes.toLocaleString('id-ID')}</div>
+              <div className={styles.metricSubtitle}>
+                <span className={styles.metricSubDot} />
+                <span>{metrics.active_classes.toLocaleString('id-ID')} Rombel Aktif</span>
+              </div>
             </div>
-            <div className={styles.metricWatermark} aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M3 21h18" />
-                <path d="M5 21V7l7-4 7 4v14" />
-                <path d="M9 10h1" />
-                <path d="M9 14h1" />
-                <path d="M14 10h1" />
-                <path d="M14 14h1" />
-                <path d="M10 21v-4h4v4" />
-              </svg>
+            <div className={styles.metricIconWrap}>
+              <LayoutGridIcon size={20} />
             </div>
           </div>
-          <Link href="/dashboard/classes" className={styles.metricBottom}>
-            <span>Rombongan Belajar</span>
-            <svg className={styles.metricArrow} viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
-            </svg>
+          <Link href="/dashboard/classes" className={styles.metricFooter}>
+            <span>Kelola Rombongan Belajar</span>
+            <ArrowRightIcon className={styles.metricFooterArrow} size={14} />
           </Link>
         </div>
 
         {/* Card 5: Wali Murid */}
         <div className={`${styles.metricCard} ${styles.cardTeal}`}>
-          <div className={styles.metricTop}>
+          <div className={styles.metricCardTop}>
             <div className={styles.metricInfo}>
-              <div className={styles.metricValue}>{metrics.total_guardians}</div>
-              <div className={styles.metricSubtitle}>Kemitraan Orang Tua</div>
+              <span className={styles.metricLabel}>Kemitraan Wali</span>
+              <div className={styles.metricValue}>{metrics.total_guardians.toLocaleString('id-ID')}</div>
+              <div className={styles.metricSubtitle}>
+                <span className={styles.metricSubDot} />
+                <span>Orang Tua Terhubung</span>
+              </div>
             </div>
-            <div className={styles.metricWatermark} aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                <circle cx="9" cy="7" r="4" />
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-              </svg>
+            <div className={styles.metricIconWrap}>
+              <HeartHandshakeIcon size={20} />
             </div>
           </div>
-          <Link href="/dashboard/students/qr-scan" className={styles.metricBottom}>
-            <span>Wali Murid Siswa</span>
-            <svg className={styles.metricArrow} viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
-            </svg>
+          <Link href="/dashboard/guardians" className={styles.metricFooter}>
+            <span>Kemitraan Wali Murid</span>
+            <ArrowRightIcon className={styles.metricFooterArrow} size={14} />
           </Link>
         </div>
       </div>
 
       {/* ── 2. Row 1: Demografi & Ekosistem Digital Multi-Platform ── */}
       <div className={styles.rowOneGrid}>
-        {/* Card 1: Sebaran Jenjang Pendidikan Kesetaraan (Infografis) */}
+        {/* Card 1: Sebaran Jenjang Siswa */}
         <div className={styles.card}>
           <div className={styles.cardHeader}>
             <h2 className={styles.cardTitle}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/></svg>
+              <span className={styles.cardTitleIcon}><BarChart3Icon size={18} /></span>
               <span>Sebaran Jenjang Siswa</span>
             </h2>
             <span className={styles.cardBadge}>Total {metrics.total_students} Siswa</span>
           </div>
 
-          {/* ── Chart: Sebaran Jenjang (Horizontal Bar) ── */}
           {jenjangData.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
-              {isLoading ? 'Memuat data jenjang...' : 'Belum ada data sebaran jenjang'}
+            <div className={styles.emptyState}>
+              <span className={styles.emptyStateText}>
+                {isLoading ? 'Memuat data sebaran jenjang...' : 'Belum ada data sebaran jenjang'}
+              </span>
             </div>
           ) : (
             <div style={{ width: '100%' }}>
-              <ResponsiveContainer width="100%" height={jenjangData.length * 64 + 24}>
+              <ResponsiveContainer width="100%" height={jenjangData.length * 64 + 20}>
                 <BarChart
                   layout="vertical"
                   data={jenjangData.map((item, idx) => ({
@@ -505,9 +689,13 @@ export default function DashboardPage() {
                       const d = payload[0]?.payload;
                       return (
                         <div style={{
-                          background: 'var(--bg-card)', border: '1px solid var(--border-light)',
-                          borderRadius: 8, padding: '8px 12px', fontSize: 11,
-                          boxShadow: 'var(--shadow-md)', color: 'var(--text-primary)'
+                          background: 'var(--bg-card)',
+                          border: '1px solid var(--border-medium)',
+                          borderRadius: 8,
+                          padding: '8px 12px',
+                          fontSize: 11,
+                          boxShadow: 'var(--shadow-md)',
+                          color: 'var(--text-primary)',
                         }}>
                           <div style={{ fontWeight: 700, marginBottom: 4 }}>{d?.name}</div>
                           <div>{d?.siswa} Siswa ({d?.persen}%)</div>
@@ -523,45 +711,49 @@ export default function DashboardPage() {
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
-              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginTop: '0.25rem', paddingLeft: 8, fontSize: '0.68rem', color: 'var(--text-muted)' }}>
+
+              <div className={styles.jenjangLegendStrip}>
                 {jenjangData.map((item, idx) => (
-                  <span key={idx} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <span style={{ width: 8, height: 8, borderRadius: 2, background: idx === 0 ? '#3b82f6' : idx === 1 ? '#10b981' : '#f59e0b', display: 'inline-block' }} />
-                    {item.class_count} Rombel
-                  </span>
+                  <div key={idx} className={styles.jenjangLegendItem}>
+                    <span className={styles.jenjangDot} style={{ background: idx === 0 ? '#3b82f6' : idx === 1 ? '#10b981' : '#f59e0b' }} />
+                    <span>{item.class_count} Rombel</span>
+                  </div>
                 ))}
-                <span style={{ marginLeft: 'auto' }}>T.A {activeAcademicYear.split(' ')[0]}</span>
+                <span style={{ marginLeft: 'auto', color: 'var(--text-muted)' }}>
+                  T.A {activeAcademicYear.split(' ')[0]}
+                </span>
               </div>
             </div>
           )}
 
-          <div style={{ paddingTop: '0.4rem', borderTop: '1px solid var(--border-light)', marginTop: 'auto' }}>
+          <div className={styles.cardFooterLink}>
             <Link href="/dashboard/classes" className={styles.linkMore}>
               <span>Lihat Detail Semua Rombel ({metrics.total_classes})</span>
-              <span>→</span>
+              <ArrowRightIcon size={12} />
             </Link>
           </div>
         </div>
 
-        {/* Card 2: Komposisi Gender & Rasio Siswa (Redesigned Padat & Compact) */}
+        {/* Card 2: Komposisi Gender Siswa */}
         <div className={styles.card}>
           <div className={styles.cardHeader}>
             <h2 className={styles.cardTitle}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              <span className={styles.cardTitleIcon}><UsersIcon size={18} /></span>
               <span>Komposisi Gender Siswa</span>
             </h2>
-            <span className={styles.cardBadge}>Realitas Sekolah</span>
+            <span className={styles.cardBadge}>Demografi Sekolah</span>
           </div>
 
           {genderData.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
-              {isLoading ? 'Memuat data gender...' : 'Belum ada data gender'}
+            <div className={styles.emptyState}>
+              <span className={styles.emptyStateText}>
+                {isLoading ? 'Memuat data gender...' : 'Belum ada data gender'}
+              </span>
             </div>
           ) : (
             <div className={styles.genderCardCompact}>
-              {/* 1. Top Row: Donut Chart & Dual-Bar Legend */}
+              {/* Donut Chart & Dual-Bar */}
               <div className={styles.genderTopRow}>
-                {/* Donut chart */}
                 <div className={styles.genderChartWrap}>
                   <ResponsiveContainer width={110} height={110}>
                     <PieChart>
@@ -587,9 +779,13 @@ export default function DashboardPage() {
                           const pct = total ? ((Number(d.value) / total) * 100).toFixed(1) : '0';
                           return (
                             <div style={{
-                              background: 'var(--bg-card)', border: '1px solid var(--border-light)',
-                              borderRadius: 8, padding: '6px 10px', fontSize: 11,
-                              boxShadow: 'var(--shadow-md)', color: 'var(--text-primary)'
+                              background: 'var(--bg-card)',
+                              border: '1px solid var(--border-medium)',
+                              borderRadius: 8,
+                              padding: '6px 10px',
+                              fontSize: 11,
+                              boxShadow: 'var(--shadow-md)',
+                              color: 'var(--text-primary)',
                             }}>
                               <b>{d.name}</b>: {d.value} ({pct}%)
                             </div>
@@ -598,7 +794,6 @@ export default function DashboardPage() {
                       />
                     </PieChart>
                   </ResponsiveContainer>
-                  {/* Center label */}
                   <div className={styles.genderCenterLabel}>
                     <div className={styles.genderCenterCount}>
                       {(maleItem.count || 0) + (femaleItem.count || 0)}
@@ -607,9 +802,7 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
-                {/* Legend bars */}
                 <div className={styles.genderLegendWrap}>
-                  {/* Male */}
                   <div className={styles.genderRowItem}>
                     <div className={styles.genderItemHead}>
                       <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--text-primary)' }}>
@@ -623,7 +816,6 @@ export default function DashboardPage() {
                     </div>
                   </div>
 
-                  {/* Female */}
                   <div className={styles.genderRowItem}>
                     <div className={styles.genderItemHead}>
                       <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--text-primary)' }}>
@@ -639,7 +831,7 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              {/* 2. Middle Row: 3-Column Compact KPI Metrics (Padat & Informatif) */}
+              {/* 3-Column Compact KPI Strip */}
               <div className={styles.genderKpiGrid}>
                 <div className={styles.genderKpiItem}>
                   <span className={styles.genderKpiLabel}>Rasio Gender</span>
@@ -652,19 +844,19 @@ export default function DashboardPage() {
                   <span className={styles.genderKpiLabel}>Siswa Aktif</span>
                   <div className={styles.genderKpiVal}>
                     <span>{metrics.active_students}</span>
-                    <span className={styles.genderKpiSub} style={{ color: '#10b981' }}>● 99.7%</span>
+                    <span className={styles.genderKpiSub} style={{ color: '#10b981' }}>Aktif</span>
                   </div>
                 </div>
                 <div className={styles.genderKpiItem}>
                   <span className={styles.genderKpiLabel}>Mutasi / Keluar</span>
                   <div className={styles.genderKpiVal}>
                     <span>{metrics.transferred_students}</span>
-                    <span className={styles.genderKpiSub}>Nir-Mutasi</span>
+                    <span className={styles.genderKpiSub}>Siswa</span>
                   </div>
                 </div>
               </div>
 
-              {/* 3. Lower Row: Continuous Dual Demographic Distribution Strip */}
+              {/* Continuous Dual Segment Strip */}
               <div className={styles.genderRatioBar}>
                 <div className={styles.genderSegmentTrack}>
                   <div className={styles.segmentMale} style={{ width: `${maleItem.percentage}%` }} title={`Putra: ${maleItem.count}`} />
@@ -672,53 +864,53 @@ export default function DashboardPage() {
                 </div>
                 <div className={styles.genderSegmentLabels}>
                   <span>Putra: {maleItem.count} Siswa</span>
-                  <span style={{ color: 'var(--text-muted)' }}>Sinkron Buku Induk</span>
+                  <span style={{ color: 'var(--text-muted)' }}>Buku Induk</span>
                   <span>Putri: {femaleItem.count} Siswa</span>
                 </div>
               </div>
             </div>
           )}
 
-          <div style={{ paddingTop: '0.4rem', borderTop: '1px solid var(--border-light)', marginTop: 'auto' }}>
+          <div className={styles.cardFooterLink}>
             <Link href="/dashboard/students" className={styles.linkMore}>
               <span>Buka Database Siswa Lengkap</span>
-              <span>→</span>
+              <ArrowRightIcon size={12} />
             </Link>
           </div>
         </div>
 
-        {/* Card 3: Telemetri Ekosistem Digital Multi-Platform (Redesigned Padat & Compact) */}
+        {/* Card 3: Telemetri Ekosistem Digital Multi-Platform */}
         <div className={styles.card}>
           <div className={styles.cardHeader}>
             <h2 className={styles.cardTitle}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-              <span>Ekosistem Digital Multi-Platform</span>
+              <span className={styles.cardTitleIcon}><ZapIcon size={18} /></span>
+              <span>Ekosistem Digital Terpadu</span>
             </h2>
-            <span className="badge badge-active" style={{ fontSize: '0.62rem', padding: '0.12rem 0.45rem', fontWeight: 800 }}>
-              AKTIF
+            <span className={styles.liveDotPulse}>
+              <span className={styles.pulsingDot} />
+              ONLINE
             </span>
           </div>
 
-          {/* 4 Interactive Compact Tiles */}
           <div className={styles.ecosystemGridCompact}>
             <Link href="/dashboard/students/qr-scan" className={styles.ecoTileCompact}>
               <div className={styles.ecoTileTopCompact}>
                 <span className={styles.ecoIconCompact} style={{ background: 'rgba(16, 185, 129, 0.12)', color: '#059669' }}>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><rect width="5" height="5" x="7" y="7"/><rect width="5" height="5" x="12" y="12"/></svg>
+                  <QrCodeIcon size={15} />
                 </span>
                 <span className={styles.ecoTagCompact} style={{ background: 'rgba(16, 185, 129, 0.12)', color: '#059669', border: '1px solid rgba(16, 185, 129, 0.25)' }}>
                   ONLINE
                 </span>
               </div>
               <div className={styles.ecoValCompact}>{metrics.active_qr_tokens}</div>
-              <div className={styles.ecoLabelCompact}>Token QR Login</div>
+              <div className={styles.ecoLabelCompact}>Token QR Presensi</div>
               <div className={styles.ecoSubCompact}>Auth Siswa &amp; Guru</div>
             </Link>
 
             <Link href="/dashboard/learning/materials" className={styles.ecoTileCompact}>
               <div className={styles.ecoTileTopCompact}>
                 <span className={styles.ecoIconCompact} style={{ background: 'rgba(59, 130, 246, 0.12)', color: '#2563eb' }}>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/></svg>
+                  <BookOpenIcon size={15} />
                 </span>
                 <span className={styles.ecoTagCompact} style={{ background: 'rgba(59, 130, 246, 0.12)', color: '#2563eb', border: '1px solid rgba(59, 130, 246, 0.25)' }}>
                   LMS
@@ -732,7 +924,7 @@ export default function DashboardPage() {
             <Link href="/dashboard/learning/quizzes" className={styles.ecoTileCompact}>
               <div className={styles.ecoTileTopCompact}>
                 <span className={styles.ecoIconCompact} style={{ background: 'rgba(147, 51, 234, 0.12)', color: '#9333ea' }}>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg>
+                  <FileTextIcon size={15} />
                 </span>
                 <span className={styles.ecoTagCompact} style={{ background: 'rgba(147, 51, 234, 0.12)', color: '#9333ea', border: '1px solid rgba(147, 51, 234, 0.25)' }}>
                   CBT
@@ -740,13 +932,13 @@ export default function DashboardPage() {
               </div>
               <div className={styles.ecoValCompact}>{metrics.total_quizzes}</div>
               <div className={styles.ecoLabelCompact}>Ujian CBT &amp; Kuis</div>
-              <div className={styles.ecoSubCompact}>{metrics.total_assignments || 0} Tugas · Evaluasi</div>
+              <div className={styles.ecoSubCompact}>{metrics.total_assignments || 0} Tugas Aktif</div>
             </Link>
 
             <Link href="/dashboard/dapodik" className={styles.ecoTileCompact}>
               <div className={styles.ecoTileTopCompact}>
                 <span className={styles.ecoIconCompact} style={{ background: 'rgba(245, 158, 11, 0.12)', color: '#d97706' }}>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
+                  <RefreshIcon size={15} />
                 </span>
                 <span className={styles.ecoTagCompact} style={{ background: 'rgba(245, 158, 11, 0.12)', color: '#d97706', border: '1px solid rgba(245, 158, 11, 0.25)' }}>
                   SYNC
@@ -758,26 +950,28 @@ export default function DashboardPage() {
             </Link>
           </div>
 
-          {/* Telemetry Service Status Ribbon */}
           <div className={styles.ecoTelemetryStrip}>
             <div className={styles.telemetryItem}>
               <span className={styles.telemetryDot} />
               <span>Core API: 99.98%</span>
             </div>
             <div className={styles.telemetryItem}>
-              <span>🔔 {metrics.total_notifications.toLocaleString('id-ID')} Notif</span>
+              <BellIcon size={13} />
+              <span>{metrics.total_notifications.toLocaleString('id-ID')} Notif</span>
             </div>
             <div className={styles.telemetryItem}>
-              <span>📱 Mobile Siap</span>
+              <SmartphoneIcon size={13} />
+              <span>Mobile Siap</span>
             </div>
           </div>
 
-          <div style={{ paddingTop: '0.4rem', borderTop: '1px solid var(--border-light)', marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
-              Telemetri Layanan Terpadu
+          <div className={styles.cardFooterLink}>
+            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+              Telemetri Sistem Terpadu
             </span>
             <Link href="/dashboard/activity-logs" className={styles.linkMore}>
-              <span>Data Hub →</span>
+              <span>Audit Trail</span>
+              <ArrowRightIcon size={12} />
             </Link>
           </div>
         </div>
@@ -785,22 +979,24 @@ export default function DashboardPage() {
 
       {/* ── 3. Row 2: Kinerja Akademik, Pengumuman & Aksi Cepat ── */}
       <div className={styles.rowTwoGrid}>
-        {/* Card 1: Kualitas Akademik per Mata Pelajaran */}
+        {/* Card 1: Mutu Akademik per Mata Pelajaran */}
         <div className={styles.card}>
           <div className={styles.cardHeader}>
             <h2 className={styles.cardTitle}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-              <span>Kualitas Akademik per Mata Pelajaran</span>
+              <span className={styles.cardTitleIcon}><TrendingUpIcon size={18} /></span>
+              <span>Kualitas Akademik Mata Pelajaran</span>
             </h2>
             <span className={styles.cardBadge}>
-              {academicList.length > 0 ? `${academicList.length} Mata Pelajaran` : 'Belum Ada Penilaian'}
+              {academicList.length > 0 ? `${academicList.length} Mapel` : 'Belum Ada'}
             </span>
           </div>
 
           <div className={styles.academicList}>
             {academicList.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
-                {isLoading ? 'Memuat data akademik...' : 'Belum ada data nilai akademik'}
+              <div className={styles.emptyState}>
+                <span className={styles.emptyStateText}>
+                  {isLoading ? 'Memuat data akademik...' : 'Belum ada data nilai akademik'}
+                </span>
               </div>
             ) : (
               academicList.slice(0, 4).map((sub, idx) => {
@@ -828,28 +1024,33 @@ export default function DashboardPage() {
             )}
           </div>
 
-          <div style={{ paddingTop: '0.4rem', borderTop: '1px solid var(--border-light)', marginTop: 'auto' }}>
+          <div className={styles.cardFooterLink}>
             <Link href="/dashboard/grading/final-grades" className={styles.linkMore}>
               <span>Buka Buku Nilai &amp; e-Rapor Siswa</span>
-              <span>→</span>
+              <ArrowRightIcon size={12} />
             </Link>
           </div>
         </div>
 
-        {/* Card 2: Pusat Peringatan & Pengumuman Resmi Real-Time */}
+        {/* Card 2: Pusat Peringatan & Pengumuman Resmi */}
         <div className={styles.card}>
           <div className={styles.cardHeader}>
             <h2 className={styles.cardTitle}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-              <span>Papan Pengumuman &amp; Peringatan Resmi</span>
+              <span className={styles.cardTitleIcon}><MegaphoneIcon size={18} /></span>
+              <span>Papan Pengumuman &amp; Maklumat</span>
             </h2>
-            <Link href="/dashboard/announcements" className={styles.linkMore}>Lihat Semua</Link>
+            <Link href="/dashboard/announcements" className={styles.linkMore}>
+              <span>Lihat Semua</span>
+              <ArrowRightIcon size={12} />
+            </Link>
           </div>
 
           <div className={styles.announcementList}>
             {announcements.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
-                {isLoading ? 'Memuat pengumuman...' : 'Belum ada pengumuman resmi'}
+              <div className={styles.emptyState}>
+                <span className={styles.emptyStateText}>
+                  {isLoading ? 'Memuat pengumuman...' : 'Belum ada pengumuman resmi'}
+                </span>
               </div>
             ) : (
               announcements.slice(0, 3).map((ann) => {
@@ -858,8 +1059,8 @@ export default function DashboardPage() {
                   <div key={ann.id} className={styles.announcementCard}>
                     <div className={styles.annTop}>
                       <div className={styles.annTitleRow}>
-                        <span style={{ width: 8, height: 8, borderRadius: '50%', background: isPenting ? '#dc2626' : '#2563eb', display: 'inline-block' }} />
-                        <span>{ann.title}</span>
+                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: isPenting ? '#dc2626' : '#2563eb', flexShrink: 0 }} />
+                        <span title={ann.title}>{ann.title}</span>
                       </div>
                       <span className={`${styles.catBadge} ${isPenting ? styles.catPenting : styles.catAkademik}`}>
                         {ann.category}
@@ -872,7 +1073,7 @@ export default function DashboardPage() {
 
                     <div className={styles.annMeta}>
                       <span>{ann.author}</span>
-                      <span>•</span>
+                      <span>·</span>
                       <span>{formatDate(ann.created_at)}</span>
                     </div>
                   </div>
@@ -881,10 +1082,10 @@ export default function DashboardPage() {
             )}
           </div>
 
-          <div style={{ paddingTop: '0.4rem', borderTop: '1px solid var(--border-light)', marginTop: 'auto' }}>
+          <div className={styles.cardFooterLink}>
             <Link href="/dashboard/announcements" className={styles.linkMore}>
               <span>Kelola Pengumuman Sekolah</span>
-              <span>→</span>
+              <ArrowRightIcon size={12} />
             </Link>
           </div>
         </div>
@@ -893,7 +1094,7 @@ export default function DashboardPage() {
         <div className={styles.card}>
           <div className={styles.cardHeader}>
             <h2 className={styles.cardTitle}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <span className={styles.cardTitleIcon}><CompassIcon size={18} /></span>
               <span>Aksi Cepat</span>
             </h2>
             <span className={styles.cardBadge}>Menu Utama</span>
@@ -902,57 +1103,57 @@ export default function DashboardPage() {
           <div className={styles.quickActionsGrid}>
             <Link href="/dashboard/announcements" className={styles.actionSquare}>
               <span className={styles.actionIcon}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                <MegaphoneIcon size={18} />
               </span>
-              <span>Buat Pengumuman</span>
+              <span className={styles.actionLabel}>Buat Pengumuman</span>
               <span className={styles.actionCountBadge}>{announcements.length} Aktif</span>
             </Link>
 
             <Link href="/dashboard/reports/cards" className={styles.actionSquare}>
               <span className={styles.actionIcon}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/></svg>
+                <FileTextIcon size={18} />
               </span>
-              <span>e-Rapor Siswa</span>
+              <span className={styles.actionLabel}>e-Rapor Siswa</span>
               <span className={styles.actionCountBadge}>{metrics.total_classes} Kelas</span>
             </Link>
 
             <Link href="/dashboard/students/qr-scan" className={styles.actionSquare}>
               <span className={styles.actionIcon}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><rect width="5" height="5" x="7" y="7"/><rect width="5" height="5" x="12" y="12"/></svg>
+                <QrCodeIcon size={18} />
               </span>
-              <span>Kartu QR Siswa</span>
+              <span className={styles.actionLabel}>Kartu QR Siswa</span>
               <span className={styles.actionCountBadge}>{metrics.active_qr_tokens} Kartu</span>
             </Link>
 
             <Link href="/dashboard/teachers" className={styles.actionSquare}>
               <span className={styles.actionIcon}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>
+                <BookOpenIcon size={18} />
               </span>
-              <span>Kelola Guru</span>
+              <span className={styles.actionLabel}>Kelola Guru</span>
               <span className={styles.actionCountBadge}>{metrics.total_teachers} Guru</span>
             </Link>
 
             <Link href="/dashboard/students" className={styles.actionSquare}>
               <span className={styles.actionIcon}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                <UsersIcon size={18} />
               </span>
-              <span>Kelola Siswa</span>
+              <span className={styles.actionLabel}>Kelola Siswa</span>
               <span className={styles.actionCountBadge}>{metrics.total_students} Siswa</span>
             </Link>
 
             <Link href="/dashboard/dapodik" className={styles.actionSquare}>
               <span className={styles.actionIcon}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
+                <RefreshIcon size={18} />
               </span>
-              <span>Dapodik Hub</span>
+              <span className={styles.actionLabel}>Dapodik Hub</span>
               <span className={styles.actionCountBadge}>{metrics.dapodik_sync_records} Data</span>
             </Link>
           </div>
 
-          <div style={{ paddingTop: '0.4rem', borderTop: '1px solid var(--border-light)', marginTop: 'auto' }}>
+          <div className={styles.cardFooterLink}>
             <Link href="/dashboard/learning" className={styles.linkMore}>
               <span>Workspace Pembelajaran LMS</span>
-              <span>→</span>
+              <ArrowRightIcon size={12} />
             </Link>
           </div>
         </div>
@@ -960,42 +1161,44 @@ export default function DashboardPage() {
 
       {/* ── 4. Row 3: Kapasitas Siswa per Rombel & Live Activity Log ── */}
       <div className={styles.rowThreeGrid}>
-        {/* Card 1: Distribusi Siswa per Rombel — Redesigned */}
+        {/* Card 1: Distribusi Siswa per Rombel */}
         <div className={styles.card}>
           <div className={styles.cardHeader}>
             <h2 className={styles.cardTitle}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M10 21v-4h4v4"/></svg>
+              <span className={styles.cardTitleIcon}><LayoutGridIcon size={18} /></span>
               <span>Distribusi Siswa per Rombel</span>
             </h2>
             <span className={styles.cardBadge}>
-              {metrics.active_classes > 0 ? `${metrics.active_classes} Rombel Aktif` : 'Belum Ada Rombel'}
+              {metrics.active_classes > 0 ? `${metrics.active_classes} Rombel Aktif` : 'Belum Ada'}
             </span>
           </div>
 
-          {/* Summary strip — hilangkan ruang kosong */}
           <div className={styles.rombelSummary}>
             <div className={styles.rombelSummaryItem}>
-              <span className={styles.rombelSummaryLabel}>Total</span>
+              <span className={styles.rombelSummaryLabel}>Total Siswa</span>
               <span className={styles.rombelSummaryValue}>{totalRombelSiswa.toLocaleString('id-ID')}</span>
             </div>
             <div className={styles.rombelSummaryItem}>
-              <span className={styles.rombelSummaryLabel}>Rata-rata</span>
+              <span className={styles.rombelSummaryLabel}>Rata-Rata</span>
               <span className={styles.rombelSummaryValue}>{avgRombel}<small>/rombel</small></span>
             </div>
             <div className={styles.rombelSummaryItem}>
               <span className={styles.rombelSummaryLabel}>Terpadat</span>
-              <span className={styles.rombelSummaryValueSm}>{maxRombel ? `${maxRombel.name} · ${maxRombel.student_count}` : '-'}</span>
+              <span className={styles.rombelSummaryValueSm}>{maxRombel ? `${maxRombel.name} (${maxRombel.student_count})` : '-'}</span>
             </div>
             <div className={styles.rombelSummaryItem}>
-              <span className={styles.rombelSummaryLabel}>💡 &lt;12 siswa</span>
+              <span className={styles.rombelSummaryLabel}>
+                <InfoIcon size={12} /> &lt;12 Siswa
+              </span>
               <span className={styles.rombelSummaryValue}>{rombelKecil}<small> rombel</small></span>
             </div>
           </div>
 
-          {/* ── Chart: Distribusi Rombel (Vertical Bar) ── */}
           {rombelList.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
-              {isLoading ? 'Memuat rombel...' : 'Belum ada data rombel'}
+            <div className={styles.emptyState}>
+              <span className={styles.emptyStateText}>
+                {isLoading ? 'Memuat rombel...' : 'Belum ada data rombel'}
+              </span>
             </div>
           ) : (
             <ResponsiveContainer width="100%" height={Math.min(sortedRombel.length * 28 + 80, 320)}>
@@ -1008,7 +1211,7 @@ export default function DashboardPage() {
                     color: nm.includes('PAKET C') ? '#6366f1' : nm.includes('PAKET B') ? '#3b82f6' : '#10b981',
                   };
                 })}
-                margin={{ top: 4, right: 8, left: -24, bottom: 60 }}
+                margin={{ top: 8, right: 8, left: -24, bottom: 60 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" vertical={false} />
                 <XAxis
@@ -1034,13 +1237,17 @@ export default function DashboardPage() {
                     const share = totalRombelSiswa ? ((d.siswa / totalRombelSiswa) * 100).toFixed(1) : '0';
                     return (
                       <div style={{
-                        background: 'var(--bg-card)', border: '1px solid var(--border-light)',
-                        borderRadius: 8, padding: '8px 12px', fontSize: 11,
-                        boxShadow: 'var(--shadow-md)', color: 'var(--text-primary)'
+                        background: 'var(--bg-card)',
+                        border: '1px solid var(--border-medium)',
+                        borderRadius: 8,
+                        padding: '8px 12px',
+                        fontSize: 11,
+                        boxShadow: 'var(--shadow-md)',
+                        color: 'var(--text-primary)',
                       }}>
                         <div style={{ fontWeight: 700, marginBottom: 3 }}>{d.name}</div>
-                        <div>🎓 {d.siswa} Siswa</div>
-                        <div>📊 {share}% dari total</div>
+                        <div>{d.siswa} Siswa</div>
+                        <div>{share}% dari total kapasitas</div>
                       </div>
                     );
                   }}
@@ -1058,15 +1265,15 @@ export default function DashboardPage() {
 
           {rombelList.length > 0 && (
             <div className={styles.rombelInsight}>
-              <span>✨</span>
-              <span><b>{maxRombel?.name} ({maxRombel?.student_count})</b> terpadat · <b>{minRombel?.name} ({minRombel?.student_count})</b> tersedikit{rombelKecil > 0 ? ` · ${rombelKecil} rombel <12 siswa perlu merger/PPDB.` : ' · distribusi merata.'}</span>
+              <InfoIcon size={14} />
+              <span><b>{maxRombel?.name} ({maxRombel?.student_count})</b> terpadat · <b>{minRombel?.name} ({minRombel?.student_count})</b> tersedikit{rombelKecil > 0 ? ` · ${rombelKecil} rombel <12 siswa perlu perhatian regulasi Kemendikbud.` : ' · distribusi kapasitas optimal.'}</span>
             </div>
           )}
 
           <div className={styles.rombelFoot}>
             <Link href="/dashboard/classes" className={styles.linkMore}>
               <span>Kelola Seluruh {metrics.total_classes} Rombel Belajar</span>
-              <span>→</span>
+              <ArrowRightIcon size={12} />
             </Link>
           </div>
         </div>
@@ -1075,32 +1282,46 @@ export default function DashboardPage() {
         <div className={styles.card}>
           <div className={styles.cardHeader}>
             <h2 className={styles.cardTitle}>
-              <span>🛰️</span>
+              <span className={styles.cardTitleIcon}><ActivityIcon size={18} /></span>
               <span>Linimasa Aktivitas &amp; Log Sistem</span>
             </h2>
-            <Link href="/dashboard/activity-logs" className={styles.linkMore}>Lihat Semua</Link>
+            <Link href="/dashboard/activity-logs" className={styles.linkMore}>
+              <span>Lihat Semua</span>
+              <ArrowRightIcon size={12} />
+            </Link>
           </div>
 
           <div className={styles.activityTimeline}>
             {recentActivities.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
-                {isLoading ? 'Memuat linimasa aktivitas...' : 'Belum ada aktivitas tercatat'}
+              <div className={styles.emptyState}>
+                <span className={styles.emptyStateText}>
+                  {isLoading ? 'Memuat linimasa aktivitas...' : 'Belum ada aktivitas tercatat'}
+                </span>
               </div>
             ) : (
               recentActivities.map((act, index) => {
-                const iconColor = index === 0 ? styles.actIconPurple : index === 1 ? styles.actIconGreen : styles.actIconBlue;
-                const iconSymbol = index === 0 ? '📜' : index === 1 ? '🔄' : index === 2 ? '📢' : '🔑';
+                const iconColor = index === 0 ? styles.actIconPurple : index === 1 ? styles.actIconGreen : index === 2 ? styles.actIconBlue : styles.actIconAmber;
                 return (
                   <div key={act.id || index} className={styles.activityCard}>
                     <div className={`${styles.actBadgeIcon} ${iconColor}`}>
-                      {iconSymbol}
+                      {index === 0 ? (
+                        <FileTextIcon size={14} />
+                      ) : index === 1 ? (
+                        <RefreshIcon size={14} />
+                      ) : index === 2 ? (
+                        <MegaphoneIcon size={14} />
+                      ) : (
+                        <ShieldCheckIcon size={14} />
+                      )}
                     </div>
                     <div className={styles.actBody}>
                       <div className={styles.actTitle}>{act.action}</div>
                       <div className={styles.actDetail}>{act.reason || act.resource}</div>
                       <div className={styles.actMetaRow}>
-                        <span className={styles.platformPill}>{act.decision === 'Allowed' ? 'SUCCESS' : 'SYSTEM'}</span>
-                        <span>🗓️ {formatDate(act.created_at)}</span>
+                        <span className={styles.platformPill}>
+                          {act.decision === 'Allowed' ? 'SUCCESS' : 'SYSTEM'}
+                        </span>
+                        <span>{formatDate(act.created_at)}</span>
                       </div>
                     </div>
                   </div>
@@ -1109,10 +1330,10 @@ export default function DashboardPage() {
             )}
           </div>
 
-          <div style={{ paddingTop: '0.4rem', borderTop: '1px solid var(--border-light)', marginTop: 'auto' }}>
+          <div className={styles.cardFooterLink}>
             <Link href="/dashboard/activity-logs" className={styles.linkMore}>
-              <span>Audit Trail Lengkap Multi-Platform</span>
-              <span>→</span>
+              <span>Audit Trail Lengkap Platform</span>
+              <ArrowRightIcon size={12} />
             </Link>
           </div>
         </div>

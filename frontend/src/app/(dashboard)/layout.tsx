@@ -819,14 +819,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               {pathname === '/dashboard' ? (
                 <>
                   <h1 className={styles.greetingTitle} title={`Selamat datang, ${user?.full_name || user?.email || 'Admin'}`}>
-                    Selamat datang, {user?.full_name || user?.email || 'Admin'} 👋
+                    Selamat datang, {user?.full_name || user?.email || 'Admin'}
                   </h1>
                   <span className={styles.greetingSub}>Dashboard ringkasan — pantau kinerja sekolah hari ini</span>
                 </>
               ) : pathname === '/dashboard/teacher' ? (
                 <>
                   <h1 className={styles.greetingTitle} title={`Selamat datang, ${user?.full_name || user?.email || 'Bapak/Ibu Guru'}`}>
-                    Selamat datang, {user?.full_name || user?.email || 'Bapak/Ibu Guru'} 👨‍🏫
+                    Selamat datang, {user?.full_name || user?.email || 'Bapak/Ibu Guru'}
                   </h1>
                   <span className={styles.greetingSub}>Teacher Workstation — pusat kelola aktivitas mengajar &amp; penilaian</span>
                 </>
@@ -905,7 +905,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     <div className={styles.notifList}>
                       {notifications.length === 0 ? (
                         <div style={{ padding: '2rem 1.25rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                          <div style={{ fontSize: '1.6rem', marginBottom: '0.4rem' }}>🔔</div>
+                          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.6rem', color: 'var(--text-muted)' }}>
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+                              <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+                            </svg>
+                          </div>
                           <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-primary)' }}>
                             Belum Ada Notifikasi Baru
                           </div>
@@ -928,8 +933,29 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                               }}
                               onClick={() => handleNotificationClick(n)}
                             >
-                              <div className={styles.notifIconCircle} style={{ background: visual.bg }}>
-                                {visual.icon}
+                              <div className={styles.notifIconCircle} style={{ background: visual.bg, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                {(() => {
+                                  const t = `${n.notification_type || ''} ${n.title || ''}`.toLowerCase();
+                                  if (t.includes('dapodik') || t.includes('sinkron')) {
+                                    return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0284c7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>;
+                                  }
+                                  if (t.includes('presensi') || t.includes('scan') || t.includes('qr') || t.includes('attendance')) {
+                                    return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><rect width="5" height="5" x="7" y="7"/><rect width="5" height="5" x="12" y="12"/></svg>;
+                                  }
+                                  if (t.includes('quiz') || t.includes('cbt') || t.includes('ujian') || t.includes('tugas')) {
+                                    return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/></svg>;
+                                  }
+                                  if (t.includes('warning') || t.includes('peringatan') || t.includes('remedial')) {
+                                    return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>;
+                                  }
+                                  if (t.includes('announcement') || t.includes('pengumuman')) {
+                                    return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>;
+                                  }
+                                  if (t.includes('grade') || t.includes('rapor') || t.includes('nilai')) {
+                                    return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>;
+                                  }
+                                  return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>;
+                                })()}
                               </div>
                               <div className={styles.notifContent}>
                                 <span className={styles.notifText} style={{ fontWeight: n.is_read ? 600 : 700 }}>

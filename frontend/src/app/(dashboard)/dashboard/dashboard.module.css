@@ -1,4 +1,8 @@
-/* ── Dashboard Home — High-Performance Educational SaaS & Infographics ── */
+/* ══════════════════════════════════════════════════════════════
+   Akselerasi-Edu — Institutional Executive Dashboard
+   School Principal & School Admin Overview System
+   Linear / Stripe / Vercel Grade Architecture
+   ══════════════════════════════════════════════════════════════ */
 
 .page {
   padding: 1.5rem 2rem;
@@ -7,54 +11,217 @@
   gap: 1.25rem;
   max-width: 1680px;
   margin: 0 auto;
-  animation: fadeIn 0.3s ease;
+  width: 100%;
+  animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(6px); }
+  from { opacity: 0; transform: translateY(4px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
 /* ══════════════════════════════════════════════════════════════
-   TOP METRICS ROW (5 Cards — Redesigned as per Screenshot 1)
-   Top: Bold Academic Counter + Status Label + Watermark Outline SVG
-   Bottom: Solid Thematic Education Banner with Label and Arrow
+   SUB-BAR: INSTITUTIONAL CONTEXT, CLOCK & TELEMETRY
+   ══════════════════════════════════════════════════════════════ */
+.subBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 0.25rem 0;
+}
+
+.subBarLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.subBarRight {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.institutionBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-sm, 8px);
+  padding: 0.35rem 0.65rem;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  box-shadow: var(--shadow-sm);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+.institutionBadge svg {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.taBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: var(--accent-dim);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm, 8px);
+  padding: 0.35rem 0.65rem;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--accent-dark);
+}
+
+[data-theme="dark"] .taBadge {
+  color: var(--accent);
+}
+
+.clockBadge {
+  background: var(--bg-card);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-sm, 8px);
+  padding: 0.35rem 0.75rem;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: var(--shadow-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.liveDotPulse {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  border-radius: 9999px;
+  padding: 0.15rem 0.45rem;
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #059669;
+  letter-spacing: 0.04em;
+}
+
+[data-theme="dark"] .liveDotPulse {
+  color: #34d399;
+}
+
+.pulsingDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
+  animation: pulseDot 2s infinite ease-in-out;
+}
+
+@keyframes pulseDot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.85); }
+}
+
+.refreshBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-sm, 8px);
+  padding: 0.38rem 0.75rem;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all var(--dur-fast) ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.refreshBtn:hover {
+  background: var(--bg-hover);
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.refreshBtn:active {
+  transform: translateY(0);
+}
+
+.spinning {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   TOP METRICS ROW (5 Executive KPI Cards)
+   Hairline 1px border, high-contrast typography, status indicator
    ══════════════════════════════════════════════════════════════ */
 .metricsGrid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 1.15rem;
+  gap: 1rem;
 }
+
 @media (max-width: 1400px) { .metricsGrid { grid-template-columns: repeat(3, 1fr); } }
 @media (max-width: 900px)  { .metricsGrid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 600px)  { .metricsGrid { grid-template-columns: 1fr; } }
 
 .metricCard {
-  background: var(--bg-card, #ffffff);
-  border: 1px solid var(--border-light, #e2e8f0);
-  border-radius: 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md, 12px);
   display: flex;
   flex-direction: column;
-  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.04), 0 2px 6px -1px rgba(0, 0, 0, 0.02);
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
   overflow: hidden;
   text-decoration: none;
 }
 
-.metricCard:hover {
-  box-shadow: 0 10px 25px -4px rgba(0, 0, 0, 0.08), 0 4px 10px -2px rgba(0, 0, 0, 0.03);
-  transform: translateY(-3px);
-  border-color: var(--border-medium, #cbd5e1);
+.metricCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: transparent;
+  transition: background 0.2s ease;
 }
 
-.metricTop {
-  padding: 1.25rem 1.35rem 1.15rem;
+.cardBlue::before   { background: #0284c7; }
+.cardIndigo::before { background: #4f46e5; }
+.cardEmerald::before{ background: #059669; }
+.cardAmber::before  { background: #d97706; }
+.cardTeal::before   { background: #0d9488; }
+
+.metricCard:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+  border-color: var(--border-medium);
+}
+
+.metricCardTop {
+  padding: 1.15rem 1.25rem 0.95rem;
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  gap: 1rem;
-  position: relative;
+  align-items: flex-start;
+  gap: 0.75rem;
   flex: 1;
 }
 
@@ -63,121 +230,120 @@
   flex-direction: column;
   gap: 0.25rem;
   min-width: 0;
-  z-index: 1;
+}
+
+.metricLabel {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
 }
 
 .metricValue {
-  font-size: 2.25rem;
+  font-size: 2.15rem;
   font-weight: 800;
   line-height: 1.1;
   letter-spacing: -0.03em;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  margin-top: 0.15rem;
 }
 
 .metricSubtitle {
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   font-weight: 600;
-  letter-spacing: 0.01em;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.2rem;
 }
 
-.metricWatermark {
-  position: absolute;
-  right: 1.25rem;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 68px;
-  height: 68px;
-  color: #94a3b8;
-  opacity: 0.18;
+.metricSubDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.cardBlue .metricSubDot    { background: #0284c7; }
+.cardIndigo .metricSubDot  { background: #4f46e5; }
+.cardEmerald .metricSubDot { background: #059669; }
+.cardAmber .metricSubDot   { background: #d97706; }
+.cardTeal .metricSubDot    { background: #0d9488; }
+
+.metricIconWrap {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm, 8px);
   display: flex;
   align-items: center;
   justify-content: center;
-  pointer-events: none;
-  transition: transform 0.3s ease, opacity 0.3s ease;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
 }
 
-.metricCard:hover .metricWatermark {
-  transform: translateY(-50%) scale(1.08);
-  opacity: 0.26;
+.cardBlue .metricIconWrap    { background: rgba(2, 132, 199, 0.1); color: #0284c7; }
+.cardIndigo .metricIconWrap  { background: rgba(79, 70, 229, 0.1); color: #4f46e5; }
+.cardEmerald .metricIconWrap { background: rgba(5, 150, 105, 0.1); color: #059669; }
+.cardAmber .metricIconWrap   { background: rgba(217, 119, 6, 0.1); color: #d97706; }
+.cardTeal .metricIconWrap    { background: rgba(13, 148, 136, 0.1); color: #0d9488; }
+
+.metricCard:hover .metricIconWrap {
+  transform: scale(1.05);
 }
 
-.metricWatermark svg {
-  width: 100%;
-  height: 100%;
-}
-
-.metricBottom {
+.metricFooter {
+  padding: 0.65rem 1.25rem;
+  border-top: 1px solid var(--border-light);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.75rem 1.25rem;
-  color: #ffffff;
-  font-size: 0.84rem;
-  font-weight: 700;
-  letter-spacing: 0.01em;
-  text-decoration: none;
-  transition: background-color 0.2s ease, filter 0.2s ease;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--bg-elevated);
+  transition: color 0.15s ease, background 0.15s ease;
 }
 
-.metricArrow {
-  width: 18px;
-  height: 18px;
+.metricCard:hover .metricFooter {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+
+.metricFooterArrow {
+  width: 14px;
+  height: 14px;
   transition: transform 0.2s ease;
-  fill: currentColor;
+  color: var(--text-muted);
 }
 
-.metricCard:hover .metricArrow {
-  transform: translateX(4px);
+.metricCard:hover .metricFooterArrow {
+  transform: translateX(3px);
+  color: var(--accent);
 }
 
-/* Educational Philosophy Colors for the Cards & Footers */
-/* Card 1: Siswa Aktif - Tut Wuri Handayani / Kemendikbud Academic Blue */
-.cardBlue .metricValue { color: #0284c7; }
-.cardBlue .metricSubtitle { color: #0284c7; }
-.cardBlue .metricBottom { background: #0284c7; }
-.cardBlue:hover .metricBottom { background: #0369a1; }
-
-/* Card 2: Guru Pengajar - Deep Scholarly Royal Blue */
-.cardIndigo .metricValue { color: #2563eb; }
-.cardIndigo .metricSubtitle { color: #2563eb; }
-.cardIndigo .metricBottom { background: #2563eb; }
-.cardIndigo:hover .metricBottom { background: #1d4ed8; }
-
-/* Card 3: Tenaga Kependidikan - Budi Pekerti Emerald Green */
-.cardEmerald .metricValue { color: #059669; }
-.cardEmerald .metricSubtitle { color: #059669; }
-.cardEmerald .metricBottom { background: #059669; }
-.cardEmerald:hover .metricBottom { background: #047857; }
-
-/* Card 4: Rombongan Belajar - Balai Belajar & Prestasi Amber Gold */
-.cardAmber .metricValue { color: #d97706; }
-.cardAmber .metricSubtitle { color: #d97706; }
-.cardAmber .metricBottom { background: #d97706; }
-.cardAmber:hover .metricBottom { background: #b45309; }
-
-/* Card 5: Wali Murid - Kemitraan Keluarga Slate Teal */
-.cardTeal .metricValue { color: #0d9488; }
-.cardTeal .metricSubtitle { color: #0d9488; }
-.cardTeal .metricBottom { background: #0d9488; }
-.cardTeal:hover .metricBottom { background: #0f766e; }
-
-/* ══════════════════════
-   BASE CARD STYLES
-══════════════════════ */
+/* ══════════════════════════════════════════════════════════════
+   BASE CARD CONTAINER
+   ══════════════════════════════════════════════════════════════ */
 .card {
   background: var(--bg-card);
   border: 1px solid var(--border-light);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md, 12px);
   padding: 1.25rem 1.35rem;
   display: flex;
   flex-direction: column;
   gap: 1rem;
   box-shadow: var(--shadow-sm);
-  transition: all var(--dur-base) ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  min-width: 0;
 }
 
 .card:hover {
-  box-shadow: var(--shadow-md);
   border-color: var(--border-medium);
+  box-shadow: var(--shadow-md);
 }
 
 .cardHeader {
@@ -189,125 +355,112 @@
 }
 
 .cardTitle {
-  font-size: 0.92rem;
+  font-size: 0.9rem;
   font-weight: 700;
   color: var(--text-primary);
   letter-spacing: -0.01em;
   display: flex;
   align-items: center;
-  gap: 0.45rem;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.cardTitleIcon {
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
 }
 
 .cardBadge {
   font-size: 0.68rem;
   font-weight: 700;
-  padding: 0.15rem 0.5rem;
+  padding: 0.2rem 0.55rem;
   border-radius: 9999px;
   background: var(--bg-elevated);
-  border: 1px solid var(--border-medium);
+  border: 1px solid var(--border-light);
   color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .linkMore {
   font-size: 0.76rem;
   font-weight: 600;
   color: var(--accent);
-  transition: all var(--dur-fast) ease;
-  white-space: nowrap;
-  flex-shrink: 0;
+  text-decoration: none;
   display: flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: 0.35rem;
+  transition: color 0.15s ease, transform 0.15s ease;
+  white-space: nowrap;
 }
-.linkMore:hover { color: var(--accent-dark); transform: translateX(2px); }
 
-/* ══════════════════════
+.linkMore:hover {
+  color: var(--accent-dark);
+  transform: translateX(2px);
+}
+
+.cardFooterLink {
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border-light);
+  margin-top: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* ══════════════════════════════════════════════════════════════
    ROW 1: DEMOGRAFI & EKOSISTEM DIGITAL
-══════════════════════ */
+   ══════════════════════════════════════════════════════════════ */
 .rowOneGrid {
   display: grid;
-  grid-template-columns: 1.35fr 1.15fr 1.5fr;
+  grid-template-columns: 1.35fr 1.25fr 1.4fr;
   gap: 1rem;
 }
+
 @media (max-width: 1250px) { .rowOneGrid { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 850px)  { .rowOneGrid { grid-template-columns: 1fr; } }
 
-/* ── Jenjang Infografis List ── */
-.jenjangList {
+/* Jenjang Legend Strip */
+.jenjangLegendStrip {
   display: flex;
-  flex-direction: column;
-  gap: 0.85rem;
-}
-
-.jenjangItem {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.jenjangHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 0.8rem;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm, 8px);
+  font-size: 0.72rem;
   font-weight: 600;
+  color: var(--text-secondary);
+  margin-top: 0.5rem;
 }
 
-.jenjangName {
-  color: var(--text-primary);
+.jenjangLegendItem {
   display: flex;
   align-items: center;
   gap: 0.4rem;
 }
 
-.jenjangMeta {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-}
-
-.jenjangStudents {
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-.jenjangPercent {
-  font-size: 0.72rem;
-  color: var(--text-muted);
-  font-weight: 600;
-}
-
-.meterTrack {
-  width: 100%;
+.jenjangDot {
+  width: 8px;
   height: 8px;
-  background: var(--bg-hover);
-  border-radius: 9999px;
-  overflow: hidden;
-  position: relative;
+  border-radius: 2px;
+  flex-shrink: 0;
 }
 
-.meterFill {
-  height: 100%;
-  border-radius: 9999px;
-  transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.fillPaketC { background: linear-gradient(90deg, #3b82f6, #1d4ed8); }
-.fillPaketB { background: linear-gradient(90deg, #10b981, #047857); }
-.fillPaketA { background: linear-gradient(90deg, #f59e0b, #d97706); }
-
-/* ── Gender Widget ── */
-/* ── Redesigned Padat: Gender Section ── */
+/* Gender Donut & Metrics Widget */
 .genderCardCompact {
   display: flex;
   flex-direction: column;
-  gap: 0.65rem;
+  gap: 0.75rem;
 }
 
 .genderTopRow {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 1rem;
 }
 
 .genderChartWrap {
@@ -334,27 +487,28 @@
   font-weight: 800;
   color: var(--text-primary);
   line-height: 1;
+  font-variant-numeric: tabular-nums;
 }
 
 .genderCenterSub {
-  font-size: 0.62rem;
+  font-size: 0.6rem;
   color: var(--text-muted);
   font-weight: 700;
-  letter-spacing: 0.05em;
-  margin-top: 1px;
+  letter-spacing: 0.06em;
+  margin-top: 2px;
 }
 
 .genderLegendWrap {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 0.45rem;
+  gap: 0.55rem;
 }
 
 .genderRowItem {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: 0.25rem;
 }
 
 .genderItemHead {
@@ -374,14 +528,14 @@
 
 .genderBarFillMale {
   height: 100%;
-  background: linear-gradient(90deg, #3b82f6, #2563eb);
+  background: #3b82f6;
   border-radius: 999px;
   transition: width 0.6s ease;
 }
 
 .genderBarFillFemale {
   height: 100%;
-  background: linear-gradient(90deg, #ec4899, #db2777);
+  background: #ec4899;
   border-radius: 999px;
   transition: width 0.6s ease;
 }
@@ -390,53 +544,52 @@
 .genderKpiGrid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 0.45rem;
-  padding: 0.55rem 0.65rem;
+  gap: 0.5rem;
+  padding: 0.6rem 0.75rem;
   background: var(--bg-elevated);
   border: 1px solid var(--border-light);
-  border-radius: 10px;
+  border-radius: var(--radius-sm, 8px);
 }
 
 .genderKpiItem {
   display: flex;
   flex-direction: column;
-  gap: 0.1rem;
+  gap: 0.15rem;
 }
 
 .genderKpiLabel {
-  font-size: 0.62rem;
-  color: var(--text-muted);
+  font-size: 0.65rem;
   font-weight: 600;
+  color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.04em;
 }
 
 .genderKpiVal {
-  font-size: 0.86rem;
-  font-weight: 800;
-  color: var(--text-primary);
   display: flex;
   align-items: baseline;
-  gap: 0.2rem;
+  gap: 0.3rem;
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
 }
 
 .genderKpiSub {
-  font-size: 0.62rem;
+  font-size: 0.68rem;
   font-weight: 600;
-  color: var(--text-secondary);
+  color: var(--text-muted);
 }
 
-/* Dual Segmented Strip */
+/* Continuous Dual Strip */
 .genderRatioBar {
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
-  padding-top: 0.1rem;
+  gap: 0.35rem;
 }
 
 .genderSegmentTrack {
   display: flex;
-  width: 100%;
   height: 7px;
   border-radius: 999px;
   overflow: hidden;
@@ -446,134 +599,115 @@
 .segmentMale {
   background: #3b82f6;
   height: 100%;
-  transition: width 0.5s ease;
+  transition: width 0.6s ease;
 }
 
 .segmentFemale {
   background: #ec4899;
   height: 100%;
-  transition: width 0.5s ease;
+  transition: width 0.6s ease;
 }
 
 .genderSegmentLabels {
   display: flex;
   justify-content: space-between;
-  font-size: 0.64rem;
+  align-items: center;
+  font-size: 0.68rem;
   color: var(--text-secondary);
   font-weight: 600;
 }
 
-/* ── Redesigned Padat: Digital Ecosystem ── */
+/* Ecosystem Tiles */
 .ecosystemGridCompact {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.55rem;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.65rem;
 }
 
 .ecoTileCompact {
   background: var(--bg-elevated);
   border: 1px solid var(--border-light);
-  border-radius: 11px;
-  padding: 0.7rem 0.8rem;
+  border-radius: var(--radius-sm, 8px);
+  padding: 0.75rem;
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
-  transition: all var(--dur-fast) cubic-bezier(0.16, 1, 0.3, 1);
+  gap: 0.25rem;
   text-decoration: none;
-  position: relative;
-  overflow: hidden;
+  transition: all 0.15s ease;
 }
 
 .ecoTileCompact:hover {
   background: var(--bg-hover);
   border-color: var(--border-medium);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-}
-
-.ecoTileCompact::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 3px;
-  height: 100%;
-  background: transparent;
-  transition: background 0.2s ease;
-}
-
-.ecoTileCompact:hover::before {
-  background: var(--accent);
+  transform: translateY(-1px);
 }
 
 .ecoTileTopCompact {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  margin-bottom: 0.2rem;
 }
 
 .ecoIconCompact {
-  width: 26px;
-  height: 26px;
-  border-radius: 7px;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .ecoTagCompact {
-  font-size: 0.58rem;
+  font-size: 0.62rem;
   font-weight: 800;
-  padding: 0.1rem 0.4rem;
-  border-radius: 9999px;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
 }
 
 .ecoValCompact {
-  font-size: 1.3rem;
+  font-size: 1.35rem;
   font-weight: 800;
   color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
   line-height: 1.1;
-  margin-top: 0.05rem;
 }
 
 .ecoLabelCompact {
-  font-size: 0.7rem;
+  font-size: 0.76rem;
   font-weight: 700;
   color: var(--text-primary);
-  line-height: 1.2;
-}
-
-.ecoSubCompact {
-  font-size: 0.62rem;
-  color: var(--text-muted);
-  font-weight: 500;
-  line-height: 1.2;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* Telemetry Service Status Ribbon */
+.ecoSubCompact {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .ecoTelemetryStrip {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.45rem 0.7rem;
+  padding: 0.45rem 0.75rem;
   background: var(--bg-elevated);
   border: 1px solid var(--border-light);
-  border-radius: 9px;
-  font-size: 0.65rem;
-  color: var(--text-secondary);
+  border-radius: var(--radius-sm, 8px);
+  font-size: 0.72rem;
   font-weight: 600;
-  gap: 0.5rem;
-  flex-wrap: wrap;
+  color: var(--text-secondary);
 }
 
 .telemetryItem {
   display: flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: 0.4rem;
 }
 
 .telemetryDot {
@@ -581,26 +715,25 @@
   height: 6px;
   border-radius: 50%;
   background: #10b981;
-  display: inline-block;
-  box-shadow: 0 0 6px rgba(16, 185, 129, 0.4);
 }
 
-/* ══════════════════════
+/* ══════════════════════════════════════════════════════════════
    ROW 2: KINERJA AKADEMIK, PENGUMUMAN & AKSI CEPAT
-══════════════════════ */
+   ══════════════════════════════════════════════════════════════ */
 .rowTwoGrid {
   display: grid;
-  grid-template-columns: 1.5fr 1.5fr 1fr;
+  grid-template-columns: 1.25fr 1.35fr 1.15fr;
   gap: 1rem;
 }
+
 @media (max-width: 1250px) { .rowTwoGrid { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 850px)  { .rowTwoGrid { grid-template-columns: 1fr; } }
 
-/* ── Academic Performance List ── */
+/* Academic List */
 .academicList {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
 .academicItem {
@@ -610,9 +743,8 @@
   padding: 0.65rem 0.85rem;
   background: var(--bg-elevated);
   border: 1px solid var(--border-light);
-  border-radius: var(--radius-md);
-  gap: 0.75rem;
-  transition: all var(--dur-fast) ease;
+  border-radius: var(--radius-sm, 8px);
+  transition: all 0.15s ease;
 }
 
 .academicItem:hover {
@@ -623,13 +755,13 @@
 .academicMain {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: 0.15rem;
   min-width: 0;
   flex: 1;
 }
 
 .academicName {
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   font-weight: 700;
   color: var(--text-primary);
   white-space: nowrap;
@@ -638,37 +770,43 @@
 }
 
 .academicSub {
-  font-size: 0.69rem;
-  color: var(--text-muted);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
+  font-size: 0.7rem;
+  color: var(--text-muted);
 }
 
 .academicScoreBadge {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
+  margin-left: 0.75rem;
   flex-shrink: 0;
 }
 
 .scoreVal {
-  font-size: 1.05rem;
+  font-size: 0.95rem;
   font-weight: 800;
-  color: #10b981;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
 }
 
 .gradeLetter {
   font-size: 0.68rem;
   font-weight: 800;
   padding: 0.15rem 0.45rem;
-  border-radius: 6px;
+  border-radius: 4px;
   background: rgba(16, 185, 129, 0.12);
   color: #059669;
-  border: 1px solid rgba(16, 185, 129, 0.2);
+  border: 1px solid rgba(16, 185, 129, 0.25);
 }
 
-/* ── Announcements Feed ── */
+[data-theme="dark"] .gradeLetter {
+  color: #34d399;
+}
+
+/* Announcement Cards */
 .announcementList {
   display: flex;
   flex-direction: column;
@@ -676,20 +814,19 @@
 }
 
 .announcementCard {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-md);
-  padding: 0.85rem;
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
-  position: relative;
-  transition: all var(--dur-fast) ease;
+  padding: 0.75rem 0.85rem;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm, 8px);
+  transition: all 0.15s ease;
 }
 
 .announcementCard:hover {
-  border-color: var(--border-medium);
   background: var(--bg-hover);
+  border-color: var(--border-medium);
 }
 
 .annTop {
@@ -702,40 +839,47 @@
 .annTitleRow {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.45rem;
   font-size: 0.82rem;
   font-weight: 700;
   color: var(--text-primary);
+  min-width: 0;
+}
+
+.annTitleRow span:last-child {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .catBadge {
   font-size: 0.62rem;
   font-weight: 800;
-  padding: 0.12rem 0.45rem;
-  border-radius: 9999px;
-  text-transform: uppercase;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
   letter-spacing: 0.04em;
+  flex-shrink: 0;
 }
 
 .catPenting {
-  background: rgba(239, 68, 68, 0.12);
+  background: rgba(220, 38, 38, 0.1);
   color: #dc2626;
-  border: 1px solid rgba(239, 68, 68, 0.25);
+  border: 1px solid rgba(220, 38, 38, 0.25);
 }
 
 .catAkademik {
-  background: rgba(37, 99, 235, 0.12);
+  background: rgba(59, 130, 246, 0.1);
   color: #2563eb;
-  border: 1px solid rgba(37, 99, 235, 0.25);
+  border: 1px solid rgba(59, 130, 246, 0.25);
 }
 
 .annContent {
   font-size: 0.74rem;
   color: var(--text-secondary);
-  line-height: 1.45;
+  line-height: 1.4;
+  margin: 0;
   display: -webkit-box;
   -webkit-line-clamp: 2;
-  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -743,311 +887,259 @@
 .annMeta {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  font-size: 0.67rem;
+  gap: 0.45rem;
+  font-size: 0.68rem;
   color: var(--text-muted);
-  padding-top: 0.3rem;
-  border-top: 1px dashed var(--border-light);
+  font-weight: 500;
 }
 
-/* ── Quick Actions ── */
+/* Quick Actions Grid */
 .quickActionsGrid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.55rem;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.65rem;
 }
 
 .actionSquare {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.35rem;
-  padding: 0.85rem 0.5rem;
   background: var(--bg-elevated);
   border: 1px solid var(--border-light);
-  border-radius: var(--radius-md);
-  color: var(--text-secondary);
-  font-size: 0.71rem;
-  font-weight: 600;
-  text-align: center;
-  cursor: pointer;
-  transition: all var(--dur-base) ease;
-  position: relative;
+  border-radius: var(--radius-sm, 8px);
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+  text-decoration: none;
+  transition: all 0.15s ease;
 }
 
 .actionSquare:hover {
-  background: var(--accent-dim);
+  background: var(--bg-hover);
   border-color: var(--accent);
-  color: var(--accent-dark);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
 }
-[data-theme="dark"] .actionSquare:hover { color: var(--accent); }
 
 .actionIcon {
-  font-size: 1.25rem;
-  transition: transform var(--dur-fast) ease;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background: var(--accent-dim);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.15rem;
+  transition: transform 0.15s ease;
 }
-.actionSquare:hover .actionIcon { transform: scale(1.18); }
+
+.actionSquare:hover .actionIcon {
+  transform: scale(1.08);
+}
+
+.actionLabel {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
 
 .actionCountBadge {
-  font-size: 0.62rem;
-  font-weight: 800;
-  padding: 0.05rem 0.4rem;
-  border-radius: 9999px;
-  background: var(--bg-surface);
+  font-size: 0.65rem;
+  font-weight: 600;
   color: var(--text-muted);
-  border: 1px solid var(--border-medium);
+  font-variant-numeric: tabular-nums;
 }
 
-/* ══════════════════════
-   ROW 3: SEBARAN ROMBEL & LIVE ACTIVITY TIMELINE
-══════════════════════ */
+/* ══════════════════════════════════════════════════════════════
+   ROW 3: KAPASITAS SISWA PER ROMBEL & AUDIT TIMELINE
+   ══════════════════════════════════════════════════════════════ */
 .rowThreeGrid {
   display: grid;
-  grid-template-columns: 1.8fr 1.2fr;
+  grid-template-columns: 1.45fr 1fr;
   gap: 1rem;
-  align-items: start;
 }
-@media (max-width: 1100px) { .rowThreeGrid { grid-template-columns: 1fr; } }
 
-/* ── Rombel Grid — Redesigned Dense ── */
+@media (max-width: 1050px) { .rowThreeGrid { grid-template-columns: 1fr; } }
+
+/* Rombel Summary KPIs */
 .rombelSummary {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 0.6rem;
-}
-@media (max-width: 700px) { .rombelSummary { grid-template-columns: repeat(2, 1fr); } }
-.rombelSummaryItem {
-  background: linear-gradient(135deg, var(--accent-dim), transparent);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-md);
-  padding: 0.6rem 0.75rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-}
-.rombelSummaryLabel { font-size: 0.66rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
-.rombelSummaryValue { font-size: 1.15rem; font-weight: 800; color: var(--text-primary); line-height: 1.1; }
-.rombelSummaryValue small { font-size: 0.68rem; font-weight: 600; color: var(--text-muted); }
-.rombelSummaryValueSm { font-size: 0.8rem; font-weight: 800; color: var(--text-primary); line-height: 1.25; }
-.rombelGrid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.6rem;
-}
-@media (max-width: 900px) { .rombelGrid { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 550px) { .rombelGrid { grid-template-columns: 1fr; } }
-
-.rombelItem {
+  gap: 0.5rem;
+  padding: 0.65rem 0.85rem;
   background: var(--bg-elevated);
   border: 1px solid var(--border-light);
-  border-radius: var(--radius-md);
-  border-left: 3px solid var(--accent);
-  padding: 0.6rem 0.7rem;
+  border-radius: var(--radius-sm, 8px);
+}
+
+@media (max-width: 700px) { .rombelSummary { grid-template-columns: repeat(2, 1fr); } }
+
+.rombelSummaryItem {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
-  text-decoration: none;
-  transition: all var(--dur-fast) ease;
+  gap: 0.15rem;
 }
-.rombelItem:hover {
-  background: var(--bg-hover);
-  border-color: var(--accent);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-sm);
-}
-.rombelVarC { border-left-color: #2563eb; }
-.rombelVarB { border-left-color: #059669; }
-.rombelVarA { border-left-color: #d97706; }
-.rombelTopRow {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-}
-.rombelRank {
-  font-size: 0.6rem;
-  font-weight: 800;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-medium);
+
+.rombelSummaryLabel {
+  font-size: 0.66rem;
+  font-weight: 700;
   color: var(--text-muted);
-  border-radius: 5px;
-  padding: 0.05rem 0.3rem;
-  flex-shrink: 0;
-}
-
-.rombelHeader {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 0.3rem;
 }
 
-.rombelName {
-  font-size: 0.74rem;
+.rombelSummaryValue {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.rombelSummaryValue small {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-left: 2px;
+}
+
+.rombelSummaryValueSm {
+  font-size: 0.82rem;
   font-weight: 700;
   color: var(--text-primary);
-  flex: 1;
-  min-width: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  margin-top: 0.15rem;
 }
 
-.rombelCount {
-  font-size: 0.76rem;
-  font-weight: 800;
-  color: var(--accent);
-  white-space: nowrap;
-  margin-left: auto;
-}
-.rombelCount small { font-weight: 600; color: var(--text-muted); font-size: 0.64rem; }
-.rombelMetaRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 0.62rem;
-  font-weight: 600;
-  color: var(--text-muted);
-}
 .rombelInsight {
   display: flex;
+  align-items: center;
   gap: 0.5rem;
-  align-items: flex-start;
-  background: linear-gradient(135deg, rgba(14,165,233,0.10), rgba(147,51,234,0.08));
-  border: 1px solid rgba(14,165,233,0.25);
-  border-radius: var(--radius-md);
-  padding: 0.6rem 0.75rem;
+  padding: 0.55rem 0.75rem;
+  background: rgba(59, 130, 246, 0.06);
+  border: 1px solid rgba(59, 130, 246, 0.18);
+  border-radius: var(--radius-sm, 8px);
   font-size: 0.72rem;
-  line-height: 1.5;
   color: var(--text-secondary);
+  line-height: 1.4;
 }
+
+.rombelInsight svg {
+  color: #3b82f6;
+  flex-shrink: 0;
+}
+
 .rombelFoot {
-  padding-top: 0.5rem;
+  padding-top: 0.4rem;
   border-top: 1px solid var(--border-light);
   margin-top: auto;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
 }
 
-.rombelTrack {
-  width: 100%;
-  height: 5px;
-  background: var(--bg-surface);
-  border-radius: 9999px;
-  overflow: hidden;
-}
-
-.rombelFill {
-  height: 100%;
-  background: linear-gradient(90deg, #3b82f6, #60a5fa);
-  border-radius: 9999px;
-}
-
-/* ── Live Activity Timeline ── */
+/* Activity Timeline */
 .activityTimeline {
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  gap: 0.65rem;
 }
 
 .activityCard {
   display: flex;
   align-items: flex-start;
   gap: 0.75rem;
-  padding: 0.65rem 0.75rem;
+  padding: 0.65rem 0.85rem;
   background: var(--bg-elevated);
   border: 1px solid var(--border-light);
-  border-radius: var(--radius-md);
-  font-size: 0.74rem;
-  transition: all var(--dur-fast) ease;
+  border-radius: var(--radius-sm, 8px);
+  transition: all 0.15s ease;
 }
-.activityCard:hover { background: var(--bg-hover); }
+
+.activityCard:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-medium);
+}
 
 .actBadgeIcon {
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.95rem;
   flex-shrink: 0;
-  margin-top: 1px;
+  margin-top: 2px;
 }
-.actIconBlue { background: rgba(37, 99, 235, 0.12); border: 1px solid rgba(37, 99, 235, 0.2); }
-.actIconGreen { background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.2); }
-.actIconPurple { background: rgba(147, 51, 234, 0.12); border: 1px solid rgba(147, 51, 234, 0.2); }
+
+.actIconBlue   { background: rgba(59, 130, 246, 0.12); color: #2563eb; }
+.actIconGreen  { background: rgba(16, 185, 129, 0.12); color: #059669; }
+.actIconPurple { background: rgba(139, 92, 246, 0.12); color: #7c3aed; }
+.actIconAmber  { background: rgba(245, 158, 11, 0.12); color: #d97706; }
 
 .actBody {
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
-  flex: 1;
+  gap: 0.2rem;
   min-width: 0;
+  flex: 1;
 }
 
 .actTitle {
+  font-size: 0.78rem;
   font-weight: 700;
   color: var(--text-primary);
-  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .actDetail {
-  font-size: 0.69rem;
+  font-size: 0.71rem;
   color: var(--text-secondary);
   line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .actMetaRow {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  margin-top: 0.2rem;
-  font-size: 0.65rem;
+  gap: 0.5rem;
+  font-size: 0.66rem;
   color: var(--text-muted);
+  margin-top: 0.15rem;
 }
 
 .platformPill {
   font-size: 0.6rem;
-  font-weight: 700;
-  padding: 0.05rem 0.35rem;
-  border-radius: 4px;
-  background: var(--bg-surface);
+  font-weight: 800;
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
+  background: var(--bg-card);
   border: 1px solid var(--border-light);
+  letter-spacing: 0.04em;
+}
+
+/* Empty State */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.5rem;
+  text-align: center;
+  gap: 0.5rem;
   color: var(--text-muted);
 }
 
-/* ── Refresh button ── */
-.refreshBtn {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.4rem 0.75rem;
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-medium);
-  border-radius: 10px;
-  font-size: 0.76rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  cursor: pointer;
-  transition: all var(--dur-fast) ease;
-  box-shadow: var(--shadow-sm);
+.emptyStateIcon {
+  color: var(--text-disabled);
 }
 
-.refreshBtn:hover {
-  background: var(--bg-hover);
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-.spinning {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
+.emptyStateText {
+  font-size: 0.8rem;
+  font-weight: 500;
 }
