@@ -509,7 +509,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    const schoolName = selectedSchool || (typeof window !== 'undefined' ? getTenantItem('dapodik_nama_sekolah') : '') || 'School OS';
+    const schoolName = selectedSchool || (typeof window !== 'undefined' ? getTenantItem('dapodik_nama_sekolah') : '') || 'akselerasi-edu';
     const breadcrumb = getBreadcrumbLabel();
     const targetTitle = pathname === '/dashboard'
       ? `${schoolName} — Platform Manajemen Sekolah`
@@ -721,8 +721,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </svg>
             </div>
             <div className={styles.logoText}>
-              <span className={styles.logoName} title={selectedSchool || (typeof window !== 'undefined' ? getTenantItem('dapodik_nama_sekolah') : '') || 'School OS'}>
-                {selectedSchool || (typeof window !== 'undefined' ? getTenantItem('dapodik_nama_sekolah') : '') || 'School OS'}
+              <span className={styles.logoName} title={selectedSchool || (typeof window !== 'undefined' ? getTenantItem('dapodik_nama_sekolah') : '') || 'akselerasi-edu'}>
+                {selectedSchool || (typeof window !== 'undefined' ? getTenantItem('dapodik_nama_sekolah') : '') || 'akselerasi-edu'}
               </span>
               <span className={styles.logoBadge}>
                 {isTeacherWorkstation ? 'Teacher Workstation' : 'Sistem Manajemen Sekolah'}

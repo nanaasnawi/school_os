@@ -30,7 +30,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [schoolName, setSchoolName] = useState('School OS');
+  const [schoolName, setSchoolName] = useState('akselerasi-edu');
   const [schoolLogoUrl, setSchoolLogoUrl] = useState('');
   const [maintenance, setMaintenance] = useState<{ is_active: boolean; message: string } | null>(null);
   const [checkingMaintenance, setCheckingMaintenance] = useState(false);
@@ -210,7 +210,7 @@ export default function LoginPage() {
   }, [isAuthenticated, isLoading, user, router]);
 
   useEffect(() => {
-    document.title = 'Masuk — School OS';
+    document.title = 'Masuk — akselerasi-edu';
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -322,7 +322,7 @@ export default function LoginPage() {
         <div className={styles.mntLeft}>
           <img
             src="/images/under-construction-animate.svg"
-            alt="Under Construction – School OS"
+            alt="Under Construction – akselerasi-edu"
             className={styles.mntIllustration}
             draggable={false}
           />
@@ -450,7 +450,7 @@ export default function LoginPage() {
               ) : (
                 <img
                   src="/logo.png"
-                  alt={schoolName || 'School OS'}
+                  alt={schoolName || 'akselerasi-edu'}
                   className={styles.schoolLogoImg}
                 />
               )}
@@ -465,7 +465,7 @@ export default function LoginPage() {
           <div className={styles.illustrationArea}>
             <img
               src="/images/security-animate.svg"
-              alt="Keamanan Terjamin School OS"
+              alt="Keamanan Terjamin akselerasi-edu"
               className={styles.securityIllustration}
             />
           </div>
@@ -569,7 +569,7 @@ export default function LoginPage() {
                   />
                 </div>
                 <span className={styles.inputHint}>
-                  Admin/Kepala Sekolah wajib menggunakan Email. Guru, Siswa, &amp; Wali dapat menggunakan Username (cth: <code>surafatih</code>, <code>ikin.baihaki</code>) atau Email.
+                  Admin/Kepala Sekolah wajib menggunakan Email. Guru, Siswa, &amp; Wali dapat menggunakan Username (cth: <code>nama.pengguna</code>, <code>guru_akselerasi</code>) atau Email.
                 </span>
               </div>
 
@@ -626,7 +626,7 @@ export default function LoginPage() {
                 <span>Siswa, Guru, atau Orang Tua?</span>
               </div>
               <p className={styles.androidNoticeText}>
-                Gunakan <strong>Aplikasi Android School OS</strong> untuk jadwal, tugas, absensi, dan
+                Gunakan <strong>Aplikasi Android akselerasi-edu</strong> untuk jadwal, tugas, absensi, dan
                 e-rapor langsung dari smartphone.
               </p>
             </div>

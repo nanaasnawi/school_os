@@ -81,7 +81,7 @@ export default function LandingPage() {
               </div>
               <div className={styles.logoText}>
                 <span>AKSELERASI</span>
-                <span className={styles.logoBadge}>SCHOOL OS</span>
+                <span className={styles.logoBadge}>EDU</span>
               </div>
             </Link>
 
@@ -1103,7 +1103,7 @@ class SibiReaderViewModel(private val repository: SibiRepository) : ViewModel() 
                 </div>
                 <div className={styles.logoText}>
                   <span>AKSELERASI</span>
-                  <span className={styles.logoBadge}>SCHOOL OS</span>
+                  <span className={styles.logoBadge}>EDU</span>
                 </div>
               </div>
               <p style={{ fontSize: '0.88rem', color: '#64748B', lineHeight: '1.65', margin: '8px 0 0' }}>
@@ -1149,7 +1149,7 @@ class SibiReaderViewModel(private val repository: SibiRepository) : ViewModel() 
 
           <div className={styles.footerBottom}>
             <div>
-              &copy; {new Date().getFullYear()} Akselerasi-Edu (School OS). Hak Cipta Dilindungi Undang-Undang.
+              &copy; {new Date().getFullYear()} Akselerasi-Edu. Hak Cipta Dilindungi Undang-Undang.
             </div>
             <div style={{ display: 'flex', gap: '20px' }}>
               <a href="#" className={styles.footerLink}>Ketentuan Layanan</a>
