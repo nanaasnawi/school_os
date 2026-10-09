@@ -114,13 +114,26 @@ export function TeacherInquiryView() {
         align: 'center',
         render: (item) => {
           const s = item.status?.toUpperCase() || 'OPEN';
-          if (s === 'ANSWERED' || s === 'TERJAWAB' || s === 'DIJAWAB') {
-            return <StatusBadge status="Paid" label="Dijawab" />;
-          }
-          if (s === 'OPEN' || s === 'MENUNGGU' || s === 'WAITING_REPLY') {
-            return <StatusBadge status="Pending" label="Menunggu Jawaban" />;
-          }
-          return <StatusBadge status="Cancelled" label="Ditutup" />;
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem' }}>
+              {s === 'ANSWERED' || s === 'TERJAWAB' || s === 'DIJAWAB' ? (
+                <StatusBadge status="Paid" label="Dijawab" />
+              ) : s === 'OPEN' || s === 'MENUNGGU' || s === 'WAITING_REPLY' ? (
+                <StatusBadge status="Pending" label="Menunggu Jawaban" />
+              ) : (
+                <StatusBadge status="Cancelled" label="Ditutup" />
+              )}
+              {item.read_status_label && (
+                <span style={{
+                  fontSize: '0.7rem',
+                  color: item.read_status_label.includes('Dibaca') ? '#059669' : '#d97706',
+                  fontWeight: 600,
+                }}>
+                  {item.read_status_label}
+                </span>
+              )}
+            </div>
+          );
         },
       },
       {
@@ -339,8 +352,20 @@ export function TeacherInquiryView() {
                 <h3 className={styles.chatTitle}>
                   {activeDetail.thread.student_name} ({activeDetail.thread.student_class})
                 </h3>
-                <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.15rem' }}>
-                  {activeDetail.thread.subject_name} • {activeDetail.thread.reference_title}
+                <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.15rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span>{activeDetail.thread.subject_name} • {activeDetail.thread.reference_title}</span>
+                  {activeDetail.thread.read_status_label && (
+                    <span style={{
+                      fontSize: '0.72rem',
+                      background: activeDetail.thread.read_status_label.includes('Dibaca') ? '#ecfdf5' : '#fffbeb',
+                      color: activeDetail.thread.read_status_label.includes('Dibaca') ? '#059669' : '#d97706',
+                      padding: '0.1rem 0.45rem',
+                      borderRadius: '4px',
+                      fontWeight: 600,
+                    }}>
+                      {activeDetail.thread.read_status_label}
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -386,11 +411,23 @@ export function TeacherInquiryView() {
                         {isTeacher ? 'Bapak/Ibu Guru' : msg.sender_name}
                       </span>
                       <span>{msg.content}</span>
-                      <span className={styles.bubbleTime}>
-                        {new Date(msg.created_at).toLocaleTimeString('id-ID', {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
+                      <span className={styles.bubbleTime} style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', justifyContent: 'flex-end' }}>
+                        <span>
+                          {new Date(msg.created_at).toLocaleTimeString('id-ID', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </span>
+                        {isTeacher && (
+                          <span style={{ fontSize: '0.72rem', color: msg.is_read ? '#38bdf8' : '#94a3b8', fontWeight: 600 }}>
+                            {msg.is_read ? '✓✓ Dibaca Siswa' : '✓ Terkirim'}
+                          </span>
+                        )}
+                        {!isTeacher && msg.is_read && (
+                          <span style={{ fontSize: '0.72rem', color: '#10b981', fontWeight: 600 }}>
+                            ✓ Dibaca Guru
+                          </span>
+                        )}
                       </span>
                     </div>
                   );
