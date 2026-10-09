@@ -1629,13 +1629,13 @@ export default function CreateMaterialPage() {
                           )}
                         </div>
                       ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', flex: 1 }}>
                           <textarea
-                            rows={3}
                             placeholder="Tuliskan keterangan bagan atau penjelasan materi..."
                             value={block.content}
                             onChange={e => updateInfographicBlock(block.id, e.target.value)}
                             className={styles.textareaField}
+                            style={{ minHeight: '180px', flex: 1, resize: 'vertical' }}
                           />
                           <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                             <button
@@ -1751,7 +1751,7 @@ export default function CreateMaterialPage() {
               </div>
 
               {articleTab === 'EDIT' ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem', flex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
                       {articleContent.split(/\s+/).filter(Boolean).length} kata • ± {Math.max(1, Math.round(articleContent.split(/\s+/).filter(Boolean).length / 120))} menit baca
@@ -1767,12 +1767,11 @@ export default function CreateMaterialPage() {
                   </div>
 
                   <textarea
-                    rows={10}
                     placeholder="Tuliskan naskah materi lengkap di sini, gunakan baris baru ganda untuk memisahkan antar paragraf pembahasan..."
                     value={articleContent}
                     onChange={e => setArticleContent(e.target.value)}
                     className={styles.textareaField}
-                    style={{ fontSize: '0.8rem', lineHeight: 1.55 }}
+                    style={{ fontSize: '0.8rem', lineHeight: 1.55, flex: 1, minHeight: '440px', resize: 'vertical' }}
                   />
                 </div>
               ) : (

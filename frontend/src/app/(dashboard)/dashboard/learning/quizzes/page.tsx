@@ -629,14 +629,6 @@ export default function QuizzesPage() {
         <>
           {/* Top Action Row (Enterprise Style - Screenshot Match) */}
           <div className="tableActionRow">
-            <button className="tableActionBtn" onClick={() => setShowAddModal(true)}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="12" y1="5" x2="12" y2="19" />
-                <line x1="5" y1="12" x2="19" y2="12" />
-              </svg>
-              <span>+ Buat &amp; Publish Kuis CBT</span>
-            </button>
-
             <Link href="/dashboard/learning/quizzes/create" className="tableActionBtn">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -665,14 +657,6 @@ export default function QuizzesPage() {
               </svg>
               <span>Ekspor Hasil CBT (CSV)</span>
             </button>
-
-            <div className="tableActionBtn" style={{ cursor: 'default' }}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
-                <line x1="12" y1="18" x2="12.01" y2="18" />
-              </svg>
-              <span>Sinkron Portal Guru Android: Aktif</span>
-            </div>
           </div>
 
           {/* Table Card (Screenshot Match) */}

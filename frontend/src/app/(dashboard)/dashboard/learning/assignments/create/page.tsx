@@ -394,26 +394,6 @@ export default function CreateAssignmentPage() {
       {/* Top Nav Row */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <Link
-            href="/dashboard/learning/assignments"
-            className="btn btn-secondary btn-sm"
-            style={{
-              borderRadius: '8px',
-              padding: '0.35rem 0.65rem',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.35rem',
-              fontSize: '0.8rem',
-              fontWeight: 600,
-              color: 'var(--text-secondary)',
-              background: 'var(--bg-card)',
-              border: '1px solid var(--border-light)',
-              textDecoration: 'none',
-            }}
-          >
-            <ArrowLeft size={13} />
-            <span>Kembali</span>
-          </Link>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
             <Link href="/dashboard" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>Dashboard</Link>
             <span>/</span>

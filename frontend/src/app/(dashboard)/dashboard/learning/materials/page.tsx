@@ -30,6 +30,8 @@ type MaterialItem = {
   class_id?: string;
   class_name?: string;
   subject_id?: string;
+  rawDate?: number;
+  createdAt?: string;
 };
 
 type StudentCompletion = {
@@ -133,6 +135,8 @@ export default function MaterialsPage() {
         downloads: 12,
         completedCount: m.completed_count || 0,
         date: m.created_at ? new Date(m.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Hari ini',
+        rawDate: m.created_at ? new Date(m.created_at).getTime() : Date.now(),
+        createdAt: m.created_at,
         youtubeUrl: isVideo ? m.external_url : undefined,
         externalUrl: m.external_url,
         pdfFileName: isPdf ? (m.storage_key || (m.external_url ? m.external_url.split('/').pop() : 'Buku_Kurikulum.pdf')) : undefined,
@@ -515,7 +519,7 @@ export default function MaterialsPage() {
       } else if (sortField === 'completedCount') {
         comparison = (a.completedCount || 0) - (b.completedCount || 0);
       } else if (sortField === 'date') {
-        comparison = (a.date || '').localeCompare(b.date || '');
+        comparison = (a.rawDate || 0) - (b.rawDate || 0);
       }
       return sortOrder === 'asc' ? comparison : -comparison;
     });
@@ -566,14 +570,6 @@ export default function MaterialsPage() {
         </div>
 
         <div className={styles.headerActions}>
-          <Link href="/dashboard/learning" className={styles.btnSecondary} title="Kembali ke Workspace Pembelajaran">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="19" y1="12" x2="5" y2="12" />
-              <polyline points="12 19 5 12 12 5" />
-            </svg>
-            <span>Workspace</span>
-          </Link>
-
           <Link
             href="/dashboard/learning/materials/create"
             className={styles.btnLibrary}
