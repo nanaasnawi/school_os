@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDbPool } from '@/lib/db';
+import { getApiUrl } from '@/lib/api';
 import {
   generateAssignmentFromMaterials,
   generateQuizFromMaterials,
@@ -125,29 +126,122 @@ export async function POST(req: NextRequest) {
     // 3. Generate questions or task according to requested type
     const targetSubject = { id: effectiveSubjectId, name: subjectName };
 
-    if (type === 'ASSIGNMENT_STRUCTURED') {
-      const result = generateAssignmentFromMaterials(materials, 'STRUCTURED_QUESTIONS', targetSubject);
+    if (type === 'ASSIGNMENT_STRUCTURED' || type === 'ASSIGNMENT_HOMEWORK') {
+      const isHomework = type === 'ASSIGNMENT_HOMEWORK';
+      const topic = materials.map(m => m.title).slice(0, 2).join(', ') || subjectName;
+
+      try {
+        const backendEndpoint = getApiUrl('/api/v1/ai/generate-content');
+        const authHeader = req.headers.get('authorization');
+        const aiRes = await fetch(backendEndpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(authHeader ? { Authorization: authHeader } : {}),
+          },
+          body: JSON.stringify({
+            mode: 'ASSIGNMENT',
+            topic,
+            grade_level: 'SD/SMP/SMA',
+            subject_name: subjectName,
+          }),
+        });
+
+        if (aiRes.ok) {
+          const aiJson = await aiRes.json();
+          const aiTask = aiJson?.data?.assignment;
+          if (aiTask && aiTask.title) {
+            const questions = (aiTask.tasks || []).map((t: string, idx: number) => ({
+              id: `task-q-${idx + 1}-${Date.now()}`,
+              question_text: t,
+              question_type: 'ESSAY' as const,
+              points: Math.round(100 / Math.max(1, aiTask.tasks?.length || 1)),
+              choices: [],
+              explanation: aiTask.rubric || '',
+            }));
+
+            const result = {
+              title: aiTask.title,
+              assignment_type: isHomework ? 'HOMEWORK_PR' : 'STRUCTURED_QUESTIONS',
+              instructions: `${aiTask.instructions}\n\nRubrik Penilaian:\n${aiTask.rubric}`,
+              questions,
+              subject_id: effectiveSubjectId,
+              subject_name: subjectName,
+              source_materials: materials.map(m => ({ id: m.id, title: m.title, type: m.material_type || 'document' })),
+            };
+            return NextResponse.json({ success: true, data: result });
+          }
+        }
+      } catch (aiErr) {
+        console.warn('Backend AI assignment auto-generate fallback to template:', aiErr);
+      }
+
+      const result = generateAssignmentFromMaterials(materials, isHomework ? 'HOMEWORK_PR' : 'STRUCTURED_QUESTIONS', targetSubject);
       return NextResponse.json({ success: true, data: result });
     }
 
-    if (type === 'ASSIGNMENT_HOMEWORK') {
-      const result = generateAssignmentFromMaterials(materials, 'HOMEWORK_PR', targetSubject);
-      return NextResponse.json({ success: true, data: result });
-    }
+    if (type === 'QUIZ_MCQ_ONLY' || type === 'QUIZ_MCQ_ESSAY' || type === 'EXAM_MONTHLY') {
+      const isMonthly = type === 'EXAM_MONTHLY';
+      const format: QuizGenFormat = (type === 'QUIZ_MCQ_ONLY' || body.format === 'MCQ_ONLY') ? 'MCQ_ONLY' : 'MCQ_AND_ESSAY';
+      const numQuestions = isMonthly ? 10 : 5;
+      const topic = materials.map(m => m.title).slice(0, 3).join(', ') || subjectName;
 
-    if (type === 'QUIZ_MCQ_ONLY') {
-      const result = generateQuizFromMaterials(materials, 'MCQ_ONLY', targetSubject, false);
-      return NextResponse.json({ success: true, data: result });
-    }
+      try {
+        const backendEndpoint = getApiUrl('/api/v1/ai/generate-content');
+        const authHeader = req.headers.get('authorization');
+        const aiRes = await fetch(backendEndpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(authHeader ? { Authorization: authHeader } : {}),
+          },
+          body: JSON.stringify({
+            mode: 'QUIZ',
+            topic,
+            grade_level: 'SD/SMP/SMA',
+            subject_name: subjectName,
+            num_questions: numQuestions,
+            difficulty: isMonthly ? 'HOTS' : 'Sedang',
+          }),
+        });
 
-    if (type === 'QUIZ_MCQ_ESSAY') {
-      const result = generateQuizFromMaterials(materials, 'MCQ_AND_ESSAY', targetSubject, false);
-      return NextResponse.json({ success: true, data: result });
-    }
+        if (aiRes.ok) {
+          const aiJson = await aiRes.json();
+          const aiQuiz = aiJson?.data?.quiz;
+          if (aiQuiz && aiQuiz.questions && aiQuiz.questions.length > 0) {
+            const generatedQuestions = aiQuiz.questions.map((q: any, idx: number) => ({
+              id: `gen-q-${idx + 1}-${Date.now()}`,
+              question_text: q.question_text,
+              question_type: 'MULTIPLE_CHOICE' as const,
+              points: q.points || 20,
+              choices: (q.choices || []).map((c: any) => ({
+                choice_text: typeof c === 'string' ? c : c.choice_text,
+                is_correct: typeof c === 'object' ? Boolean(c.is_correct) : false,
+              })),
+              explanation: q.explanation,
+            }));
 
-    if (type === 'EXAM_MONTHLY') {
-      const format: QuizGenFormat = body.format === 'MCQ_ONLY' ? 'MCQ_ONLY' : 'MCQ_AND_ESSAY';
-      const result = generateQuizFromMaterials(materials, format, targetSubject, true);
+            const result = {
+              title: aiQuiz.title || (isMonthly ? `Ujian Bulanan CBT: ${subjectName}` : `Kuis Pembelajaran: ${subjectName}`),
+              description: aiQuiz.description || `Soal disusun otomatis oleh AI NVIDIA berbasis kurikulum materi ${subjectName}.`,
+              format,
+              time_limit_minutes: isMonthly ? 90 : 45,
+              passing_score: 75,
+              questions: generatedQuestions,
+              subject_id: effectiveSubjectId,
+              subject_name: subjectName,
+              is_monthly_exam: isMonthly,
+              source_materials: materials.map(m => ({ id: m.id, title: m.title, type: m.material_type || 'document' })),
+            };
+            return NextResponse.json({ success: true, data: result });
+          }
+        }
+      } catch (aiErr) {
+        console.warn('Backend AI Quiz auto-generate fallback to rule engine:', aiErr);
+      }
+
+      // Fallback to deterministic template generator
+      const result = generateQuizFromMaterials(materials, format, targetSubject, isMonthly);
       return NextResponse.json({ success: true, data: result });
     }
 

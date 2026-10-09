@@ -33,6 +33,7 @@ import {
   Image as ImageIcon
 } from 'lucide-react';
 import styles from './create.module.css';
+import { AiGeneratorModal, AiGeneratorMode } from '@/features/ai';
 
 const YOUTUBE_API_KEY = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY || '';
 
@@ -182,6 +183,28 @@ export default function CreateMaterialPage() {
       subjectName: finalSubjectName || subject || 'Umum',
       format,
     });
+  };
+
+  // AI Generator Modal State (NVIDIA NIM)
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+  const [aiModalMode, setAiModalMode] = useState<AiGeneratorMode>('INFOGRAPHIC');
+
+  const handleAiGenerated = (data: any) => {
+    if (aiModalMode === 'INFOGRAPHIC') {
+      if (data.title) setTitle(data.title);
+      if (data.description) setDescription(data.description);
+      if (data.blocks && data.blocks.length > 0) {
+        setInfographicBlocks(data.blocks);
+      }
+      showToast('✨ Infografis materi berhasil dibuat otomatis oleh AI NVIDIA!', 'success');
+    } else if (aiModalMode === 'ARTICLE') {
+      if (data.title) setTitle(data.title);
+      if (data.description) setDescription(data.description);
+      if (data.articleContent) {
+        setArticleContent(data.articleContent);
+      }
+      showToast('✨ Naskah artikel berhasil dibuat lengkap oleh AI NVIDIA!', 'success');
+    }
   };
 
   useEffect(() => {
@@ -803,6 +826,23 @@ export default function CreateMaterialPage() {
         </div>
 
         <div className={styles.headerActions}>
+          <button
+            type="button"
+            onClick={() => {
+              setAiModalMode(materialFormat === 'ARTICLE' ? 'ARTICLE' : 'INFOGRAPHIC');
+              setIsAiModalOpen(true);
+            }}
+            className={styles.btnSecondary}
+            style={{
+              background: 'linear-gradient(135deg, rgba(124, 58, 237, 0.08) 0%, rgba(79, 70, 229, 0.04) 100%)',
+              color: '#7c3aed',
+              borderColor: 'rgba(124, 58, 237, 0.35)',
+              fontWeight: 700,
+            }}
+          >
+            <Sparkles size={13} />
+            <span>Generate dengan AI</span>
+          </button>
           <Link href="/dashboard/learning/materials" className={styles.btnSecondary}>
             Batal
           </Link>
@@ -1346,34 +1386,54 @@ export default function CreateMaterialPage() {
                   </p>
                 </div>
 
-                {/* Edit vs Preview Toggle */}
-                <div style={{ display: 'flex', background: 'var(--bg-elevated)', borderRadius: '8px', padding: '2px', border: '1px solid var(--border-light)' }}>
+                {/* Edit vs Preview Toggle & AI Assistant */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
                   <button
                     type="button"
-                    onClick={() => setInfographicTab('EDIT')}
+                    onClick={() => {
+                      setAiModalMode('INFOGRAPHIC');
+                      setIsAiModalOpen(true);
+                    }}
                     className={`${styles.btnSecondary} ${styles.btnSm}`}
                     style={{
-                      border: 'none',
-                      background: infographicTab === 'EDIT' ? '#7c3aed' : 'transparent',
-                      color: infographicTab === 'EDIT' ? '#fff' : 'var(--text-secondary)'
+                      background: 'rgba(124, 58, 237, 0.08)',
+                      borderColor: 'rgba(124, 58, 237, 0.35)',
+                      color: '#7c3aed',
+                      fontWeight: 700,
                     }}
                   >
-                    <Edit3 size={12} />
-                    <span>Editor Blok</span>
+                    <Sparkles size={12} />
+                    <span>AI Generate Infografis</span>
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setInfographicTab('PREVIEW')}
-                    className={`${styles.btnSecondary} ${styles.btnSm}`}
-                    style={{
-                      border: 'none',
-                      background: infographicTab === 'PREVIEW' ? '#7c3aed' : 'transparent',
-                      color: infographicTab === 'PREVIEW' ? '#fff' : 'var(--text-secondary)'
-                    }}
-                  >
-                    <Eye size={12} />
-                    <span>Pratinjau Kanvas</span>
-                  </button>
+
+                  <div style={{ display: 'flex', background: 'var(--bg-elevated)', borderRadius: '8px', padding: '2px', border: '1px solid var(--border-light)' }}>
+                    <button
+                      type="button"
+                      onClick={() => setInfographicTab('EDIT')}
+                      className={`${styles.btnSecondary} ${styles.btnSm}`}
+                      style={{
+                        border: 'none',
+                        background: infographicTab === 'EDIT' ? '#7c3aed' : 'transparent',
+                        color: infographicTab === 'EDIT' ? '#fff' : 'var(--text-secondary)'
+                      }}
+                    >
+                      <Edit3 size={12} />
+                      <span>Editor Blok</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setInfographicTab('PREVIEW')}
+                      className={`${styles.btnSecondary} ${styles.btnSm}`}
+                      style={{
+                        border: 'none',
+                        background: infographicTab === 'PREVIEW' ? '#7c3aed' : 'transparent',
+                        color: infographicTab === 'PREVIEW' ? '#fff' : 'var(--text-secondary)'
+                      }}
+                    >
+                      <Eye size={12} />
+                      <span>Pratinjau Kanvas</span>
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -1632,33 +1692,53 @@ export default function CreateMaterialPage() {
                   </p>
                 </div>
 
-                <div style={{ display: 'flex', background: 'var(--bg-elevated)', borderRadius: '8px', padding: '2px', border: '1px solid var(--border-light)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
                   <button
                     type="button"
-                    onClick={() => setArticleTab('EDIT')}
+                    onClick={() => {
+                      setAiModalMode('ARTICLE');
+                      setIsAiModalOpen(true);
+                    }}
                     className={`${styles.btnSecondary} ${styles.btnSm}`}
                     style={{
-                      border: 'none',
-                      background: articleTab === 'EDIT' ? '#059669' : 'transparent',
-                      color: articleTab === 'EDIT' ? '#fff' : 'var(--text-secondary)'
+                      background: 'rgba(5, 150, 105, 0.08)',
+                      borderColor: 'rgba(5, 150, 105, 0.35)',
+                      color: '#059669',
+                      fontWeight: 700,
                     }}
                   >
-                    <Edit3 size={12} />
-                    <span>Tulis Artikel</span>
+                    <Sparkles size={12} />
+                    <span>AI Tulis Artikel</span>
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setArticleTab('PREVIEW')}
-                    className={`${styles.btnSecondary} ${styles.btnSm}`}
-                    style={{
-                      border: 'none',
-                      background: articleTab === 'PREVIEW' ? '#059669' : 'transparent',
-                      color: articleTab === 'PREVIEW' ? '#fff' : 'var(--text-secondary)'
-                    }}
-                  >
-                    <Eye size={12} />
-                    <span>Pratinjau Bacaan</span>
-                  </button>
+
+                  <div style={{ display: 'flex', background: 'var(--bg-elevated)', borderRadius: '8px', padding: '2px', border: '1px solid var(--border-light)' }}>
+                    <button
+                      type="button"
+                      onClick={() => setArticleTab('EDIT')}
+                      className={`${styles.btnSecondary} ${styles.btnSm}`}
+                      style={{
+                        border: 'none',
+                        background: articleTab === 'EDIT' ? '#059669' : 'transparent',
+                        color: articleTab === 'EDIT' ? '#fff' : 'var(--text-secondary)'
+                      }}
+                    >
+                      <Edit3 size={12} />
+                      <span>Tulis Artikel</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setArticleTab('PREVIEW')}
+                      className={`${styles.btnSecondary} ${styles.btnSm}`}
+                      style={{
+                        border: 'none',
+                        background: articleTab === 'PREVIEW' ? '#059669' : 'transparent',
+                        color: articleTab === 'PREVIEW' ? '#fff' : 'var(--text-secondary)'
+                      }}
+                    >
+                      <Eye size={12} />
+                      <span>Pratinjau Bacaan</span>
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -1955,6 +2035,17 @@ export default function CreateMaterialPage() {
           </div>
         </div>
       )}
+
+      {/* NVIDIA NIM Educational AI Generator Modal */}
+      <AiGeneratorModal
+        isOpen={isAiModalOpen}
+        onClose={() => setIsAiModalOpen(false)}
+        mode={aiModalMode}
+        initialTopic={title}
+        initialSubject={subject || 'IPA'}
+        initialGrade={targetGrade || 'Kelas 5 SD'}
+        onGenerated={handleAiGenerated}
+      />
     </div>
   );
 }
