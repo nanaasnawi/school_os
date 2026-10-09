@@ -216,7 +216,7 @@ export default function CreateAssignmentPage() {
 
   const removeQuestion = (qIndex: number) => {
     if (questions.length <= 1) {
-      showToast('⚠️ Tugas terstruktur harus memiliki setidaknya satu butir soal', 'warning');
+      showToast('Tugas terstruktur harus memiliki setidaknya satu butir soal', 'warning');
       return;
     }
     setQuestions(prev => prev.filter((_, i) => i !== qIndex));
@@ -253,7 +253,7 @@ export default function CreateAssignmentPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) {
-      showToast('⚠️ Masukkan judul tugas pembelajaran', 'warning');
+      showToast('Masukkan judul tugas pembelajaran', 'warning');
       return;
     }
 
@@ -261,7 +261,7 @@ export default function CreateAssignmentPage() {
     if (assignmentFormat === 'STRUCTURED_QUESTIONS') {
       const validQuestions = questions.filter(q => q.question_text.trim().length > 0);
       if (validQuestions.length === 0) {
-        showToast('⚠️ Tuliskan minimal satu butir soal pada tugas terstruktur ini', 'warning');
+        showToast('Tuliskan minimal satu butir soal pada tugas terstruktur ini', 'warning');
         return;
       }
 
@@ -271,11 +271,11 @@ export default function CreateAssignmentPage() {
         if (q.question_type === 'MULTIPLE_CHOICE') {
           const filledChoices = q.choices.filter(c => c.choice_text.trim().length > 0);
           if (filledChoices.length < 2) {
-            showToast(`⚠️ Soal #${i + 1} harus memiliki minimal 2 pilihan jawaban yang terisi`, 'warning');
+            showToast(`Soal #${i + 1} harus memiliki minimal 2 pilihan jawaban yang terisi`, 'warning');
             return;
           }
           if (!q.choices.some(c => c.is_correct)) {
-            showToast(`⚠️ Tentukan kunci jawaban yang benar untuk soal #${i + 1}`, 'warning');
+            showToast(`Tentukan kunci jawaban yang benar untuk soal #${i + 1}`, 'warning');
             return;
           }
         }
@@ -339,13 +339,13 @@ export default function CreateAssignmentPage() {
         throw new Error(errJson?.error?.message || 'Gagal membuat tugas');
       }
 
-      showToast('✓ Tugas terstruktur berhasil diterbitkan & disinkronkan ke Android!', 'success');
+      showToast('Tugas terstruktur berhasil diterbitkan & disinkronkan ke Android!', 'success');
       setTimeout(() => {
         router.push('/dashboard/learning/assignments');
       }, 800);
     } catch (err: unknown) {
       console.error('Error creating assignment:', err);
-      const message = err instanceof Error ? err.message : '⚠️ Terjadi kendala saat menerbitkan tugas';
+      const message = err instanceof Error ? err.message : 'Terjadi kendala saat menerbitkan tugas';
       showToast(message, 'error');
     } finally {
       setIsSubmitting(false);
@@ -504,7 +504,10 @@ export default function CreateAssignmentPage() {
               </>
             ) : (
               <>
-                <span>🚀</span>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="22" y1="2" x2="11" y2="13"/>
+                  <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                </svg>
                 <span>Terbitkan Tugas</span>
               </>
             )}
@@ -580,7 +583,7 @@ export default function CreateAssignmentPage() {
           }}
         >
           <Sparkles size={16} />
-          <span>✨ Generate Otomatis dari Materi</span>
+          <span>Generate Otomatis dari Materi</span>
         </button>
       </div>
 
@@ -615,7 +618,10 @@ export default function CreateAssignmentPage() {
             boxShadow: assignmentFormat === 'STRUCTURED_QUESTIONS' ? '0 4px 12px rgba(14, 165, 233, 0.25)' : 'none'
           }}
         >
-          <span style={{ fontSize: '1.25rem' }}>📋</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+            <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+          </svg>
           <span>Soal Terstruktur (Pilihan Ganda &amp; Essay) — Ditampilkan di App Android</span>
         </button>
 
@@ -639,7 +645,9 @@ export default function CreateAssignmentPage() {
             boxShadow: assignmentFormat === 'HOMEWORK_PR' ? '0 4px 12px rgba(14, 165, 233, 0.25)' : 'none'
           }}
         >
-          <span style={{ fontSize: '1.25rem' }}>📁</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+          </svg>
           <span>Tugas Mandiri / Unggah Berkas Lembar Kerja</span>
         </button>
       </div>
@@ -660,7 +668,10 @@ export default function CreateAssignmentPage() {
             boxShadow: 'var(--shadow-sm)'
           }}>
             <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span>⚙️</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+              </svg>
               <span>Informasi &amp; Pengaturan Tugas</span>
             </h2>
 
@@ -787,8 +798,13 @@ export default function CreateAssignmentPage() {
               flexDirection: 'column',
               gap: '0.75rem'
             }}>
-              <div style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                📊 Akumulasi Soal Tugas
+              <div style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="20" x2="18" y2="10"/>
+                  <line x1="12" y1="20" x2="12" y2="4"/>
+                  <line x1="6" y1="20" x2="6" y2="14"/>
+                </svg>
+                <span>Akumulasi Soal Tugas</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
                 <span>Pilihan Ganda:</span>
@@ -822,7 +838,13 @@ export default function CreateAssignmentPage() {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
                 <div>
                   <h2 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span>📝</span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                      <polyline points="14 2 14 8 20 8"/>
+                      <line x1="16" y1="13" x2="8" y2="13"/>
+                      <line x1="16" y1="17" x2="8" y2="17"/>
+                      <polyline points="10 9 9 9 8 9"/>
+                    </svg>
                     <span>Butir Soal Tugas ({questions.length} Soal)</span>
                   </h2>
                   <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
@@ -916,10 +938,13 @@ export default function CreateAssignmentPage() {
                             type="button"
                             onClick={() => removeQuestion(qIdx)}
                             className="btn btn-secondary btn-sm"
-                            style={{ color: '#ef4444', borderColor: '#fca5a5', padding: '0.2rem 0.5rem' }}
+                            style={{ color: '#ef4444', borderColor: '#fca5a5', padding: '0.2rem 0.5rem', display: 'flex', alignItems: 'center' }}
                             title="Hapus Soal"
                           >
-                            🗑️
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="3 6 5 6 21 6"/>
+                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                            </svg>
                           </button>
                         </div>
                       </div>
@@ -1029,15 +1054,34 @@ export default function CreateAssignmentPage() {
               gap: '1rem',
               boxShadow: 'var(--shadow-sm)'
             }}>
-              <span style={{ fontSize: '3rem' }}>📂</span>
+              <div style={{
+                width: '52px',
+                height: '52px',
+                borderRadius: '12px',
+                background: 'var(--bg-elevated)',
+                border: '1px solid var(--border-light)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--text-muted)'
+              }}>
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                </svg>
+              </div>
               <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)' }}>
                 Tugas Mandiri / Proyek Siswa
               </h3>
               <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
                 Pada format ini, siswa tidak mengisi lembar soal di aplikasi, melainkan membaca petunjuk pengerjaan yang kamu berikan lalu mengunggah lembar kerja tugas (berupa file PDF, foto bukti tugas, atau catatan jawaban).
               </p>
-              <div style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-light)', borderRadius: '12px', padding: '1rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                💡 <strong>Tips:</strong> Pastikan kolom <em>Petunjuk Pengerjaan</em> di sebelah kiri terisi dengan instruksi yang lengkap dan detail agar siswa memahami kriteria penilaian tugas.
+              <div style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-light)', borderRadius: '12px', padding: '1rem', fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: '2px' }}>
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="12" y1="16" x2="12" y2="12"/>
+                  <line x1="12" y1="8" x2="12.01" y2="8"/>
+                </svg>
+                <div><strong>Tips:</strong> Pastikan kolom <em>Petunjuk Pengerjaan</em> di sebelah kiri terisi dengan instruksi yang lengkap dan detail agar siswa memahami kriteria penilaian tugas.</div>
               </div>
             </div>
           )}

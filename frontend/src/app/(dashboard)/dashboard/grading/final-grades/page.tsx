@@ -119,15 +119,15 @@ export default function FinalGradesPage() {
 
   const handleFinalize = () => {
     if (!hasSavedGrades) {
-      showToast('⚠️ Belum ada nilai akhir untuk dikunci!');
+      showToast('Belum ada nilai akhir untuk dikunci!');
       return;
     }
-    showToast(`🔒 Seluruh Nilai Akhir Rapor & Transkrip Semester ${schoolName} Berhasil Dikunci!`);
+    showToast(`Seluruh Nilai Akhir Rapor & Transkrip Semester ${schoolName} Berhasil Dikunci!`);
   };
 
   const exportToExcelFile = () => {
     if (!filtered || filtered.length === 0) {
-      showToast('⚠️ Tidak ada data nilai akhir untuk diekspor!');
+      showToast('Tidak ada data nilai akhir untuk diekspor!');
       return;
     }
     exportToExcel(
@@ -148,7 +148,7 @@ export default function FinalGradesPage() {
       })),
       `Nilai_Akhir_Rapor_${schoolName.replace(/[^a-zA-Z0-9]/g, '_')}`
     );
-    showToast('📊 Mengunduh Excel Nilai Akhir Rapor (.xlsx)...');
+    showToast('Mengunduh Excel Nilai Akhir Rapor (.xlsx)...');
   };
 
   const filtered = finalGrades.filter(f => {
@@ -224,11 +224,22 @@ export default function FinalGradesPage() {
           </p>
         </div>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <button className="btn btn-secondary btn-sm" onClick={exportToExcelFile}>
-            📊 Ekspor Excel (.xlsx)
+          <button className="btn btn-secondary btn-sm" onClick={exportToExcelFile} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="8" y1="13" x2="16" y2="13"/>
+              <line x1="8" y1="17" x2="16" y2="17"/>
+              <polyline points="10 9 9 9 8 9"/>
+            </svg>
+            Ekspor Excel (.xlsx)
           </button>
-          <button className="btn btn-primary btn-sm" onClick={handleFinalize}>
-            🔒 Kunci &amp; Finalisasi Transkrip
+          <button className="btn btn-primary btn-sm" onClick={handleFinalize} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+            Kunci &amp; Finalisasi Transkrip
           </button>
         </div>
       </div>
@@ -265,7 +276,23 @@ export default function FinalGradesPage() {
           padding: '3.5rem 1.5rem',
           textAlign: 'center'
         }}>
-          <div style={{ fontSize: '3rem', marginBottom: '0.75rem' }}>📄</div>
+          <div style={{
+            width: '48px',
+            height: '48px',
+            borderRadius: '12px',
+            background: 'var(--bg-elevated)',
+            border: '1px solid var(--border-light)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto 1rem auto',
+            color: 'var(--text-muted)'
+          }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+            </svg>
+          </div>
           <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
             Belum Ada Data Nilai Akhir Rapor yang Diinput
           </h2>
@@ -273,8 +300,12 @@ export default function FinalGradesPage() {
             Guru pengampu di <strong>{schoolName}</strong> belum menginput nilai mata pelajaran untuk semester ini. Nilai akhir rapor &amp; transkrip akan terisi secara otomatis setelah nilai dimasukkan pada menu <strong>Buku Nilai</strong>.
           </p>
           <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
-            <Link href="/dashboard/grading/gradebook" className="btn btn-primary btn-sm">
-              ✏️ Buka Buku Nilai &amp; Input Nilai
+            <Link href="/dashboard/grading/gradebook" className="btn btn-primary btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 20h9"/>
+                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+              </svg>
+              Buka Buku Nilai &amp; Input Nilai
             </Link>
           </div>
         </div>
@@ -368,8 +399,12 @@ export default function FinalGradesPage() {
                       </div>
                     </td>
                     <td style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>
-                      <button className="btn btn-secondary btn-sm" style={{ fontSize: '0.72rem' }} onClick={() => setSelectedTranscript(item)}>
-                        📄 Transkrip Rapor
+                      <button className="btn btn-secondary btn-sm" style={{ fontSize: '0.72rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }} onClick={() => setSelectedTranscript(item)}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                          <polyline points="14 2 14 8 20 8"/>
+                        </svg>
+                        Transkrip Rapor
                       </button>
                     </td>
                   </tr>
@@ -416,7 +451,15 @@ export default function FinalGradesPage() {
           <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: '16px', width: '100%', maxWidth: '580px', padding: '1.5rem', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.3)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid var(--border-light)', paddingBottom: '0.75rem' }}>
               <div>
-                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)' }}>📄 Transkrip Nilai Rapor Digital</h3>
+                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <line x1="16" y1="13" x2="8" y2="13"/>
+                    <line x1="16" y1="17" x2="8" y2="17"/>
+                  </svg>
+                  Transkrip Nilai Rapor Digital
+                </h3>
                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{schoolName}</div>
               </div>
               <button className="btn btn-ghost btn-sm" onClick={() => setSelectedTranscript(null)}>✕</button>
@@ -454,8 +497,13 @@ export default function FinalGradesPage() {
                 <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Rata-Rata Akhir: </span>
                 <strong style={{ fontSize: '1.2rem', color: '#2563eb' }}>{selectedTranscript.averageGrade} / 100</strong>
               </div>
-              <button className="btn btn-primary btn-sm" onClick={() => { showToast(`🖨️ Mencetak Transkrip Rapor ${selectedTranscript.name}...`); window.print(); }}>
-                🖨️ Cetak Transkrip PDF
+              <button className="btn btn-primary btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }} onClick={() => { showToast(`Mencetak Transkrip Rapor ${selectedTranscript.name}...`); window.print(); }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="6 9 6 2 18 2 18 9"/>
+                  <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                  <rect x="6" y="14" width="12" height="8"/>
+                </svg>
+                Cetak Transkrip PDF
               </button>
             </div>
           </div>

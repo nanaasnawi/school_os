@@ -219,13 +219,13 @@ export default function GradebookPage() {
         throw new Error(errJson?.error?.message || `Server error (HTTP ${res.status})`);
       }
 
-      showToast(`💾 Nilai [${selectedSubject}] berhasil disimpan & disinkronkan ke Database!`);
+      showToast(`Nilai [${selectedSubject}] berhasil disimpan & disinkronkan ke Database!`);
       // Re-fetch to ensure complete sync
       await fetchGradesForSubject(selectedSubject, studentsList, subjectsList);
     } catch (err: unknown) {
       console.error('Failed to sync grades to backend:', err);
       const message = err instanceof Error ? err.message : 'Gagal menyimpan nilai ke database';
-      showToast(`⚠️ ${message}`);
+      showToast(message);
     } finally {
       setIsSaving(false);
     }
@@ -238,7 +238,7 @@ export default function GradebookPage() {
 
   const exportToExcelFile = () => {
     if (!filtered || filtered.length === 0) {
-      showToast('⚠️ Tidak ada data nilai untuk diekspor!');
+      showToast('Tidak ada data nilai untuk diekspor!');
       return;
     }
 
@@ -257,7 +257,7 @@ export default function GradebookPage() {
     }));
 
     exportToExcel(exportData, `Buku_Nilai_${selectedSubject.replace(/\s+/g, '_')}_${schoolName.replace(/[^a-zA-Z0-9]/g, '_')}`, 'Buku Nilai');
-    showToast('📊 Berkas Excel (.xlsx) Buku Nilai Rapor berhasil diunduh!');
+    showToast('Berkas Excel (.xlsx) Buku Nilai Rapor berhasil diunduh.');
   };
 
   type GradebookSortField = 'name' | 'className' | 'formatif1' | 'formatif2' | 'pts' | 'pas' | 'totalScore' | 'grade';
@@ -340,11 +340,22 @@ export default function GradebookPage() {
           </p>
         </div>
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-          <button className="btn btn-secondary btn-sm" onClick={exportToExcelFile}>
-            📊 Ekspor Excel (.xlsx)
+          <button className="btn btn-secondary btn-sm" onClick={exportToExcelFile} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+              <line x1="8" y1="13" x2="16" y2="13" />
+              <line x1="8" y1="17" x2="16" y2="17" />
+            </svg>
+            <span>Ekspor Excel (.xlsx)</span>
           </button>
-          <button className="btn btn-primary btn-sm" onClick={handleSaveChanges} disabled={isSaving}>
-            {isSaving ? 'Saving...' : '💾 Simpan Perubahan'}
+          <button className="btn btn-primary btn-sm" onClick={handleSaveChanges} disabled={isSaving} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+              <polyline points="17 21 17 13 7 13 7 21" />
+              <polyline points="7 3 7 8 15 8" />
+            </svg>
+            <span>{isSaving ? 'Menyimpan...' : 'Simpan Perubahan'}</span>
           </button>
         </div>
       </div>
@@ -372,7 +383,7 @@ export default function GradebookPage() {
         <div style={{ flex: 1, minWidth: '220px' }}>
           <input
             type="text"
-            placeholder="🔍 Cari NISN atau nama siswa..."
+            placeholder="Cari NISN atau nama siswa..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="input"
@@ -399,7 +410,12 @@ export default function GradebookPage() {
       <div className={styles.tableCard}>
         {filtered.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '3.5rem 1rem' }}>
-            <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>📄</div>
+            <div style={{ width: '40px', height: '40px', margin: '0 auto 0.5rem', borderRadius: '10px', background: '#f1f5f9', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+              </svg>
+            </div>
             <h3 style={{ fontSize: '1rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
               Tidak ada data siswa ditemukan
             </h3>
