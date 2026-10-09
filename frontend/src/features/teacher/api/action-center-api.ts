@@ -330,10 +330,6 @@ export async function fetchRecentMaterials(classId?: string, existingProfile?: a
       );
     });
 
-    if (teacherMaterials.length === 0 && raw.length > 0) {
-      teacherMaterials = raw;
-    }
-
     if (classId && classId !== 'ALL') {
       teacherMaterials = teacherMaterials.filter((m) => !m.class_id || m.class_id === classId);
     }

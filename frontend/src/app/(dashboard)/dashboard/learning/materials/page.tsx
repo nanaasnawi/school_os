@@ -100,7 +100,29 @@ export default function MaterialsPage() {
   }, [libraryBooks, bookSearchQuery]);
 
   const materials = useMemo<MaterialItem[]>(() => {
-    const dataList = materialsData;
+    let dataList = materialsData;
+
+    // Strict Teacher Isolation: Ensure teacher only sees their own materials
+    if (isTeacher && user) {
+      const currentTeacher = teachers.find(
+        (t) =>
+          t.user_id === user.id ||
+          (t.full_name && user.full_name && t.full_name.trim().toLowerCase() === user.full_name.trim().toLowerCase())
+      );
+      const currentTeacherId = currentTeacher?.id;
+      const currentUserName = user.full_name?.trim().toLowerCase();
+
+      dataList = dataList.filter((m) => {
+        if (currentTeacherId && m.teacher_id === currentTeacherId) return true;
+        if (m.teacher_id === user.id || (m as any).created_by === user.id) return true;
+        if (currentUserName && m.teacher_name && m.teacher_name.trim().toLowerCase() === currentUserName) return true;
+        const desc = m.description || '';
+        const descParts = desc.includes(' • ') ? desc.split(' • ') : [];
+        const authorInDesc = descParts[2]?.trim().toLowerCase();
+        if (currentUserName && authorInDesc && authorInDesc === currentUserName) return true;
+        return false;
+      });
+    }
 
     return dataList.map((m) => {
       const desc = m.description || '';
@@ -134,7 +156,7 @@ export default function MaterialsPage() {
         subject_id: (m as any).subject_id,
       };
     });
-  }, [materialsData, isTeacher, user?.full_name, user?.id]);
+  }, [materialsData, isTeacher, user?.full_name, user?.id, teachers]);
 
   // Modal Input State
   const [showAddModal, setShowAddModal] = useState(false);
