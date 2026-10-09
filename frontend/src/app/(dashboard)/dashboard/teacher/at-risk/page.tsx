@@ -13,6 +13,29 @@ interface ReminderRecord {
   title: string;
 }
 
+function getAuthHeaders(): HeadersInit {
+  if (typeof window === 'undefined') return { 'Content-Type': 'application/json' };
+  const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
+  const tenantId = localStorage.getItem('tenant_id') || localStorage.getItem('tenantId');
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(tenantId ? { 'x-tenant-id': tenantId } : {}),
+  };
+}
+
+async function safeJsonParse(res: Response) {
+  const text = await res.text();
+  if (!text || text.trim() === '') {
+    return { success: res.ok };
+  }
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { success: false, error: `Format respon server tidak valid (${res.status})` };
+  }
+}
+
 function formatReminderTime(isoString: string): string {
   try {
     const date = new Date(isoString);
@@ -84,8 +107,8 @@ export default function AtRiskDetailPage() {
         const [cls, riskList, reminderRes] = await Promise.all([
           fetchTeacherClasses(prof || undefined),
           fetchAtRiskStudents(selectedClassId === 'ALL' ? undefined : selectedClassId, prof || undefined),
-          fetch('/api/v1/teacher/remind')
-            .then((r) => (r.ok ? r.json() : null))
+          fetch('/api/v1/teacher/remind', { headers: getAuthHeaders() })
+            .then(async (r) => (r.ok ? await safeJsonParse(r) : null))
             .catch(() => null),
         ]);
 
@@ -193,7 +216,7 @@ export default function AtRiskDetailPage() {
     try {
       const res = await fetch('/api/v1/teacher/remind', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           student_id: student.student_id,
           title: student.title,
@@ -205,9 +228,9 @@ export default function AtRiskDetailPage() {
         }),
       });
 
-      const json = await res.json();
+      const json = await safeJsonParse(res);
       if (!res.ok || !json.success) {
-        throw new Error(json.error || 'Gagal mengirim pengingat');
+        throw new Error(json.error || json.message || `Gagal mengirim pengingat (HTTP ${res.status})`);
       }
 
       const now = new Date().toISOString();
@@ -239,7 +262,7 @@ export default function AtRiskDetailPage() {
       const studentIds = filteredStudents.map((s) => s.student_id);
       const res = await fetch('/api/v1/teacher/remind', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           student_ids: studentIds,
           title:
@@ -255,9 +278,9 @@ export default function AtRiskDetailPage() {
         }),
       });
 
-      const json = await res.json();
+      const json = await safeJsonParse(res);
       if (!res.ok || !json.success) {
-        throw new Error(json.error || 'Gagal mengirim pengingat serentak');
+        throw new Error(json.error || json.message || `Gagal mengirim pengingat serentak (HTTP ${res.status})`);
       }
 
       const now = new Date().toISOString();
