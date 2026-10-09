@@ -159,14 +159,25 @@ export function PendingGradingWidget({ tasks }: PendingGradingWidgetProps) {
         </div>
       )}
 
-      {/* ── Bounded Scrollable List ── */}
+      {/* ── Bounded Scrollable List or Clean Empty State ── */}
       {tasks.length === 0 ? (
         <div className={styles.emptyState}>
-          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2">
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
+          <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#ecfdf5', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 4 }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+          </div>
           <span className={styles.emptyStateTitle}>Semua Pengumpulan Sudah Dinilai!</span>
-          <span>Tidak ada antrean koreksi tugas siswa saat ini.</span>
+          <span className={styles.emptyStateSub}>
+            Tidak ada antrean koreksi tugas siswa yang tertunda saat ini. Anda dapat membuka Mass Grader untuk melihat riwayat penilaian.
+          </span>
+          <Link
+            href="/dashboard/teacher/grading"
+            className={styles.actionBtnSmall}
+            style={{ marginTop: '0.45rem' }}
+          >
+            <span>Buka Mass Grader &rarr;</span>
+          </Link>
         </div>
       ) : filteredTasks.length === 0 ? (
         <div className={styles.emptyState}>

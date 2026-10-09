@@ -150,7 +150,9 @@ export function AtRiskStudentsWidget({ students, onResolve }: AtRiskStudentsWidg
           <div>
             <h3 className={styles.widgetTitle}>
               Siswa Perlu Perhatian
-              <span className={styles.badgeCount}>{students.length}</span>
+              <span className={students.length > 0 ? styles.badgeCount : styles.badgeCountNeutral}>
+                {students.length}
+              </span>
             </h3>
             <p className={styles.widgetSub}>
               Distribusi keterlambatan modul, tugas tertunda, atau nilai di bawah KKM.
@@ -191,14 +193,14 @@ export function AtRiskStudentsWidget({ students, onResolve }: AtRiskStudentsWidg
         </div>
       ) : (
         <>
-          {/* ── Executive KPI Summary Strip ── */}
+          {/* ── Executive KPI Summary Strip (Spacious & Non-cramped) ── */}
           <div className={styles.kpiStrip}>
             {/* KPI 1: Materi Tertinggal */}
             <div className={styles.kpiCard}>
               <div className={styles.kpiCardAccent} style={{ background: '#f97316' }} />
               <div className={styles.kpiLabelRow}>
                 <span className={styles.dotOrange} />
-                <span>Materi Tertinggal</span>
+                <span className={styles.kpiTitle} title="Materi Tertinggal">Materi Tertinggal</span>
               </div>
               <div className={styles.kpiValueRow}>
                 <span className={styles.kpiValue}>{categoryStats.unread}</span>
@@ -214,7 +216,7 @@ export function AtRiskStudentsWidget({ students, onResolve }: AtRiskStudentsWidg
               <div className={styles.kpiCardAccent} style={{ background: '#ef4444' }} />
               <div className={styles.kpiLabelRow}>
                 <span className={styles.dotRed} />
-                <span>Nilai &lt; KKM</span>
+                <span className={styles.kpiTitle} title="Nilai di bawah KKM">Nilai &lt; KKM</span>
               </div>
               <div className={styles.kpiValueRow}>
                 <span className={styles.kpiValue}>{categoryStats.lowScore}</span>
@@ -230,12 +232,18 @@ export function AtRiskStudentsWidget({ students, onResolve }: AtRiskStudentsWidg
               <div className={styles.kpiCardAccent} style={{ background: categoryStats.overdue > 0 ? '#f59e0b' : '#10b981' }} />
               <div className={styles.kpiLabelRow}>
                 <span className={categoryStats.overdue > 0 ? styles.dotAmber : styles.dotGreen} />
-                <span>Tugas Tertunda</span>
+                <span className={styles.kpiTitle} title="Tugas Tertunda">Tugas Tertunda</span>
               </div>
               <div className={styles.kpiValueRow}>
                 <span className={styles.kpiValue}>{categoryStats.overdue}</span>
                 <span className={styles.kpiUnit}>siswa</span>
-                <span className={styles.kpiPct} style={{ background: categoryStats.overdue > 0 ? '#fffbeb' : '#f0fdf4', color: categoryStats.overdue > 0 ? '#b45309' : '#15803d' }}>
+                <span
+                  className={styles.kpiPct}
+                  style={{
+                    background: categoryStats.overdue > 0 ? '#fffbeb' : '#f0fdf4',
+                    color: categoryStats.overdue > 0 ? '#b45309' : '#15803d',
+                  }}
+                >
                   {categoryStats.overdue > 0 ? `${categoryStats.overduePct}%` : 'Aman'}
                 </span>
               </div>
@@ -270,13 +278,13 @@ export function AtRiskStudentsWidget({ students, onResolve }: AtRiskStudentsWidg
             {/* Recharts Horizontal Analytics Chart */}
             <div className={styles.chartAreaBox}>
               {!isMounted ? (
-                <div style={{ height: 135, background: 'var(--bg-hover, #f8fafc)', borderRadius: 6 }} />
+                <div style={{ height: 140, background: 'var(--bg-hover, #f8fafc)', borderRadius: 6 }} />
               ) : (
-                <ResponsiveContainer width="100%" height={135}>
+                <ResponsiveContainer width="100%" height={140}>
                   <BarChart
                     layout="vertical"
                     data={activeChartData}
-                    margin={{ top: 4, right: 36, left: 0, bottom: 4 }}
+                    margin={{ top: 6, right: 32, left: 4, bottom: 6 }}
                   >
                     <defs>
                       {/* Gradients for Categories */}
@@ -317,8 +325,8 @@ export function AtRiskStudentsWidget({ students, onResolve }: AtRiskStudentsWidg
                     <YAxis
                       type="category"
                       dataKey="name"
-                      width={118}
-                      tick={{ fontSize: 11, fill: 'var(--text-secondary, #64748b)', fontWeight: 600 }}
+                      width={125}
+                      tick={{ fontSize: 11.5, fill: 'var(--text-secondary, #64748b)', fontWeight: 600 }}
                       axisLine={false}
                       tickLine={false}
                     />
@@ -358,7 +366,7 @@ export function AtRiskStudentsWidget({ students, onResolve }: AtRiskStudentsWidg
                     <Bar
                       dataKey="count"
                       radius={[0, 6, 6, 0]}
-                      barSize={16}
+                      barSize={18}
                     >
                       {activeChartData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.fillId} />

@@ -2,6 +2,7 @@ export * from './action-center/ActionCenterView';
 export * from './action-center/AtRiskStudentsWidget';
 export * from './action-center/PendingGradingWidget';
 export * from './action-center/TodayScheduleWidget';
+export * from './action-center/RecentMaterialsWidget';
 
 export * from './shared/TeacherWorkspaceHeader';
 export * from './shared/TeacherMetricGrid';
