@@ -4,33 +4,96 @@ import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import styles from './at-risk.module.css';
 import { fetchAtRiskStudents, fetchTeacherClasses, fetchCurrentTeacherProfile } from '@/features/teacher/api';
-import type { AtRiskStudent, TeacherClassSummary, RiskCategory } from '@/features/teacher/types';
+import type { AtRiskStudent, TeacherClassSummary, RiskCategory, TeacherProfile } from '@/features/teacher/types';
+
+interface ReminderRecord {
+  id: string;
+  sent: boolean;
+  sent_at: string;
+  title: string;
+}
+
+function formatReminderTime(isoString: string): string {
+  try {
+    const date = new Date(isoString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMinutes = Math.floor(diffMs / (1000 * 60));
+    if (diffMinutes < 2) return 'Baru saja';
+    if (diffMinutes < 60) return `${diffMinutes} mnt lalu`;
+
+    const isToday =
+      date.getDate() === now.getDate() &&
+      date.getMonth() === now.getMonth() &&
+      date.getFullYear() === now.getFullYear();
+
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+
+    if (isToday) return `Hari ini ${hours}:${minutes}`;
+
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
+    const isYesterday =
+      date.getDate() === yesterday.getDate() &&
+      date.getMonth() === yesterday.getMonth() &&
+      date.getFullYear() === yesterday.getFullYear();
+
+    if (isYesterday) return `Kemarin ${hours}:${minutes}`;
+
+    const day = date.getDate();
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+    return `${day} ${months[date.getMonth()]}`;
+  } catch {
+    return 'Terkirim';
+  }
+}
 
 export default function AtRiskDetailPage() {
   const [loading, setLoading] = useState(true);
+  const [teacherProfile, setTeacherProfile] = useState<TeacherProfile | null>(null);
   const [students, setStudents] = useState<AtRiskStudent[]>([]);
   const [classes, setClasses] = useState<TeacherClassSummary[]>([]);
   const [selectedClassId, setSelectedClassId] = useState<string>('ALL');
   const [selectedFilter, setSelectedFilter] = useState<'ALL' | RiskCategory>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
-  const [notifiedStudentIds, setNotifiedStudentIds] = useState<Record<string, boolean>>({});
-  const [batchSentMessage, setBatchSentMessage] = useState<string | null>(null);
+  
+  // Realtime reminders state
+  const [remindersMap, setRemindersMap] = useState<Record<string, ReminderRecord>>({});
+  const [sendingStudentId, setSendingStudentId] = useState<string | null>(null);
+  const [isBatchSending, setIsBatchSending] = useState(false);
+  const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
 
+  const showToast = (text: string, type: 'success' | 'error' = 'success') => {
+    setToastMessage({ text, type });
+    setTimeout(() => setToastMessage(null), 5000);
+  };
+
+  // Load teacher classes, at-risk students, and active reminders
   useEffect(() => {
     async function loadData() {
       setLoading(true);
       try {
         const prof = await fetchCurrentTeacherProfile();
-        const [cls, riskList] = await Promise.all([
+        setTeacherProfile(prof);
+
+        const [cls, riskList, reminderRes] = await Promise.all([
           fetchTeacherClasses(prof || undefined),
           fetchAtRiskStudents(selectedClassId === 'ALL' ? undefined : selectedClassId, prof || undefined),
+          fetch('/api/v1/teacher/remind')
+            .then((r) => (r.ok ? r.json() : null))
+            .catch(() => null),
         ]);
+
         setClasses(cls);
         setStudents(riskList);
+        if (reminderRes?.data) {
+          setRemindersMap(reminderRes.data);
+        }
       } catch (err) {
         console.error('Error loading at risk students:', err);
       } finally {
@@ -45,32 +108,63 @@ export default function AtRiskDetailPage() {
     setCurrentPage(1);
   }, [selectedFilter, searchQuery, selectedClassId, pageSize]);
 
-  // Overall Statistics
+  // Selected class object
+  const selectedClass = useMemo(() => {
+    if (selectedClassId === 'ALL') return null;
+    return classes.find((c) => c.id === selectedClassId) || null;
+  }, [classes, selectedClassId]);
+
+  // Overall Statistics scoped to the selected class
   const stats = useMemo(() => {
+    const targetStudents = students.filter((s) => {
+      if (selectedClassId === 'ALL') return true;
+      const matchesId = s.class_id && s.class_id === selectedClassId;
+      const matchesName =
+        selectedClass &&
+        s.class_name &&
+        s.class_name.trim().toLowerCase() === selectedClass.name.trim().toLowerCase();
+      return matchesId || matchesName;
+    });
+
     let lowScore = 0;
     let overdue = 0;
     let unread = 0;
 
-    for (const s of students) {
+    for (const s of targetStudents) {
       if (s.category === 'LOW_SCORE') lowScore++;
       else if (s.category === 'OVERDUE_ASSIGNMENT') overdue++;
       else if (s.category === 'UNREAD_MATERIAL') unread++;
     }
 
     return {
-      total: students.length,
+      total: targetStudents.length,
       lowScore,
       overdue,
       unread,
     };
-  }, [students]);
+  }, [students, selectedClassId, selectedClass]);
 
   // Filtered dataset
   const filteredStudents = useMemo(() => {
     return students.filter((s) => {
+      // 1. Strict class filter
+      if (selectedClassId !== 'ALL') {
+        const matchesId = s.class_id && s.class_id === selectedClassId;
+        const matchesName =
+          selectedClass &&
+          s.class_name &&
+          s.class_name.trim().toLowerCase() === selectedClass.name.trim().toLowerCase();
+        if (!matchesId && !matchesName) {
+          return false;
+        }
+      }
+
+      // 2. Category tab filter
       if (selectedFilter !== 'ALL' && s.category !== selectedFilter) {
         return false;
       }
+
+      // 3. Search query
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         const matchesName = s.student_name?.toLowerCase().includes(q);
@@ -83,7 +177,7 @@ export default function AtRiskDetailPage() {
       }
       return true;
     });
-  }, [students, selectedFilter, searchQuery]);
+  }, [students, selectedClassId, selectedClass, selectedFilter, searchQuery]);
 
   // Pagination calculation
   const totalFiltered = filteredStudents.length;
@@ -93,19 +187,98 @@ export default function AtRiskDetailPage() {
     return filteredStudents.slice(startIndex, startIndex + pageSize);
   }, [filteredStudents, startIndex, pageSize]);
 
-  const handleSendSingleReminder = (studentId: string) => {
-    setNotifiedStudentIds((prev) => ({ ...prev, [studentId]: true }));
+  // Realtime single reminder sending
+  const handleSendSingleReminder = async (student: AtRiskStudent) => {
+    setSendingStudentId(student.student_id);
+    try {
+      const res = await fetch('/api/v1/teacher/remind', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          student_id: student.student_id,
+          title: student.title,
+          category: student.category,
+          reason: student.description,
+          material_id: student.material_id,
+          assignment_id: student.assignment_id,
+          teacher_name: teacherProfile?.full_name || 'Guru Pengampu',
+        }),
+      });
+
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        throw new Error(json.error || 'Gagal mengirim pengingat');
+      }
+
+      const now = new Date().toISOString();
+      setRemindersMap((prev) => ({
+        ...prev,
+        [student.student_id]: {
+          id: json.reminders?.[0]?.notification_id || 'sent',
+          sent: true,
+          sent_at: now,
+          title: student.title,
+        },
+      }));
+
+      showToast(`Pengingat berhasil dikirim ke ${student.student_name} secara realtime.`);
+    } catch (err: any) {
+      console.error('Error sending single reminder:', err);
+      showToast(err?.message || 'Gagal mengirim pengingat ke siswa.', 'error');
+    } finally {
+      setSendingStudentId(null);
+    }
   };
 
-  const handleSendBatchReminder = () => {
-    if (filteredStudents.length === 0) return;
-    const newNotified = { ...notifiedStudentIds };
-    for (const s of filteredStudents) {
-      newNotified[s.student_id] = true;
+  // Realtime batch reminder sending
+  const handleSendBatchReminder = async () => {
+    if (filteredStudents.length === 0 || isBatchSending) return;
+    setIsBatchSending(true);
+
+    try {
+      const studentIds = filteredStudents.map((s) => s.student_id);
+      const res = await fetch('/api/v1/teacher/remind', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          student_ids: studentIds,
+          title:
+            selectedFilter === 'UNREAD_MATERIAL'
+              ? 'Membaca Modul Pembelajaran'
+              : selectedFilter === 'OVERDUE_ASSIGNMENT'
+              ? 'Tugas Belum Dikumpulkan'
+              : selectedFilter === 'LOW_SCORE'
+              ? 'Evaluasi & Remedial Belajar'
+              : 'Penyelesaian Kendala Belajar',
+          category: selectedFilter !== 'ALL' ? selectedFilter : 'UNREAD_MATERIAL',
+          teacher_name: teacherProfile?.full_name || 'Guru Pengampu',
+        }),
+      });
+
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        throw new Error(json.error || 'Gagal mengirim pengingat serentak');
+      }
+
+      const now = new Date().toISOString();
+      const updatedMap: Record<string, ReminderRecord> = {};
+      for (const id of studentIds) {
+        updatedMap[id] = {
+          id: 'batch_sent',
+          sent: true,
+          sent_at: now,
+          title: 'Pengingat Serentak',
+        };
+      }
+      setRemindersMap((prev) => ({ ...prev, ...updatedMap }));
+
+      showToast(`Notifikasi pengingat berhasil dikirimkan ke ${json.sent_count || studentIds.length} siswa secara serentak.`);
+    } catch (err: any) {
+      console.error('Error sending batch reminder:', err);
+      showToast(err?.message || 'Gagal mengirim pengingat serentak.', 'error');
+    } finally {
+      setIsBatchSending(false);
     }
-    setNotifiedStudentIds(newNotified);
-    setBatchSentMessage(`Notifikasi pengingat berhasil dikirimkan ke ${filteredStudents.length} siswa.`);
-    setTimeout(() => setBatchSentMessage(null), 4000);
   };
 
   return (
@@ -143,25 +316,57 @@ export default function AtRiskDetailPage() {
 
         <button
           onClick={handleSendBatchReminder}
-          disabled={filteredStudents.length === 0}
+          disabled={filteredStudents.length === 0 || isBatchSending}
           className={styles.batchBtn}
-          title="Kirim pengingat serentak ke siswa yang tampil di filter ini"
+          title="Kirim notifikasi pengingat secara serentak ke seluruh siswa yang terfilter"
         >
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-          </svg>
-          <span>Kirim Pengingat Serentak ({filteredStudents.length})</span>
+          {isBatchSending ? (
+            <>
+              <svg className={styles.spin} width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <circle cx="12" cy="12" r="10" strokeDasharray="32" strokeDashoffset="12" />
+              </svg>
+              <span>Mengirim Notifikasi...</span>
+            </>
+          ) : (
+            <>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+              </svg>
+              <span>Kirim Pengingat Serentak ({filteredStudents.length})</span>
+            </>
+          )}
         </button>
       </div>
 
-      {batchSentMessage && (
-        <div style={{ background: '#ecfdf5', color: '#047857', padding: '0.55rem 1rem', fontSize: '0.75rem', fontWeight: 600, borderRadius: '8px', border: '1px solid #a7f3d0' }}>
-          ✓ {batchSentMessage}
+      {/* ── Toast Alert Banner ── */}
+      {toastMessage && (
+        <div
+          style={{
+            background: toastMessage.type === 'success' ? '#ecfdf5' : '#fef2f2',
+            color: toastMessage.type === 'success' ? '#047857' : '#b91c1c',
+            padding: '0.6rem 1rem',
+            fontSize: '0.75rem',
+            fontWeight: 600,
+            borderRadius: '8px',
+            border: `1px solid ${toastMessage.type === 'success' ? '#a7f3d0' : '#fecaca'}`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+          }}
+        >
+          <span>{toastMessage.type === 'success' ? '✓ ' : '⚠ '}{toastMessage.text}</span>
+          <button
+            onClick={() => setToastMessage(null)}
+            style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'inherit', fontWeight: 700 }}
+          >
+            ✕
+          </button>
         </div>
       )}
 
-      {/* ── KPI Metric Grid ── */}
+      {/* ── KPI Metric Grid (Scoped to Selected Class) ── */}
       <div className={styles.kpiGrid}>
         <div className={styles.kpiCard}>
           <div>
@@ -253,6 +458,7 @@ export default function AtRiskDetailPage() {
               value={selectedClassId}
               onChange={(e) => setSelectedClassId(e.target.value)}
               className={styles.selectInput}
+              aria-label="Filter berdasarkan rombel"
             >
               <option value="ALL">Semua Rombel Diampu</option>
               {classes.map((c) => (
@@ -278,6 +484,7 @@ export default function AtRiskDetailPage() {
                 <button
                   onClick={() => setSearchQuery('')}
                   style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#94a3b8', fontSize: '0.75rem', padding: 0 }}
+                  aria-label="Hapus pencarian"
                 >
                   ✕
                 </button>
@@ -296,29 +503,53 @@ export default function AtRiskDetailPage() {
                 <th>Rombel / Kelas</th>
                 <th>Kategori Kendala</th>
                 <th>Detail Masalah / Materi</th>
-                <th style={{ textAlign: 'right' }}>Tindakan</th>
+                <th style={{ textAlign: 'right', minWidth: '160px' }}>Tindakan</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
                   <td colSpan={6} style={{ textAlign: 'center', padding: '2.5rem', color: '#64748b' }}>
-                    Memuat data siswa terpantau...
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                      <svg className={styles.spin} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0284c7" strokeWidth="2.5">
+                        <circle cx="12" cy="12" r="10" strokeDasharray="32" strokeDashoffset="12" />
+                      </svg>
+                      <span>Memuat data siswa terpantau...</span>
+                    </div>
                   </td>
                 </tr>
               ) : paginatedStudents.length === 0 ? (
                 <tr>
-                  <td colSpan={6} style={{ textAlign: 'center', padding: '2.5rem', color: '#64748b' }}>
-                    Tidak ditemukan siswa yang sesuai filter atau seluruh siswa dalam kondisi aman.
+                  <td colSpan={6} style={{ padding: 0 }}>
+                    {selectedClassId !== 'ALL' && selectedClass ? (
+                      <div className={styles.safeEmptyCard}>
+                        <div className={styles.safeIconBox}>
+                          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                        </div>
+                        <h3 className={styles.safeTitle}>
+                          Rombel {selectedClass.name} Dalam Kondisi Aman
+                        </h3>
+                        <p className={styles.safeDesc}>
+                          Tidak ada peserta didik yang memerlukan perhatian khusus di rombel ini. Seluruh kegiatan belajar (membaca modul, tugas, dan evaluasi) berjalan tuntas tanpa kendala.
+                        </p>
+                      </div>
+                    ) : (
+                      <div style={{ textAlign: 'center', padding: '2.5rem', color: '#64748b' }}>
+                        Tidak ditemukan siswa yang memerlukan perhatian atau seluruh siswa dalam kondisi aman.
+                      </div>
+                    )}
                   </td>
                 </tr>
               ) : (
                 paginatedStudents.map((student, idx) => {
-                  const isSent = notifiedStudentIds[student.student_id];
+                  const reminderInfo = remindersMap[student.student_id];
+                  const isSending = sendingStudentId === student.student_id;
                   const initial = student.student_name.trim().charAt(0).toUpperCase();
 
                   return (
-                    <tr key={student.student_id}>
+                    <tr key={`${student.student_id}_${student.category}_${idx}`}>
                       <td style={{ textAlign: 'center', color: '#64748b', fontWeight: 600 }}>
                         {startIndex + idx + 1}
                       </td>
@@ -370,23 +601,63 @@ export default function AtRiskDetailPage() {
                         </div>
                       </td>
                       <td style={{ textAlign: 'right' }}>
-                        {isSent ? (
-                          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#16a34a', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
-                            ✓ Terkirim
-                          </span>
-                        ) : student.target_url ? (
-                          <Link href={student.target_url} className={styles.actionBtnSmall}>
-                            <span>{student.action_label}</span>
-                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                              <polyline points="9 18 15 12 9 6" />
+                        {isSending ? (
+                          <span style={{ fontSize: '0.72rem', fontWeight: 600, color: '#0284c7', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                            <svg className={styles.spin} width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                              <circle cx="12" cy="12" r="10" strokeDasharray="32" strokeDashoffset="12" />
                             </svg>
-                          </Link>
+                            <span>Mengirim...</span>
+                          </span>
+                        ) : reminderInfo ? (
+                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                            <span
+                              className={styles.remindBadge}
+                              title={`Terkirim pada: ${new Date(reminderInfo.sent_at).toLocaleString('id-ID')}`}
+                            >
+                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                                <polyline points="20 6 9 17 4 12" />
+                              </svg>
+                              <span>Terkirim ({formatReminderTime(reminderInfo.sent_at)})</span>
+                            </span>
+                            <button
+                              onClick={() => handleSendSingleReminder(student)}
+                              className={styles.resendBtn}
+                              title="Kirim ulang notifikasi pengingat ke siswa ini"
+                            >
+                              Kirim Ulang
+                            </button>
+                          </div>
+                        ) : student.category === 'LOW_SCORE' && student.target_url ? (
+                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                            <Link href={student.target_url} className={styles.actionBtnSmall}>
+                              <span>{student.action_label}</span>
+                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                <polyline points="9 18 15 12 9 6" />
+                              </svg>
+                            </Link>
+                            <button
+                              onClick={() => handleSendSingleReminder(student)}
+                              className={styles.actionBtnSmall}
+                              title="Kirim notifikasi pengingat remedial ke siswa"
+                            >
+                              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                              </svg>
+                              <span>Ingatkan</span>
+                            </button>
+                          </div>
                         ) : (
                           <button
-                            onClick={() => handleSendSingleReminder(student.student_id)}
+                            onClick={() => handleSendSingleReminder(student)}
                             className={styles.actionBtnSmall}
+                            title="Kirim notifikasi pengingat realtime ke siswa"
                           >
-                            <span>{student.action_label || 'Kirim Pengingat'}</span>
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                            </svg>
+                            <span>Kirim Pengingat</span>
                           </button>
                         )}
                       </td>
@@ -411,6 +682,7 @@ export default function AtRiskDetailPage() {
                 value={pageSize}
                 onChange={(e) => setPageSize(Number(e.target.value))}
                 className={styles.pageSizeSelect}
+                aria-label="Jumlah baris per halaman"
               >
                 <option value={15}>15</option>
                 <option value={25}>25</option>

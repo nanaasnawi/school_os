@@ -24,6 +24,10 @@ export interface AtRiskStudent {
   action_label: string;      // Action button text: "Kirim Pengingat" / "Beri Remedial"
   action_type: 'REMIND_STUDENT' | 'CONTACT_GUARDIAN' | 'ASSIGN_REMEDIAL' | 'VIEW_PROGRESS';
   target_url?: string;
+  material_id?: string;
+  assignment_id?: string;
+  last_reminded_at?: string | null;
+  is_reminded?: boolean;
   updated_at: string;
 }
 

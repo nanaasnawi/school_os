@@ -15,20 +15,41 @@ function getAuthHeaders(): HeadersInit {
  */
 export async function fetchAtRiskStudents(classId?: string, existingProfile?: any): Promise<AtRiskStudent[]> {
   try {
-    // 1. Fetch live assignments to detect overdue or low-scoring submissions
-    const res = await fetch(getApiUrl('/api/v1/learning/assignments'), {
-      headers: getAuthHeaders(),
-    });
-    if (!res.ok) return [];
+    const headers = getAuthHeaders();
+    const isFilteredClass = classId && classId !== 'ALL';
 
-    const json = await res.json();
-    const assignments: any[] = json?.data?.items || json?.data || [];
+    // 1. Fetch classes list to build accurate id-to-name and name-to-id maps
+    const [classesRes, assignmentsRes, materialsRes] = await Promise.all([
+      fetch(getApiUrl('/api/v1/academic/classes?page_size=200'), { headers })
+        .then((r) => (r.ok ? r.json() : null))
+        .catch(() => null),
+      fetch(getApiUrl('/api/v1/learning/assignments'), { headers })
+        .then((r) => (r.ok ? r.json() : null))
+        .catch(() => null),
+      fetch(getApiUrl('/api/v1/learning/materials'), { headers })
+        .then((r) => (r.ok ? r.json() : null))
+        .catch(() => null),
+    ]);
+
+    const rawClasses: any[] = classesRes?.data?.items || classesRes?.data || [];
+    const classNameToId = new Map<string, string>();
+    const classIdToName = new Map<string, string>();
+    for (const c of rawClasses) {
+      if (c.id && c.name) {
+        classNameToId.set(c.name.trim().toLowerCase(), c.id);
+        classIdToName.set(c.id, c.name.trim());
+      }
+    }
+
+    const targetClass = isFilteredClass ? rawClasses.find((c) => c.id === classId) : null;
+    const targetClassNameLower = targetClass?.name?.trim().toLowerCase();
 
     const profile = existingProfile || await fetchCurrentTeacherProfile().catch(() => null);
     const currentTeacherId = profile?.id;
     const currentUserId = profile?.user_id;
 
-    const teacherAssignments = assignments.filter((a) => {
+    const rawAssignments: any[] = assignmentsRes?.data?.items || assignmentsRes?.data || [];
+    let teacherAssignments = rawAssignments.filter((a) => {
       if (!currentTeacherId && !currentUserId && !profile?.full_name) return true;
       return (
         a.teacher_id === currentTeacherId ||
@@ -38,39 +59,63 @@ export async function fetchAtRiskStudents(classId?: string, existingProfile?: an
       );
     });
 
-    const atRisk: AtRiskStudent[] = [];
+    if (teacherAssignments.length === 0 && rawAssignments.length > 0) {
+      teacherAssignments = rawAssignments;
+    }
 
-    // Check recent assignments in parallel
+    if (isFilteredClass) {
+      teacherAssignments = teacherAssignments.filter((a) => {
+        if (a.class_id && a.class_id === classId) return true;
+        if (targetClassNameLower && a.class_name && a.class_name.trim().toLowerCase() === targetClassNameLower) return true;
+        return false;
+      });
+    }
+
+    const atRisk: AtRiskStudent[] = [];
+    const seenRiskKeys = new Set<string>();
+
+    // Check recent assignments for low scores (< 70)
     await Promise.all(
       teacherAssignments.slice(0, 5).map(async (a) => {
-        if (classId && a.class_id && a.class_id !== classId) return;
-
         try {
           const subRes = await fetch(getApiUrl(`/api/v1/learning/assignments/${a.id}/submissions`), {
-            headers: getAuthHeaders(),
+            headers,
           });
           if (subRes.ok) {
             const subJson = await subRes.json();
             const subs: any[] = subJson?.data || [];
 
             for (const s of subs) {
-              // Flag 1: Low score (< 70)
-              if (s.score !== null && s.score !== undefined && s.score < 70) {
-                atRisk.push({
-                  student_id: s.student_id,
-                  student_name: s.student_name || 'Peserta Didik',
-                  class_id: a.class_id || '',
-                  class_name: a.class_name || 'Rombel',
-                  nisn: s.student_nisn || null,
-                  risk_level: s.score < 60 ? 'HIGH' : 'MEDIUM',
-                  category: 'LOW_SCORE',
-                  title: `Nilai ${a.title} di bawah KKM (${s.score}/100)`,
-                  description: `Siswa memperoleh skor ${s.score}. Perlu diberikan bimbingan atau tugas remedial.`,
-                  action_label: 'Beri Remedial',
-                  action_type: 'ASSIGN_REMEDIAL',
-                  target_url: `/dashboard/learning/assignments?id=${a.id}`,
-                  updated_at: s.submitted_at || new Date().toISOString(),
-                });
+              const studentClassId = a.class_id || (a.class_name ? classNameToId.get(a.class_name.trim().toLowerCase()) : '') || '';
+              const studentClassName = a.class_name || (studentClassId ? classIdToName.get(studentClassId) : '') || 'Rombel';
+
+              if (isFilteredClass) {
+                if (studentClassId && studentClassId !== classId) continue;
+                if (targetClassNameLower && studentClassName.trim().toLowerCase() !== targetClassNameLower) continue;
+              }
+
+              // Flag: Low score (< 70)
+              if (s.score !== null && s.score !== undefined && Number(s.score) < 70) {
+                const riskKey = `${s.student_id}_LOW_SCORE_${a.id}`;
+                if (!seenRiskKeys.has(riskKey)) {
+                  seenRiskKeys.add(riskKey);
+                  atRisk.push({
+                    student_id: s.student_id,
+                    student_name: s.student_name || 'Peserta Didik',
+                    class_id: studentClassId,
+                    class_name: studentClassName,
+                    nisn: s.student_nisn || null,
+                    risk_level: Number(s.score) < 60 ? 'HIGH' : 'MEDIUM',
+                    category: 'LOW_SCORE',
+                    title: `Nilai ${a.title} di bawah KKM (${s.score}/100)`,
+                    description: `Siswa memperoleh skor ${s.score}. Perlu diberikan bimbingan atau tugas remedial.`,
+                    action_label: 'Beri Remedial',
+                    action_type: 'ASSIGN_REMEDIAL',
+                    assignment_id: a.id,
+                    target_url: `/dashboard/learning/assignments?id=${a.id}`,
+                    updated_at: s.submitted_at || new Date().toISOString(),
+                  });
+                }
               }
             }
           }
@@ -80,48 +125,74 @@ export async function fetchAtRiskStudents(classId?: string, existingProfile?: an
       })
     );
 
-    // Flag 2: Reading progress check
-    try {
-      const matRes = await fetch(getApiUrl('/api/v1/learning/materials'), {
-        headers: getAuthHeaders(),
+    // Check reading progress for learning materials
+    const rawMaterials: any[] = materialsRes?.data?.items || materialsRes?.data || [];
+    let relevantMaterials = rawMaterials;
+
+    if (isFilteredClass) {
+      relevantMaterials = rawMaterials.filter((m) => {
+        if (m.class_id && m.class_id === classId) return true;
+        if (targetClassNameLower && m.class_name && m.class_name.trim().toLowerCase() === targetClassNameLower) return true;
+        return false;
       });
-      if (matRes.ok) {
-        const matJson = await matRes.json();
-        const materials: any[] = matJson?.data?.items || matJson?.data || [];
-        if (materials.length > 0) {
-          const recentMat = materials[0];
-          const compRes = await fetch(getApiUrl(`/api/v1/learning/materials/${recentMat.id}/completions`), {
-            headers: getAuthHeaders(),
+    }
+
+    // Inspect up to 4 relevant materials in parallel
+    await Promise.all(
+      relevantMaterials.slice(0, 4).map(async (mat) => {
+        try {
+          const compRes = await fetch(getApiUrl(`/api/v1/learning/materials/${mat.id}/completions`), {
+            headers,
           });
           if (compRes.ok) {
             const compJson = await compRes.json();
             const completions: any[] = compJson?.data || [];
+
             for (const c of completions) {
-              if (classId && c.class_id && c.class_id !== classId) continue;
-              if (!c.is_completed && (c.current_page || 0) < 3) {
-                atRisk.push({
-                  student_id: c.student_id,
-                  student_name: c.student_name || 'Peserta Didik',
-                  class_id: c.class_id || recentMat.class_id || '',
-                  class_name: c.class_name || recentMat.class_name || 'Rombel',
-                  nisn: c.nisn || null,
-                  risk_level: 'MEDIUM',
-                  category: 'UNREAD_MATERIAL',
-                  title: `Belum Membaca Materi ${recentMat.title}`,
-                  description: `Siswa baru membaca sampai halaman ${c.current_page || 1}. Diperlukan pengingat literasi.`,
-                  action_label: 'Kirim Pengingat',
-                  action_type: 'REMIND_STUDENT',
-                  target_url: `/dashboard/learning/materials?id=${recentMat.id}`,
-                  updated_at: c.last_read_at || new Date().toISOString(),
-                });
+              const studentClassId =
+                mat.class_id ||
+                (c.class_name ? classNameToId.get(c.class_name.trim().toLowerCase()) : '') ||
+                '';
+              const studentClassName =
+                c.class_name ||
+                mat.class_name ||
+                (studentClassId ? classIdToName.get(studentClassId) : '') ||
+                'Rombel';
+
+              if (isFilteredClass) {
+                if (studentClassId && studentClassId !== classId) continue;
+                if (targetClassNameLower && studentClassName.trim().toLowerCase() !== targetClassNameLower) continue;
+              }
+
+              // Flag: unread or reading progress lagging (< page 3)
+              if (!c.is_completed && Number(c.current_page || 0) < 3) {
+                const riskKey = `${c.student_id}_UNREAD_${mat.id}`;
+                if (!seenRiskKeys.has(riskKey)) {
+                  seenRiskKeys.add(riskKey);
+                  atRisk.push({
+                    student_id: c.student_id,
+                    student_name: c.student_name || 'Peserta Didik',
+                    class_id: studentClassId,
+                    class_name: studentClassName,
+                    nisn: c.nisn || null,
+                    risk_level: 'MEDIUM',
+                    category: 'UNREAD_MATERIAL',
+                    title: `Belum Membaca Materi ${mat.title}`,
+                    description: `Siswa baru membaca sampai halaman ${c.current_page || 1}. Diperlukan pengingat literasi.`,
+                    action_label: 'Kirim Pengingat',
+                    action_type: 'REMIND_STUDENT',
+                    material_id: mat.id,
+                    updated_at: c.last_read_at || new Date().toISOString(),
+                  });
+                }
               }
             }
           }
+        } catch {
+          // non-critical
         }
-      }
-    } catch {
-      // non-critical
-    }
+      })
+    );
 
     return atRisk;
   } catch (err) {

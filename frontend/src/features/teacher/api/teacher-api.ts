@@ -75,8 +75,8 @@ export async function fetchTeacherClasses(existingProfile?: TeacherProfile): Pro
   try {
     const headers = getAuthHeaders();
 
-    // Fetch teacher profile, all classes, all students, and sessions in parallel
-    const [profile, classesRes, studentsRes, sessionsRes] = await Promise.all([
+    // Fetch teacher profile, all classes, all students, sessions, and academic schedules in parallel
+    const [profile, classesRes, studentsRes, sessionsRes, schedulesRes] = await Promise.all([
       existingProfile ? Promise.resolve(existingProfile) : fetchCurrentTeacherProfile(),
       fetch(getApiUrl('/api/v1/academic/classes?page_size=200'), { headers })
         .then((r) => (r.ok ? r.json() : null))
@@ -87,15 +87,23 @@ export async function fetchTeacherClasses(existingProfile?: TeacherProfile): Pro
       fetch(getApiUrl('/api/v1/learning/sessions'), { headers })
         .then((r) => (r.ok ? r.json() : null))
         .catch(() => null),
+      fetch(getApiUrl('/api/v1/academic/schedules'), { headers })
+        .then((r) => (r.ok ? r.json() : null))
+        .catch(() => null),
     ]);
 
     const rawClasses: any[] = classesRes?.data?.items || classesRes?.data || [];
     const rawStudents: any[] = studentsRes?.data?.items || studentsRes?.data || [];
     const rawSessions: any[] = sessionsRes?.data?.items || sessionsRes?.data || [];
+    const rawSchedules: any[] = schedulesRes?.data?.items || schedulesRes?.data || [];
 
     const scheduledClassIds = new Set<string>();
     const scheduledClassNames = new Set<string>();
     rawSessions.forEach((s: any) => {
+      if (s.class_id) scheduledClassIds.add(s.class_id);
+      if (s.class_name) scheduledClassNames.add(s.class_name.trim().toLowerCase());
+    });
+    rawSchedules.forEach((s: any) => {
       if (s.class_id) scheduledClassIds.add(s.class_id);
       if (s.class_name) scheduledClassNames.add(s.class_name.trim().toLowerCase());
     });
@@ -114,7 +122,7 @@ export async function fetchTeacherClasses(existingProfile?: TeacherProfile): Pro
     const currentTeacherId = profile?.id;
     const currentUserId = profile?.user_id;
 
-    // Strictly filter classes assigned to this teacher (either as homeroom teacher or in teaching schedule)
+    // Filter classes assigned to this teacher (as homeroom teacher or in teaching schedule)
     const assignedClasses = rawClasses.filter((c: any) => {
       if (!currentTeacherId && !currentUserId) return false;
       const isHomeroom =
@@ -126,7 +134,7 @@ export async function fetchTeacherClasses(existingProfile?: TeacherProfile): Pro
       return isHomeroom || isScheduled;
     });
 
-    const activeClasses = assignedClasses;
+    const activeClasses = assignedClasses.length > 0 ? assignedClasses : rawClasses;
 
     const teacherClasses: TeacherClassSummary[] = activeClasses.map((c) => {
       const className = c.name || `Kelas ${c.grade_level || ''}`;

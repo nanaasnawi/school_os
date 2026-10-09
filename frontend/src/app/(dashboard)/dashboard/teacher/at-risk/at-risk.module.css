@@ -553,3 +553,94 @@
   border-color: #3f3f46;
   color: #f1f5f9;
 }
+
+/* ── Reminder Badges & Action States ── */
+.remindBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #16a34a;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  padding: 2px 7px;
+  border-radius: 99px;
+  white-space: nowrap;
+}
+
+[data-theme="dark"] .remindBadge {
+  background: rgba(22, 163, 74, 0.15);
+  border-color: #15803d;
+  color: #4ade80;
+}
+
+.resendBtn {
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-size: 0.66rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0 4px;
+  transition: color 0.15s ease;
+}
+
+.resendBtn:hover {
+  color: #0284c7;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.spin {
+  animation: spin 0.8s linear infinite;
+}
+
+/* ── Safe Class Empty State ── */
+.safeEmptyCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1.5rem;
+  text-align: center;
+  gap: 0.5rem;
+}
+
+.safeIconBox {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #ecfdf5;
+  color: #10b981;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #a7f3d0;
+  margin-bottom: 0.25rem;
+}
+
+[data-theme="dark"] .safeIconBox {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: #047857;
+}
+
+.safeTitle {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-primary, #0f172a);
+  margin: 0;
+}
+
+.safeDesc {
+  font-size: 0.74rem;
+  color: var(--text-secondary, #64748b);
+  max-width: 460px;
+  margin: 0;
+  line-height: 1.45;
+}
+
