@@ -100,13 +100,7 @@ export default function MaterialsPage() {
   }, [libraryBooks, bookSearchQuery]);
 
   const materials = useMemo<MaterialItem[]>(() => {
-    const dataList = isTeacher && user?.full_name
-      ? materialsData.filter(m => {
-          const tName = (m.teacher_name || '').toLowerCase();
-          const uName = (user.full_name || '').toLowerCase();
-          return tName === uName || (m as any).created_by === user.id || (m as any).teacher_id === user.id;
-        })
-      : materialsData;
+    const dataList = materialsData;
 
     return dataList.map((m) => {
       const desc = m.description || '';

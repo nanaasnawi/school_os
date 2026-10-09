@@ -424,8 +424,9 @@ function LearningPortalContent() {
       const linkedMaterials = materials.filter(
         (m) =>
           (matchingSession && m.session_id === matchingSession.id) ||
-          (m.class_id === sched.class_id &&
-            m.subject_name?.toLowerCase() === sched.subject_name?.toLowerCase())
+          ((m.class_id === sched.class_id || (m.class_name && sched.class_name && m.class_name.trim().toLowerCase() === sched.class_name.trim().toLowerCase())) &&
+            (m.subject_name?.trim().toLowerCase() === sched.subject_name?.trim().toLowerCase() ||
+             ((m as any).subject_id && sched.subject_id && (m as any).subject_id === sched.subject_id)))
       );
 
       // Match linked assignments

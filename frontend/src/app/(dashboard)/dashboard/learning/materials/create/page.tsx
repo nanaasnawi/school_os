@@ -114,7 +114,9 @@ export default function CreateMaterialPage() {
   // Common Form Fields
   const [title, setTitle] = useState('');
   const [subject, setSubject] = useState('');
+  const [selectedSubjectId, setSelectedSubjectId] = useState('');
   const [targetGrade, setTargetGrade] = useState('');
+  const [selectedClassId, setSelectedClassId] = useState('');
   const [author, setAuthor] = useState('');
   const [description, setDescription] = useState('');
 
@@ -171,6 +173,7 @@ export default function CreateMaterialPage() {
             : [];
         if (cList.length > 0) {
           setClassesList(cList);
+          setSelectedClassId(prev => prev || cList[0].id);
           setTargetGrade(prev => prev || cList[0].name);
         }
       } catch (err) {
@@ -190,10 +193,15 @@ export default function CreateMaterialPage() {
 
   // Set default subject if available
   useEffect(() => {
-    if (!subject && subjectsList.length > 0) {
-      setSubject(subjectsList[0].name);
+    if (subjectsList.length > 0) {
+      if (!selectedSubjectId) {
+        setSelectedSubjectId(subjectsList[0].id || subjectsList[0].code || '');
+      }
+      if (!subject) {
+        setSubject(subjectsList[0].name);
+      }
     }
-  }, [subjectsList, subject]);
+  }, [subjectsList, selectedSubjectId, subject]);
 
   const currentBook = selectedBook ?? (libraryBooks.length > 0 ? libraryBooks[0] : null);
   const currentSubject = subject || (subjectsList.length > 0 ? subjectsList[0].name : '');
@@ -240,7 +248,10 @@ export default function CreateMaterialPage() {
     if (book.subject_name) {
       const subjectName = book.subject_name.toLowerCase();
       const matched = subjectsList.find(s => s.name && s.name.toLowerCase() === subjectName);
-      if (matched) setSubject(matched.name);
+      if (matched) {
+        setSubject(matched.name);
+        if (matched.id) setSelectedSubjectId(matched.id);
+      }
     }
   };
 
@@ -375,13 +386,23 @@ export default function CreateMaterialPage() {
     e.preventDefault();
     const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
     const effectiveAuthor = (isTeacher && user?.full_name) ? user.full_name : author;
-    const targetClassObj = classesList.find(c => c.name === targetGrade || c.id === targetGrade) || classesList[0];
+    const targetClassObj = classesList.find(c => c.id === selectedClassId) || classesList.find(c => c.name === targetGrade) || (classesList.length === 1 ? classesList[0] : null);
     const targetTeacherObj = teachers.find(t => t.full_name === effectiveAuthor || (isTeacher && (t.user_id === user?.id || t.id === user?.id))) || (isTeacher ? null : teachers[0]);
-    const targetSubjectObj = subjectsList.find(s => s.name === currentSubject || s.id === currentSubject) || subjectsList[0];
+    const targetSubjectObj = subjectsList.find(s => (s.id || s.code) === selectedSubjectId) || subjectsList.find(s => s.name === currentSubject) || (subjectsList.length === 1 ? subjectsList[0] : null);
 
     // Form Validations
     if (!title.trim()) {
       showToast('Judul materi wajib diisi', 'warning');
+      return;
+    }
+
+    if (!targetClassObj) {
+      showToast('Silakan pilih rombel / kelas target yang valid', 'warning');
+      return;
+    }
+
+    if (!targetSubjectObj) {
+      showToast('Silakan pilih mata pelajaran yang valid', 'warning');
       return;
     }
 
@@ -1635,12 +1656,17 @@ export default function CreateMaterialPage() {
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>Mata Pelajaran *</label>
               <select
-                value={subject}
-                onChange={e => setSubject(e.target.value)}
+                value={selectedSubjectId}
+                onChange={e => {
+                  const sId = e.target.value;
+                  setSelectedSubjectId(sId);
+                  const matched = subjectsList.find(s => (s.id || s.code) === sId);
+                  if (matched) setSubject(matched.name);
+                }}
                 className={styles.inputField}
               >
                 {subjectsList.map(s => (
-                  <option key={s.id || s.code} value={s.name}>{s.name}</option>
+                  <option key={s.id || s.code} value={s.id || s.code}>{s.name}</option>
                 ))}
               </select>
             </div>
@@ -1649,12 +1675,17 @@ export default function CreateMaterialPage() {
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>Rombel / Kelas Target *</label>
               <select
-                value={targetGrade}
-                onChange={e => setTargetGrade(e.target.value)}
+                value={selectedClassId}
+                onChange={e => {
+                  const cId = e.target.value;
+                  setSelectedClassId(cId);
+                  const matched = classesList.find(c => c.id === cId);
+                  if (matched) setTargetGrade(matched.name);
+                }}
                 className={styles.inputField}
               >
                 {classesList.map(c => (
-                  <option key={c.id} value={c.name}>{c.name}</option>
+                  <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </select>
             </div>
