@@ -1,11 +1,27 @@
 'use client';
-import { getTenantItem } from '@/lib/tenant-storage';
 
 import React, { useState, useEffect, useMemo } from 'react';
 import styles from './gradebook.module.css';
+import { getTenantItem } from '@/lib/tenant-storage';
 import { listStudents, listClasses } from '@/lib/sdk/sdk.gen';
 import { exportToExcel } from '@/lib/exportExcel';
 import { getApiUrl } from '@/lib/api';
+import {
+  BookOpen,
+  Download,
+  Save,
+  Search,
+  SlidersHorizontal,
+  Users,
+  TrendingUp,
+  CheckCircle2,
+  AlertTriangle,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react';
 
 type RawStudent = { id: string; full_name: string; nisn: string; class_name?: string };
 type RawClass = { id: string; name: string };
@@ -24,6 +40,8 @@ type GradebookEntry = {
   grade: 'A' | 'B' | 'C';
   statusKkm: 'Tuntas KKM' | 'Remedial' | 'Belum Diinput';
 };
+
+type GradebookSortField = 'name' | 'className' | 'formatif1' | 'formatif2' | 'pts' | 'pas' | 'totalScore' | 'grade';
 
 export default function GradebookPage() {
   const [selectedClass, setSelectedClass] = useState('ALL');
@@ -260,7 +278,6 @@ export default function GradebookPage() {
     showToast('Berkas Excel (.xlsx) Buku Nilai Rapor berhasil diunduh.');
   };
 
-  type GradebookSortField = 'name' | 'className' | 'formatif1' | 'formatif2' | 'pts' | 'pas' | 'totalScore' | 'grade';
   const [sortField, setSortField] = useState<GradebookSortField>('name');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
@@ -318,307 +335,398 @@ export default function GradebookPage() {
   const safePage = Math.min(currentPage, totalPages);
   const paginated = sortedGradebook.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
 
+  const renderSortIcon = (field: GradebookSortField) => {
+    if (sortField !== field) {
+      return <ArrowUpDown size={11} className={styles.sortIcon} />;
+    }
+    return sortOrder === 'asc' ? (
+      <ArrowUp size={11} color="var(--accent, #0284c7)" />
+    ) : (
+      <ArrowDown size={11} color="var(--accent, #0284c7)" />
+    );
+  };
+
   return (
     <div className={styles.page}>
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="toastContainer">
-          <div className="toast toastSuccess">
-            <span>{toastMessage}</span>
-          </div>
+        <div style={{
+          position: 'fixed',
+          top: '20px',
+          right: '20px',
+          zIndex: 99999,
+          background: '#10b981',
+          color: '#ffffff',
+          padding: '0.65rem 1rem',
+          borderRadius: '8px',
+          boxShadow: '0 10px 25px -5px rgba(0,0,0,0.25)',
+          fontWeight: 600,
+          fontSize: '0.82rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          animation: 'fadeIn 0.2s ease-out'
+        }}>
+          <CheckCircle2 size={16} />
+          <span>{toastMessage}</span>
         </div>
       )}
 
-      {/* Header */}
+      {/* Top Header Card */}
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <h1 className={styles.title} style={{ margin: 0, fontSize: '1.3rem', fontWeight: 800 }}>
-            Buku Nilai (Teacher Gradebook)
-          </h1>
-          <p className={styles.subtitle}>
-            Input &amp; Rekapitulasi Nilai Formatif, Sumatif, PTS, dan PAS Kurikulum Merdeka di {schoolName}
-          </p>
+          <div className={styles.headerIconBox}>
+            <BookOpen size={18} />
+          </div>
+          <div className={styles.headerTextGroup}>
+            <h1 className={styles.headerTitle}>
+              Buku Nilai (Teacher Gradebook)
+            </h1>
+            <p className={styles.headerSubtitle}>
+              Input &amp; rekapitulasi nilai formatif, sumatif, PTS, dan PAS Kurikulum Merdeka di {schoolName}
+            </p>
+          </div>
         </div>
-        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-          <button className="btn btn-secondary btn-sm" onClick={exportToExcelFile} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-              <polyline points="14 2 14 8 20 8" />
-              <line x1="8" y1="13" x2="16" y2="13" />
-              <line x1="8" y1="17" x2="16" y2="17" />
-            </svg>
+
+        <div className={styles.headerActions}>
+          <button
+            type="button"
+            className={styles.btnSecondary}
+            onClick={exportToExcelFile}
+            title="Unduh data nilai format .xlsx"
+          >
+            <Download size={13} />
             <span>Ekspor Excel (.xlsx)</span>
           </button>
-          <button className="btn btn-primary btn-sm" onClick={handleSaveChanges} disabled={isSaving} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-              <polyline points="17 21 17 13 7 13 7 21" />
-              <polyline points="7 3 7 8 15 8" />
-            </svg>
-            <span>{isSaving ? 'Menyimpan...' : 'Simpan Perubahan'}</span>
+
+          <button
+            type="button"
+            className={styles.btnPrimary}
+            onClick={handleSaveChanges}
+            disabled={isSaving}
+            title="Simpan rekapitulasi nilai ke database"
+          >
+            {isSaving ? (
+              <>
+                <span
+                  style={{
+                    display: 'inline-block',
+                    width: '12px',
+                    height: '12px',
+                    border: '2px solid #fff',
+                    borderTopColor: 'transparent',
+                    borderRadius: '50%',
+                    animation: 'spin 1s linear infinite',
+                  }}
+                />
+                <span>Menyimpan...</span>
+              </>
+            ) : (
+              <>
+                <Save size={13} />
+                <span>Simpan Perubahan</span>
+              </>
+            )}
           </button>
         </div>
       </div>
 
-      {/* Top Stat Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
-        <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: '16px', padding: '1.1rem' }}>
-          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 700 }}>Total Siswa Terdaftar</div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--text-primary)', marginTop: '0.2rem' }}>{totalCount} Siswa</div>
+      {/* Top Executive KPI Stat Cards (4 Columns) */}
+      <div className={styles.metricsGrid}>
+        {/* Card 1: Total Siswa */}
+        <div className={`${styles.metricCard} ${styles.cardBlue}`}>
+          <div className={styles.metricTopRow}>
+            <span className={styles.metricLabel}>Total Siswa Terdaftar</span>
+            <div className={styles.metricIconBox}>
+              <Users size={13} />
+            </div>
+          </div>
+          <div className={styles.metricValueRow}>
+            <span className={styles.metricValue}>{totalCount}</span>
+            <span className={styles.metricSubtext}>Peserta Didik</span>
+          </div>
         </div>
-        <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: '16px', padding: '1.1rem' }}>
-          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 700 }}>Rata-Rata Nilai ({selectedSubject})</div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#2563eb', marginTop: '0.2rem' }}>{avgTotal} / 100</div>
+
+        {/* Card 2: Rata-Rata Nilai */}
+        <div className={`${styles.metricCard} ${styles.cardIndigo}`}>
+          <div className={styles.metricTopRow}>
+            <span className={styles.metricLabel}>Rata-Rata Nilai Mapel</span>
+            <div className={styles.metricIconBox}>
+              <TrendingUp size={13} />
+            </div>
+          </div>
+          <div className={styles.metricValueRow}>
+            <span className={styles.metricValue}>{avgTotal}</span>
+            <span className={styles.metricSubtext} title={selectedSubject}>/ 100 • {selectedSubject}</span>
+          </div>
         </div>
-        <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: '16px', padding: '1.1rem' }}>
-          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 700 }}>Ketuntasan KKM (&ge;75)</div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#16a34a', marginTop: '0.2rem' }}>
-            {passedCount} Siswa <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>({totalCount > 0 ? Math.round((passedCount / totalCount) * 100) : 0}%)</span>
+
+        {/* Card 3: Ketuntasan KKM */}
+        <div className={`${styles.metricCard} ${styles.cardEmerald}`}>
+          <div className={styles.metricTopRow}>
+            <span className={styles.metricLabel}>Ketuntasan KKM (&ge;75)</span>
+            <div className={styles.metricIconBox}>
+              <CheckCircle2 size={13} />
+            </div>
+          </div>
+          <div className={styles.metricValueRow}>
+            <span className={styles.metricValue}>{passedCount}</span>
+            <span className={styles.metricSubtext}>
+              {totalCount > 0 ? Math.round((passedCount / totalCount) * 100) : 0}% Tuntas KKM
+            </span>
+          </div>
+        </div>
+
+        {/* Card 4: Remedial */}
+        <div className={`${styles.metricCard} ${styles.cardAmber}`}>
+          <div className={styles.metricTopRow}>
+            <span className={styles.metricLabel}>Perlu Remedial (&lt;75)</span>
+            <div className={styles.metricIconBox}>
+              <AlertTriangle size={13} />
+            </div>
+          </div>
+          <div className={styles.metricValueRow}>
+            <span className={styles.metricValue}>{Math.max(0, totalCount - passedCount)}</span>
+            <span className={styles.metricSubtext}>Perlu Pembinaan</span>
           </div>
         </div>
       </div>
 
-      {/* Filter Bar */}
-      <div className={styles.filterCard} style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
-        <div style={{ flex: 1, minWidth: '220px' }}>
-          <input
-            type="text"
-            placeholder="Cari NISN atau nama siswa..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="input"
-          />
+      {/* Filter Toolbar Card */}
+      <div className={styles.filterCard}>
+        <div className={styles.filterControls}>
+          <div className={styles.searchBox}>
+            <Search size={14} className={styles.searchIcon} />
+            <input
+              type="text"
+              placeholder="Cari NISN atau nama siswa..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className={styles.searchInput}
+            />
+          </div>
+
+          <select
+            value={selectedClass}
+            onChange={(e) => setSelectedClass(e.target.value)}
+            className={styles.selectInput}
+          >
+            <option value="ALL">Semua Rombel</option>
+            {classesList.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+          </select>
+
+          <select
+            value={selectedSubject}
+            onChange={(e) => handleSubjectChange(e.target.value)}
+            className={styles.selectInput}
+            disabled={isLoadingGrades || isSaving}
+          >
+            {subjectsList.map((s: RawSubject) => (
+              <option key={s.id || s.name} value={s.name}>{s.name}</option>
+            ))}
+          </select>
         </div>
 
-        <select value={selectedClass} onChange={(e) => setSelectedClass(e.target.value)} className="input" style={{ width: '160px' }}>
-          <option value="ALL">Semua Rombel</option>
-          {classesList.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
-        </select>
-
-        <select value={selectedSubject} onChange={(e) => handleSubjectChange(e.target.value)} className="input" style={{ width: '220px' }} disabled={isLoadingGrades || isSaving}>
-          {subjectsList.map((s: RawSubject) => (
-            <option key={s.id || s.name} value={s.name}>{s.name}</option>
-          ))}
-        </select>
-
-        <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-          Bobot: Formatif 1 (20%) • Formatif 2 (20%) • PTS (30%) • PAS (30%)
+        <div className={styles.weightBadge}>
+          <SlidersHorizontal size={12} color="#0284c7" />
+          <span>Bobot: Formatif 1 (20%) • Formatif 2 (20%) • PTS (30%) • PAS (30%)</span>
         </div>
       </div>
 
       {/* Table Card */}
       <div className={styles.tableCard}>
         {filtered.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '3.5rem 1rem' }}>
-            <div style={{ width: '40px', height: '40px', margin: '0 auto 0.5rem', borderRadius: '10px', background: '#f1f5f9', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                <polyline points="14 2 14 8 20 8" />
-              </svg>
+          <div style={{ textAlign: 'center', padding: '3rem 1rem' }}>
+            <div style={{
+              width: '38px',
+              height: '38px',
+              margin: '0 auto 0.5rem',
+              borderRadius: '8px',
+              background: 'var(--bg-elevated, #f1f5f9)',
+              color: 'var(--text-muted, #64748b)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <Search size={18} />
             </div>
-            <h3 style={{ fontSize: '1rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
+            <h3 style={{ fontSize: '0.92rem', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
               Tidak ada data siswa ditemukan
             </h3>
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '3px' }}>
               Coba sesuaikan kata kunci pencarian atau pilihan filter rombel.
             </p>
           </div>
         ) : (
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th className="thSortable" onClick={() => handleSetSort('name')}>
-                  <div className="thSortContent">
-                    <span>NISN &amp; NAMA SISWA (DAPODIK REAL)</span>
-                    <span className="sortArrows">{sortField === 'name' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}</span>
-                  </div>
-                </th>
-                <th className="thSortable" onClick={() => handleSetSort('className')}>
-                  <div className="thSortContent">
-                    <span>ROMBEL</span>
-                    <span className="sortArrows">{sortField === 'className' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}</span>
-                  </div>
-                </th>
-                <th className="thSortable" style={{ textAlign: 'center' }} onClick={() => handleSetSort('formatif1')}>
-                  <div className="thSortContent" style={{ justifyContent: 'center' }}>
-                    <span>FORMATIF 1 (20%)</span>
-                    <span className="sortArrows">{sortField === 'formatif1' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}</span>
-                  </div>
-                </th>
-                <th className="thSortable" style={{ textAlign: 'center' }} onClick={() => handleSetSort('formatif2')}>
-                  <div className="thSortContent" style={{ justifyContent: 'center' }}>
-                    <span>FORMATIF 2 (20%)</span>
-                    <span className="sortArrows">{sortField === 'formatif2' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}</span>
-                  </div>
-                </th>
-                <th className="thSortable" style={{ textAlign: 'center' }} onClick={() => handleSetSort('pts')}>
-                  <div className="thSortContent" style={{ justifyContent: 'center' }}>
-                    <span>PTS (30%)</span>
-                    <span className="sortArrows">{sortField === 'pts' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}</span>
-                  </div>
-                </th>
-                <th className="thSortable" style={{ textAlign: 'center' }} onClick={() => handleSetSort('pas')}>
-                  <div className="thSortContent" style={{ justifyContent: 'center' }}>
-                    <span>PAS (30%)</span>
-                    <span className="sortArrows">{sortField === 'pas' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}</span>
-                  </div>
-                </th>
-                <th className="thSortable" style={{ textAlign: 'center' }} onClick={() => handleSetSort('totalScore')}>
-                  <div className="thSortContent" style={{ justifyContent: 'center' }}>
-                    <span>NILAI AKHIR</span>
-                    <span className="sortArrows">{sortField === 'totalScore' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}</span>
-                  </div>
-                </th>
-                <th className="thSortable" onClick={() => handleSetSort('grade')}>
-                  <div className="thSortContent">
-                    <span>PREDIKAT &amp; STATUS</span>
-                    <span className="sortArrows">{sortField === 'grade' ? (sortOrder === 'asc' ? '▲' : '▼') : '⇅'}</span>
-                  </div>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {paginated.map((item) => (
-                <tr key={item.studentId}>
-                  <td>
-                    <strong style={{ display: 'block', color: 'var(--text-primary)' }}>{item.name}</strong>
-                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>NISN: {item.nisn}</span>
-                  </td>
-                  <td>
-                    <span className="badge badge-info">{item.className}</span>
-                  </td>
-                  <td style={{ textAlign: 'center' }}>
-                    <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={item.formatif1 || ''}
-                      placeholder="0"
-                      onChange={(e) => handleScoreChange(item.studentId, 'formatif1', parseInt(e.target.value) || 0)}
-                      style={{
-                        width: '65px',
-                        textAlign: 'center',
-                        padding: '0.35rem 0.4rem',
-                        borderRadius: '8px',
-                        border: '1px solid var(--border-light)',
-                        background: 'var(--bg-elevated)',
-                        color: 'var(--text-primary)',
-                        fontWeight: 700,
-                      }}
-                    />
-                  </td>
-                  <td style={{ textAlign: 'center' }}>
-                    <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={item.formatif2 || ''}
-                      placeholder="0"
-                      onChange={(e) => handleScoreChange(item.studentId, 'formatif2', parseInt(e.target.value) || 0)}
-                      style={{
-                        width: '65px',
-                        textAlign: 'center',
-                        padding: '0.35rem 0.4rem',
-                        borderRadius: '8px',
-                        border: '1px solid var(--border-light)',
-                        background: 'var(--bg-elevated)',
-                        color: 'var(--text-primary)',
-                        fontWeight: 700,
-                      }}
-                    />
-                  </td>
-                  <td style={{ textAlign: 'center' }}>
-                    <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={item.pts || ''}
-                      placeholder="0"
-                      onChange={(e) => handleScoreChange(item.studentId, 'pts', parseInt(e.target.value) || 0)}
-                      style={{
-                        width: '65px',
-                        textAlign: 'center',
-                        padding: '0.35rem 0.4rem',
-                        borderRadius: '8px',
-                        border: '1px solid var(--border-light)',
-                        background: 'var(--bg-elevated)',
-                        color: 'var(--text-primary)',
-                        fontWeight: 700,
-                      }}
-                    />
-                  </td>
-                  <td style={{ textAlign: 'center' }}>
-                    <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={item.pas || ''}
-                      placeholder="0"
-                      onChange={(e) => handleScoreChange(item.studentId, 'pas', parseInt(e.target.value) || 0)}
-                      style={{
-                        width: '65px',
-                        textAlign: 'center',
-                        padding: '0.35rem 0.4rem',
-                        borderRadius: '8px',
-                        border: '1px solid var(--border-light)',
-                        background: 'var(--bg-elevated)',
-                        color: 'var(--text-primary)',
-                        fontWeight: 700,
-                      }}
-                    />
-                  </td>
-                  <td style={{ textAlign: 'center' }}>
-                    <strong style={{ fontSize: '1.05rem', color: item.totalScore > 0 ? '#2563eb' : 'var(--text-muted)' }}>
-                      {item.totalScore > 0 ? item.totalScore : '-'}
-                    </strong>
-                  </td>
-                  <td>
-                    {item.totalScore === 0 ? (
-                      <span className="badge badge-ghost" style={{ fontWeight: 600, color: 'var(--text-muted)' }}>
-                        Belum Diinput
-                      </span>
-                    ) : (
-                      <>
-                        <span className={`badge ${item.grade === 'A' ? 'badge-success' : item.grade === 'B' ? 'badge-active' : 'badge-inactive'}`} style={{ fontWeight: 800 }}>
-                          Predikat {item.grade}
-                        </span>
-                        <div style={{ fontSize: '0.7rem', marginTop: '2px', color: item.statusKkm === 'Tuntas KKM' ? '#16a34a' : '#dc2626', fontWeight: 700 }}>
-                          • {item.statusKkm}
-                        </div>
-                      </>
-                    )}
-                  </td>
+          <div className={styles.tableContainer}>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th className={styles.thSortable} onClick={() => handleSetSort('name')}>
+                    <div className={styles.thSortContent}>
+                      <span>NISN &amp; NAMA SISWA (DAPODIK REAL)</span>
+                      {renderSortIcon('name')}
+                    </div>
+                  </th>
+                  <th className={styles.thSortable} onClick={() => handleSetSort('className')}>
+                    <div className={styles.thSortContent}>
+                      <span>ROMBEL</span>
+                      {renderSortIcon('className')}
+                    </div>
+                  </th>
+                  <th className={styles.thSortable} style={{ textAlign: 'center' }} onClick={() => handleSetSort('formatif1')}>
+                    <div className={styles.thSortContent} style={{ justifyContent: 'center' }}>
+                      <span>FORMATIF 1 (20%)</span>
+                      {renderSortIcon('formatif1')}
+                    </div>
+                  </th>
+                  <th className={styles.thSortable} style={{ textAlign: 'center' }} onClick={() => handleSetSort('formatif2')}>
+                    <div className={styles.thSortContent} style={{ justifyContent: 'center' }}>
+                      <span>FORMATIF 2 (20%)</span>
+                      {renderSortIcon('formatif2')}
+                    </div>
+                  </th>
+                  <th className={styles.thSortable} style={{ textAlign: 'center' }} onClick={() => handleSetSort('pts')}>
+                    <div className={styles.thSortContent} style={{ justifyContent: 'center' }}>
+                      <span>PTS (30%)</span>
+                      {renderSortIcon('pts')}
+                    </div>
+                  </th>
+                  <th className={styles.thSortable} style={{ textAlign: 'center' }} onClick={() => handleSetSort('pas')}>
+                    <div className={styles.thSortContent} style={{ justifyContent: 'center' }}>
+                      <span>PAS (30%)</span>
+                      {renderSortIcon('pas')}
+                    </div>
+                  </th>
+                  <th className={styles.thSortable} style={{ textAlign: 'center' }} onClick={() => handleSetSort('totalScore')}>
+                    <div className={styles.thSortContent} style={{ justifyContent: 'center' }}>
+                      <span>NILAI AKHIR</span>
+                      {renderSortIcon('totalScore')}
+                    </div>
+                  </th>
+                  <th className={styles.thSortable} onClick={() => handleSetSort('grade')}>
+                    <div className={styles.thSortContent}>
+                      <span>PREDIKAT &amp; STATUS</span>
+                      {renderSortIcon('grade')}
+                    </div>
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {paginated.map((item) => (
+                  <tr key={item.studentId}>
+                    <td>
+                      <div className={styles.studentName}>{item.name}</div>
+                      <div className={styles.studentNisn}>NISN: {item.nisn}</div>
+                    </td>
+                    <td>
+                      <span className={styles.classBadge}>{item.className}</span>
+                    </td>
+                    <td style={{ textAlign: 'center' }}>
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={item.formatif1 || ''}
+                        placeholder="0"
+                        onChange={(e) => handleScoreChange(item.studentId, 'formatif1', parseInt(e.target.value) || 0)}
+                        className={styles.scoreInput}
+                      />
+                    </td>
+                    <td style={{ textAlign: 'center' }}>
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={item.formatif2 || ''}
+                        placeholder="0"
+                        onChange={(e) => handleScoreChange(item.studentId, 'formatif2', parseInt(e.target.value) || 0)}
+                        className={styles.scoreInput}
+                      />
+                    </td>
+                    <td style={{ textAlign: 'center' }}>
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={item.pts || ''}
+                        placeholder="0"
+                        onChange={(e) => handleScoreChange(item.studentId, 'pts', parseInt(e.target.value) || 0)}
+                        className={styles.scoreInput}
+                      />
+                    </td>
+                    <td style={{ textAlign: 'center' }}>
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={item.pas || ''}
+                        placeholder="0"
+                        onChange={(e) => handleScoreChange(item.studentId, 'pas', parseInt(e.target.value) || 0)}
+                        className={styles.scoreInput}
+                      />
+                    </td>
+                    <td style={{ textAlign: 'center' }}>
+                      {item.totalScore > 0 ? (
+                        <span className={styles.finalScore}>{item.totalScore}</span>
+                      ) : (
+                        <span className={styles.finalScoreEmpty}>-</span>
+                      )}
+                    </td>
+                    <td>
+                      {item.totalScore === 0 ? (
+                        <span className={styles.badgeGhost}>
+                          Belum Diinput
+                        </span>
+                      ) : (
+                        <>
+                          <span className={`${styles.gradeBadge} ${
+                            item.grade === 'A' ? styles.gradeA : item.grade === 'B' ? styles.gradeB : styles.gradeC
+                          }`}>
+                            Predikat {item.grade}
+                          </span>
+                          <div className={`${styles.statusKkmText} ${
+                            item.statusKkm === 'Tuntas KKM' ? styles.statusPassed : styles.statusFailed
+                          }`}>
+                            • {item.statusKkm}
+                          </div>
+                        </>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
 
         {/* Pagination Controls */}
         {filtered.length > itemsPerPage && (
-          <div style={{ padding: '0.75rem 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-elevated)', borderTop: '1px solid var(--border-light)', fontSize: '0.8rem' }}>
-            <span style={{ color: 'var(--text-muted)' }}>
+          <div className={styles.pagination}>
+            <span>
               Menampilkan {(safePage - 1) * itemsPerPage + 1} - {Math.min(safePage * itemsPerPage, filtered.length)} dari {filtered.length} siswa
             </span>
-            <div style={{ display: 'flex', gap: '0.35rem' }}>
+            <div className={styles.pageBtnGroup}>
               <button
-                className="btn btn-secondary btn-sm"
+                type="button"
+                className={styles.pageBtn}
                 disabled={safePage === 1}
                 onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                style={{ padding: '0.2rem 0.6rem', fontSize: '0.75rem' }}
               >
-                &laquo; Prev
+                <ChevronLeft size={13} />
+                <span>Prev</span>
               </button>
-              <span style={{ padding: '0.2rem 0.6rem', fontWeight: 700, display: 'flex', alignItems: 'center' }}>
-                Halaman {safePage} dari {totalPages}
+              <span className={styles.pageIndicator}>
+                {safePage} / {totalPages}
               </span>
               <button
-                className="btn btn-secondary btn-sm"
+                type="button"
+                className={styles.pageBtn}
                 disabled={safePage === totalPages}
                 onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                style={{ padding: '0.2rem 0.6rem', fontSize: '0.75rem' }}
               >
-                Next &raquo;
+                <span>Next</span>
+                <ChevronRight size={13} />
               </button>
             </div>
           </div>
