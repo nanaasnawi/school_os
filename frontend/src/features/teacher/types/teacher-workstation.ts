@@ -41,6 +41,19 @@ export interface TodayScheduleItem {
   is_upcoming: boolean;
 }
 
+export interface WeeklyScheduleItem {
+  id: string;
+  class_id: string;
+  class_name: string;
+  subject_id: string;
+  subject_name: string;
+  day_of_week: string;
+  start_time: string;
+  end_time: string;
+  room?: string | null;
+  teacher_name?: string | null;
+}
+
 export interface TeacherWorkstationStats {
   total_assigned_classes: number;
   total_students: number;

@@ -459,7 +459,9 @@ function LearningPortalContent() {
         else if (matchingSession.status === 'cancelled') status = 'CANCELLED';
         else if (matchingSession.substitute_teacher_id) status = 'SUBSTITUTED';
       } else if (isTimePassed && selectedDayFilter === 'TODAY') {
-        status = 'OVERDUE';
+        status = 'COMPLETED';
+      } else if (isTimeWindow && selectedDayFilter === 'TODAY') {
+        status = 'ACTIVE';
       }
 
       return {
@@ -556,25 +558,25 @@ function LearningPortalContent() {
         </div>
       </div>
 
-      {/* ── Smart Architectural Guidance Banner ── */}
+      {/* ── Smart Guidance Banner ── */}
       <div className={styles.archBanner}>
         <div className={styles.archBannerContent}>
-          <Info size={20} className={styles.archBannerIcon} />
+          <CheckCircle2 size={20} className={styles.archBannerIcon} style={{ color: '#0284c7' }} />
           <div>
             <div className={styles.archBannerTitle}>
-              Arsitektur Pembelajaran Terhubung Jadwal (Timetable Hub)
+              Hub Sesi Pembelajaran &amp; Jadwal Terpadu
             </div>
             <div style={{ fontSize: '0.8rem', color: '#475569', lineHeight: 1.5 }}>
-              Aplikasi ini membedakan jadwal rutin (template mingguan) dan sesi pembelajaran riil (tanggal konkret).
+              Seluruh sesi pembelajaran aktif secara otomatis setiap hari sesuai kalender akademik tanpa perlu aktivasi manual oleh Kepala Sekolah. Guru &amp; siswa dapat langsung mengakses ruang belajar, presensi, dan modul 24/7.
             </div>
             <div className={styles.archBannerList}>
               <span className={styles.archBannerItem}>
                 <CheckCircle2 size={13} color="#059669" />
-                <strong>Sesi Aktual:</strong> Pertemuan mandiri setiap minggu tanpa menimpa riwayat sebelumnya.
+                <strong>Jadwal Otomatis:</strong> Sesi aktif otomatis saat jam masuk dan berstatus selesai saat jam usai.
               </span>
               <span className={styles.archBannerItem}>
                 <CheckCircle2 size={13} color="#059669" />
-                <strong>Arsip 24/7:</strong> Modul &amp; materi tetap tersimpan di histori belajar siswa setelah jam usai.
+                <strong>Arsip 24/7:</strong> Guru &amp; siswa dapat meninjau modul materi dan tugas kapan saja.
               </span>
               <span className={styles.archBannerItem}>
                 <CheckCircle2 size={13} color="#059669" />
@@ -582,7 +584,7 @@ function LearningPortalContent() {
               </span>
               <span className={styles.archBannerItem}>
                 <CheckCircle2 size={13} color="#059669" />
-                <strong>Presensi Permanen:</strong> Dilindungi RESTRICT, data kehadiran siswa tidak pernah hilang.
+                <strong>Presensi Permanen:</strong> Data presensi rombel tersimpan aman dan terintegrasi langsung dengan rekap absensi.
               </span>
             </div>
           </div>
@@ -807,8 +809,8 @@ function LearningPortalContent() {
                         </span>
                       )}
                       {status === 'OVERDUE' && (
-                        <span className={`${styles.statusBadge} ${styles.statusOverdue}`}>
-                          Terlewat
+                        <span className={`${styles.statusBadge} ${styles.statusCompleted}`}>
+                          ✓ Selesai
                         </span>
                       )}
                     </div>
@@ -928,22 +930,21 @@ function LearningPortalContent() {
                     {/* Footer Actions */}
                     <div className={styles.sessionFooter}>
                       <div style={{ display: 'flex', gap: '0.35rem' }}>
-                        {status === 'SCHEDULED' || status === 'OVERDUE' ? (
-                          <button
-                            onClick={() => handleStartSession(schedule)}
-                            disabled={isSubmittingAction}
-                            className="btn btn-primary btn-sm"
-                            style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '4px',
-                              fontSize: '0.78rem',
-                            }}
-                          >
-                            <PlayCircle size={13} />
-                            <span>Mulai Sesi</span>
-                          </button>
-                        ) : status === 'ACTIVE' ? (
+                        <Link
+                          href={`/dashboard/attendance?class_id=${schedule.class_id}`}
+                          className="btn btn-primary btn-sm"
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            fontSize: '0.78rem',
+                          }}
+                        >
+                          <Users size={13} />
+                          <span>Presensi</span>
+                        </Link>
+
+                        {status === 'ACTIVE' ? (
                           <button
                             onClick={() => session && handleEndSession(session.id)}
                             disabled={isSubmittingAction}
@@ -960,21 +961,22 @@ function LearningPortalContent() {
                             <Check size={13} />
                             <span>Selesaikan Sesi</span>
                           </button>
+                        ) : status === 'SCHEDULED' && isTimeWindow ? (
+                          <button
+                            onClick={() => handleStartSession(schedule)}
+                            disabled={isSubmittingAction}
+                            className="btn btn-secondary btn-sm"
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              fontSize: '0.78rem',
+                            }}
+                          >
+                            <PlayCircle size={13} />
+                            <span>Buka Sesi</span>
+                          </button>
                         ) : null}
-
-                        <Link
-                          href={`/dashboard/attendance?class_id=${schedule.class_id}`}
-                          className="btn btn-ghost btn-sm"
-                          style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                            fontSize: '0.78rem',
-                          }}
-                        >
-                          <Users size={13} />
-                          <span>Presensi</span>
-                        </Link>
                       </div>
 
                       {status === 'ACTIVE' && session && (
@@ -988,7 +990,7 @@ function LearningPortalContent() {
                           }}
                           title="Batalkan Sesi"
                         >
-                          Batalkan
+                          Izin / Dibatalkan
                         </button>
                       )}
                     </div>

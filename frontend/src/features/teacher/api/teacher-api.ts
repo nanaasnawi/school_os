@@ -3,6 +3,7 @@ import type {
   TeacherProfile,
   TeacherClassSummary,
   TodayScheduleItem,
+  WeeklyScheduleItem,
   TeacherWorkstationStats,
   ClassStudentDto,
 } from '../types';
@@ -177,40 +178,93 @@ export async function fetchTeacherClasses(existingProfile?: TeacherProfile): Pro
 }
 
 /**
- * Fetch today's teaching schedules dynamically from learning sessions
+ * Fetch today's teaching schedules dynamically from learning sessions & academic schedules
  */
 export async function fetchTodaySchedule(): Promise<TodayScheduleItem[]> {
   try {
-    const res = await fetch(getApiUrl('/api/v1/learning/sessions'), {
-      headers: getAuthHeaders(),
-    });
-    if (!res.ok) {
-      return [];
-    }
-    const json = await res.json();
-    const sessions: any[] = json?.data?.items || json?.data || [];
-
+    const headers = getAuthHeaders();
+    const daysIndo = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
     const now = new Date();
+    const todayName = daysIndo[now.getDay()];
     const currentHourMin = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
-    return sessions.map((s, idx) => {
-      const startTime = s.start_time || '08:00';
-      const endTime = s.end_time || '09:30';
-      return {
-        id: s.id || `sched-${idx}`,
+    const [sessionsRes, schedulesRes] = await Promise.all([
+      fetch(getApiUrl('/api/v1/learning/sessions'), { headers }).then((r) => (r.ok ? r.json() : null)).catch(() => null),
+      fetch(getApiUrl('/api/v1/academic/schedules'), { headers }).then((r) => (r.ok ? r.json() : null)).catch(() => null),
+    ]);
+
+    const sessions: any[] = sessionsRes?.data?.items || sessionsRes?.data || [];
+    const schedules: any[] = schedulesRes?.data?.items || schedulesRes?.data || [];
+
+    // Filter weekly schedules that match today's day of week
+    const todaySchedules = schedules.filter(
+      (s) => s.day_of_week?.trim().toLowerCase() === todayName.toLowerCase()
+    );
+
+    // Merge: prioritize sessions, but fallback to todaySchedules so teacher never sees empty schedule
+    const items: TodayScheduleItem[] = [];
+    const seenScheduleIds = new Set<string>();
+
+    sessions.forEach((s, idx) => {
+      const startTime = s.start_time?.slice(0, 5) || '08:00';
+      const endTime = s.end_time?.slice(0, 5) || '09:30';
+      if (s.schedule_id) seenScheduleIds.add(s.schedule_id);
+
+      items.push({
+        id: s.id || `session-${idx}`,
         class_id: s.class_id || '',
         class_name: s.class_name || 'Rombel Belajar',
         subject_id: s.subject_id || '',
         subject_name: s.subject_name || s.title || 'Mata Pelajaran',
         start_time: startTime,
         end_time: endTime,
-        room: s.room || 'Kelas Belajar',
+        room: s.room || 'Ruang Kelas',
         is_current: currentHourMin >= startTime && currentHourMin <= endTime,
         is_upcoming: currentHourMin < startTime,
-      };
+      });
     });
+
+    // Add any todaySchedules not yet in sessions
+    todaySchedules.forEach((sched, idx) => {
+      if (!seenScheduleIds.has(sched.id)) {
+        const startTime = sched.start_time?.slice(0, 5) || '08:00';
+        const endTime = sched.end_time?.slice(0, 5) || '09:30';
+        items.push({
+          id: sched.id || `sched-${idx}`,
+          class_id: sched.class_id || '',
+          class_name: sched.class_name || 'Rombel Belajar',
+          subject_id: sched.subject_id || '',
+          subject_name: sched.subject_name || 'Mata Pelajaran',
+          start_time: startTime,
+          end_time: endTime,
+          room: sched.room || 'Ruang Kelas',
+          is_current: currentHourMin >= startTime && currentHourMin <= endTime,
+          is_upcoming: currentHourMin < startTime,
+        });
+      }
+    });
+
+    return items.sort((a, b) => a.start_time.localeCompare(b.start_time));
   } catch (err) {
     console.error('Failed to fetch today schedule:', err);
+    return [];
+  }
+}
+
+/**
+ * Fetch full weekly timetable (Senin - Sabtu) for the teacher
+ */
+export async function fetchWeeklySchedule(): Promise<WeeklyScheduleItem[]> {
+  try {
+    const res = await fetch(getApiUrl('/api/v1/academic/schedules'), {
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok) return [];
+    const json = await res.json();
+    const list: any[] = json?.data?.items || json?.data || [];
+    return list;
+  } catch (err) {
+    console.error('Failed to fetch weekly schedule:', err);
     return [];
   }
 }
