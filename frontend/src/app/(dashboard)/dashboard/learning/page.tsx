@@ -773,14 +773,20 @@ function LearningPortalContent() {
                       status === 'ACTIVE' ? styles.sessionCardActive : ''
                     }`}
                   >
-                    {/* Top Row: Time & Status */}
+                    {/* Top Row: Day, Time & Status */}
                     <div className={styles.sessionTopRow}>
-                      <span className={styles.timePill}>
-                        <Clock size={12} color="#0284c7" />
-                        <span>
-                          {schedule.start_time} - {schedule.end_time}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                        <span className={styles.dayPill}>
+                          <Calendar size={12} />
+                          <span>{schedule.day_of_week || 'Jadwal'}</span>
                         </span>
-                      </span>
+                        <span className={styles.timePill}>
+                          <Clock size={12} color="#0284c7" />
+                          <span>
+                            {schedule.start_time} - {schedule.end_time}
+                          </span>
+                        </span>
+                      </div>
 
                       {status === 'ACTIVE' && (
                         <span className={`${styles.statusBadge} ${styles.statusActive}`}>
@@ -931,7 +937,7 @@ function LearningPortalContent() {
                     <div className={styles.sessionFooter}>
                       <div style={{ display: 'flex', gap: '0.35rem' }}>
                         <Link
-                          href={`/dashboard/attendance?class_id=${schedule.class_id}`}
+                          href={`/dashboard/attendance?class_id=${schedule.class_id}&date=${session?.session_date || now.toISOString().split('T')[0]}&session_id=${session?.id || ''}&subject_name=${encodeURIComponent(schedule.subject_name || '')}`}
                           className="btn btn-primary btn-sm"
                           style={{
                             display: 'inline-flex',

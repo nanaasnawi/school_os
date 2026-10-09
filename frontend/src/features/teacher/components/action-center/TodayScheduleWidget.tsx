@@ -15,6 +15,20 @@ export function TodayScheduleWidget({ schedules }: TodayScheduleWidgetProps) {
   const [weeklySchedules, setWeeklySchedules] = useState<WeeklyScheduleItem[]>([]);
   const [loadingWeekly, setLoadingWeekly] = useState(false);
 
+  React.useEffect(() => {
+    let isMounted = true;
+    fetchWeeklySchedule()
+      .then((data) => {
+        if (isMounted && data.length > 0) {
+          setWeeklySchedules(data);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const handleOpenWeekly = async () => {
     setShowWeeklyModal(true);
     if (weeklySchedules.length === 0) {
@@ -33,7 +47,7 @@ export function TodayScheduleWidget({ schedules }: TodayScheduleWidgetProps) {
   const dayOrder = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
   const groupedWeekly = dayOrder.reduce((acc, day) => {
     acc[day] = weeklySchedules.filter(
-      (s) => s.day_of_week?.trim().toLowerCase() === day.toLowerCase()
+      (s: WeeklyScheduleItem) => s.day_of_week?.trim().toLowerCase() === day.toLowerCase()
     );
     return acc;
   }, {} as Record<string, WeeklyScheduleItem[]>);
@@ -91,27 +105,77 @@ export function TodayScheduleWidget({ schedules }: TodayScheduleWidgetProps) {
       {/* ── Schedules List or Rich Informative State ── */}
       {schedules.length === 0 ? (
         <div className={styles.scheduleEmptyContainer}>
-          <div className={styles.scheduleEmptyIcon}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0284c7" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10" />
-              <polyline points="12 6 12 12 16 14" />
-            </svg>
-          </div>
-          <div className={styles.scheduleEmptyContent}>
-            <div className={styles.scheduleEmptyTitle}>Bebas Sesi Tatap Muka Hari Ini</div>
-            <div className={styles.scheduleEmptySub}>
-              Tidak ada jadwal mengajar tatap muka untuk hari ini. Anda dapat memeriksa jadwal hari lain, menyusun modul belajar, atau melakukan evaluasi.
+          <div className={styles.scheduleEmptyTop}>
+            <div className={styles.scheduleEmptyIcon}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0284c7" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 16 14" />
+              </svg>
+            </div>
+            <div className={styles.scheduleEmptyContent}>
+              <div className={styles.scheduleEmptyTitle}>Hari Ini Bebas Sesi Tatap Muka</div>
+              <div className={styles.scheduleEmptySub}>
+                Tidak ada jadwal mengajar tatap muka untuk hari ini. Anda dapat memeriksa agenda mengajar hari lain, menyusun modul belajar, atau melakukan evaluasi.
+              </div>
             </div>
           </div>
-          <div className={styles.scheduleEmptyActions} style={{ display: 'flex', gap: '0.5rem' }}>
+
+          {weeklySchedules.length > 0 && (
+            <div
+              style={{
+                background: 'var(--bg-surface, #ffffff)',
+                border: '1px solid var(--border-light, #e2e8f0)',
+                borderRadius: '8px',
+                padding: '0.75rem 0.9rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.45rem',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.74rem', fontWeight: 700, color: '#0284c7' }}>
+                  Jadwal Mengajar Anda Pekan Ini:
+                </span>
+                <span style={{ fontSize: '0.7rem', color: '#64748b' }}>
+                  Total {weeklySchedules.length} Sesi Terjadwal
+                </span>
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                {dayOrder
+                  .filter((day) => (groupedWeekly[day]?.length || 0) > 0)
+                  .map((day) => {
+                    const dayList = groupedWeekly[day] || [];
+                    const distinctSubjects = Array.from(new Set(dayList.map((s) => s.subject_name).filter(Boolean)));
+                    return (
+                      <span
+                        key={day}
+                        style={{
+                          fontSize: '0.72rem',
+                          padding: '3px 8px',
+                          borderRadius: '6px',
+                          background: '#f0f9ff',
+                          border: '1px solid #bae6fd',
+                          color: '#0369a1',
+                          fontWeight: 600,
+                        }}
+                      >
+                        <strong>{day}</strong>: {dayList.length} Sesi ({distinctSubjects.slice(0, 2).join(', ')})
+                      </span>
+                    );
+                  })}
+              </div>
+            </div>
+          )}
+
+          <div className={styles.scheduleEmptyActions}>
             <button
               onClick={handleOpenWeekly}
               className={styles.actionBtnSmall}
-              style={{ background: '#0284c7', color: '#fff', border: 'none', cursor: 'pointer' }}
+              style={{ background: '#0284c7', color: '#fff', border: 'none', cursor: 'pointer', padding: '0.4rem 0.85rem' }}
             >
               Lihat Jadwal Mingguan (Senin–Sabtu) &rarr;
             </button>
-            <Link href="/dashboard/attendance" className={styles.actionBtnSmall}>
+            <Link href="/dashboard/attendance" className={styles.actionBtnSmall} style={{ padding: '0.4rem 0.85rem' }}>
               Lembar Presensi
             </Link>
           </div>

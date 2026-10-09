@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { getApiUrl, apiClient } from '@/lib/api';
 import styles from './attendance.module.css';
@@ -29,19 +30,27 @@ interface AttendanceRecord {
   checked_in_at?: string;
 }
 
-export default function AttendancePage() {
+function AttendanceContent() {
   const { user } = useAuth();
   const isTeacher = user?.role === 'teacher';
+  const searchParams = useSearchParams();
+
+  // URL Query Parameters from Learning / Jadwal Sesi
+  const queryClassId = searchParams.get('class_id') || '';
+  const queryDate = searchParams.get('date') || '';
+  const querySessionId = searchParams.get('session_id') || '';
+  const querySubject = searchParams.get('subject_name') || '';
 
   // ── States ──
   const [classes, setClasses] = useState<ClassItem[]>([]);
-  const [selectedClassId, setSelectedClassId] = useState<string>('');
+  const [selectedClassId, setSelectedClassId] = useState<string>(queryClassId || '');
   const [selectedDate, setSelectedDate] = useState<string>(() => {
+    if (queryDate && /^\d{4}-\d{2}-\d{2}$/.test(queryDate)) return queryDate;
     const d = new Date();
     return d.toISOString().split('T')[0];
   });
   const [sessions, setSessions] = useState<any[]>([]);
-  const [selectedSessionId, setSelectedSessionId] = useState<string>('');
+  const [selectedSessionId, setSelectedSessionId] = useState<string>(querySessionId || '');
   const [students, setStudents] = useState<StudentRosterItem[]>([]);
   const [attendanceMap, setAttendanceMap] = useState<Record<string, AttendanceRecord>>({});
   const [loading, setLoading] = useState<boolean>(true);
@@ -108,6 +117,11 @@ export default function AttendancePage() {
               c.homeroom_teacher_id === teacherRecord.id ||
               c.homeroom_teacher_id === user?.id
           );
+          // If queryClassId was provided (e.g. from Jadwal Pelajaran), ensure that class is selectable
+          if (queryClassId && !assigned.some((c: any) => c.id === queryClassId)) {
+            const matchedTarget = rawClasses.find((c: any) => c.id === queryClassId);
+            if (matchedTarget) assigned.push(matchedTarget);
+          }
           if (assigned.length > 0) finalClasses = assigned;
         }
 
@@ -121,6 +135,7 @@ export default function AttendancePage() {
         setClasses(formatted);
         if (formatted.length > 0) {
           setSelectedClassId((prev) => {
+            if (queryClassId && formatted.some((c: any) => c.id === queryClassId)) return queryClassId;
             if (prev && formatted.some((c: any) => c.id === prev)) return prev;
             return formatted[0].id;
           });
@@ -133,7 +148,7 @@ export default function AttendancePage() {
     }
 
     loadClasses();
-  }, [user?.id, isTeacher]);
+  }, [user?.id, isTeacher, queryClassId]);
 
   // ── 2. Fetch Sessions and Students for Selected Class ──
   useEffect(() => {
@@ -180,12 +195,15 @@ export default function AttendancePage() {
         setSessions(classSessions);
 
         // Pick session
-        const matchingSession = classSessions.find((sess: any) => {
-          if (!sess.date) return false;
-          return sess.date.startsWith(selectedDate);
-        }) || classSessions[0];
+        const matchingSession =
+          (querySessionId && classSessions.find((sess: any) => sess.id === querySessionId)) ||
+          classSessions.find((sess: any) => {
+            if (!sess.date) return false;
+            return sess.date.startsWith(selectedDate);
+          }) ||
+          classSessions[0];
 
-        const activeSessionId = matchingSession?.id || 'daily-session';
+        const activeSessionId = matchingSession?.id || (querySessionId || 'daily-session');
         setSelectedSessionId(activeSessionId);
 
         // Fetch existing attendance if real session ID exists
@@ -495,6 +513,26 @@ export default function AttendancePage() {
           </Link>
         </div>
       </div>
+
+      {/* ── Contextual Session Banner (When navigated from Jadwal / Sesi Belajar) ── */}
+      {Boolean(queryClassId || querySubject) && (
+        <div className={styles.sessionContextBanner}>
+          <div className={styles.sessionContextLeft}>
+            <span className={styles.sessionBadge}>Sesi Terjadwal</span>
+            <div>
+              <h3 className={styles.sessionTitle}>
+                Presensi Sesi: {classes.find((c) => c.id === selectedClassId)?.name || 'Kelas Terpilih'} {querySubject ? `• ${querySubject}` : ''}
+              </h3>
+              <p className={styles.sessionMeta}>
+                📅 {dateFormatted} {selectedSessionId && selectedSessionId !== 'daily-session' ? `• Sesi ID: ${selectedSessionId.slice(0, 8)}...` : ''} • Lembar presensi rombel dibuka otomatis sesuai jadwal sesi belajar.
+              </p>
+            </div>
+          </div>
+          <Link href="/dashboard/learning" className="btn btn-secondary btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <span>←</span> Kembali ke Jadwal Pelajaran
+          </Link>
+        </div>
+      )}
 
       {/* ── 2. Filter & Date Selector Card (Clean Enterprise Bar) ── */}
       <div className={styles.controlsCard}>
@@ -1071,5 +1109,19 @@ export default function AttendancePage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AttendancePage() {
+  return (
+    <Suspense
+      fallback={
+        <div style={{ padding: '3rem 2rem', textAlign: 'center', color: 'var(--text-muted, #64748b)' }}>
+          <p style={{ fontWeight: 600 }}>Memuat Lembar Presensi...</p>
+        </div>
+      }
+    >
+      <AttendanceContent />
+    </Suspense>
   );
 }
