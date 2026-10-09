@@ -62,6 +62,45 @@ function unescapeHtml(text: string): string {
     .replace(/&#x2F;/g, '/');
 }
 
+const FORMAT_ITEMS = [
+  {
+    id: 'PDF' as const,
+    title: 'Modul Dokumen / PDF',
+    label: 'Modul Dokumen / PDF',
+    subtitle: 'Katalog resmi SIBI Kemdikdasmen & berkas PDF mandiri',
+    tag: 'Buku SIBI & PDF',
+    icon: FileText,
+    cardClass: styles.formatCardPdf,
+  },
+  {
+    id: 'VIDEO' as const,
+    title: 'Video YouTube',
+    label: 'Video YouTube',
+    subtitle: 'Streaming edukasi terintegrasi & video pembelajaran',
+    tag: 'Streaming Video',
+    icon: Video,
+    cardClass: styles.formatCardVideo,
+  },
+  {
+    id: 'INFOGRAPHIC' as const,
+    title: 'Infografis Interaktif',
+    label: 'Infografis Interaktif',
+    subtitle: 'Visualisasi konsep, bagan alur diagram & slide visual',
+    tag: 'Bagan & Visual',
+    icon: Layers,
+    cardClass: styles.formatCardInfographic,
+  },
+  {
+    id: 'ARTICLE' as const,
+    title: 'Artikel & Bacaan',
+    label: 'Artikel & Bacaan',
+    subtitle: 'Naskah teks terstruktur, literasi & referensi bacaan',
+    tag: 'Naskah Teks',
+    icon: BookOpen,
+    cardClass: styles.formatCardArticle,
+  },
+];
+
 export default function CreateMaterialPage() {
   const router = useRouter();
   const { user } = useAuth();
@@ -73,8 +112,19 @@ export default function CreateMaterialPage() {
   // PDF Source Mode: SIBI (Katalog Buku Kurikulum) vs UPLOAD (Unggah Dokumen Mandiri)
   const [pdfSourceMode, setPdfSourceMode] = useState<'SIBI' | 'UPLOAD'>('SIBI');
 
-  // Master Data via TanStack Query & SDK
-  const { data: libraryBooks = [], isLoading: isLoadingBooks } = useLibraryBooks();
+  // Common Form Fields
+  const [title, setTitle] = useState('');
+  const [subject, setSubject] = useState('');
+  const [selectedSubjectId, setSelectedSubjectId] = useState('');
+  const [targetGrade, setTargetGrade] = useState('');
+  const [selectedClassId, setSelectedClassId] = useState('');
+  const [author, setAuthor] = useState('');
+  const [description, setDescription] = useState('');
+
+  // Master Data via TanStack Query & SDK (scoped to selectedClassId)
+  const { data: libraryBooks = [], isLoading: isLoadingBooks } = useLibraryBooks({
+    classId: selectedClassId || undefined,
+  });
   const { data: subjectsList = [] } = useSubjects();
   const [teachers, setTeachers] = useState<any[]>([]);
   const [classesList, setClassesList] = useState<any[]>([]);
@@ -111,15 +161,6 @@ export default function CreateMaterialPage() {
   const [articleContent, setArticleContent] = useState('');
   const [articleTab, setArticleTab] = useState<'EDIT' | 'PREVIEW'>('EDIT');
 
-  // Common Form Fields
-  const [title, setTitle] = useState('');
-  const [subject, setSubject] = useState('');
-  const [selectedSubjectId, setSelectedSubjectId] = useState('');
-  const [targetGrade, setTargetGrade] = useState('');
-  const [selectedClassId, setSelectedClassId] = useState('');
-  const [author, setAuthor] = useState('');
-  const [description, setDescription] = useState('');
-
   // UI state
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'error' | 'warning' } | null>(null);
@@ -149,7 +190,7 @@ export default function CreateMaterialPage() {
       try {
         const [teacherRes, classRes] = await Promise.all([
           listTeachers({ query: { page_size: 100 } as any }).catch(() => null),
-          listClasses({ query: { page_size: 100, all: true } as any }).catch(() => null),
+          listClasses({ query: { page_size: 100, all: isTeacher ? false : true } as any }).catch(() => null),
         ]);
 
         const tList = Array.isArray(teacherRes?.data?.data)
@@ -203,12 +244,45 @@ export default function CreateMaterialPage() {
     }
   }, [subjectsList, selectedSubjectId, subject]);
 
+  const selectedClassObj = useMemo(() => {
+    return classesList.find(c => c.id === selectedClassId || c.name === targetGrade) || null;
+  }, [classesList, selectedClassId, targetGrade]);
+
+  const targetClassLevel = useMemo(() => {
+    if (!selectedClassObj) return null;
+    if (selectedClassObj.tingkat) {
+      const num = parseInt(String(selectedClassObj.tingkat).replace(/\D/g, ''), 10);
+      if (!isNaN(num)) return num;
+    }
+    const match = (selectedClassObj.name || '').match(/\d+/);
+    return match ? parseInt(match[0], 10) : null;
+  }, [selectedClassObj]);
+
   const currentBook = selectedBook ?? (libraryBooks.length > 0 ? libraryBooks[0] : null);
   const currentSubject = subject || (subjectsList.length > 0 ? subjectsList[0].name : '');
 
-  // Filtered Books for SIBI Catalog
+  // Reset selected book if mismatched with newly selected class
+  useEffect(() => {
+    if (selectedBook && targetClassLevel !== null) {
+      if (selectedBook.class_level !== undefined && selectedBook.class_level !== null && selectedBook.class_level !== targetClassLevel) {
+        setSelectedBook(null);
+      }
+    }
+  }, [targetClassLevel, selectedBook]);
+
+  // Filtered Books for SIBI Catalog strictly scoped by target class level
   const filteredBooks = useMemo(() => {
     return libraryBooks.filter((b: LibraryBook) => {
+      // Strict class level scoping to avoid wrong book assignment
+      if (targetClassLevel !== null) {
+        if (b.class_level !== undefined && b.class_level !== null) {
+          if (b.class_level !== targetClassLevel) return false;
+        } else if (b.grade_level_name) {
+          const matchNum = b.grade_level_name.match(/\d+/);
+          if (matchNum && parseInt(matchNum[0], 10) !== targetClassLevel) return false;
+        }
+      }
+
       const q = bookSearchQuery.toLowerCase().trim();
       const matchSearch = !q || (
         (b.title && b.title.toLowerCase().includes(q)) ||
@@ -228,7 +302,7 @@ export default function CreateMaterialPage() {
 
       return matchSearch && matchSubject && matchGrade;
     });
-  }, [libraryBooks, bookSearchQuery, selectedSubjectFilter, selectedGradeFilter]);
+  }, [libraryBooks, targetClassLevel, bookSearchQuery, selectedSubjectFilter, selectedGradeFilter]);
 
   const bookSubjects = useMemo(() => {
     const set = new Set<string>();
@@ -752,44 +826,63 @@ export default function CreateMaterialPage() {
         </div>
       </div>
 
-      {/* ── FORMAT SELECTION BAR (4 CORE LMS FORMATS) ── */}
-      <div className={styles.formatBar}>
-        <button
-          type="button"
-          onClick={() => setMaterialFormat('PDF')}
-          className={`${styles.formatBtn} ${materialFormat === 'PDF' ? styles.formatBtnPdfActive : ''}`}
-        >
-          <FileText size={15} />
-          <span>Modul Dokumen / PDF</span>
-        </button>
+      {/* ── FORMAT SELECTION SECTION (4 CORE LMS FORMATS) ── */}
+      <section className={styles.formatSection} aria-label="Format Materi Pembelajaran">
+        <div className={styles.formatSectionHeader}>
+          <div className={styles.formatSectionTitleGroup}>
+            <div className={styles.formatSectionBadge}>
+              <Sparkles size={12} />
+              <span>Format Materi</span>
+            </div>
+            <h2 className={styles.formatSectionHeading}>Pilih Tipe Pembelajaran</h2>
+          </div>
+          <div className={styles.formatActiveStatus}>
+            <span className={styles.formatActiveStatusDot} />
+            <span>
+              Format Aktif: <strong>{FORMAT_ITEMS.find((f) => f.id === materialFormat)?.label}</strong>
+            </span>
+          </div>
+        </div>
 
-        <button
-          type="button"
-          onClick={() => setMaterialFormat('VIDEO')}
-          className={`${styles.formatBtn} ${materialFormat === 'VIDEO' ? styles.formatBtnVideoActive : ''}`}
-        >
-          <Video size={15} />
-          <span>Video YouTube</span>
-        </button>
+        <div className={styles.formatGrid}>
+          {FORMAT_ITEMS.map((item) => {
+            const Icon = item.icon;
+            const isActive = materialFormat === item.id;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setMaterialFormat(item.id)}
+                className={`${styles.formatCard} ${item.cardClass} ${isActive ? styles.formatCardActive : ''}`}
+                aria-pressed={isActive}
+              >
+                <div className={styles.formatCardTop}>
+                  <div className={styles.formatIconBox}>
+                    <Icon size={18} />
+                  </div>
+                  <div className={styles.formatBadgeWrap}>
+                    {isActive ? (
+                      <span className={styles.formatActivePill}>
+                        <Check size={11} strokeWidth={3} />
+                        <span>Dipilih</span>
+                      </span>
+                    ) : (
+                      <span className={styles.formatTagPill}>{item.tag}</span>
+                    )}
+                  </div>
+                </div>
 
-        <button
-          type="button"
-          onClick={() => setMaterialFormat('INFOGRAPHIC')}
-          className={`${styles.formatBtn} ${materialFormat === 'INFOGRAPHIC' ? styles.formatBtnInfographicActive : ''}`}
-        >
-          <Layers size={15} />
-          <span>Infografis Interaktif</span>
-        </button>
+                <div className={styles.formatCardContent}>
+                  <span className={styles.formatCardTitle}>{item.title}</span>
+                  <span className={styles.formatCardSubtitle}>{item.subtitle}</span>
+                </div>
 
-        <button
-          type="button"
-          onClick={() => setMaterialFormat('ARTICLE')}
-          className={`${styles.formatBtn} ${materialFormat === 'ARTICLE' ? styles.formatBtnArticleActive : ''}`}
-        >
-          <BookOpen size={15} />
-          <span>Artikel &amp; Bacaan</span>
-        </button>
-      </div>
+                <div className={styles.formatCardBar} />
+              </button>
+            );
+          })}
+        </div>
+      </section>
 
       {/* Main Workspace Layout */}
       <div className={styles.workspaceGrid}>
@@ -837,8 +930,10 @@ export default function CreateMaterialPage() {
               {pdfSourceMode === 'SIBI' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                   <div className={styles.infoBanner}>
-                    <CheckCircle2 size={15} style={{ flexShrink: 0 }} />
-                    <span><strong>Buku SIBI Resmi Terpilih:</strong> Pengunggahan berkas tidak diperlukan. Judul &amp; deskripsi terisi otomatis dari metadata buku resmi.</span>
+                    <CheckCircle2 size={15} style={{ flexShrink: 0, color: '#0284c7' }} />
+                    <span>
+                      <strong>Katalog SIBI Terfilter untuk {selectedClassObj?.name || 'Kelas Terpilih'} {targetClassLevel ? `(Tingkat ${targetClassLevel})` : ''}:</strong> Hanya menampilkan buku kurikulum resmi yang sesuai dengan rombel yang diampu untuk mencegah salah input materi buku.
+                    </span>
                   </div>
 
                   {/* Filters */}
@@ -871,13 +966,19 @@ export default function CreateMaterialPage() {
                       onChange={e => setSelectedGradeFilter(e.target.value)}
                       className={styles.inputField}
                     >
-                      <option value="ALL">Semua Kelas</option>
-                      <option value="Kelas 7">Kelas 7</option>
-                      <option value="Kelas 8">Kelas 8</option>
-                      <option value="Kelas 9">Kelas 9</option>
-                      <option value="Kelas 10">Kelas 10</option>
-                      <option value="Kelas 11">Kelas 11</option>
-                      <option value="Kelas 12">Kelas 12</option>
+                      <option value="ALL">Semua Tingkat</option>
+                      <option value="Kelas 1">Kelas 1 (SD)</option>
+                      <option value="Kelas 2">Kelas 2 (SD)</option>
+                      <option value="Kelas 3">Kelas 3 (SD)</option>
+                      <option value="Kelas 4">Kelas 4 (SD / Paket A)</option>
+                      <option value="Kelas 5">Kelas 5 (SD / Paket A)</option>
+                      <option value="Kelas 6">Kelas 6 (SD / Paket A)</option>
+                      <option value="Kelas 7">Kelas 7 (SMP / Paket B)</option>
+                      <option value="Kelas 8">Kelas 8 (SMP / Paket B)</option>
+                      <option value="Kelas 9">Kelas 9 (SMP / Paket B)</option>
+                      <option value="Kelas 10">Kelas 10 (SMA / SMK / Paket C)</option>
+                      <option value="Kelas 11">Kelas 11 (SMA / SMK / Paket C)</option>
+                      <option value="Kelas 12">Kelas 12 (SMA / SMK / Paket C)</option>
                     </select>
                   </div>
 

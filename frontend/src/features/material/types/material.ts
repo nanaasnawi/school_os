@@ -3,6 +3,7 @@ export interface LibraryBook {
   title: string;
   subject_name?: string;
   grade_level_name?: string;
+  class_level?: number;
   author?: string;
   publisher?: string;
   cover_url?: string;

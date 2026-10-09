@@ -4,6 +4,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import styles from './at-risk.module.css';
 import { fetchAtRiskStudents, fetchTeacherClasses, fetchCurrentTeacherProfile } from '@/features/teacher/api';
+import { getApiUrl, apiClient } from '@/lib/api';
 import type { AtRiskStudent, TeacherClassSummary, RiskCategory, TeacherProfile } from '@/features/teacher/types';
 
 interface ReminderRecord {
@@ -14,9 +15,18 @@ interface ReminderRecord {
 }
 
 function getAuthHeaders(): HeadersInit {
-  if (typeof window === 'undefined') return { 'Content-Type': 'application/json' };
-  const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
-  const tenantId = localStorage.getItem('tenant_id') || localStorage.getItem('tenantId');
+  const token =
+    apiClient.getToken() ||
+    (typeof window !== 'undefined'
+      ? localStorage.getItem('auth_token') || localStorage.getItem('token')
+      : null);
+  const tenantId =
+    typeof window !== 'undefined'
+      ? localStorage.getItem('active_tenant_id') ||
+        localStorage.getItem('tenant_id') ||
+        localStorage.getItem('tenantId')
+      : null;
+
   return {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -107,7 +117,7 @@ export default function AtRiskDetailPage() {
         const [cls, riskList, reminderRes] = await Promise.all([
           fetchTeacherClasses(prof || undefined),
           fetchAtRiskStudents(selectedClassId === 'ALL' ? undefined : selectedClassId, prof || undefined),
-          fetch('/api/v1/teacher/remind', { headers: getAuthHeaders() })
+          fetch(getApiUrl('/api/v1/teacher/remind'), { headers: getAuthHeaders() })
             .then(async (r) => (r.ok ? await safeJsonParse(r) : null))
             .catch(() => null),
         ]);
@@ -214,7 +224,7 @@ export default function AtRiskDetailPage() {
   const handleSendSingleReminder = async (student: AtRiskStudent) => {
     setSendingStudentId(student.student_id);
     try {
-      const res = await fetch('/api/v1/teacher/remind', {
+      const res = await fetch(getApiUrl('/api/v1/teacher/remind'), {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify({
@@ -260,7 +270,7 @@ export default function AtRiskDetailPage() {
 
     try {
       const studentIds = filteredStudents.map((s) => s.student_id);
-      const res = await fetch('/api/v1/teacher/remind', {
+      const res = await fetch(getApiUrl('/api/v1/teacher/remind'), {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify({

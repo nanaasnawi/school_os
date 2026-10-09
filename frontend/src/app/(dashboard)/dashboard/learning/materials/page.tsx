@@ -88,17 +88,6 @@ export default function MaterialsPage() {
     }
   }, [libraryBooks, selectedBook]);
 
-  const filteredBooks = useMemo(() => {
-    if (!bookSearchQuery.trim()) return libraryBooks;
-    const q = bookSearchQuery.toLowerCase();
-    return libraryBooks.filter((b) =>
-      (b.title && b.title.toLowerCase().includes(q)) ||
-      (b.subject_name && b.subject_name.toLowerCase().includes(q)) ||
-      (b.grade_level_name && b.grade_level_name.toLowerCase().includes(q)) ||
-      (b.author && b.author.toLowerCase().includes(q))
-    );
-  }, [libraryBooks, bookSearchQuery]);
-
   const materials = useMemo<MaterialItem[]>(() => {
     let dataList = materialsData;
 
@@ -172,6 +161,34 @@ export default function MaterialsPage() {
     pdfFileName: '',
     imagePreviewUrl: '',
   });
+
+  const currentModalClassLevel = useMemo(() => {
+    if (!newMaterial.grade) return null;
+    const match = newMaterial.grade.match(/\d+/);
+    return match ? parseInt(match[0], 10) : null;
+  }, [newMaterial.grade]);
+
+  const filteredBooks = useMemo(() => {
+    return libraryBooks.filter((b) => {
+      if (currentModalClassLevel !== null) {
+        if (b.class_level !== undefined && b.class_level !== null) {
+          if (b.class_level !== currentModalClassLevel) return false;
+        } else if (b.grade_level_name) {
+          const matchNum = b.grade_level_name.match(/\d+/);
+          if (matchNum && parseInt(matchNum[0], 10) !== currentModalClassLevel) return false;
+        }
+      }
+
+      if (!bookSearchQuery.trim()) return true;
+      const q = bookSearchQuery.toLowerCase();
+      return (
+        (b.title && b.title.toLowerCase().includes(q)) ||
+        (b.subject_name && b.subject_name.toLowerCase().includes(q)) ||
+        (b.grade_level_name && b.grade_level_name.toLowerCase().includes(q)) ||
+        (b.author && b.author.toLowerCase().includes(q))
+      );
+    });
+  }, [libraryBooks, currentModalClassLevel, bookSearchQuery]);
 
   // Selected Material Modal Preview
   const [previewMaterial, setPreviewMaterial] = useState<MaterialItem | null>(null);
@@ -429,7 +446,8 @@ export default function MaterialsPage() {
         setShowAddModal(false);
         showToast('Tugas materi bacaan buku perpustakaan berhasil diterbitkan');
       } else {
-        showToast('Gagal menugaskan materi buku');
+        const errJson = await res.json().catch(() => null);
+        showToast(errJson?.error?.message || 'Gagal menugaskan materi buku');
       }
     } catch {
       showToast('Terjadi kendala koneksi server');
@@ -1095,7 +1113,7 @@ export default function MaterialsPage() {
                       <line x1="12" y1="8" x2="12.01" y2="8" />
                     </svg>
                     <div>
-                      <strong>Perpustakaan Guru:</strong> Pilih buku teks kurikulum SIBI Kemendikbudristek dan tentukan rentang halaman bacaan siswa.
+                      <strong>Katalog SIBI Terfilter untuk {newMaterial.grade || 'Kelas Terpilih'} {currentModalClassLevel ? `(Tingkat ${currentModalClassLevel})` : ''}:</strong> Pilih buku teks kurikulum resmi yang sesuai dengan rombel target yang diampu untuk mencegah salah input materi buku.
                     </div>
                   </div>
 
