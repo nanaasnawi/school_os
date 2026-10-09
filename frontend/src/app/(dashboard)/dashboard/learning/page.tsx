@@ -1,887 +1,1318 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import styles from './learning.module.css';
-import { listTeachers, listClasses } from '@/lib/sdk/sdk.gen';
-import { Calendar, School, X, Eye, BookOpen, Settings, FileText, Video, UploadCloud, CheckCircle2, AlertCircle, Image as ImageIcon, Send } from 'lucide-react';
+import {
+  Calendar,
+  Clock,
+  BookOpen,
+  FileText,
+  CheckCircle2,
+  PlayCircle,
+  FileCheck,
+  Users,
+  ShieldCheck,
+  Plus,
+  RefreshCw,
+  Video,
+  Info,
+  Check,
+  X,
+} from 'lucide-react';
 
-type MaterialItem = {
+interface LearningSessionDto {
   id: string;
-  className: string;
-  subjectName: string;
-  teacherName: string;
-  chapterTitle: string;
-  contentType: 'PDF' | 'VIDEO' | 'TEXT';
-  description: string;
-  topics: string;
-  youtubeUrl?: string;
-  pdfFileName?: string;
-  imagePreviewUrl?: string;
-  publishedAt: string;
-  androidSynced: boolean;
-};
-
-interface TeacherItem {
-  id: string;
-  full_name: string;
+  tenant_id: string;
+  session_type: string;
+  schedule_id?: string | null;
+  class_id: string;
+  subject_id?: string | null;
+  teacher_id: string;
+  substitute_teacher_id?: string | null;
+  session_date: string;
+  session_number: number;
+  start_time?: string | null;
+  end_time?: string | null;
+  status: string; // 'scheduled' | 'active' | 'completed' | 'cancelled'
+  notes?: string | null;
+  cancellation_reason?: string | null;
+  subject_name?: string | null;
+  teacher_name?: string | null;
+  substitute_teacher_name?: string | null;
+  class_name?: string | null;
+  room?: string | null;
 }
 
-interface ClassItem {
+interface ClassScheduleDto {
   id: string;
-  name: string;
+  tenant_id: string;
+  class_id: string;
+  class_name?: string;
+  subject_id: string;
+  subject_name?: string;
+  teacher_id: string;
+  teacher_name?: string;
+  day_of_week: string;
+  start_time: string;
+  end_time: string;
+  room?: string;
 }
 
-interface SubjectItem {
-  id?: string;
-  code?: string;
-  name: string;
+interface MaterialItemDto {
+  id: string;
+  title: string;
+  description?: string | null;
+  material_type: string;
+  storage_key?: string | null;
+  external_url?: string | null;
+  session_id?: string | null;
+  class_id?: string | null;
+  class_name?: string | null;
+  subject_name?: string | null;
+  teacher_name?: string | null;
+  created_at: string;
 }
 
-const INITIAL_MATERIALS: MaterialItem[] = [];
+interface AssignmentItemDto {
+  id: string;
+  title: string;
+  description?: string | null;
+  due_at?: string | null;
+  allow_late_submission?: boolean | null;
+  class_name?: string | null;
+  subject_name?: string | null;
+  session_id?: string | null;
+  status: string;
+}
 
-export default function LearningPage() {
+interface QuizItemDto {
+  id: string;
+  title: string;
+  description?: string | null;
+  duration_minutes: number;
+  time_limit_minutes?: number;
+  exam_token?: string | null;
+  class_name?: string | null;
+  subject_name?: string | null;
+  status: string;
+}
+
+interface ScheduleComplianceData {
+  date: string;
+  total_scheduled: number;
+  completed_count: number;
+  in_progress_count: number;
+  scheduled_count: number;
+  substituted_count: number;
+  cancelled_count: number;
+  overdue_unrecorded_count: number;
+  compliance_rate: number;
+}
+
+function getAuthHeaders(): HeadersInit {
+  const token =
+    typeof window !== 'undefined'
+      ? localStorage.getItem('auth_token') || localStorage.getItem('token')
+      : null;
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+}
+
+export default function LearningPortalPage() {
   return (
-    <Suspense fallback={<div style={{ padding: '2rem', textAlign: 'center' }}>Memuat Portal Modul & Silabus...</div>}>
-      <LearningPageContent />
+    <Suspense
+      fallback={
+        <div style={{ padding: '3rem', textAlign: 'center', color: '#64748b' }}>
+          Memuat Timetable Hub &amp; Portal Pembelajaran Terpadu...
+        </div>
+      }
+    >
+      <LearningPortalContent />
     </Suspense>
   );
 }
 
-function LearningPageContent() {
+function LearningPortalContent() {
   const searchParams = useSearchParams();
   const classParam = searchParams.get('class');
   const subjectParam = searchParams.get('subject');
 
-  const [materials, setMaterials] = useState<MaterialItem[]>(INITIAL_MATERIALS);
-  const [viewRole, setViewRole] = useState<'teacher' | 'admin'>('teacher');
-  const [userClassFilter, setUserClassFilter] = useState<string | null>(null);
-  const [userSubjectFilter, setUserSubjectFilter] = useState<string | null>(null);
+  // ── Tab Navigation State ──
+  const [activeTab, setActiveTab] = useState<
+    'hub' | 'library' | 'assignments' | 'cbt' | 'compliance'
+  >('hub');
 
-  const selectedClassFilter = userClassFilter ?? classParam ?? 'ALL';
-  const selectedSubjectFilter = userSubjectFilter ?? subjectParam ?? 'ALL';
-  
-  // Teachers, Classes, and Subjects for dropdowns
-  const [teachers, setTeachers] = useState<TeacherItem[]>([]);
-  const [classesList, setClassesList] = useState<ClassItem[]>([]);
-  const [subjectsList, setSubjectsList] = useState<SubjectItem[]>([]);
+  // ── Data States ──
+  const [sessions, setSessions] = useState<LearningSessionDto[]>([]);
+  const [schedules, setSchedules] = useState<ClassScheduleDto[]>([]);
+  const [materials, setMaterials] = useState<MaterialItemDto[]>([]);
+  const [assignments, setAssignments] = useState<AssignmentItemDto[]>([]);
+  const [quizzes, setQuizzes] = useState<QuizItemDto[]>([]);
+  const [compliance, setCompliance] = useState<ScheduleComplianceData | null>(null);
+  const [classesList, setClassesList] = useState<any[]>([]);
 
-  // Modal Input Materi State
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [newMaterial, setNewMaterial] = useState({
-    className: classParam || '',
-    subjectName: subjectParam || '',
-    teacherName: '',
-    chapterTitle: '',
-    contentType: 'PDF' as 'PDF' | 'VIDEO' | 'TEXT',
-    description: '',
-    topics: '',
-    youtubeUrl: '',
-    pdfFileName: '',
-    imagePreviewUrl: '',
-  });
+  // ── Filter States ──
+  const [selectedClass, setSelectedClass] = useState<string>(classParam || 'ALL');
+  const [selectedSubject, setSelectedSubject] = useState<string>(subjectParam || 'ALL');
+  const [selectedDayFilter, setSelectedDayFilter] = useState<string>('TODAY');
 
-  // Selected Material Preview Modal
-  const [previewMaterial, setPreviewMaterial] = useState<MaterialItem | null>(null);
-
-  // Toast
+  const [loading, setLoading] = useState<boolean>(true);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // ── Cancel Modal State ──
+  const [cancellingSessionId, setCancellingSessionId] = useState<string | null>(null);
+  const [cancelReason, setCancelReason] = useState<string>('');
+  const [isSubmittingAction, setIsSubmittingAction] = useState<boolean>(false);
+
+  // ── Toast Trigger ──
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
-        const [teacherRes, classRes, subjectRes, materialsRes] = await Promise.all([
-          listTeachers({ query: { page_size: 100 } }).catch(() => null),
-          listClasses({ query: { page_size: 100 } }).catch(() => null),
-          fetch('/api/v1/academic/subjects', {
-            headers: token ? { Authorization: `Bearer ${token}` } : {}
-          }).then(r => r.ok ? r.json() : null).catch(() => null),
-          fetch('/api/v1/learning/materials', {
-            headers: token ? { Authorization: `Bearer ${token}` } : {}
-          }).then(r => r.ok ? r.json() : null).catch(() => null)
-        ]);
+  // ── Load All Learning & Schedule Hub Data ──
+  const loadHubData = async () => {
+    try {
+      setLoading(true);
+      const headers = getAuthHeaders();
 
-        if (teacherRes?.data?.data) {
-          const list = teacherRes.data.data;
-          setTeachers(list);
-          if (list.length > 0) {
-            setNewMaterial(prev => ({ ...prev, teacherName: list[0].full_name }));
-          }
-        }
+      const [
+        sessionsRes,
+        schedulesRes,
+        materialsRes,
+        assignmentsRes,
+        quizzesRes,
+        complianceRes,
+        classesRes,
+      ] = await Promise.all([
+        fetch('/api/v1/learning/sessions', { headers }).then((r) =>
+          r.ok ? r.json() : null
+        ),
+        fetch('/api/v1/academic/schedules', { headers }).then((r) =>
+          r.ok ? r.json() : null
+        ),
+        fetch('/api/v1/learning/materials', { headers }).then((r) =>
+          r.ok ? r.json() : null
+        ),
+        fetch('/api/v1/learning/assignments', { headers }).then((r) =>
+          r.ok ? r.json() : null
+        ),
+        fetch('/api/v1/learning/quizzes', { headers }).then((r) =>
+          r.ok ? r.json() : null
+        ),
+        fetch('/api/v1/analytics/schedule-compliance', { headers }).then((r) =>
+          r.ok ? r.json() : null
+        ),
+        fetch('/api/v1/academic/classes?page_size=200', { headers }).then((r) =>
+          r.ok ? r.json() : null
+        ),
+      ]);
 
-        if (classRes?.data?.data) {
-          const allRombels = classRes.data.data;
-          setClassesList(allRombels);
-        }
-
-        if (subjectRes?.data && Array.isArray(subjectRes.data)) {
-          setSubjectsList(subjectRes.data);
-        }
-
-        if (materialsRes?.data && Array.isArray(materialsRes.data)) {
-          const mapped: MaterialItem[] = materialsRes.data.map((m: Record<string, unknown>) => {
-            const desc = String(m.description || '');
-            const title = String(m.title || '');
-            const hasBullet = desc.includes(' • ');
-            const descParts = hasBullet ? desc.split(' • ') : [];
-
-            // Detect format cleanly
-            const externalUrl = m.external_url ? String(m.external_url) : '';
-            const storageKey = m.storage_key ? String(m.storage_key) : '';
-            const rawType = String(m.material_type || '').toLowerCase();
-            const isVideo = rawType === 'video' || externalUrl.includes('youtube.com') || externalUrl.includes('youtu.be');
-            const isPdf = rawType === 'pdf' || rawType === 'document' || externalUrl.toLowerCase().endsWith('.pdf') || externalUrl.includes('static-sc.cloudapp') || Boolean(storageKey);
-            const contentType: 'PDF' | 'VIDEO' | 'TEXT' = isVideo ? 'VIDEO' : isPdf ? 'PDF' : 'TEXT';
-
-            // Clean subject name (never let it be a 200-char paragraph)
-            let subjectName = String(m.subject_name || (hasBullet ? descParts[0] : ''));
-            if (!subjectName || subjectName.length > 35) {
-              const textLower = `${title} ${desc}`.toLowerCase();
-              if (textLower.includes('bahasa indonesia')) subjectName = 'Bahasa Indonesia';
-              else if (textLower.includes('bahasa inggris')) subjectName = 'Bahasa Inggris';
-              else if (textLower.includes('matematika')) subjectName = 'Matematika';
-              else if (textLower.includes('agama islam') || textLower.includes('pai')) subjectName = 'Pendidikan Agama Islam';
-              else if (textLower.includes('ipas') || textLower.includes('ipa')) subjectName = 'IPAS';
-              else if (textLower.includes('ips')) subjectName = 'IPS';
-              else if (textLower.includes('ppkn') || textLower.includes('pancasila')) subjectName = 'Pendidikan Pancasila';
-              else if (textLower.includes('pjok') || textLower.includes('jasmani')) subjectName = 'PJOK';
-              else if (textLower.includes('seni')) subjectName = 'Seni Budaya';
-              else subjectName = 'Pelajaran Umum';
-            }
-
-            // Clean class name
-            let className = String(m.class_name || (hasBullet && descParts.length > 1 ? descParts[1] : ''));
-            if (!className || className.length > 25) {
-              const textLower = `${title} ${desc}`.toLowerCase();
-              const classMatch = textLower.match(/kelas\s+([0-9ivx]+)/i);
-              if (classMatch) {
-                className = `Kelas ${classMatch[1].toUpperCase()}`;
-              } else if (textLower.includes('paket a')) {
-                className = 'Paket A';
-              } else if (textLower.includes('paket b')) {
-                className = 'Paket B';
-              } else if (textLower.includes('paket c')) {
-                className = 'Paket C';
-              } else {
-                className = 'Semua Rombel';
-              }
-            }
-
-            // Clean teacher / author name
-            let teacherName = String(m.teacher_name || (hasBullet && descParts.length > 2 ? descParts[2] : ''));
-            if (!teacherName || teacherName.toLowerCase() === 'guru pengampu' || teacherName.length > 40) {
-              const authorMatch = desc.match(/oleh\s+([^.]+)/i);
-              if (authorMatch && authorMatch[1].trim().length < 40) {
-                teacherName = authorMatch[1].trim();
-              } else {
-                teacherName = 'Tim Guru Terpadu';
-              }
-            }
-
-            // Clean description
-            let cleanDesc = hasBullet && descParts.length > 3 ? descParts.slice(3).join(' • ') : desc;
-            if (cleanDesc.length > 160) {
-              cleanDesc = cleanDesc.slice(0, 155) + '...';
-            }
-
-            return {
-              id: String(m.id),
-              className,
-              subjectName,
-              teacherName,
-              chapterTitle: title,
-              contentType,
-              description: cleanDesc || 'Modul & materi pembelajaran digital siswa.',
-              topics: 'Pembelajaran Rombel',
-              youtubeUrl: isVideo ? externalUrl : undefined,
-              pdfFileName: isPdf ? (storageKey || (externalUrl ? externalUrl.split('/').pop()?.split('?')[0] : 'Buku_Kurikulum.pdf')) : undefined,
-              imagePreviewUrl: '',
-              publishedAt: m.created_at ? new Date(String(m.created_at)).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Hari ini',
-              androidSynced: true,
-            };
-          });
-          setMaterials(mapped);
-        }
-      } catch (err) {
-        console.error('Error loading learning data:', err);
+      if (sessionsRes?.data) {
+        setSessions(Array.isArray(sessionsRes.data) ? sessionsRes.data : []);
       }
+      if (schedulesRes?.data) {
+        setSchedules(Array.isArray(schedulesRes.data) ? schedulesRes.data : []);
+      }
+      if (materialsRes?.data) {
+        setMaterials(Array.isArray(materialsRes.data) ? materialsRes.data : []);
+      }
+      if (assignmentsRes?.data) {
+        setAssignments(Array.isArray(assignmentsRes.data) ? assignmentsRes.data : []);
+      }
+      if (quizzesRes?.data) {
+        setQuizzes(Array.isArray(quizzesRes.data) ? quizzesRes.data : []);
+      }
+      if (complianceRes?.data) {
+        setCompliance(complianceRes.data);
+      }
+      if (classesRes?.data) {
+        const clsItems = classesRes.data.items || classesRes.data;
+        setClassesList(Array.isArray(clsItems) ? clsItems : []);
+      }
+    } catch (err) {
+      console.error('Error fetching learning hub data:', err);
+    } finally {
+      setLoading(false);
     }
-    loadData();
+  };
+
+  useEffect(() => {
+    loadHubData();
   }, []);
 
-  // PDF File Upload Handler
-  const handlePdfFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setNewMaterial(prev => ({ ...prev, pdfFileName: file.name }));
-      showToast(`File PDF "${file.name}" terpilih dari perangkat!`);
-    }
-  };
+  // ── Compute Day of Week in Indonesian ──
+  const now = new Date();
+  const daysMap = ['minggu', 'senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu'];
+  const todayIndo = daysMap[now.getDay()];
 
-  // Image File Upload Handler
-  const handleImageFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const imageUrl = URL.createObjectURL(file);
-      setNewMaterial(prev => ({ ...prev, imagePreviewUrl: imageUrl }));
-      showToast(`Gambar penjelas "${file.name}" terpilih dari perangkat!`);
-    }
-  };
-
-  const handlePublishMaterial = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newMaterial.chapterTitle) return;
-
-    if (newMaterial.contentType === 'VIDEO' && !newMaterial.youtubeUrl) {
-      showToast('Mohon masukkan link URL YouTube video pembelajaran!');
-      return;
-    }
-    if (newMaterial.contentType === 'PDF' && !newMaterial.pdfFileName) {
-      showToast('Mohon pilih file PDF dari perangkat!');
-      return;
-    }
-
+  // ── Start / Initialize Session from Schedule ──
+  const handleStartSession = async (sched: ClassScheduleDto) => {
     try {
-      const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
-      const payload = {
-        material_type: newMaterial.contentType.toLowerCase(),
-        title: newMaterial.chapterTitle,
-        description: `${newMaterial.subjectName} • ${newMaterial.className} • ${newMaterial.teacherName} • ${newMaterial.description || 'Modul Pelajaran'}`,
-        storage_key: newMaterial.contentType === 'PDF' ? newMaterial.pdfFileName : null,
-        external_url: newMaterial.contentType === 'VIDEO' ? newMaterial.youtubeUrl : null,
-        order_index: 0,
-        visibility: 'published',
-      };
+      setIsSubmittingAction(true);
+      const headers = getAuthHeaders();
+      const todayDate = now.toISOString().split('T')[0];
 
-      const res = await fetch('/api/v1/learning/materials', {
+      const res = await fetch('/api/v1/learning/sessions', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
-        },
-        body: JSON.stringify(payload)
+        headers,
+        body: JSON.stringify({
+          session_type: 'scheduled',
+          schedule_id: sched.id,
+          class_id: sched.class_id,
+          subject_id: sched.subject_id,
+          teacher_id: sched.teacher_id,
+          session_date: todayDate,
+          start_time: sched.start_time,
+          end_time: sched.end_time,
+        }),
       });
 
       if (res.ok) {
-        const resJson = await res.json();
-        const created = resJson.data;
-        const item: MaterialItem = {
-          id: created?.id || `mat-${Date.now()}`,
-          className: newMaterial.className,
-          subjectName: newMaterial.subjectName,
-          teacherName: newMaterial.teacherName,
-          chapterTitle: newMaterial.chapterTitle,
-          contentType: newMaterial.contentType,
-          description: newMaterial.description || 'Modul & materi pembelajaran digital siswa.',
-          topics: newMaterial.topics || 'Pembelajaran Rombel',
-          youtubeUrl: newMaterial.youtubeUrl,
-          pdfFileName: newMaterial.pdfFileName,
-          imagePreviewUrl: newMaterial.imagePreviewUrl,
-          publishedAt: 'Hari ini',
-          androidSynced: true,
-        };
-
-        setMaterials(prev => [item, ...prev]);
-        setShowAddModal(false);
-        showToast(`Materi "${newMaterial.chapterTitle}" dipublish ke Android App Siswa Rombel ${newMaterial.className}!`);
+        const _json = await res.json();
+        showToast(
+          `✓ Sesi ${sched.subject_name || 'Pelajaran'} (${sched.class_name || 'Rombel'}) aktif! Notifikasi & presensi telah dibuka.`
+        );
+        loadHubData();
       } else {
-        showToast('Gagal mempublish materi');
+        showToast('Gagal memulai sesi pembelajaran.');
       }
-    } catch {
-      showToast('Terjadi kendala koneksi');
+    } catch (err) {
+      console.error('Start session error:', err);
+      showToast('Terjadi kendala jaringan saat memulai sesi.');
+    } finally {
+      setIsSubmittingAction(false);
     }
   };
 
-  const handleDownloadPdf = (fileName: string, title: string, subject: string, teacher: string, description: string) => {
-    const safeTitle = (title || 'Modul Pembelajaran').replace(/[()\\]/g, '');
-    const safeSubject = (subject || 'Umum').replace(/[()\\]/g, '');
-    const safeTeacher = (teacher || 'Guru').replace(/[()\\]/g, '');
-    const safeDesc = (description || 'Modul Ajar').replace(/[()\\]/g, '').slice(0, 150);
+  // ── End Learning Session ──
+  const handleEndSession = async (sessionId: string) => {
+    try {
+      setIsSubmittingAction(true);
+      const headers = getAuthHeaders();
+      const res = await fetch(`/api/v1/learning/sessions/${sessionId}/end`, {
+        method: 'POST',
+        headers,
+      });
 
-    const pdfData = `%PDF-1.4
-1 0 obj
-<< /Type /Catalog /Pages 2 0 R >>
-endobj
-2 0 obj
-<< /Type /Pages /Kids [3 0 R] /Count 1 >>
-endobj
-3 0 obj
-<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>
-endobj
-4 0 obj
-<< /Length 250 >>
-stream
-BT
-/F1 18 Tf
-50 720 Td
-(${safeTitle}) Tj
-/F1 12 Tf
-0 -32 Td
-(Mata Pelajaran: ${safeSubject}) Tj
-0 -22 Td
-(Guru Pengampu: ${safeTeacher}) Tj
-0 -30 Td
-(Ringkasan Modul:) Tj
-0 -22 Td
-(${safeDesc}) Tj
-ET
-endstream
-endobj
-5 0 obj
-<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
-endobj
-xref
-0 6
-0000000000 65535 f 
-0000000009 00000 n 
-0000000058 00000 n 
-0000000115 00000 n 
-0000000234 00000 n 
-0000000535 00000 n 
-trailer
-<< /Size 6 /Root 1 0 R >>
-startxref
-610
-%%EOF`;
-
-    const blob = new Blob([pdfData], { type: 'application/pdf' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = fileName.endsWith('.pdf') ? fileName : `${fileName}.pdf`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    showToast('Berkas PDF berhasil diunduh ke perangkat');
+      if (res.ok) {
+        showToast('✓ Sesi pembelajaran telah ditutup secara resmi.');
+        loadHubData();
+      } else {
+        showToast('Gagal mengakhiri sesi.');
+      }
+    } catch {
+      showToast('Gagal mengakhiri sesi.');
+    } finally {
+      setIsSubmittingAction(false);
+    }
   };
 
-  const filteredMaterials = materials.filter(m => {
-    const matchClass = selectedClassFilter === 'ALL' || m.className === selectedClassFilter;
-    const matchSubject = selectedSubjectFilter === 'ALL' || m.subjectName === selectedSubjectFilter;
-    return matchClass && matchSubject;
-  });
+  // ── Cancel Learning Session ──
+  const handleConfirmCancel = async () => {
+    if (!cancellingSessionId || !cancelReason.trim()) {
+      showToast('Mohon masukkan alasan pembatalan sesi.');
+      return;
+    }
+    try {
+      setIsSubmittingAction(true);
+      const headers = getAuthHeaders();
+      const res = await fetch(
+        `/api/v1/learning/sessions/${cancellingSessionId}/cancel`,
+        {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ reason: cancelReason }),
+        }
+      );
+
+      if (res.ok) {
+        showToast('✓ Sesi pembelajaran berhasil dibatalkan secara tercatat.');
+        setCancellingSessionId(null);
+        setCancelReason('');
+        loadHubData();
+      } else {
+        showToast('Gagal membatalkan sesi.');
+      }
+    } catch {
+      showToast('Gagal membatalkan sesi.');
+    } finally {
+      setIsSubmittingAction(false);
+    }
+  };
+
+  // ── Combined Timetable Hub Cards ──
+  const hubCards = useMemo(() => {
+    const todayDate = now.toISOString().split('T')[0];
+
+    // Filter schedules
+    const targetDay = selectedDayFilter === 'TODAY' ? todayIndo : selectedDayFilter.toLowerCase();
+    const filteredSchedules = schedules.filter((s) => {
+      const matchDay = targetDay === 'all' || s.day_of_week?.toLowerCase() === targetDay;
+      const matchClass = selectedClass === 'ALL' || s.class_id === selectedClass || s.class_name === selectedClass;
+      const matchSubject = selectedSubject === 'ALL' || s.subject_name === selectedSubject;
+      return matchDay && matchClass && matchSubject;
+    });
+
+    return filteredSchedules.map((sched) => {
+      // Find matching session for today
+      const matchingSession = sessions.find(
+        (sess) =>
+          sess.schedule_id === sched.id ||
+          (sess.class_id === sched.class_id &&
+            sess.subject_id === sched.subject_id &&
+            sess.session_date === todayDate)
+      );
+
+      // Match linked materials
+      const linkedMaterials = materials.filter(
+        (m) =>
+          (matchingSession && m.session_id === matchingSession.id) ||
+          (m.class_id === sched.class_id &&
+            m.subject_name?.toLowerCase() === sched.subject_name?.toLowerCase())
+      );
+
+      // Match linked assignments
+      const linkedAssignments = assignments.filter(
+        (a) =>
+          (matchingSession && a.session_id === matchingSession.id) ||
+          (a.class_name === sched.class_name &&
+            a.subject_name?.toLowerCase() === sched.subject_name?.toLowerCase())
+      );
+
+      // Match linked quizzes
+      const linkedQuizzes = quizzes.filter(
+        (q) =>
+          q.class_name === sched.class_name &&
+          q.subject_name?.toLowerCase() === sched.subject_name?.toLowerCase()
+      );
+
+      // Current time check
+      const currentHourMin = `${String(now.getHours()).padStart(2, '0')}:${String(
+        now.getMinutes()
+      ).padStart(2, '0')}`;
+      const isTimeWindow =
+        currentHourMin >= sched.start_time && currentHourMin <= sched.end_time;
+      const isTimePassed = currentHourMin > sched.end_time;
+
+      let status = 'SCHEDULED';
+      if (matchingSession) {
+        if (matchingSession.status === 'active') status = 'ACTIVE';
+        else if (matchingSession.status === 'completed') status = 'COMPLETED';
+        else if (matchingSession.status === 'cancelled') status = 'CANCELLED';
+        else if (matchingSession.substitute_teacher_id) status = 'SUBSTITUTED';
+      } else if (isTimePassed && selectedDayFilter === 'TODAY') {
+        status = 'OVERDUE';
+      }
+
+      return {
+        schedule: sched,
+        session: matchingSession,
+        status,
+        isTimeWindow,
+        linkedMaterials,
+        linkedAssignments,
+        linkedQuizzes,
+      };
+    });
+  }, [
+    schedules,
+    sessions,
+    materials,
+    assignments,
+    quizzes,
+    selectedClass,
+    selectedSubject,
+    selectedDayFilter,
+    todayIndo,
+  ]);
 
   return (
     <div className={styles.page}>
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="toastContainer">
-          <div className="toast toastSuccess">
-            <span>{toastMessage}</span>
-          </div>
+        <div
+          style={{
+            position: 'fixed',
+            top: '20px',
+            right: '20px',
+            zIndex: 10000,
+            background: '#0f172a',
+            color: '#ffffff',
+            padding: '0.75rem 1.25rem',
+            borderRadius: '10px',
+            boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
+            fontSize: '0.85rem',
+            fontWeight: 600,
+            animation: 'fadeInUp 0.2s ease',
+          }}
+        >
+          {toastMessage}
         </div>
       )}
 
-      {/* Header & Breadcrumb */}
+      {/* ── Top Header ── */}
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <h1 className={styles.title} style={{ margin: 0, fontSize: '1.4rem', fontWeight: 800 }}>Manajemen Modul & Silabus Guru</h1>
-          <p className={styles.subtitle}>Portal penginputan materi oleh guru & pemantauan kurikulum digital sekolah</p>
+          <h1 className={styles.title}>
+            <Calendar size={26} color="#0284c7" />
+            <span>Timetable Hub &amp; Portal Pembelajaran</span>
+          </h1>
+          <p className={styles.subtitle}>
+            Hub terpadu yang memetakan jam tatap muka, modul bahan ajar, tugas terstruktur, ujian CBT, dan presensi siswa ke dalam jadwal aktual.
+          </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-          <Link href="/dashboard/subjects" className="btn btn-secondary btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-            <Calendar size={13} />
-            <span>Plotting Jadwal Rombel</span>
+        <div className={styles.headerActions}>
+          <Link
+            href="/dashboard/learning/materials/create"
+            className="btn btn-secondary btn-sm"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+          >
+            <Plus size={14} />
+            <span>Upload Materi</span>
           </Link>
-          <button className="btn btn-primary btn-sm" onClick={() => {
-            if (selectedClassFilter !== 'ALL') setNewMaterial(prev => ({ ...prev, className: selectedClassFilter }));
-            if (selectedSubjectFilter !== 'ALL') setNewMaterial(prev => ({ ...prev, subjectName: selectedSubjectFilter }));
-            setShowAddModal(true);
-          }}>
-            + Buat & Upload Materi Baru
+          <Link
+            href="/dashboard/learning/assignments/create"
+            className="btn btn-secondary btn-sm"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+          >
+            <Plus size={14} />
+            <span>Buat Tugas</span>
+          </Link>
+          <Link
+            href="/dashboard/learning/quizzes/create"
+            className="btn btn-primary btn-sm"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+          >
+            <Plus size={14} />
+            <span>Buat CBT Online</span>
+          </Link>
+          <button
+            onClick={loadHubData}
+            className="btn btn-ghost btn-sm"
+            title="Muat ulang data"
+            style={{ padding: '0.4rem' }}
+          >
+            <RefreshCw size={15} />
           </button>
         </div>
       </div>
 
-      {/* Filter Active Notification Banner */}
-      {(selectedClassFilter !== 'ALL' || selectedSubjectFilter !== 'ALL') && (
-        <div style={{
-          background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)',
-          border: '1px solid #6366f1',
-          borderRadius: '12px',
-          padding: '0.75rem 1.25rem',
-          color: '#ffffff',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: '0.75rem'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem' }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><School size={14} /> Filter Aktif Rombel: <strong>{selectedClassFilter}</strong></span>
-            {selectedSubjectFilter !== 'ALL' && <span>| Mapel: <strong>{selectedSubjectFilter}</strong></span>}
+      {/* ── Smart Architectural Guidance Banner ── */}
+      <div className={styles.archBanner}>
+        <div className={styles.archBannerContent}>
+          <Info size={20} className={styles.archBannerIcon} />
+          <div>
+            <div className={styles.archBannerTitle}>
+              Arsitektur Pembelajaran Terhubung Jadwal (Timetable Hub)
+            </div>
+            <div style={{ fontSize: '0.8rem', color: '#475569', lineHeight: 1.5 }}>
+              Aplikasi ini membedakan jadwal rutin (template mingguan) dan sesi pembelajaran riil (tanggal konkret).
+            </div>
+            <div className={styles.archBannerList}>
+              <span className={styles.archBannerItem}>
+                <CheckCircle2 size={13} color="#059669" />
+                <strong>Sesi Aktual:</strong> Pertemuan mandiri setiap minggu tanpa menimpa riwayat sebelumnya.
+              </span>
+              <span className={styles.archBannerItem}>
+                <CheckCircle2 size={13} color="#059669" />
+                <strong>Arsip 24/7:</strong> Modul &amp; materi tetap tersimpan di histori belajar siswa setelah jam usai.
+              </span>
+              <span className={styles.archBannerItem}>
+                <CheckCircle2 size={13} color="#059669" />
+                <strong>CBT Terproteksi:</strong> Token ujian dilindungi pembatasan 5x salah dan durasi jam server.
+              </span>
+              <span className={styles.archBannerItem}>
+                <CheckCircle2 size={13} color="#059669" />
+                <strong>Presensi Permanen:</strong> Dilindungi RESTRICT, data kehadiran siswa tidak pernah hilang.
+              </span>
+            </div>
           </div>
-          <button 
-            className="btn btn-ghost btn-sm" 
-            style={{ color: '#a5b4fc', fontSize: '0.78rem', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
-            onClick={() => { setUserClassFilter('ALL'); setUserSubjectFilter('ALL'); }}
-          >
-            <X size={12} />
-            <span>Reset Filter</span>
-          </button>
+        </div>
+      </div>
+
+      {/* ── KPI Compliance Summary Cards ── */}
+      {compliance && (
+        <div className={styles.statsGrid}>
+          <div className={styles.statCard}>
+            <span className={styles.statValue}>{compliance.total_scheduled}</span>
+            <span className={styles.statLabel}>Total Jadwal</span>
+          </div>
+          <div className={styles.statCard} style={{ borderColor: '#a7f3d0' }}>
+            <span className={styles.statValue} style={{ color: '#059669' }}>
+              {compliance.in_progress_count}
+            </span>
+            <span className={styles.statLabel}>Berlangsung</span>
+          </div>
+          <div className={styles.statCard} style={{ borderColor: '#bae6fd' }}>
+            <span className={styles.statValue} style={{ color: '#0284c7' }}>
+              {compliance.completed_count}
+            </span>
+            <span className={styles.statLabel}>Selesai</span>
+          </div>
+          <div className={styles.statCard} style={{ borderColor: '#fde68a' }}>
+            <span className={styles.statValue} style={{ color: '#d97706' }}>
+              {compliance.substituted_count}
+            </span>
+            <span className={styles.statLabel}>Pengganti</span>
+          </div>
+          <div className={styles.statCard} style={{ borderColor: '#fecaca' }}>
+            <span className={styles.statValue} style={{ color: '#dc2626' }}>
+              {compliance.cancelled_count}
+            </span>
+            <span className={styles.statLabel}>Dibatalkan</span>
+          </div>
+          <div className={styles.statCard} style={{ borderColor: '#fed7aa' }}>
+            <span className={styles.statValue} style={{ color: '#ea580c' }}>
+              {Math.round(compliance.compliance_rate)}%
+            </span>
+            <span className={styles.statLabel}>Kepatuhan Sesi</span>
+          </div>
         </div>
       )}
 
-      {/* View Switcher (Guru Workspace vs Admin Monitor) */}
-      <div style={{
-        background: 'var(--bg-card)',
-        border: '1px solid var(--border-dim)',
-        borderRadius: '12px',
-        padding: '0.75rem 1rem',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        flexWrap: 'wrap',
-        gap: '0.75rem'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <span style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}><Eye size={13} /> Mode Pandang:</span>
-          <div style={{ display: 'flex', gap: '4px', background: 'var(--bg-elevated)', padding: '3px', borderRadius: '8px' }}>
-            <button
-              className={`btn btn-sm ${viewRole === 'teacher' ? 'btn-primary' : 'btn-ghost'}`}
-              style={{ fontSize: '0.75rem', padding: '0.25rem 0.65rem' }}
-              onClick={() => setViewRole('teacher')}
-            >
-              Guru Workspace (Upload Materi)
-            </button>
-            <button
-              className={`btn btn-sm ${viewRole === 'admin' ? 'btn-primary' : 'btn-ghost'}`}
-              style={{ fontSize: '0.75rem', padding: '0.25rem 0.65rem' }}
-              onClick={() => setViewRole('admin')}
-            >
-              Admin &amp; Kepsek (Pantau Materi Rombel)
-            </button>
-          </div>
-        </div>
-
-        {/* Filter Controls */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Rombel:</span>
+      {/* ── Filters Bar ── */}
+      <div className={styles.filterBar}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+          {/* Day Filter */}
+          <div className={styles.filterGroup}>
+            <span className={styles.filterLabel}>
+              <Clock size={13} />
+              <span>Hari:</span>
+            </span>
             <select
-              value={selectedClassFilter}
-              onChange={e => setUserClassFilter(e.target.value)}
-              className="input"
-              style={{ padding: '0.3rem 0.6rem', fontSize: '0.78rem', width: '140px' }}
+              value={selectedDayFilter}
+              onChange={(e) => setSelectedDayFilter(e.target.value)}
+              className={styles.selectInput}
+            >
+              <option value="TODAY">Hari Ini ({todayIndo.toUpperCase()})</option>
+              <option value="ALL">Semua Hari (Mingguan)</option>
+              <option value="senin">Senin</option>
+              <option value="selasa">Selasa</option>
+              <option value="rabu">Rabu</option>
+              <option value="kamis">Kamis</option>
+              <option value="jumat">Jumat</option>
+              <option value="sabtu">Sabtu</option>
+            </select>
+          </div>
+
+          {/* Class Filter */}
+          <div className={styles.filterGroup}>
+            <span className={styles.filterLabel}>Rombel:</span>
+            <select
+              value={selectedClass}
+              onChange={(e) => setSelectedClass(e.target.value)}
+              className={styles.selectInput}
             >
               <option value="ALL">Semua Rombel</option>
-              {classesList.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+              {classesList.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
             </select>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Mata Pelajaran:</span>
+          {/* Subject Filter */}
+          <div className={styles.filterGroup}>
+            <span className={styles.filterLabel}>Mapel:</span>
             <select
-              value={selectedSubjectFilter}
-              onChange={e => setUserSubjectFilter(e.target.value)}
-              className="input"
-              style={{ padding: '0.3rem 0.6rem', fontSize: '0.78rem', width: '180px' }}
+              value={selectedSubject}
+              onChange={(e) => setSelectedSubject(e.target.value)}
+              className={styles.selectInput}
             >
               <option value="ALL">Semua Mata Pelajaran</option>
-              {subjectsList.map(s => <option key={s.id || s.code} value={s.name}>{s.name}</option>)}
+              <option value="Matematika">Matematika</option>
+              <option value="Bahasa Indonesia">Bahasa Indonesia</option>
+              <option value="Bahasa Inggris">Bahasa Inggris</option>
+              <option value="IPAS">IPAS</option>
+              <option value="Pendidikan Agama Islam">Pendidikan Agama Islam</option>
+              <option value="Pendidikan Pancasila">Pendidikan Pancasila</option>
             </select>
           </div>
+        </div>
+
+        <div style={{ fontSize: '0.78rem', color: '#64748b' }}>
+          Menampilkan <strong>{hubCards.length}</strong> jadwal pembelajaran
         </div>
       </div>
 
-      {/* Main Content Cards */}
-      {filteredMaterials.length > 0 ? (
-        <div className={styles.gridThree}>
-          {filteredMaterials.map(m => (
-            <div key={m.id} className={styles.card}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
-                <span className={styles.cardBadge} title={`${m.className} · ${m.subjectName}`}>
-                  {m.className} · {m.subjectName}
-                </span>
-                <span className={`badge ${m.contentType === 'PDF' ? 'badge-info' : m.contentType === 'VIDEO' ? 'badge-warning' : 'badge-active'}`}>
-                  {m.contentType === 'VIDEO' ? 'Video' : m.contentType === 'PDF' ? 'Buku / PDF' : 'Modul Ajar'}
-                </span>
-              </div>
+      {/* ── Portal Navigation Tabs ── */}
+      <div className={styles.tabNav}>
+        <button
+          className={`${styles.tabBtn} ${activeTab === 'hub' ? styles.tabBtnActive : ''}`}
+          onClick={() => setActiveTab('hub')}
+        >
+          <Calendar size={15} />
+          <span>Hub Sesi &amp; Jadwal Terpadu</span>
+          <span className={styles.tabBadge}>{hubCards.length}</span>
+        </button>
 
-              {m.imagePreviewUrl && (
-                <div style={{ width: '100%', height: '120px', borderRadius: '8px', overflow: 'hidden', marginTop: '0.25rem' }}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={m.imagePreviewUrl} alt="Illustration" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                </div>
-              )}
+        <button
+          className={`${styles.tabBtn} ${activeTab === 'library' ? styles.tabBtnActive : ''}`}
+          onClick={() => setActiveTab('library')}
+        >
+          <BookOpen size={15} />
+          <span>Arsip Materi 24/7 ({materials.length})</span>
+        </button>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
-                <h2 className={styles.cardTitle} title={m.chapterTitle}>
-                  {m.chapterTitle}
-                </h2>
-                
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                  <span>Guru: <strong style={{ color: 'var(--text-primary)' }}>{m.teacherName}</strong></span>
-                </div>
+        <button
+          className={`${styles.tabBtn} ${activeTab === 'assignments' ? styles.tabBtnActive : ''}`}
+          onClick={() => setActiveTab('assignments')}
+        >
+          <FileText size={15} />
+          <span>Tugas &amp; PR ({assignments.length})</span>
+        </button>
 
-                <p style={{
-                  fontSize: '0.8rem',
-                  color: 'var(--text-muted)',
-                  lineHeight: 1.45,
-                  margin: 0,
-                  display: '-webkit-box',
-                  WebkitLineClamp: 2,
-                  lineClamp: 2,
-                  WebkitBoxOrient: 'vertical',
-                  overflow: 'hidden'
-                }}>
-                  {m.description}
-                </p>
+        <button
+          className={`${styles.tabBtn} ${activeTab === 'cbt' ? styles.tabBtnActive : ''}`}
+          onClick={() => setActiveTab('cbt')}
+        >
+          <ShieldCheck size={15} />
+          <span>Ujian CBT &amp; Kuis ({quizzes.length})</span>
+        </button>
 
-                {m.youtubeUrl && (
-                  <div style={{
-                    marginTop: '0.2rem',
-                    padding: '0.35rem 0.65rem',
-                    background: 'rgba(239, 68, 68, 0.08)',
-                    border: '1px solid rgba(239, 68, 68, 0.2)',
-                    borderRadius: '8px',
-                    fontSize: '0.74rem',
-                    color: '#dc2626',
-                    fontWeight: 700,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.4rem'
-                  }}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
-                    <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>Tonton Video YouTube</span>
-                  </div>
-                )}
+        <button
+          className={`${styles.tabBtn} ${activeTab === 'compliance' ? styles.tabBtnActive : ''}`}
+          onClick={() => setActiveTab('compliance')}
+        >
+          <FileCheck size={15} />
+          <span>Audit Kepatuhan Jadwal</span>
+        </button>
+      </div>
 
-                {m.pdfFileName && (
-                  <div style={{
-                    marginTop: '0.2rem',
-                    padding: '0.35rem 0.65rem',
-                    background: 'rgba(37, 99, 235, 0.08)',
-                    border: '1px solid rgba(37, 99, 235, 0.2)',
-                    borderRadius: '8px',
-                    fontSize: '0.74rem',
-                    color: '#2563eb',
-                    fontWeight: 700,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.4rem'
-                  }}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-                    <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>Berkas Modul PDF ({m.pdfFileName})</span>
-                  </div>
-                )}
-              </div>
-
-              <div className={styles.cardFooter}>
-                <span style={{ fontSize: '0.74rem', color: '#16a34a', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                  <span>Tersinkron Mobile App</span>
-                </span>
-
-                <button
-                  className="btn btn-ghost btn-sm"
-                  style={{ fontSize: '0.76rem', color: '#2563eb', fontWeight: 700 }}
-                  onClick={() => setPreviewMaterial(m)}
-                >
-                  Pratinjau Modul →
-                </button>
-              </div>
+      {/* ── TAB 1: Hub Sesi & Jadwal Terpadu ── */}
+      {activeTab === 'hub' && (
+        <>
+          {hubCards.length === 0 ? (
+            <div className={styles.emptyState}>
+              <Calendar size={40} color="#94a3b8" />
+              <div className={styles.emptyStateTitle}>Tidak Ada Jadwal Ditemukan</div>
+              <p style={{ margin: 0, fontSize: '0.84rem' }}>
+                Tidak ada agenda pembelajaran untuk filter yang dipilih. Silakan pilih hari lain atau plotting jadwal di menu Jadwal Pelajaran.
+              </p>
+              <Link href="/dashboard/subjects" className="btn btn-secondary btn-sm" style={{ marginTop: '0.5rem' }}>
+                Buka Plotting Jadwal Rombel
+              </Link>
             </div>
-          ))}
-        </div>
-      ) : (
-        <div style={{
-          padding: '3rem 1.5rem',
-          textAlign: 'center',
-          background: 'var(--bg-card)',
-          borderRadius: '16px',
-          border: '1px dashed var(--border-dim)',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: '0.75rem'
-        }}>
-          <BookOpen size={36} color="var(--accent)" />
-          <div>
-            <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800 }}>
-              Belum Ada Modul Materi untuk {selectedClassFilter !== 'ALL' ? selectedClassFilter : 'Rombel Ini'}
-            </h3>
-            <p style={{ margin: '0.4rem 0 0 0', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-              {selectedSubjectFilter !== 'ALL' 
-                ? `Mata Pelajaran: ${selectedSubjectFilter}`
-                : 'Belum ada materi pembelajaran yang di-upload oleh guru untuk rombel ini.'}
-            </p>
-          </div>
-          <button
-            className="btn btn-primary"
-            onClick={() => {
-              setNewMaterial(prev => ({
-                ...prev,
-                className: selectedClassFilter !== 'ALL' ? selectedClassFilter : prev.className,
-                subjectName: selectedSubjectFilter !== 'ALL' ? selectedSubjectFilter : prev.subjectName,
-              }));
-              setShowAddModal(true);
-            }}
-          >
-            + Upload & Publish Materi Pertama
-          </button>
-        </div>
-      )}
-
-      {/* ── Modal In-Page: Form Input Materi Pembelajaran Baru ── */}
-      {showAddModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(15, 23, 42, 0.7)',
-          backdropFilter: 'blur(5px)',
-          zIndex: 999999,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '1rem',
-        }} onClick={() => setShowAddModal(false)}>
-          <div style={{
-            background: 'var(--bg-card)',
-            borderRadius: '16px',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-            maxWidth: '560px',
-            width: '100%',
-            overflow: 'hidden',
-            border: '1px solid var(--border-light)',
-            maxHeight: '90vh',
-            display: 'flex',
-            flexDirection: 'column'
-          }} onClick={e => e.stopPropagation()}>
-            <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid var(--border-light)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                Publish Materi Pembelajaran ke Android App Siswa
-              </h3>
-              <button style={{ border: 'none', background: 'none', fontSize: '1.4rem', cursor: 'pointer', color: 'var(--text-muted)' }} onClick={() => setShowAddModal(false)}>×</button>
-            </div>
-
-            <form onSubmit={handlePublishMaterial} style={{ overflowY: 'auto' }}>
-              <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                {/* Select Rombel & Subject */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                  <div className={styles.formGroup}>
-                    <label style={{ fontSize: '0.76rem', fontWeight: 700 }}>Rombel Target *</label>
-                    <select
-                      value={newMaterial.className}
-                      onChange={e => setNewMaterial({ ...newMaterial, className: e.target.value })}
-                      className="input"
-                    >
-                      {classesList.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
-                    </select>
-                  </div>
-
-                  <div className={styles.formGroup}>
-                    <label style={{ fontSize: '0.76rem', fontWeight: 700 }}>Mata Pelajaran *</label>
-                    <select
-                      value={newMaterial.subjectName}
-                      onChange={e => setNewMaterial({ ...newMaterial, subjectName: e.target.value })}
-                      className="input"
-                    >
-                      {subjectsList.map(s => <option key={s.id || s.code} value={s.name}>{s.name}</option>)}
-                    </select>
-                  </div>
-                </div>
-
-                {/* Teacher Name */}
-                <div className={styles.formGroup}>
-                  <label style={{ fontSize: '0.76rem', fontWeight: 700 }}>Guru Pengampu *</label>
-                  <select
-                    value={newMaterial.teacherName}
-                    onChange={e => setNewMaterial({ ...newMaterial, teacherName: e.target.value })}
-                    className="input"
+          ) : (
+            <div className={styles.sessionsGrid}>
+              {hubCards.map(
+                ({
+                  schedule,
+                  session,
+                  status,
+                  isTimeWindow,
+                  linkedMaterials,
+                  linkedAssignments,
+                  linkedQuizzes,
+                }) => (
+                  <div
+                    key={schedule.id}
+                    className={`${styles.sessionCard} ${
+                      status === 'ACTIVE' ? styles.sessionCardActive : ''
+                    }`}
                   >
-                    {teachers.map((t: TeacherItem) => <option key={t.id} value={t.full_name}>{t.full_name}</option>)}
-                  </select>
-                </div>
+                    {/* Top Row: Time & Status */}
+                    <div className={styles.sessionTopRow}>
+                      <span className={styles.timePill}>
+                        <Clock size={12} color="#0284c7" />
+                        <span>
+                          {schedule.start_time} - {schedule.end_time}
+                        </span>
+                      </span>
 
-                {/* Chapter Title */}
-                <div className={styles.formGroup}>
-                  <label style={{ fontSize: '0.76rem', fontWeight: 700 }}>Judul Bab / Topik Materi *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="contoh: BAB 1: Al-Qur'an & Hadis Pilihan"
-                    value={newMaterial.chapterTitle}
-                    onChange={e => setNewMaterial({ ...newMaterial, chapterTitle: e.target.value })}
-                    className="input"
-                  />
-                </div>
+                      {status === 'ACTIVE' && (
+                        <span className={`${styles.statusBadge} ${styles.statusActive}`}>
+                          <span className={styles.pulseDot} />
+                          <span>Berlangsung</span>
+                        </span>
+                      )}
+                      {status === 'COMPLETED' && (
+                        <span className={`${styles.statusBadge} ${styles.statusCompleted}`}>
+                          ✓ Selesai
+                        </span>
+                      )}
+                      {status === 'SCHEDULED' && (
+                        <span className={`${styles.statusBadge} ${styles.statusScheduled}`}>
+                          {isTimeWindow ? 'Jam Belajar' : 'Mendatang'}
+                        </span>
+                      )}
+                      {status === 'SUBSTITUTED' && (
+                        <span className={`${styles.statusBadge} ${styles.statusSubstituted}`}>
+                          Guru Pengganti
+                        </span>
+                      )}
+                      {status === 'CANCELLED' && (
+                        <span className={`${styles.statusBadge} ${styles.statusCancelled}`}>
+                          Dibatalkan
+                        </span>
+                      )}
+                      {status === 'OVERDUE' && (
+                        <span className={`${styles.statusBadge} ${styles.statusOverdue}`}>
+                          Terlewat
+                        </span>
+                      )}
+                    </div>
 
-                {/* Content Type Selection */}
-                <div className={styles.formGroup}>
-                  <label style={{ fontSize: '0.76rem', fontWeight: 700 }}>Tipe Format Materi *</label>
-                  <select
-                    value={newMaterial.contentType}
-                    onChange={e => setNewMaterial({ ...newMaterial, contentType: e.target.value as MaterialItem['contentType'] })}
-                    className="input"
-                  >
-                    <option value="PDF">Dokumen Modul PDF (Tombol Upload File)</option>
-                    <option value="VIDEO">Video YouTube Pembelajaran (Link Embed URL)</option>
-                    <option value="TEXT">Teks &amp; Gambar Penjelas (Modul Digital Direct)</option>
-                  </select>
-                </div>
-
-                {/* Dynamic Content Inputs */}
-                {newMaterial.contentType === 'PDF' && (
-                  <div style={{ background: 'var(--bg-elevated)', padding: '0.85rem', borderRadius: '10px', border: '1px dashed #3b82f6' }}>
-                    <label style={{ fontSize: '0.76rem', fontWeight: 700, color: '#2563eb', display: 'block', marginBottom: '0.4rem' }}>
-                      Form Upload Dokumen PDF / Modul:
-                    </label>
-                    <label style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.3rem' }}>
-                      Pilih File PDF dari Komputer / Perangkat *
-                    </label>
-                    <input
-                      type="file"
-                      accept=".pdf"
-                      onChange={handlePdfFileSelect}
-                      className="input"
-                      style={{ padding: '0.35rem', fontSize: '0.8rem' }}
-                    />
-                    {newMaterial.pdfFileName && (
-                      <div style={{ marginTop: '0.4rem', fontSize: '0.74rem', color: '#16a34a', fontWeight: 700 }}>
-                        File Siap: {newMaterial.pdfFileName}
+                    {/* Subject & Meta */}
+                    <div className={styles.sessionTitleGroup}>
+                      <h3 className={styles.sessionSubject}>{schedule.subject_name}</h3>
+                      <div className={styles.sessionMeta}>
+                        <span>{schedule.class_name}</span>
+                        <span>•</span>
+                        <span>{schedule.room || 'Ruang Kelas'}</span>
+                        <span>•</span>
+                        <span>
+                          {session?.substitute_teacher_name
+                            ? `Pengganti: ${session.substitute_teacher_name}`
+                            : schedule.teacher_name}
+                        </span>
                       </div>
-                    )}
-                  </div>
-                )}
+                    </div>
 
-                {newMaterial.contentType === 'VIDEO' && (
-                  <div style={{ background: 'var(--bg-elevated)', padding: '0.85rem', borderRadius: '10px', border: '1px dashed #eab308' }}>
-                    <label style={{ fontSize: '0.76rem', fontWeight: 700, color: '#ca8a04', display: 'block', marginBottom: '0.4rem' }}>
-                      Form Embed Video YouTube Pembelajaran:
-                    </label>
-                    <input
-                      type="url"
-                      placeholder="https://www.youtube.com/watch?v=..."
-                      value={newMaterial.youtubeUrl}
-                      onChange={e => setNewMaterial({ ...newMaterial, youtubeUrl: e.target.value })}
-                      className="input"
-                    />
-                  </div>
-                )}
+                    {/* Integrated Activity Section: Materials & Tasks */}
+                    <div className={styles.activitySection}>
+                      <div className={styles.activityHeader}>
+                        <span>Aktivitas Pembelajaran Terlampir</span>
+                        <span>
+                          {linkedMaterials.length +
+                            linkedAssignments.length +
+                            linkedQuizzes.length}{' '}
+                          Item
+                        </span>
+                      </div>
 
-                {newMaterial.contentType === 'TEXT' && (
-                  <div style={{ background: 'var(--bg-elevated)', padding: '0.85rem', borderRadius: '10px', border: '1px dashed #22c55e' }}>
-                    <label style={{ fontSize: '0.76rem', fontWeight: 700, color: '#16a34a', display: 'block', marginBottom: '0.4rem' }}>
-                      Upload Gambar Penjelas Modul (Opsional):
-                    </label>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageFileSelect}
-                      className="input"
-                      style={{ padding: '0.35rem', fontSize: '0.8rem' }}
-                    />
-                  </div>
-                )}
+                      <div className={styles.activityList}>
+                        {/* Linked Materials */}
+                        {linkedMaterials.slice(0, 2).map((m) => (
+                          <div key={m.id} className={styles.activityItem}>
+                            <div className={styles.activityItemLeft}>
+                              {m.material_type === 'video' ? (
+                                <Video size={13} color="#dc2626" />
+                              ) : (
+                                <BookOpen size={13} color="#0284c7" />
+                              )}
+                              <span className={styles.activityItemTitle}>
+                                {m.title}
+                              </span>
+                            </div>
+                            <span
+                              style={{
+                                fontSize: '0.68rem',
+                                color: '#059669',
+                                fontWeight: 700,
+                              }}
+                            >
+                              Arsip 24/7
+                            </span>
+                          </div>
+                        ))}
 
-                {/* Description */}
-                <div className={styles.formGroup}>
-                  <label style={{ fontSize: '0.76rem', fontWeight: 700 }}>Deskripsi / Ringkasan Instruksi Materi *</label>
-                  <textarea
-                    rows={3}
-                    placeholder="Tuliskan ulasan ringkas materi dan petunjuk belajar untuk siswa di rombel ini..."
-                    value={newMaterial.description}
-                    onChange={e => setNewMaterial({ ...newMaterial, description: e.target.value })}
-                    className="input"
-                    style={{ resize: 'vertical' }}
-                  />
-                </div>
-              </div>
+                        {/* Linked Assignments */}
+                        {linkedAssignments.slice(0, 1).map((a) => (
+                          <div key={a.id} className={styles.activityItem}>
+                            <div className={styles.activityItemLeft}>
+                              <FileText size={13} color="#d97706" />
+                              <span className={styles.activityItemTitle}>
+                                Tugas: {a.title}
+                              </span>
+                            </div>
+                            <span
+                              style={{
+                                fontSize: '0.68rem',
+                                color: '#64748b',
+                              }}
+                            >
+                              {a.due_at ? 'Deadline' : 'Tugas Sesi'}
+                            </span>
+                          </div>
+                        ))}
 
-              <div style={{ padding: '1rem 1.25rem', background: 'var(--bg-elevated)', borderTop: '1px solid var(--border-light)', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
-                <button type="button" className="btn btn-secondary" onClick={() => setShowAddModal(false)}>Batal</button>
-                <button type="submit" className="btn btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                  <Send size={13} />
-                  <span>Publish ke Android App Siswa</span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+                        {/* Linked Quizzes */}
+                        {linkedQuizzes.slice(0, 1).map((q) => (
+                          <div key={q.id} className={styles.activityItem}>
+                            <div className={styles.activityItemLeft}>
+                              <ShieldCheck size={13} color="#7c3aed" />
+                              <span className={styles.activityItemTitle}>
+                                CBT: {q.title}
+                              </span>
+                            </div>
+                            <span
+                              style={{
+                                fontSize: '0.68rem',
+                                color: '#7c3aed',
+                                fontWeight: 700,
+                              }}
+                            >
+                              {q.duration_minutes || q.time_limit_minutes || 30}m
+                            </span>
+                          </div>
+                        ))}
 
-      {/* ── Modal Pratinjau Modul Materi ── */}
-      {previewMaterial && (
-        <div style={{
-          position: 'fixed',
-          top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(15, 23, 42, 0.75)',
-          backdropFilter: 'blur(5px)',
-          zIndex: 999999,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          padding: '1rem',
-        }} onClick={() => setPreviewMaterial(null)}>
-          <div style={{
-            background: 'var(--bg-card)',
-            borderRadius: '16px',
-            maxWidth: '650px',
-            width: '100%',
-            border: '1px solid var(--border-light)',
-            overflow: 'hidden'
-          }} onClick={e => e.stopPropagation()}>
-            <div style={{ padding: '1.25rem', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <span className="badge badge-info">{previewMaterial.className} · {previewMaterial.subjectName}</span>
-                <h3 style={{ margin: '0.3rem 0 0 0', fontSize: '1.1rem', fontWeight: 800 }}>{previewMaterial.chapterTitle}</h3>
-              </div>
-              <button style={{ border: 'none', background: 'none', fontSize: '1.5rem', cursor: 'pointer' }} onClick={() => setPreviewMaterial(null)}>×</button>
-            </div>
+                        {linkedMaterials.length === 0 &&
+                          linkedAssignments.length === 0 &&
+                          linkedQuizzes.length === 0 && (
+                            <div
+                              style={{
+                                fontSize: '0.74rem',
+                                color: '#94a3b8',
+                                fontStyle: 'italic',
+                                padding: '4px',
+                              }}
+                            >
+                              Belum ada materi/tugas khusus yang dilampirkan.
+                            </div>
+                          )}
+                      </div>
+                    </div>
 
-            <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                <strong>Guru Pengampu:</strong> {previewMaterial.teacherName}
-              </p>
-              <p style={{ margin: 0, fontSize: '0.85rem', lineHeight: 1.5 }}>
-                {previewMaterial.description}
-              </p>
+                    {/* Footer Actions */}
+                    <div className={styles.sessionFooter}>
+                      <div style={{ display: 'flex', gap: '0.35rem' }}>
+                        {status === 'SCHEDULED' || status === 'OVERDUE' ? (
+                          <button
+                            onClick={() => handleStartSession(schedule)}
+                            disabled={isSubmittingAction}
+                            className="btn btn-primary btn-sm"
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              fontSize: '0.78rem',
+                            }}
+                          >
+                            <PlayCircle size={13} />
+                            <span>Mulai Sesi</span>
+                          </button>
+                        ) : status === 'ACTIVE' ? (
+                          <button
+                            onClick={() => session && handleEndSession(session.id)}
+                            disabled={isSubmittingAction}
+                            className="btn btn-secondary btn-sm"
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              fontSize: '0.78rem',
+                              borderColor: '#38bdf8',
+                              color: '#0284c7',
+                            }}
+                          >
+                            <Check size={13} />
+                            <span>Selesaikan Sesi</span>
+                          </button>
+                        ) : null}
 
-              {previewMaterial.pdfFileName && (
-                <div style={{ background: 'var(--bg-elevated)', padding: '1rem', borderRadius: '10px', border: '1px solid #3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <FileText size={20} color="#2563eb" />
-                    <div>
-                      <div style={{ fontSize: '0.82rem', fontWeight: 700 }}>{previewMaterial.pdfFileName}</div>
-                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Dokumen Modul PDF Digital</div>
+                        <Link
+                          href={`/dashboard/attendance?class_id=${schedule.class_id}`}
+                          className="btn btn-ghost btn-sm"
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            fontSize: '0.78rem',
+                          }}
+                        >
+                          <Users size={13} />
+                          <span>Presensi</span>
+                        </Link>
+                      </div>
+
+                      {status === 'ACTIVE' && session && (
+                        <button
+                          onClick={() => setCancellingSessionId(session.id)}
+                          className="btn btn-ghost btn-sm"
+                          style={{
+                            color: '#dc2626',
+                            fontSize: '0.74rem',
+                            padding: '0.2rem 0.5rem',
+                          }}
+                          title="Batalkan Sesi"
+                        >
+                          Batalkan
+                        </button>
+                      )}
                     </div>
                   </div>
-                  <button
-                    className="btn btn-primary btn-sm"
-                    onClick={() => handleDownloadPdf(
-                      previewMaterial.pdfFileName || 'Modul.pdf',
-                      previewMaterial.chapterTitle,
-                      previewMaterial.subjectName,
-                      previewMaterial.teacherName,
-                      previewMaterial.description
-                    )}
-                  >
-                    Unduh PDF
-                  </button>
-                </div>
-              )}
-
-              {previewMaterial.youtubeUrl && (
-                <div style={{ background: '#000000', borderRadius: '10px', overflow: 'hidden', height: '220px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff', gap: '6px' }}>
-                  <Video size={16} />
-                  <span>YouTube Video Player ({previewMaterial.youtubeUrl})</span>
-                </div>
+                )
               )}
             </div>
+          )}
+        </>
+      )}
 
-            <div style={{ padding: '1rem 1.25rem', background: 'var(--bg-elevated)', textAlign: 'right' }}>
-              <button className="btn btn-secondary" onClick={() => setPreviewMaterial(null)}>Tutup</button>
+      {/* ── TAB 2: Katalog Materi & Modul (Arsip 24/7) ── */}
+      {activeTab === 'library' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div
+            style={{
+              background: '#f8fafc',
+              border: '1px solid #e2e8f0',
+              borderRadius: '12px',
+              padding: '0.85rem 1.25rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              fontSize: '0.82rem',
+              color: '#334155',
+            }}
+          >
+            <span>
+              💡 <strong>Arsip Digital 24/7:</strong> Seluruh modul ajar digital, video YouTube, dan buku kurikulum di bawah ini tetap dapat dipelajari siswa kapan saja di luar jam tatap muka.
+            </span>
+            <Link
+              href="/dashboard/learning/materials/create"
+              className="btn btn-primary btn-sm"
+            >
+              + Upload Modul Baru
+            </Link>
+          </div>
+
+          <div className={styles.sessionsGrid}>
+            {materials.map((m) => (
+              <div key={m.id} className={styles.sessionCard}>
+                <div className={styles.sessionTopRow}>
+                  <span
+                    style={{
+                      fontSize: '0.72rem',
+                      fontWeight: 800,
+                      color: '#0369a1',
+                      background: '#f0f9ff',
+                      padding: '2px 8px',
+                      borderRadius: '6px',
+                    }}
+                  >
+                    {m.material_type.toUpperCase()}
+                  </span>
+                  <span style={{ fontSize: '0.72rem', color: '#64748b' }}>
+                    Tersedia 24/7
+                  </span>
+                </div>
+
+                <div className={styles.sessionTitleGroup}>
+                  <h4 style={{ margin: 0, fontSize: '0.98rem', fontWeight: 700 }}>
+                    {m.title}
+                  </h4>
+                  <div className={styles.sessionMeta}>
+                    <span>{m.class_name || 'Semua Rombel'}</span>
+                    <span>•</span>
+                    <span>{m.subject_name || 'Mata Pelajaran'}</span>
+                  </div>
+                </div>
+
+                <p
+                  style={{
+                    fontSize: '0.8rem',
+                    color: '#475569',
+                    lineHeight: 1.4,
+                    margin: 0,
+                  }}
+                >
+                  {m.description || 'Bahan ajar dan modul pendalaman materi siswa.'}
+                </p>
+
+                <div className={styles.sessionFooter}>
+                  <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
+                    Oleh: {m.teacher_name || 'Guru Pengampu'}
+                  </span>
+                  {m.external_url ? (
+                    <a
+                      href={m.external_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="btn btn-secondary btn-sm"
+                      style={{ fontSize: '0.74rem' }}
+                    >
+                      Buka Tautan &rarr;
+                    </a>
+                  ) : (
+                    <Link
+                      href={`/dashboard/learning/materials?id=${m.id}`}
+                      className="btn btn-secondary btn-sm"
+                      style={{ fontSize: '0.74rem' }}
+                    >
+                      Lihat Modul &rarr;
+                    </Link>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── TAB 3: Tugas Siswa ── */}
+      {activeTab === 'assignments' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div
+            style={{
+              background: '#f8fafc',
+              border: '1px solid #e2e8f0',
+              borderRadius: '12px',
+              padding: '0.85rem 1.25rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              fontSize: '0.82rem',
+              color: '#334155',
+            }}
+          >
+            <span>
+              📝 <strong>Manajemen Tugas:</strong> Tugas yang dipetakan ke jadwal memiliki tenggat waktu terstruktur dan tetap bisa diakses siswa di arsip tugas mereka.
+            </span>
+            <Link
+              href="/dashboard/learning/assignments/create"
+              className="btn btn-primary btn-sm"
+            >
+              + Buat Tugas Baru
+            </Link>
+          </div>
+
+          <div className={styles.sessionsGrid}>
+            {assignments.map((a) => (
+              <div key={a.id} className={styles.sessionCard}>
+                <div className={styles.sessionTopRow}>
+                  <span
+                    style={{
+                      fontSize: '0.72rem',
+                      fontWeight: 800,
+                      color: '#b45309',
+                      background: '#fffbeb',
+                      padding: '2px 8px',
+                      borderRadius: '6px',
+                    }}
+                  >
+                    TUGAS
+                  </span>
+                  <span style={{ fontSize: '0.72rem', color: '#64748b' }}>
+                    {a.allow_late_submission ? 'Terima Terlambat' : 'Tepat Waktu'}
+                  </span>
+                </div>
+
+                <div className={styles.sessionTitleGroup}>
+                  <h4 style={{ margin: 0, fontSize: '0.98rem', fontWeight: 700 }}>
+                    {a.title}
+                  </h4>
+                  <div className={styles.sessionMeta}>
+                    <span>{a.class_name || 'Rombel Belajar'}</span>
+                    <span>•</span>
+                    <span>{a.subject_name || 'Mata Pelajaran'}</span>
+                  </div>
+                </div>
+
+                <div className={styles.sessionFooter}>
+                  <span style={{ fontSize: '0.74rem', color: '#64748b' }}>
+                    {a.due_at
+                      ? `Deadline: ${new Date(a.due_at).toLocaleDateString('id-ID')}`
+                      : 'Tanpa batas waktu'}
+                  </span>
+                  <Link
+                    href={`/dashboard/learning/assignments`}
+                    className="btn btn-secondary btn-sm"
+                    style={{ fontSize: '0.74rem' }}
+                  >
+                    Detail Penugasan &rarr;
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── TAB 4: Ujian CBT & Kuis ── */}
+      {activeTab === 'cbt' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div
+            style={{
+              background: '#f8fafc',
+              border: '1px solid #e2e8f0',
+              borderRadius: '12px',
+              padding: '0.85rem 1.25rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              fontSize: '0.82rem',
+              color: '#334155',
+            }}
+          >
+            <span>
+              🛡️ <strong>CBT Anti-Cheat &amp; Token Guard:</strong> Siswa hanya dapat mengerjakan ujian saat jendela aktif dan dibatasi maksimal 5 kali percobaan token sebelum terkunci 15 menit.
+            </span>
+            <Link
+              href="/dashboard/learning/quizzes/create"
+              className="btn btn-primary btn-sm"
+            >
+              + Buat Ujian CBT
+            </Link>
+          </div>
+
+          <div className={styles.sessionsGrid}>
+            {quizzes.map((q) => (
+              <div key={q.id} className={styles.sessionCard}>
+                <div className={styles.sessionTopRow}>
+                  <span
+                    style={{
+                      fontSize: '0.72rem',
+                      fontWeight: 800,
+                      color: '#6d28d9',
+                      background: '#f5f3ff',
+                      padding: '2px 8px',
+                      borderRadius: '6px',
+                    }}
+                  >
+                    CBT ONLINE
+                  </span>
+                  <span style={{ fontSize: '0.72rem', color: '#6d28d9', fontWeight: 700 }}>
+                    ⏱️ {q.duration_minutes || q.time_limit_minutes || 30} Menit
+                  </span>
+                </div>
+
+                <div className={styles.sessionTitleGroup}>
+                  <h4 style={{ margin: 0, fontSize: '0.98rem', fontWeight: 700 }}>
+                    {q.title}
+                  </h4>
+                  <div className={styles.sessionMeta}>
+                    <span>{q.class_name || 'Rombel'}</span>
+                    <span>•</span>
+                    <span>{q.subject_name || 'Mapel'}</span>
+                  </div>
+                </div>
+
+                <div className={styles.sessionFooter}>
+                  <span style={{ fontSize: '0.74rem', color: '#64748b' }}>
+                    Token: <strong>{q.exam_token ? 'Dilindungi Token' : 'Tanpa Token'}</strong>
+                  </span>
+                  <Link
+                    href={`/dashboard/learning/quizzes`}
+                    className="btn btn-secondary btn-sm"
+                    style={{ fontSize: '0.74rem' }}
+                  >
+                    Ruang Ujian &rarr;
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── TAB 5: Audit Kepatuhan Jadwal ── */}
+      {activeTab === 'compliance' && compliance && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          <div
+            style={{
+              background: 'var(--bg-card)',
+              border: '1px solid var(--border-light)',
+              borderRadius: '16px',
+              padding: '1.5rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1rem',
+            }}
+          >
+            <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800 }}>
+              Laporan Kepatuhan Jadwal &amp; Bukti Fisik Mengajar
+            </h3>
+            <p style={{ margin: 0, fontSize: '0.82rem', color: '#64748b' }}>
+              Monitoring waktu nyata (real-time) untuk Kepala Sekolah dan Manajemen Kurikulum berdasarkan 6 status bukti fisik sesi pembelajaran.
+            </p>
+
+            <div className={styles.statsGrid}>
+              <div className={styles.statCard}>
+                <span className={styles.statValue}>{compliance.total_scheduled}</span>
+                <span className={styles.statLabel}>Total Jadwal Hari Ini</span>
+              </div>
+              <div className={styles.statCard}>
+                <span className={styles.statValue} style={{ color: '#059669' }}>
+                  {compliance.completed_count}
+                </span>
+                <span className={styles.statLabel}>Selesai Dijalankan</span>
+              </div>
+              <div className={styles.statCard}>
+                <span className={styles.statValue} style={{ color: '#0284c7' }}>
+                  {compliance.in_progress_count}
+                </span>
+                <span className={styles.statLabel}>Sedang Aktif</span>
+              </div>
+              <div className={styles.statCard}>
+                <span className={styles.statValue} style={{ color: '#d97706' }}>
+                  {compliance.substituted_count}
+                </span>
+                <span className={styles.statLabel}>Guru Pengganti</span>
+              </div>
+              <div className={styles.statCard}>
+                <span className={styles.statValue} style={{ color: '#dc2626' }}>
+                  {compliance.cancelled_count}
+                </span>
+                <span className={styles.statLabel}>Dibatalkan Resmi</span>
+              </div>
+              <div className={styles.statCard}>
+                <span className={styles.statValue} style={{ color: '#ea580c' }}>
+                  {compliance.overdue_unrecorded_count}
+                </span>
+                <span className={styles.statLabel}>Terlewat / Alpa</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Cancel Session Modal ── */}
+      {cancellingSessionId && (
+        <div className={styles.modalBackdrop}>
+          <div className={styles.modalContent}>
+            <div className={styles.modalHeader}>
+              <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800 }}>
+                Batalkan Sesi Pembelajaran
+              </h3>
+              <button
+                onClick={() => setCancellingSessionId(null)}
+                className="btn btn-ghost btn-sm"
+                style={{ padding: '4px' }}
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <div className={styles.modalBody}>
+              <p style={{ margin: 0, fontSize: '0.84rem', color: '#475569' }}>
+                Pembatalan sesi akan dicatat pada sistem audit sekolah dan dilaporkan pada log kepatuhan kurikulum.
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#334155' }}>
+                  Alasan Pembatalan:
+                </label>
+                <textarea
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  placeholder="Contoh: Rapat dinas guru, pemadaman listrik, atau kegiatan sekolah."
+                  className="input"
+                  rows={3}
+                  style={{ width: '100%', resize: 'vertical' }}
+                />
+              </div>
+            </div>
+            <div className={styles.modalFooter}>
+              <button
+                onClick={() => setCancellingSessionId(null)}
+                className="btn btn-ghost btn-sm"
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleConfirmCancel}
+                disabled={isSubmittingAction}
+                className="btn btn-primary btn-sm"
+                style={{ background: '#dc2626', borderColor: '#dc2626' }}
+              >
+                Konfirmasi Pembatalan
+              </button>
             </div>
           </div>
         </div>
