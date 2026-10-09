@@ -6,6 +6,19 @@ import { useTeacherClasses } from '../../hooks';
 import type { ClassStudentDto } from '../../types';
 import { DataTable, StatusBadge, Column } from '@/shared/ui/data-table';
 import { ClassCardsSkeleton } from '../shared';
+import {
+  Printer,
+  Download,
+  RotateCw,
+  Users,
+  UserCheck,
+  User,
+  Phone,
+  MessageSquare,
+  Check,
+  Eye,
+  X,
+} from 'lucide-react';
 
 export function TeacherClassesView() {
   const {
@@ -54,7 +67,7 @@ export function TeacherClassesView() {
     window.print();
   };
 
-  // ── Table Column Definitions (Strict Screenshot Fidelity) ──
+  // ── Table Column Definitions ──
   const columns: Column<ClassStudentDto>[] = useMemo(
     () => [
       {
@@ -94,7 +107,7 @@ export function TeacherClassesView() {
           if (isP) {
             return <span className={`${styles.genderBadge} ${styles.genderFemale}`}>P</span>;
           }
-          return <span style={{ color: '#94a3b8' }}>-</span>;
+          return <span style={{ color: 'var(--text-muted, #94a3b8)' }}>-</span>;
         },
       },
       {
@@ -103,7 +116,7 @@ export function TeacherClassesView() {
         sortable: false,
         render: (item) => {
           if (!item.no_hp || item.no_hp.trim().length < 5) {
-            return <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>-</span>;
+            return <span style={{ color: 'var(--text-muted, #94a3b8)', fontSize: '0.78rem' }}>-</span>;
           }
 
           let cleaned = item.no_hp.replace(/\D/g, '');
@@ -119,9 +132,7 @@ export function TeacherClassesView() {
               className={styles.phoneLink}
               title="Kirim pesan WhatsApp"
             >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-              </svg>
+              <MessageSquare size={13} />
               <span>{item.no_hp}</span>
             </a>
           );
@@ -149,11 +160,7 @@ export function TeacherClassesView() {
             onClick={() => setActiveStudentModal(item)}
             className={styles.btnDetail}
           >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="16" x2="12" y2="12" />
-              <line x1="12" y1="8" x2="12.01" y2="8" />
-            </svg>
+            <Eye size={12} />
             <span>Profil</span>
           </button>
         ),
@@ -164,70 +171,54 @@ export function TeacherClassesView() {
 
   return (
     <div className={styles.container}>
-      {/* ── Top Header & Global Actions ── */}
-      <div className={styles.headerWrapper}>
-        <div className={styles.titleSection}>
-          <div className={styles.badgeHeader}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-              <circle cx="9" cy="7" r="4" />
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-            </svg>
-            Teacher Workstation
+      {/* ── Top Header Card (Consistent with Learning & Workstation Design System) ── */}
+      <div className={styles.header}>
+        <div className={styles.headerLeft}>
+          <div className={styles.headerIconBox}>
+            <Users size={18} />
           </div>
-          <h1 className={styles.title}>Kelas Saya &amp; Roster Siswa</h1>
-          <p className={styles.subtitle}>
-            Kelola data peserta didik, kontak wali/siswa, dan status rombel yang Anda bimbing.
-          </p>
+          <div className={styles.headerTextGroup}>
+            <h1 className={styles.headerTitle}>Kelas Saya &amp; Roster Siswa</h1>
+            <p className={styles.headerSubtitle}>
+              Kelola data peserta didik, kontak wali/siswa, dan status rombel yang Anda bimbing.
+            </p>
+          </div>
         </div>
 
-        <div className={styles.actionsGroup}>
+        <div className={styles.headerActions}>
           <button
             type="button"
             onClick={handlePrintRoster}
-            className={styles.btnAction}
+            className={styles.btnSecondary}
             title="Cetak lembar roster & presensi rombel"
           >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="6 9 6 2 18 2 18 9" />
-              <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
-              <rect x="6" y="14" width="12" height="8" />
-            </svg>
+            <Printer size={13} />
             <span>Cetak Presensi</span>
           </button>
 
           <button
             type="button"
             onClick={handleExportCSV}
-            className={styles.btnAction}
+            className={styles.btnSecondary}
             title="Unduh data roster siswa format CSV"
           >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" />
-              <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
+            <Download size={13} />
             <span>Export CSV</span>
           </button>
 
           <button
             type="button"
             onClick={() => refreshStudents()}
-            className={`${styles.btnAction} ${styles.btnPrimary}`}
+            className={styles.btnPrimary}
             title="Perbarui data roster"
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="23 4 23 10 17 10" />
-              <polyline points="1 20 1 14 7 14" />
-              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
-            </svg>
+            <RotateCw size={13} />
             <span>Segarkan</span>
           </button>
         </div>
       </div>
 
-      {/* ── Class Switcher Cards ── */}
+      {/* ── Class Switcher Cards (Refined Compact Grid) ── */}
       {isLoadingClasses ? (
         <ClassCardsSkeleton />
       ) : (
@@ -250,23 +241,16 @@ export function TeacherClassesView() {
                   </span>
                   {isSelected && (
                     <span className={styles.activeIndicator}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                      Dipilih
+                      <Check size={12} strokeWidth={2.8} />
+                      <span>Dipilih</span>
                     </span>
                   )}
                 </div>
 
-                <div>
-                  <h3 className={styles.className}>{cls.name}</h3>
-                  {cls.grade_level_name && (
-                    <div className={styles.classSubinfo}>{cls.grade_level_name}</div>
-                  )}
-                </div>
+                <h3 className={styles.className}>{cls.name}</h3>
 
                 <div className={styles.classFooter}>
-                  <span>Total Siswa:</span>
+                  <span className={styles.classFooterLabel}>Total Siswa:</span>
                   <span className={styles.studentCountBadge}>
                     {cls.student_count > 0 ? `${cls.student_count} Siswa` : 'Terdata'}
                   </span>
@@ -277,124 +261,82 @@ export function TeacherClassesView() {
         </div>
       )}
 
-      {/* ── Quick Stats Grid for Selected Class (Admin Dashboard Design) ── */}
+      {/* ── Quick Stats Grid for Selected Class (Compact 13px Scale, 5 Columns) ── */}
       {selectedClass && (
         <div className={styles.metricsGrid}>
           {/* Card 1: Total Terdaftar */}
           <div className={`${styles.metricCard} ${styles.cardBlue}`}>
-            <div className={styles.metricTop}>
-              <div className={styles.metricInfo}>
-                <div className={styles.metricValue}>{studentStats.total}</div>
-                <div className={styles.metricSubtitle}>Peserta Didik Terdata</div>
-              </div>
-              <div className={styles.metricWatermark} aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
-                  <path d="M6 12v5c3 3 9 3 12 0v-5" />
-                </svg>
+            <div className={styles.metricTopRow}>
+              <span className={styles.metricLabel}>Total Roster Siswa</span>
+              <div className={styles.metricIconBox}>
+                <Users size={13} />
               </div>
             </div>
-            <div className={styles.metricBottom}>
-              <span>Total Roster Siswa</span>
-              <svg className={styles.metricArrow} viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
-              </svg>
+            <div className={styles.metricValueRow}>
+              <span className={styles.metricValue}>{studentStats.total}</span>
+              <span className={styles.metricSubtext}>Peserta Didik</span>
             </div>
           </div>
 
           {/* Card 2: Siswa Aktif */}
           <div className={`${styles.metricCard} ${styles.cardEmerald}`}>
-            <div className={styles.metricTop}>
-              <div className={styles.metricInfo}>
-                <div className={styles.metricValue}>{studentStats.activeCount}</div>
-                <div className={styles.metricSubtitle}>Status Pembelajaran Aktif</div>
-              </div>
-              <div className={styles.metricWatermark} aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                  <circle cx="8.5" cy="7" r="4" />
-                  <polyline points="17 11 19 13 23 9" />
-                </svg>
+            <div className={styles.metricTopRow}>
+              <span className={styles.metricLabel}>Siswa Aktif</span>
+              <div className={styles.metricIconBox}>
+                <UserCheck size={13} />
               </div>
             </div>
-            <div className={styles.metricBottom}>
-              <span>Siswa Aktif Terverifikasi</span>
-              <svg className={styles.metricArrow} viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
-              </svg>
+            <div className={styles.metricValueRow}>
+              <span className={styles.metricValue}>{studentStats.activeCount}</span>
+              <span className={styles.metricSubtext}>Terverifikasi</span>
             </div>
           </div>
 
           {/* Card 3: Laki-laki */}
           <div className={`${styles.metricCard} ${styles.cardIndigo}`}>
-            <div className={styles.metricTop}>
-              <div className={styles.metricInfo}>
-                <div className={styles.metricValue}>{studentStats.maleCount}</div>
-                <div className={styles.metricSubtitle}>Peserta Didik Pria</div>
-              </div>
-              <div className={styles.metricWatermark} aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                  <circle cx="12" cy="7" r="4" />
-                </svg>
+            <div className={styles.metricTopRow}>
+              <span className={styles.metricLabel}>Laki-laki (L)</span>
+              <div className={styles.metricIconBox}>
+                <User size={13} />
               </div>
             </div>
-            <div className={styles.metricBottom}>
-              <span>Laki-laki (L)</span>
-              <svg className={styles.metricArrow} viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
-              </svg>
+            <div className={styles.metricValueRow}>
+              <span className={styles.metricValue}>{studentStats.maleCount}</span>
+              <span className={styles.metricSubtext}>Peserta Pria</span>
             </div>
           </div>
 
           {/* Card 4: Perempuan */}
-          <div className={`${styles.metricCard} ${styles.cardPurple}`}>
-            <div className={styles.metricTop}>
-              <div className={styles.metricInfo}>
-                <div className={styles.metricValue}>{studentStats.femaleCount}</div>
-                <div className={styles.metricSubtitle}>Peserta Didik Wanita</div>
-              </div>
-              <div className={styles.metricWatermark} aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                  <circle cx="12" cy="7" r="4" />
-                  <path d="M12 11v6" />
-                  <path d="M9 14h6" />
-                </svg>
+          <div className={`${styles.metricCard} ${styles.cardPink}`}>
+            <div className={styles.metricTopRow}>
+              <span className={styles.metricLabel}>Perempuan (P)</span>
+              <div className={styles.metricIconBox}>
+                <User size={13} />
               </div>
             </div>
-            <div className={styles.metricBottom}>
-              <span>Perempuan (P)</span>
-              <svg className={styles.metricArrow} viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
-              </svg>
+            <div className={styles.metricValueRow}>
+              <span className={styles.metricValue}>{studentStats.femaleCount}</span>
+              <span className={styles.metricSubtext}>Peserta Wanita</span>
             </div>
           </div>
 
           {/* Card 5: Kontak WA */}
           <div className={`${styles.metricCard} ${styles.cardTeal}`}>
-            <div className={styles.metricTop}>
-              <div className={styles.metricInfo}>
-                <div className={styles.metricValue}>{studentStats.hasPhoneCount}</div>
-                <div className={styles.metricSubtitle}>Nomor WhatsApp Terdata</div>
-              </div>
-              <div className={styles.metricWatermark} aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-                </svg>
+            <div className={styles.metricTopRow}>
+              <span className={styles.metricLabel}>Kontak WhatsApp</span>
+              <div className={styles.metricIconBox}>
+                <Phone size={13} />
               </div>
             </div>
-            <div className={styles.metricBottom}>
-              <span>Kontak Wali / Siswa</span>
-              <svg className={styles.metricArrow} viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
-              </svg>
+            <div className={styles.metricValueRow}>
+              <span className={styles.metricValue}>{studentStats.hasPhoneCount}</span>
+              <span className={styles.metricSubtext}>Nomor Terdata</span>
             </div>
           </div>
         </div>
       )}
 
-      {/* ── Main Roster Table (Pixel-Perfect to Screenshot) ── */}
+      {/* ── Main Roster Table ── */}
       <DataTable<ClassStudentDto>
         columns={columns}
         data={students}
@@ -415,23 +357,29 @@ export function TeacherClassesView() {
         <div className={styles.modalBackdrop} onClick={() => setActiveStudentModal(null)}>
           <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
-              <h3 className={styles.modalTitle}>Detail Peserta Didik</h3>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div className={styles.modalHeaderIconBox}>
+                  <User size={15} />
+                </div>
+                <h3 className={styles.modalTitle}>Detail Peserta Didik</h3>
+              </div>
               <button
                 type="button"
                 className={styles.modalCloseBtn}
                 onClick={() => setActiveStudentModal(null)}
+                aria-label="Tutup"
               >
-                ✕
+                <X size={15} />
               </button>
             </div>
 
             <div className={styles.modalBody}>
               <div className={styles.modalProfileHead}>
                 <div>
-                  <h4 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: '#0f172a' }}>
+                  <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>
                     {activeStudentModal.full_name}
                   </h4>
-                  <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.35rem', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.3rem', alignItems: 'center' }}>
                     <span className={styles.nisnBadge}>NISN: {activeStudentModal.nisn || '-'}</span>
                     <StatusBadge
                       status={activeStudentModal.status}
@@ -482,19 +430,17 @@ export function TeacherClassesView() {
                   href={`https://wa.me/${activeStudentModal.no_hp.replace(/\D/g, '').replace(/^0/, '62')}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={`${styles.btnAction} ${styles.btnPrimary}`}
+                  className={styles.btnPrimary}
                   style={{ textDecoration: 'none' }}
                 >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-                  </svg>
+                  <MessageSquare size={13} />
                   <span>Chat WhatsApp</span>
                 </a>
               )}
               <button
                 type="button"
                 onClick={() => setActiveStudentModal(null)}
-                className={styles.btnAction}
+                className={styles.btnSecondary}
               >
                 Tutup
               </button>
