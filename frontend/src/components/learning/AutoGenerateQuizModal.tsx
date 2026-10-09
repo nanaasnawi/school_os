@@ -475,9 +475,13 @@ export function AutoGenerateQuizModal({
                     fontWeight: 700,
                     padding: '3px 10px',
                     borderRadius: '999px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '5px',
                   }}
                 >
-                  ✓ Paket Soal Berhasil Disusun
+                  <CheckCircle2 size={13} />
+                  Paket Soal Berhasil Disusun
                 </span>
                 <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
                   Durasi {generatedResult.time_limit_minutes || 60} menit • KKM {generatedResult.passing_score || 75}

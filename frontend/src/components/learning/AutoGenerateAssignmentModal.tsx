@@ -456,8 +456,8 @@ export function AutoGenerateAssignmentModal({
                     <Loader2 size={15} className="animate-spin" /> Memuat materi mapel {selectedSubject}...
                   </div>
                 ) : subjectMaterials.length === 0 ? (
-                  <p style={{ color: 'var(--warning)', fontSize: '0.82rem', margin: 0 }}>
-                    ⚠️ Belum ada materi tersimpan untuk mapel ini. Sistem akan menyusun dari standar kompetensi kurikulum.
+                  <p style={{ color: 'var(--warning)', fontSize: '0.82rem', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <AlertCircle size={14} style={{ flexShrink: 0 }} /> Belum ada materi tersimpan untuk mapel ini. Sistem akan menyusun dari standar kompetensi kurikulum.
                   </p>
                 ) : (
                   <select
@@ -550,9 +550,13 @@ export function AutoGenerateAssignmentModal({
                     fontWeight: 700,
                     padding: '3px 10px',
                     borderRadius: '999px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '5px',
                   }}
                 >
-                  ✓ Berhasil Disusun Otomatis
+                  <CheckCircle2 size={13} />
+                  Berhasil Disusun Otomatis
                 </span>
                 <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
                   {generatedResult.assignment_type === 'HOMEWORK_PR' ? 'Tugas Mandiri (PR)' : `${generatedResult.questions?.length || 0} Soal (PG & Essay)`}
