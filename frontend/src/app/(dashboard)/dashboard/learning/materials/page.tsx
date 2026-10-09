@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { listTeachers, listClasses } from '@/lib/sdk/sdk.gen';
 import { getApiUrl } from '@/lib/api';
-import { useMaterials, useLibraryBooks, useSubjects, LibraryBook } from '@/features/material';
+import { useMaterials, useLibraryBooks, useSubjects, LibraryBook, InfographicMagazineViewer } from '@/features/material';
 import { useAuth } from '@/contexts/AuthContext';
 import styles from './materials.module.css';
 
@@ -1439,12 +1439,37 @@ export default function MaterialsPage() {
                 )}
               </div>
 
-              {previewMaterial.description && (
-                <div style={{ background: 'var(--bg-elevated)', borderRadius: '7px', padding: '0.65rem 0.85rem', fontSize: '0.76rem', color: 'var(--text-secondary)' }}>
-                  <strong style={{ color: 'var(--text-primary)' }}>Instruksi Belajar:</strong>
-                  <p style={{ margin: '3px 0 0 0', lineHeight: 1.45 }}>{previewMaterial.description}</p>
-                </div>
-              )}
+              {/* Infographic Blocks or Description */}
+              {(() => {
+                let parsedBlocks: any[] | null = null;
+                if (previewMaterial.description && previewMaterial.description.trim().startsWith('[')) {
+                  try {
+                    parsedBlocks = JSON.parse(previewMaterial.description);
+                  } catch {}
+                }
+
+                if (Array.isArray(parsedBlocks) && parsedBlocks.length > 0) {
+                  return (
+                    <div style={{ marginTop: '0.65rem', maxHeight: '72vh', overflowY: 'auto', borderRadius: '12px' }}>
+                      <InfographicMagazineViewer
+                        title={previewMaterial.title}
+                        subjectName={previewMaterial.subject}
+                        className={previewMaterial.grade}
+                        author={previewMaterial.author}
+                        date={previewMaterial.date}
+                        blocks={parsedBlocks}
+                      />
+                    </div>
+                  );
+                }
+
+                return previewMaterial.description ? (
+                  <div style={{ background: 'var(--bg-elevated)', borderRadius: '7px', padding: '0.65rem 0.85rem', fontSize: '0.76rem', color: 'var(--text-secondary)' }}>
+                    <strong style={{ color: 'var(--text-primary)' }}>Instruksi Belajar:</strong>
+                    <p style={{ margin: '3px 0 0 0', lineHeight: 1.45 }}>{previewMaterial.description}</p>
+                  </div>
+                ) : null;
+              })()}
 
               {previewMaterial.format === 'VIDEO' && previewMaterial.youtubeUrl && (
                 <div style={{ borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border-light)' }}>

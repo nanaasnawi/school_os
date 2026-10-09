@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Sparkles, X, Check, AlertCircle } from 'lucide-react';
 import { getApiUrl, apiClient } from '@/lib/api';
+import { resolveSafeImageUrl } from '@/features/material';
 import styles from './AiGeneratorModal.module.css';
 
 export type AiGeneratorMode = 'INFOGRAPHIC' | 'ARTICLE' | 'ASSIGNMENT' | 'QUIZ';
@@ -100,7 +101,42 @@ export const AiGeneratorModal: React.FC<AiGeneratorModalProps> = ({
       const content = result.data;
       let generatedData = null;
       if (mode === 'INFOGRAPHIC') {
-        generatedData = content?.infographic;
+        const rawInfo = content?.infographic || content;
+        if (rawInfo && Array.isArray(rawInfo.blocks)) {
+          const topicHint = topic.trim();
+          let blocks = rawInfo.blocks.map((b: any, idx: number) => {
+            const rawType = (b.type || b.block_type || 'TEXT').toUpperCase();
+            const type = rawType === 'IMAGE' ? 'IMAGE' : 'TEXT';
+            let blkContent = (b.content || '').trim();
+
+            if (type === 'IMAGE') {
+              blkContent = resolveSafeImageUrl(blkContent, idx, topicHint);
+            }
+
+            return {
+              id: b.id || `ai-block-${idx + 1}-${Date.now()}`,
+              type,
+              content: blkContent,
+            };
+          });
+
+          // Ensure hero cover exists at block 0
+          if (blocks.length > 0 && blocks[0].type !== 'IMAGE') {
+            const coverUrl = resolveSafeImageUrl('', 0, topicHint);
+            blocks.unshift({
+              id: `hero-cover-${Date.now()}`,
+              type: 'IMAGE',
+              content: coverUrl,
+            });
+          }
+
+          generatedData = {
+            ...rawInfo,
+            blocks,
+          };
+        } else {
+          generatedData = rawInfo;
+        }
       } else if (mode === 'ARTICLE') {
         generatedData = {
           ...content?.article,

@@ -548,25 +548,41 @@ export default function CreateAssignmentPage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <div
             style={{
-              width: '34px',
-              height: '34px',
+              width: '36px',
+              height: '36px',
               borderRadius: '8px',
-              background: 'var(--accent-gradient)',
+              background: 'linear-gradient(135deg, #76B900 0%, #10B981 100%)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               flexShrink: 0,
-              boxShadow: '0 2px 8px var(--accent-glow)',
+              boxShadow: '0 3px 10px rgba(118, 185, 0, 0.35)',
             }}
           >
-            <Sparkles size={16} color="#FFFFFF" />
+            <Sparkles size={18} color="#FFFFFF" />
           </div>
           <div>
-            <div style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-              Pembuat Tugas Otomatis (AI Engine)
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '0.86rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                Pembuat Tugas Otomatis (AI NVIDIA)
+              </span>
+              <span
+                style={{
+                  background: 'rgba(118, 185, 0, 0.15)',
+                  color: '#76B900',
+                  border: '1px solid rgba(118, 185, 0, 0.35)',
+                  padding: '2px 8px',
+                  borderRadius: '6px',
+                  fontSize: '0.72rem',
+                  fontWeight: 800,
+                  letterSpacing: '0.04em',
+                }}
+              >
+                NVIDIA NIM
+              </span>
             </div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-              Sintesis butir soal PG, esai & rubrik secara instan dari modul materi pelajaran yang telah diterbitkan.
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+              Sintesis butir soal PG, esai &amp; rubrik secara instan dengan kecerdasan AI NVIDIA NIM dari modul materi pelajaran.
             </div>
           </div>
         </div>
@@ -578,27 +594,27 @@ export default function CreateAssignmentPage() {
             display: 'inline-flex',
             alignItems: 'center',
             gap: '6px',
-            padding: '6px 14px',
+            padding: '7px 16px',
             borderRadius: '8px',
-            background: 'var(--accent-light)',
-            color: 'var(--accent)',
-            fontWeight: 700,
-            fontSize: '0.78rem',
-            border: '1px solid var(--border-medium)',
+            background: 'rgba(118, 185, 0, 0.12)',
+            color: '#76B900',
+            fontWeight: 800,
+            fontSize: '0.8rem',
+            border: '1px solid rgba(118, 185, 0, 0.35)',
             cursor: 'pointer',
             transition: 'all 0.15s ease',
           }}
           onMouseEnter={e => {
-            e.currentTarget.style.background = 'var(--accent)';
+            e.currentTarget.style.background = '#76B900';
             e.currentTarget.style.color = '#FFFFFF';
           }}
           onMouseLeave={e => {
-            e.currentTarget.style.background = 'var(--accent-light)';
-            e.currentTarget.style.color = 'var(--accent)';
+            e.currentTarget.style.background = 'rgba(118, 185, 0, 0.12)';
+            e.currentTarget.style.color = '#76B900';
           }}
         >
           <Sparkles size={14} />
-          <span>Generate Otomatis dari Materi</span>
+          <span>✨ Generate Tugas (AI NVIDIA)</span>
         </button>
       </div>
 

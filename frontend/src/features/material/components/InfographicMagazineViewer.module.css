@@ -1,0 +1,787 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   MAGAZINE & INFOGRAPHIC INTERACTIVE CANVAS STYLES
+   Curated Editorial & Modern Visual Infographic Experience
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.magazineContainer {
+  width: 100%;
+  max-width: 980px;
+  margin: 0 auto;
+  background: var(--bg-card, #ffffff);
+  border-radius: 18px;
+  border: 1px solid var(--border-light, #e2e8f0);
+  box-shadow: 0 12px 36px -8px rgba(15, 23, 42, 0.08), 0 4px 16px -4px rgba(124, 58, 237, 0.04);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  font-family: inherit;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[data-theme="dark"] .magazineContainer {
+  background: #0f172a;
+  border-color: rgba(148, 163, 184, 0.15);
+  box-shadow: 0 14px 40px -8px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(124, 58, 237, 0.2);
+}
+
+/* ── Top Control & Mode Toolbar ── */
+.topToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.25rem;
+  background: var(--bg-elevated, #f8fafc);
+  border-bottom: 1px solid var(--border-light, #e2e8f0);
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+[data-theme="dark"] .topToolbar {
+  background: #1e293b;
+  border-color: rgba(148, 163, 184, 0.12);
+}
+
+.modeToggleGroup {
+  display: flex;
+  background: var(--bg-card, #ffffff);
+  padding: 3px;
+  border-radius: 10px;
+  border: 1px solid var(--border-light, #cbd5e1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="dark"] .modeToggleGroup {
+  background: #0b1329;
+  border-color: rgba(148, 163, 184, 0.2);
+}
+
+.modeBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.35rem 0.85rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary, #64748b);
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.modeBtn:hover {
+  color: var(--text-primary, #0f172a);
+}
+
+.modeBtnActive {
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.35);
+}
+
+.toolbarActions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.toolBtn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  border-radius: 7px;
+  border: 1px solid var(--border-light, #cbd5e1);
+  background: var(--bg-card, #ffffff);
+  color: var(--text-secondary, #475569);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.toolBtn:hover {
+  background: var(--bg-elevated, #f1f5f9);
+  color: var(--text-primary, #0f172a);
+  border-color: #94a3b8;
+}
+
+[data-theme="dark"] .toolBtn {
+  background: #1e293b;
+  border-color: rgba(148, 163, 184, 0.2);
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .toolBtn:hover {
+  background: #334155;
+  color: #ffffff;
+}
+
+/* ── Magazine Masthead / Editorial Header ── */
+.masthead {
+  padding: 2rem 2.25rem 1.5rem;
+  background: linear-gradient(180deg, rgba(124, 58, 237, 0.05) 0%, rgba(248, 250, 252, 0) 100%);
+  border-bottom: 2px solid var(--border-light, #e2e8f0);
+  position: relative;
+}
+
+[data-theme="dark"] .masthead {
+  background: linear-gradient(180deg, rgba(124, 58, 237, 0.12) 0%, rgba(15, 23, 42, 0) 100%);
+  border-color: rgba(148, 163, 184, 0.12);
+}
+
+.editionBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  border-bottom: 1px solid rgba(124, 58, 237, 0.15);
+  padding-bottom: 0.65rem;
+}
+
+.editionBranding {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #7c3aed;
+}
+
+.editionPill {
+  background: rgba(124, 58, 237, 0.12);
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-weight: 800;
+}
+
+.readTimeBadge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-tertiary, #94a3b8);
+}
+
+.magazineTitle {
+  font-size: 2.25rem;
+  font-weight: 900;
+  line-height: 1.18;
+  letter-spacing: -0.025em;
+  color: var(--text-primary, #0f172a);
+  margin: 0 0 0.85rem 0;
+  font-family: Georgia, 'Playfair Display', serif, system-ui;
+}
+
+[data-theme="dark"] .magazineTitle {
+  color: #f8fafc;
+}
+
+.magazineSubtitle {
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: var(--text-secondary, #475569);
+  margin: 0 0 1.25rem 0;
+  max-width: 820px;
+  font-weight: 400;
+}
+
+[data-theme="dark"] .magazineSubtitle {
+  color: #cbd5e1;
+}
+
+.metaInfoStrip {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding-top: 0.75rem;
+  border-top: 1px dashed var(--border-light, #e2e8f0);
+}
+
+[data-theme="dark"] .metaInfoStrip {
+  border-color: rgba(148, 163, 184, 0.15);
+}
+
+.metaPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 6px;
+  background: var(--bg-elevated, #f1f5f9);
+  color: var(--text-secondary, #475569);
+}
+
+[data-theme="dark"] .metaPill {
+  background: #1e293b;
+  color: #cbd5e1;
+}
+
+.metaPillSubject {
+  background: rgba(124, 58, 237, 0.12);
+  color: #7c3aed;
+}
+
+.metaPillAuthor {
+  background: rgba(5, 150, 105, 0.12);
+  color: #059669;
+}
+
+/* ── Hero Cover Visual Feature ── */
+.heroCoverSection {
+  padding: 1.5rem 2.25rem 0.5rem;
+}
+
+.heroCoverFrame {
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #020617;
+  border: 1px solid var(--border-light, #e2e8f0);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  aspect-ratio: 16 / 9;
+  max-height: 440px;
+}
+
+.heroCoverImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.45s ease;
+}
+
+.heroCoverFrame:hover .heroCoverImage {
+  transform: scale(1.025);
+}
+
+.heroOverlayBadge {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(8px);
+  color: #ffffff;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.heroCaptionBox {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 2.5rem 1.5rem 1rem;
+  background: linear-gradient(180deg, transparent 0%, rgba(2, 6, 23, 0.88) 100%);
+  color: #ffffff;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.heroCaptionText {
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.4;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+  max-width: 80%;
+}
+
+.zoomHint {
+  font-size: 0.68rem;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 3px 8px;
+  border-radius: 4px;
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ── Magazine Grid Spread (Mode 1) ── */
+.magazineGrid {
+  padding: 1.75rem 2.25rem 2.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.magazineCard {
+  background: var(--bg-elevated, #f8fafc);
+  border: 1px solid var(--border-light, #e2e8f0);
+  border-radius: 14px;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: stretch;
+  box-shadow: 0 4px 14px -3px rgba(0, 0, 0, 0.04);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+[data-theme="dark"] .magazineCard {
+  background: #1e293b;
+  border-color: rgba(148, 163, 184, 0.15);
+}
+
+.magazineCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px -4px rgba(124, 58, 237, 0.12);
+  border-color: rgba(124, 58, 237, 0.35);
+}
+
+/* Inverted layout for alternating rhythm */
+.magazineCardInverted {
+  grid-template-columns: 1fr 1fr;
+}
+
+.magazineCardInverted .cardImageCol {
+  order: 2;
+}
+
+.magazineCardInverted .cardTextCol {
+  order: 1;
+}
+
+.cardImageCol {
+  position: relative;
+  background: #020617;
+  overflow: hidden;
+  min-height: 240px;
+  cursor: pointer;
+}
+
+.cardImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.35s ease;
+}
+
+.cardImageCol:hover .cardImage {
+  transform: scale(1.04);
+}
+
+.cardImageZoomBadge {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(4px);
+  color: #fff;
+  border-radius: 4px;
+  padding: 3px 7px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  opacity: 0.85;
+  transition: opacity 0.2s ease;
+}
+
+.cardImageCol:hover .cardImageZoomBadge {
+  opacity: 1;
+}
+
+.cardTextCol {
+  padding: 1.5rem 1.75rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.cardStepHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stepNumberBadge {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 900;
+  box-shadow: 0 2px 6px rgba(124, 58, 237, 0.3);
+}
+
+.stepCategoryPill {
+  font-size: 0.66rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #7c3aed;
+}
+
+.cardHeadline {
+  font-size: 1.28rem;
+  font-weight: 800;
+  line-height: 1.32;
+  color: var(--text-primary, #0f172a);
+  margin: 0;
+  font-family: Georgia, 'Playfair Display', serif, system-ui;
+}
+
+[data-theme="dark"] .cardHeadline {
+  color: #f1f5f9;
+}
+
+.cardBody {
+  font-size: 0.88rem;
+  line-height: 1.65;
+  color: var(--text-secondary, #475569);
+  margin: 0;
+}
+
+[data-theme="dark"] .cardBody {
+  color: #cbd5e1;
+}
+
+.cardTakeaway {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  background: rgba(124, 58, 237, 0.06);
+  border-left: 3px solid #7c3aed;
+  padding: 0.55rem 0.75rem;
+  border-radius: 0 6px 6px 0;
+  font-size: 0.78rem;
+  color: #6d28d9;
+  font-weight: 600;
+  line-height: 1.45;
+  margin-top: 0.25rem;
+}
+
+[data-theme="dark"] .cardTakeaway {
+  background: rgba(124, 58, 237, 0.15);
+  color: #c4b5fd;
+}
+
+/* ── Full Width Article Block (If Standalone Text) ── */
+.fullWidthTextBlock {
+  background: var(--bg-card, #ffffff);
+  border: 1px solid var(--border-light, #e2e8f0);
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  font-size: 0.88rem;
+  line-height: 1.65;
+  color: var(--text-primary, #0f172a);
+}
+
+[data-theme="dark"] .fullWidthTextBlock {
+  background: #1e293b;
+  border-color: rgba(148, 163, 184, 0.15);
+  color: #e2e8f0;
+}
+
+/* ── Vertical Poster Roadmap (Mode 2) ── */
+.posterRoadmap {
+  padding: 2rem 2.25rem 2.5rem;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  gap: 2rem;
+}
+
+.roadmapPathLine {
+  position: absolute;
+  top: 2.5rem;
+  bottom: 2.5rem;
+  left: 3.75rem;
+  width: 3px;
+  background: linear-gradient(180deg, #7c3aed 0%, #06b6d4 50%, #10b981 100%);
+  border-radius: 2px;
+  z-index: 1;
+}
+
+.roadmapStep {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.5rem;
+  position: relative;
+  z-index: 2;
+}
+
+.roadmapPin {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 3px solid #7c3aed;
+  box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.2), 0 4px 10px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+  font-weight: 900;
+  color: #7c3aed;
+}
+
+[data-theme="dark"] .roadmapPin {
+  background: #0f172a;
+  border-color: #a78bfa;
+}
+
+.roadmapContentCard {
+  flex: 1;
+  background: var(--bg-elevated, #f8fafc);
+  border: 1px solid var(--border-light, #e2e8f0);
+  border-radius: 14px;
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  box-shadow: 0 4px 14px -3px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="dark"] .roadmapContentCard {
+  background: #1e293b;
+  border-color: rgba(148, 163, 184, 0.15);
+}
+
+.roadmapImage {
+  width: 100%;
+  max-height: 280px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid var(--border-light, #cbd5e1);
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.roadmapImage:hover {
+  transform: scale(1.02);
+}
+
+/* ── Magazine Editorial Callouts (Tahukah Kamu & Glosarium) ── */
+.editorialFooterSection {
+  padding: 0 2.25rem 2.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.didYouKnowCard {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(251, 191, 36, 0.03) 100%);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+[data-theme="dark"] .didYouKnowCard {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.35);
+}
+
+.didYouKnowIconBox {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  border-radius: 9px;
+  background: #f59e0b;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 3px 8px rgba(245, 158, 11, 0.35);
+}
+
+.didYouKnowContent {
+  flex: 1;
+}
+
+.didYouKnowTitle {
+  font-size: 0.85rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #b45309;
+  margin: 0 0 0.35rem 0;
+}
+
+[data-theme="dark"] .didYouKnowTitle {
+  color: #fbbf24;
+}
+
+.didYouKnowText {
+  font-size: 0.84rem;
+  line-height: 1.55;
+  color: var(--text-primary, #0f172a);
+  margin: 0;
+}
+
+[data-theme="dark"] .didYouKnowText {
+  color: #f1f5f9;
+}
+
+.glossaryStrip {
+  background: var(--bg-elevated, #f8fafc);
+  border: 1px solid var(--border-light, #e2e8f0);
+  border-radius: 10px;
+  padding: 0.85rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+[data-theme="dark"] .glossaryStrip {
+  background: #1e293b;
+  border-color: rgba(148, 163, 184, 0.15);
+}
+
+.glossaryLabel {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--text-secondary, #64748b);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.glossaryTags {
+  display: flex;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.glossaryTag {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 5px;
+  background: var(--bg-card, #ffffff);
+  border: 1px solid var(--border-light, #cbd5e1);
+  color: var(--text-primary, #0f172a);
+}
+
+[data-theme="dark"] .glossaryTag {
+  background: #0f172a;
+  border-color: rgba(148, 163, 184, 0.2);
+  color: #cbd5e1;
+}
+
+/* ── Lightbox Zoom Modal ── */
+.lightboxOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.88);
+  backdrop-filter: blur(10px);
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.lightboxBox {
+  position: relative;
+  max-width: 90vw;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.lightboxImg {
+  max-width: 100%;
+  max-height: 80vh;
+  border-radius: 10px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+  object-fit: contain;
+}
+
+.lightboxCloseBtn {
+  position: absolute;
+  top: -14px;
+  right: -14px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #000000;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.lightboxCaption {
+  margin-top: 0.75rem;
+  color: #ffffff;
+  font-size: 0.84rem;
+  font-weight: 600;
+  text-align: center;
+  max-width: 600px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ── Responsive Mobile Layout ── */
+@media (max-width: 768px) {
+  .magazineTitle {
+    font-size: 1.6rem;
+  }
+  .masthead, .heroCoverSection, .magazineGrid, .posterRoadmap, .editorialFooterSection {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  .magazineCard {
+    grid-template-columns: 1fr;
+  }
+  .magazineCardInverted .cardImageCol {
+    order: 1;
+  }
+  .magazineCardInverted .cardTextCol {
+    order: 2;
+  }
+  .cardImageCol {
+    min-height: 190px;
+  }
+  .roadmapPathLine {
+    left: 2.25rem;
+  }
+  .roadmapPin {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    font-size: 0.8rem;
+  }
+}

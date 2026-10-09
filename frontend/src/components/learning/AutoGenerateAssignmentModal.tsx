@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { AcademicSubject } from '@/features/material';
-import { Sparkles, CheckCircle2, Layers, FileText, AlertCircle, Loader2, X } from 'lucide-react';
+import { Sparkles, CheckCircle2, Layers, FileText, AlertCircle, Loader2, X, BookOpen } from 'lucide-react';
+import { getApiUrl, apiClient } from '@/lib/api';
 
 interface AutoGenerateAssignmentModalProps {
   isOpen: boolean;
@@ -26,6 +27,9 @@ export function AutoGenerateAssignmentModal({
   onApply,
 }: AutoGenerateAssignmentModalProps) {
   const [selectedSubject, setSelectedSubject] = useState<string>(selectedSubjectName || (subjects[0]?.name || ''));
+  const [topic, setTopic] = useState('');
+  const [gradeLevel, setGradeLevel] = useState('Kelas 5 SD');
+  const [difficulty, setDifficulty] = useState<'Mudah' | 'Sedang' | 'HOTS'>('Sedang');
   const [sourceMode, setSourceMode] = useState<'LATEST' | 'HISTORY'>('LATEST');
   const [assignmentFormat, setAssignmentFormat] = useState<'STRUCTURED_QUESTIONS' | 'HOMEWORK_PR'>('STRUCTURED_QUESTIONS');
   const [subjectMaterials, setSubjectMaterials] = useState<any[]>([]);
@@ -56,14 +60,13 @@ export function AutoGenerateAssignmentModal({
       setIsLoadingMaterials(true);
       setErrorMsg(null);
       try {
-        const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
+        const token = apiClient.getToken() || (typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null);
         const res = await fetch('/api/v1/learning/materials', {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
         if (res.ok) {
           const json = await res.json().catch(() => null);
           const list = Array.isArray(json?.data) ? json.data : [];
-          // STRICT FILTER: Only materials matching current subject
           const filtered = list.filter((m: any) =>
             m.subject_id === targetSubObj?.id ||
             m.subject_name?.toLowerCase() === targetSubObj?.name.toLowerCase()
@@ -101,50 +104,80 @@ export function AutoGenerateAssignmentModal({
 
     try {
       const type = assignmentFormat === 'HOMEWORK_PR' ? 'ASSIGNMENT_HOMEWORK' : 'ASSIGNMENT_STRUCTURED';
+      const effectiveTopic = topic.trim() || currentSubjectObj.name;
+      const token = apiClient.getToken() || (typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null);
+
       const payload: any = {
         type,
         subject_id: currentSubjectObj.id,
         subject_name: currentSubjectObj.name,
+        topic: effectiveTopic,
+        grade_level: gradeLevel,
+        difficulty,
+        source_mode: sourceMode === 'HISTORY' && selectedMaterialId ? 'SELECTED_IDS' : 'LATEST_PUBLISHED',
+        material_ids: sourceMode === 'HISTORY' && selectedMaterialId ? [selectedMaterialId] : [],
       };
 
-      if (sourceMode === 'HISTORY' && selectedMaterialId) {
-        payload.source_mode = 'SELECTED_IDS';
-        payload.material_ids = [selectedMaterialId];
-      } else {
-        payload.source_mode = 'LATEST_PUBLISHED';
-      }
-
-      // Try /api/learning/auto-generate first, then fallback to /api/v1/learning/auto-generate
-      let res = await fetch('/api/learning/auto-generate', {
+      // Call Next.js proxy route which executes NVIDIA NIM AI strictly
+      let res = await fetch('/api/v1/learning/auto-generate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify(payload),
       });
 
-      if (!res.ok && res.status === 404) {
-        res = await fetch('/api/v1/learning/auto-generate', {
+      // If Next.js route fails, fallback to direct backend NVIDIA NIM endpoint
+      if (!res.ok) {
+        const endpoint = getApiUrl('/api/v1/ai/generate-content');
+        res = await fetch(endpoint, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({
+            mode: 'ASSIGNMENT',
+            topic: effectiveTopic,
+            grade_level: gradeLevel,
+            subject_name: currentSubjectObj.name,
+          }),
         });
+
+        if (res.ok) {
+          const directJson = await res.json().catch(() => null);
+          const aiTask = directJson?.data?.assignment;
+          if (aiTask && aiTask.title) {
+            const fallbackResult = {
+              title: aiTask.title,
+              assignment_type: assignmentFormat,
+              instructions: `${aiTask.instructions}\n\nRubrik Penilaian Objektif (AI NVIDIA NIM):\n${aiTask.rubric}`,
+              questions: (aiTask.tasks || []).map((t: string, idx: number) => ({
+                id: `task-${idx + 1}-${Date.now()}`,
+                question_text: t,
+                question_type: 'ESSAY' as const,
+                points: Math.round(100 / Math.max(1, (aiTask.tasks || []).length)),
+                choices: [],
+                explanation: aiTask.rubric || 'Rubrik penilaian AI NVIDIA NIM',
+              })),
+            };
+            setGeneratedResult(fallbackResult);
+            return;
+          }
+        }
       }
 
-      const rawText = await res.text();
-      let json: any = null;
-      try {
-        json = rawText ? JSON.parse(rawText) : null;
-      } catch {
-        // Not JSON
-      }
+      const json = await res.json().catch(() => null);
 
       if (!res.ok || !json?.success) {
-        const message = json?.error || (res.status === 404 ? 'Materi belum tersedia untuk mata pelajaran ini.' : `Gagal menghubungi server pembuatan otomatis (${res.status}).`);
+        const message = json?.error || (res.status === 404 ? 'Materi belum tersedia untuk mata pelajaran ini.' : `Gagal menghubungi server AI NVIDIA NIM (${res.status}).`);
         throw new Error(message);
       }
 
       setGeneratedResult(json.data);
     } catch (err: any) {
-      setErrorMsg(err.message || 'Terjadi kendala saat menyusun soal otomatis.');
+      setErrorMsg(err.message || 'Terjadi kendala saat menyusun tugas otomatis dengan AI NVIDIA NIM.');
     } finally {
       setIsGenerating(false);
     }
@@ -157,7 +190,16 @@ export function AutoGenerateAssignmentModal({
       title: generatedResult.title,
       instructions: generatedResult.instructions,
       assignmentFormat: generatedResult.assignment_type,
-      questions: generatedResult.questions || [],
+      questions: (generatedResult.questions || []).map((q: any) => ({
+        id: q.id,
+        question_text: q.question_text,
+        question_type: q.question_type,
+        points: q.points || 20,
+        choices: (q.choices || []).map((c: any) => ({
+          choice_text: c.choice_text || c.text || '',
+          is_correct: !!c.is_correct || !!c.isCorrect,
+        })),
+      })),
       subjectName: selectedSubject,
     });
     onClose();
@@ -169,8 +211,8 @@ export function AutoGenerateAssignmentModal({
         position: 'fixed',
         inset: 0,
         zIndex: 9999,
-        backgroundColor: 'rgba(0, 0, 0, 0.6)',
-        backdropFilter: 'blur(5px)',
+        backgroundColor: 'rgba(0, 0, 0, 0.65)',
+        backdropFilter: 'blur(6px)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -181,10 +223,10 @@ export function AutoGenerateAssignmentModal({
         style={{
           backgroundColor: 'var(--bg-surface)',
           border: '1px solid var(--border-light)',
-          borderRadius: '16px',
+          borderRadius: '18px',
           width: '100%',
-          maxWidth: '720px',
-          maxHeight: '90vh',
+          maxWidth: '740px',
+          maxHeight: '92vh',
           display: 'flex',
           flexDirection: 'column',
           boxShadow: 'var(--shadow-xl)',
@@ -206,39 +248,55 @@ export function AutoGenerateAssignmentModal({
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div
               style={{
-                width: '38px',
-                height: '38px',
-                borderRadius: '10px',
-                background: 'var(--accent-gradient)',
+                width: '40px',
+                height: '40px',
+                borderRadius: '12px',
+                background: 'linear-gradient(135deg, #76B900 0%, #10B981 100%)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: '0 2px 8px var(--accent-glow)',
+                boxShadow: '0 4px 12px rgba(118, 185, 0, 0.35)',
                 flexShrink: 0,
               }}
             >
-              <Sparkles size={18} color="#FFFFFF" />
+              <Sparkles size={20} color="#FFFFFF" />
             </div>
             <div>
-              <h2
-                style={{
-                  fontSize: '1.15rem',
-                  fontWeight: 700,
-                  margin: 0,
-                  color: 'var(--text-primary)',
-                  letterSpacing: '-0.01em',
-                }}
-              >
-                Generate Tugas Otomatis dari Materi
-              </h2>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <h2
+                  style={{
+                    fontSize: '1.15rem',
+                    fontWeight: 800,
+                    margin: 0,
+                    color: 'var(--text-primary)',
+                    letterSpacing: '-0.01em',
+                  }}
+                >
+                  Generate Tugas Siswa Otomatis (AI NVIDIA)
+                </h2>
+                <span
+                  style={{
+                    background: 'rgba(118, 185, 0, 0.15)',
+                    color: '#76B900',
+                    border: '1px solid rgba(118, 185, 0, 0.35)',
+                    padding: '2px 8px',
+                    borderRadius: '6px',
+                    fontSize: '0.72rem',
+                    fontWeight: 800,
+                    letterSpacing: '0.04em',
+                  }}
+                >
+                  NVIDIA NIM
+                </span>
+              </div>
               <p
                 style={{
-                  fontSize: '0.82rem',
+                  fontSize: '0.8rem',
                   color: 'var(--text-muted)',
-                  margin: '2px 0 0 0',
+                  margin: '3px 0 0 0',
                 }}
               >
-                Otomatisasi pembuatan soal &amp; tugas mandiri terisolasi per mata pelajaran
+                Sintesis butir penugasan terstruktur &amp; tugas mandiri berbasis modul materi Kurikulum Merdeka
               </p>
             </div>
           </div>
@@ -267,7 +325,7 @@ export function AutoGenerateAssignmentModal({
         </div>
 
         {/* Modal Body */}
-        <div style={{ padding: '20px 24px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '18px' }}>
+        <div style={{ padding: '20px 24px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {errorMsg && (
             <div
               style={{
@@ -293,12 +351,12 @@ export function AutoGenerateAssignmentModal({
               style={{
                 display: 'block',
                 fontSize: '0.82rem',
-                fontWeight: 600,
+                fontWeight: 700,
                 color: 'var(--text-secondary)',
                 marginBottom: '6px',
               }}
             >
-              Mata Pelajaran (Mapel) <span style={{ color: 'var(--accent)', fontSize: '0.78rem' }}>*Terkunci, tidak bocor antar mapel</span>
+              Mata Pelajaran (Mapel) <span style={{ color: '#76B900', fontSize: '0.78rem' }}>*Terkunci, isolasi penuh kurikulum</span>
             </label>
             <select
               value={selectedSubject}
@@ -314,6 +372,7 @@ export function AutoGenerateAssignmentModal({
                 borderRadius: '8px',
                 color: 'var(--text-primary)',
                 fontSize: '0.88rem',
+                fontWeight: 600,
                 outline: 'none',
               }}
             >
@@ -325,13 +384,134 @@ export function AutoGenerateAssignmentModal({
             </select>
           </div>
 
-          {/* 2. Format Selector */}
+          {/* 2. Custom Topic */}
           <div>
             <label
               style={{
                 display: 'block',
                 fontSize: '0.82rem',
-                fontWeight: 600,
+                fontWeight: 700,
+                color: 'var(--text-secondary)',
+                marginBottom: '6px',
+              }}
+            >
+              Topik / Materi Penugasan Spesifik (Opsional)
+            </label>
+            <input
+              type="text"
+              placeholder={`Contoh: Laporan Praktikum Pengukuran Besaran (atau biarkan kosong untuk topik umum ${selectedSubject})`}
+              value={topic}
+              onChange={e => {
+                setTopic(e.target.value);
+                setGeneratedResult(null);
+              }}
+              style={{
+                width: '100%',
+                padding: '9px 12px',
+                backgroundColor: 'var(--bg-surface)',
+                border: '1px solid var(--border-medium)',
+                borderRadius: '8px',
+                color: 'var(--text-primary)',
+                fontSize: '0.88rem',
+                outline: 'none',
+              }}
+            />
+          </div>
+
+          {/* 3. Grade Level & Difficulty */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div>
+              <label
+                style={{
+                  display: 'block',
+                  fontSize: '0.82rem',
+                  fontWeight: 700,
+                  color: 'var(--text-secondary)',
+                  marginBottom: '6px',
+                }}
+              >
+                Jenjang / Tingkat Kelas
+              </label>
+              <select
+                value={gradeLevel}
+                onChange={e => {
+                  setGradeLevel(e.target.value);
+                  setGeneratedResult(null);
+                }}
+                style={{
+                  width: '100%',
+                  padding: '9px 12px',
+                  backgroundColor: 'var(--bg-surface)',
+                  border: '1px solid var(--border-medium)',
+                  borderRadius: '8px',
+                  color: 'var(--text-primary)',
+                  fontSize: '0.86rem',
+                  outline: 'none',
+                }}
+              >
+                <option value="Kelas 1 SD">Kelas 1 SD</option>
+                <option value="Kelas 2 SD">Kelas 2 SD</option>
+                <option value="Kelas 3 SD">Kelas 3 SD</option>
+                <option value="Kelas 4 SD">Kelas 4 SD</option>
+                <option value="Kelas 5 SD">Kelas 5 SD</option>
+                <option value="Kelas 6 SD">Kelas 6 SD</option>
+                <option value="Kelas 7 SMP">Kelas 7 SMP</option>
+                <option value="Kelas 8 SMP">Kelas 8 SMP</option>
+                <option value="Kelas 9 SMP">Kelas 9 SMP</option>
+                <option value="Kelas 10 SMA">Kelas 10 SMA</option>
+                <option value="Kelas 11 SMA">Kelas 11 SMA</option>
+                <option value="Kelas 12 SMA">Kelas 12 SMA</option>
+              </select>
+            </div>
+
+            <div>
+              <label
+                style={{
+                  display: 'block',
+                  fontSize: '0.82rem',
+                  fontWeight: 700,
+                  color: 'var(--text-secondary)',
+                  marginBottom: '6px',
+                }}
+              >
+                Tingkat Kesulitan
+              </label>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                {(['Mudah', 'Sedang', 'HOTS'] as const).map(d => (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => {
+                      setDifficulty(d);
+                      setGeneratedResult(null);
+                    }}
+                    style={{
+                      flex: 1,
+                      padding: '8px 4px',
+                      borderRadius: '8px',
+                      fontSize: '0.8rem',
+                      fontWeight: 700,
+                      border: `1px solid ${difficulty === d ? '#76B900' : 'var(--border-medium)'}`,
+                      backgroundColor: difficulty === d ? 'rgba(118, 185, 0, 0.15)' : 'var(--bg-surface)',
+                      color: difficulty === d ? '#76B900' : 'var(--text-secondary)',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    {d}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* 4. Format Selector */}
+          <div>
+            <label
+              style={{
+                display: 'block',
+                fontSize: '0.82rem',
+                fontWeight: 700,
                 color: 'var(--text-secondary)',
                 marginBottom: '6px',
               }}
@@ -347,20 +527,20 @@ export function AutoGenerateAssignmentModal({
                 style={{
                   padding: '12px 14px',
                   borderRadius: '10px',
-                  border: `2px solid ${assignmentFormat === 'STRUCTURED_QUESTIONS' ? 'var(--accent)' : 'var(--border-light)'}`,
-                  backgroundColor: assignmentFormat === 'STRUCTURED_QUESTIONS' ? 'var(--accent-light)' : 'var(--bg-surface)',
+                  border: `2px solid ${assignmentFormat === 'STRUCTURED_QUESTIONS' ? '#76B900' : 'var(--border-light)'}`,
+                  backgroundColor: assignmentFormat === 'STRUCTURED_QUESTIONS' ? 'rgba(118, 185, 0, 0.08)' : 'var(--bg-surface)',
                   cursor: 'pointer',
                   transition: 'all 0.15s ease',
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                  <Layers size={17} color={assignmentFormat === 'STRUCTURED_QUESTIONS' ? 'var(--accent)' : 'var(--text-muted)'} />
-                  <strong style={{ fontSize: '0.88rem', color: assignmentFormat === 'STRUCTURED_QUESTIONS' ? 'var(--accent)' : 'var(--text-primary)' }}>
-                    Opsi A: PG &amp; Essay
+                  <Layers size={17} color={assignmentFormat === 'STRUCTURED_QUESTIONS' ? '#76B900' : 'var(--text-muted)'} />
+                  <strong style={{ fontSize: '0.86rem', color: assignmentFormat === 'STRUCTURED_QUESTIONS' ? '#76B900' : 'var(--text-primary)' }}>
+                    Opsi A: Soal Terstruktur (PG &amp; Essay)
                   </strong>
                 </div>
-                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0, lineHeight: 1.4 }}>
-                  5 Soal Pilihan Ganda &amp; 2 Soal Essay analitis HOTS lengkap dengan rubrik.
+                <p style={{ fontSize: '0.76rem', color: 'var(--text-muted)', margin: 0, lineHeight: 1.4 }}>
+                  4 Butir Soal PG &amp; 2 Soal Essay analitis HOTS lengkap dengan rubrik penilaian.
                 </p>
               </div>
 
@@ -372,37 +552,37 @@ export function AutoGenerateAssignmentModal({
                 style={{
                   padding: '12px 14px',
                   borderRadius: '10px',
-                  border: `2px solid ${assignmentFormat === 'HOMEWORK_PR' ? 'var(--success)' : 'var(--border-light)'}`,
-                  backgroundColor: assignmentFormat === 'HOMEWORK_PR' ? 'rgba(22, 163, 74, 0.08)' : 'var(--bg-surface)',
+                  border: `2px solid ${assignmentFormat === 'HOMEWORK_PR' ? '#76B900' : 'var(--border-light)'}`,
+                  backgroundColor: assignmentFormat === 'HOMEWORK_PR' ? 'rgba(118, 185, 0, 0.08)' : 'var(--bg-surface)',
                   cursor: 'pointer',
                   transition: 'all 0.15s ease',
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                  <FileText size={17} color={assignmentFormat === 'HOMEWORK_PR' ? 'var(--success)' : 'var(--text-muted)'} />
-                  <strong style={{ fontSize: '0.88rem', color: assignmentFormat === 'HOMEWORK_PR' ? 'var(--success)' : 'var(--text-primary)' }}>
-                    Opsi B: Tugas Mandiri (PR)
+                  <FileText size={17} color={assignmentFormat === 'HOMEWORK_PR' ? '#76B900' : 'var(--text-muted)'} />
+                  <strong style={{ fontSize: '0.86rem', color: assignmentFormat === 'HOMEWORK_PR' ? '#76B900' : 'var(--text-primary)' }}>
+                    Opsi B: Tugas Mandiri / PR (Lembar Kerja)
                   </strong>
                 </div>
-                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0, lineHeight: 1.4 }}>
-                  Instruksi tugas mandiri, panduan berkas/foto lembar kerja, &amp; rubrik.
+                <p style={{ fontSize: '0.76rem', color: 'var(--text-muted)', margin: 0, lineHeight: 1.4 }}>
+                  Instruksi tugas mandiri, petunjuk unggah foto lembar kerja, &amp; rubrik komprehensif.
                 </p>
               </div>
             </div>
           </div>
 
-          {/* 3. Source Mode Selector */}
+          {/* 5. Source Mode Selector */}
           <div>
             <label
               style={{
                 display: 'block',
                 fontSize: '0.82rem',
-                fontWeight: 600,
+                fontWeight: 700,
                 color: 'var(--text-secondary)',
                 marginBottom: '6px',
               }}
             >
-              Sumber Materi Pembelajaran
+              Sumber Referensi Pembelajaran
             </label>
             <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
               <button
@@ -416,10 +596,10 @@ export function AutoGenerateAssignmentModal({
                   padding: '8px 12px',
                   borderRadius: '8px',
                   fontSize: '0.82rem',
-                  fontWeight: 600,
-                  border: `1px solid ${sourceMode === 'LATEST' ? 'var(--accent)' : 'var(--border-medium)'}`,
-                  backgroundColor: sourceMode === 'LATEST' ? 'var(--accent)' : 'var(--bg-surface)',
-                  color: sourceMode === 'LATEST' ? '#FFFFFF' : 'var(--text-secondary)',
+                  fontWeight: 700,
+                  border: `1px solid ${sourceMode === 'LATEST' ? '#76B900' : 'var(--border-medium)'}`,
+                  backgroundColor: sourceMode === 'LATEST' ? 'rgba(118, 185, 0, 0.15)' : 'var(--bg-surface)',
+                  color: sourceMode === 'LATEST' ? '#76B900' : 'var(--text-secondary)',
                   cursor: 'pointer',
                   transition: 'all 0.15s ease',
                 }}
@@ -437,15 +617,15 @@ export function AutoGenerateAssignmentModal({
                   padding: '8px 12px',
                   borderRadius: '8px',
                   fontSize: '0.82rem',
-                  fontWeight: 600,
-                  border: `1px solid ${sourceMode === 'HISTORY' ? 'var(--accent)' : 'var(--border-medium)'}`,
-                  backgroundColor: sourceMode === 'HISTORY' ? 'var(--accent)' : 'var(--bg-surface)',
-                  color: sourceMode === 'HISTORY' ? '#FFFFFF' : 'var(--text-secondary)',
+                  fontWeight: 700,
+                  border: `1px solid ${sourceMode === 'HISTORY' ? '#76B900' : 'var(--border-medium)'}`,
+                  backgroundColor: sourceMode === 'HISTORY' ? 'rgba(118, 185, 0, 0.15)' : 'var(--bg-surface)',
+                  color: sourceMode === 'HISTORY' ? '#76B900' : 'var(--text-secondary)',
                   cursor: 'pointer',
                   transition: 'all 0.15s ease',
                 }}
               >
-                Pilih dari Materi Sebelumnya
+                Pilih dari Modul / Materi Sebelumnya
               </button>
             </div>
 
@@ -490,24 +670,24 @@ export function AutoGenerateAssignmentModal({
 
           {/* Action Generate Button */}
           {!generatedResult && (
-            <div style={{ textAlign: 'center', paddingTop: '4px' }}>
+            <div style={{ textAlign: 'center', paddingTop: '6px' }}>
               <button
                 type="button"
                 onClick={handleGenerate}
                 disabled={isGenerating}
                 style={{
-                  padding: '11px 26px',
+                  padding: '11px 28px',
                   borderRadius: '10px',
-                  background: 'var(--accent-gradient)',
+                  background: 'linear-gradient(135deg, #76B900 0%, #10B981 100%)',
                   color: '#FFFFFF',
-                  fontWeight: 700,
-                  fontSize: '0.88rem',
+                  fontWeight: 800,
+                  fontSize: '0.9rem',
                   border: 'none',
                   cursor: isGenerating ? 'not-allowed' : 'pointer',
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '8px',
-                  boxShadow: 'var(--shadow-md)',
+                  boxShadow: '0 4px 14px rgba(118, 185, 0, 0.4)',
                   opacity: isGenerating ? 0.8 : 1,
                   transition: 'transform 0.15s ease, box-shadow 0.15s ease',
                 }}
@@ -520,11 +700,11 @@ export function AutoGenerateAssignmentModal({
               >
                 {isGenerating ? (
                   <>
-                    <Loader2 size={17} className="animate-spin" /> Sedang Menganalisis &amp; Menyusun Tugas...
+                    <Loader2 size={18} className="animate-spin" /> Sedang Menganalisis &amp; Menyusun Tugas (NVIDIA NIM)...
                   </>
                 ) : (
                   <>
-                    <Sparkles size={17} /> Generate Tugas Otomatis Sekarang
+                    <Sparkles size={18} /> Generate Tugas Otomatis Sekarang (AI NVIDIA)
                   </>
                 )}
               </button>
@@ -544,10 +724,10 @@ export function AutoGenerateAssignmentModal({
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
                 <span
                   style={{
-                    backgroundColor: 'var(--accent-light)',
-                    color: 'var(--accent)',
+                    backgroundColor: 'rgba(118, 185, 0, 0.15)',
+                    color: '#76B900',
                     fontSize: '0.78rem',
-                    fontWeight: 700,
+                    fontWeight: 800,
                     padding: '3px 10px',
                     borderRadius: '999px',
                     display: 'inline-flex',
@@ -556,10 +736,10 @@ export function AutoGenerateAssignmentModal({
                   }}
                 >
                   <CheckCircle2 size={13} />
-                  Berhasil Disusun Otomatis
+                  Berhasil Disusun oleh AI NVIDIA NIM
                 </span>
                 <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                  {generatedResult.assignment_type === 'HOMEWORK_PR' ? 'Tugas Mandiri (PR)' : `${generatedResult.questions?.length || 0} Soal (PG & Essay)`}
+                  {generatedResult.assignment_type === 'HOMEWORK_PR' ? 'Tugas Mandiri (PR)' : `${generatedResult.questions?.length || 0} Soal (PG &amp; Essay)`}
                 </span>
               </div>
 
@@ -602,8 +782,8 @@ export function AutoGenerateAssignmentModal({
                         }}
                       >
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                          <span style={{ fontWeight: 700, color: 'var(--accent)' }}>
-                            Soal {idx + 1} ({q.question_type === 'MULTIPLE_CHOICE' ? 'Pilihan Ganda' : 'Essay'})
+                          <span style={{ fontWeight: 700, color: '#76B900' }}>
+                            Soal #{idx + 1} ({q.question_type === 'MULTIPLE_CHOICE' ? 'Pilihan Ganda' : 'Essay'})
                           </span>
                           <span style={{ color: 'var(--warning)', fontWeight: 600 }}>{q.points} Poin</span>
                         </div>

@@ -1,8 +1,7 @@
-'use client';
-
 import React, { useState, useEffect } from 'react';
 import { AcademicSubject } from '@/features/material';
-import { Sparkles, CheckCircle2, Calendar, BookOpen, Layers, AlertCircle, Loader2, X } from 'lucide-react';
+import { Sparkles, CheckCircle2, Calendar, BookOpen, Layers, AlertCircle, Loader2, X, Sliders } from 'lucide-react';
+import { getApiUrl, apiClient } from '@/lib/api';
 
 interface AutoGenerateQuizModalProps {
   isOpen: boolean;
@@ -27,6 +26,10 @@ export function AutoGenerateQuizModal({
   onApply,
 }: AutoGenerateQuizModalProps) {
   const [selectedSubject, setSelectedSubject] = useState<string>(selectedSubjectName || (subjects[0]?.name || ''));
+  const [topic, setTopic] = useState('');
+  const [gradeLevel, setGradeLevel] = useState('Kelas 5 SD');
+  const [difficulty, setDifficulty] = useState<'Mudah' | 'Sedang' | 'HOTS'>('Sedang');
+  const [numQuestions, setNumQuestions] = useState<number>(5);
   const [examScope, setExamScope] = useState<'MONTHLY_SUMMARY' | 'SINGLE_MODULE'>('MONTHLY_SUMMARY');
   const [quizFormat, setQuizFormat] = useState<'MCQ_ONLY' | 'MCQ_AND_ESSAY'>('MCQ_ONLY');
 
@@ -59,45 +62,99 @@ export function AutoGenerateQuizModal({
 
     try {
       const isMonthly = examScope === 'MONTHLY_SUMMARY';
-      const payload: any = {
-        type: isMonthly ? 'EXAM_MONTHLY' : (quizFormat === 'MCQ_ONLY' ? 'QUIZ_MCQ_ONLY' : 'QUIZ_MCQ_ESSAY'),
-        format: quizFormat,
-        subject_id: currentSubjectObj.id,
-        subject_name: currentSubjectObj.name,
-        source_mode: isMonthly ? 'PAST_MONTH' : 'LATEST_PUBLISHED',
-      };
+      const effectiveTopic = topic.trim() || currentSubjectObj.name;
+      const numQ = isMonthly ? 10 : numQuestions;
+      const effectiveDiff = isMonthly ? 'HOTS' : difficulty;
 
-      // Try /api/learning/auto-generate first, then fallback to /api/v1/learning/auto-generate
-      let res = await fetch('/api/learning/auto-generate', {
+      const token = apiClient.getToken() || (typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null);
+
+      // Call Next.js proxy route which delegates strictly to NVIDIA NIM
+      let res = await fetch('/api/v1/learning/auto-generate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          type: isMonthly ? 'EXAM_MONTHLY' : (quizFormat === 'MCQ_ONLY' ? 'QUIZ_MCQ_ONLY' : 'QUIZ_MCQ_ESSAY'),
+          format: quizFormat,
+          subject_id: currentSubjectObj.id,
+          subject_name: currentSubjectObj.name,
+          topic: effectiveTopic,
+          grade_level: gradeLevel,
+          num_questions: numQ,
+          difficulty: effectiveDiff,
+          source_mode: isMonthly ? 'PAST_MONTH' : 'LATEST_PUBLISHED',
+        }),
       });
 
-      if (!res.ok && res.status === 404) {
-        res = await fetch('/api/v1/learning/auto-generate', {
+      // If Next.js proxy fails, call backend NVIDIA NIM endpoint directly
+      if (!res.ok) {
+        const endpoint = getApiUrl('/api/v1/ai/generate-content');
+        res = await fetch(endpoint, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({
+            mode: 'QUIZ',
+            topic: effectiveTopic,
+            subject_name: currentSubjectObj.name,
+            grade_level: gradeLevel,
+            num_questions: numQ,
+            difficulty: effectiveDiff,
+          }),
         });
       }
 
-      const rawText = await res.text();
-      let json: any = null;
-      try {
-        json = rawText ? JSON.parse(rawText) : null;
-      } catch {
-        // Not JSON
-      }
+      const json = await res.json().catch(() => null);
 
       if (!res.ok || !json?.success) {
-        const message = json?.error || (res.status === 404 ? 'Materi belum tersedia untuk mata pelajaran ini.' : `Gagal menghubungi server pembuatan otomatis (${res.status}).`);
+        const message = json?.error || (res.status === 404 ? 'Materi belum tersedia untuk mata pelajaran ini.' : `Gagal menghubungi server AI NVIDIA NIM (${res.status}).`);
         throw new Error(message);
       }
 
-      setGeneratedResult(json.data);
+      const aiQuiz = json?.data?.quiz || json?.data;
+      if (!aiQuiz || !aiQuiz.questions || aiQuiz.questions.length === 0) {
+        throw new Error('Respons butir soal dari AI NVIDIA NIM kosong.');
+      }
+
+      const mappedQuestions = (aiQuiz.questions || []).map((q: any, idx: number) => {
+        let choices = q.choices || [];
+        const mappedChoices = choices.map((c: any) => ({
+          text: typeof c === 'string' ? c : (c.choice_text || c.text || ''),
+          isCorrect: typeof c === 'object' ? Boolean(c.is_correct || c.isCorrect) : false,
+        }));
+
+        if (q.correct_key && mappedChoices.length > 0) {
+          const keyIdx = ['A', 'B', 'C', 'D', 'E'].indexOf(q.correct_key.toUpperCase());
+          if (keyIdx >= 0 && keyIdx < mappedChoices.length) {
+            mappedChoices.forEach((ch: any, i: number) => {
+              ch.isCorrect = i === keyIdx;
+            });
+          }
+        }
+
+        return {
+          id: q.id || `q-${idx + 1}-${Date.now()}`,
+          question_text: q.question_text || q.text,
+          question_type: q.question_type || 'MULTIPLE_CHOICE',
+          points: q.points || Math.round(100 / Math.max(1, aiQuiz.questions.length)),
+          choices: mappedChoices,
+          explanation: q.explanation || 'Disusun oleh AI NVIDIA NIM',
+        };
+      });
+
+      setGeneratedResult({
+        title: aiQuiz.title || `Paket Soal CBT: ${effectiveTopic}`,
+        description: aiQuiz.description || `Ujian CBT resmi disusun otomatis oleh AI NVIDIA NIM.`,
+        time_limit_minutes: isMonthly ? 90 : 45,
+        passing_score: 75,
+        questions: mappedQuestions,
+      });
     } catch (err: any) {
-      setErrorMsg(err.message || 'Terjadi kendala saat menyusun soal kuis otomatis.');
+      setErrorMsg(err.message || 'Terjadi kendala saat menyusun soal kuis otomatis dengan AI NVIDIA NIM.');
     } finally {
       setIsGenerating(false);
     }
@@ -117,8 +174,8 @@ export function AutoGenerateQuizModal({
         question_type: q.question_type,
         points: q.points,
         choices: (q.choices || []).map((c: any) => ({
-          text: c.choice_text,
-          isCorrect: c.is_correct,
+          text: c.text || c.choice_text || '',
+          isCorrect: !!c.isCorrect || !!c.is_correct,
         })),
       })),
       subjectName: selectedSubject,
@@ -132,8 +189,8 @@ export function AutoGenerateQuizModal({
         position: 'fixed',
         inset: 0,
         zIndex: 9999,
-        backgroundColor: 'rgba(0, 0, 0, 0.6)',
-        backdropFilter: 'blur(5px)',
+        backgroundColor: 'rgba(0, 0, 0, 0.65)',
+        backdropFilter: 'blur(6px)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -144,10 +201,10 @@ export function AutoGenerateQuizModal({
         style={{
           backgroundColor: 'var(--bg-surface)',
           border: '1px solid var(--border-light)',
-          borderRadius: '16px',
+          borderRadius: '18px',
           width: '100%',
-          maxWidth: '720px',
-          maxHeight: '90vh',
+          maxWidth: '740px',
+          maxHeight: '92vh',
           display: 'flex',
           flexDirection: 'column',
           boxShadow: 'var(--shadow-xl)',
@@ -169,39 +226,55 @@ export function AutoGenerateQuizModal({
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div
               style={{
-                width: '38px',
-                height: '38px',
-                borderRadius: '10px',
-                background: 'linear-gradient(135deg, #F59E0B 0%, #EA580C 100%)',
+                width: '40px',
+                height: '40px',
+                borderRadius: '12px',
+                background: 'linear-gradient(135deg, #76B900 0%, #10B981 100%)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: '0 2px 8px rgba(245, 158, 11, 0.3)',
+                boxShadow: '0 4px 12px rgba(118, 185, 0, 0.35)',
                 flexShrink: 0,
               }}
             >
-              <Sparkles size={18} color="#FFFFFF" />
+              <Sparkles size={20} color="#FFFFFF" />
             </div>
             <div>
-              <h2
-                style={{
-                  fontSize: '1.15rem',
-                  fontWeight: 700,
-                  margin: 0,
-                  color: 'var(--text-primary)',
-                  letterSpacing: '-0.01em',
-                }}
-              >
-                Generate Kuis / Ujian CBT Otomatis
-              </h2>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <h2
+                  style={{
+                    fontSize: '1.15rem',
+                    fontWeight: 800,
+                    margin: 0,
+                    color: 'var(--text-primary)',
+                    letterSpacing: '-0.01em',
+                  }}
+                >
+                  Generate Kuis &amp; Ujian CBT (AI NVIDIA)
+                </h2>
+                <span
+                  style={{
+                    background: 'rgba(118, 185, 0, 0.15)',
+                    color: '#76B900',
+                    border: '1px solid rgba(118, 185, 0, 0.35)',
+                    padding: '2px 8px',
+                    borderRadius: '6px',
+                    fontSize: '0.72rem',
+                    fontWeight: 800,
+                    letterSpacing: '0.04em',
+                  }}
+                >
+                  NVIDIA NIM
+                </span>
+              </div>
               <p
                 style={{
-                  fontSize: '0.82rem',
+                  fontSize: '0.8rem',
                   color: 'var(--text-muted)',
-                  margin: '2px 0 0 0',
+                  margin: '3px 0 0 0',
                 }}
               >
-                Otomatisasi pembuatan paket soal kuis atau ujian bulanan terisolasi per mata pelajaran
+                Sintesis paket soal CBT &amp; kisi-kisi evaluasi otomatis menggunakan NVIDIA NIM Llama-3-70B
               </p>
             </div>
           </div>
@@ -230,7 +303,7 @@ export function AutoGenerateQuizModal({
         </div>
 
         {/* Modal Body */}
-        <div style={{ padding: '20px 24px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '18px' }}>
+        <div style={{ padding: '20px 24px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {errorMsg && (
             <div
               style={{
@@ -256,12 +329,12 @@ export function AutoGenerateQuizModal({
               style={{
                 display: 'block',
                 fontSize: '0.82rem',
-                fontWeight: 600,
+                fontWeight: 700,
                 color: 'var(--text-secondary)',
                 marginBottom: '6px',
               }}
             >
-              Mata Pelajaran (Mapel) <span style={{ color: 'var(--accent)', fontSize: '0.78rem' }}>*Terkunci, isolasi penuh</span>
+              Mata Pelajaran (Mapel) <span style={{ color: '#76B900', fontSize: '0.78rem' }}>*Terkunci, isolasi penuh kurikulum</span>
             </label>
             <select
               value={selectedSubject}
@@ -277,6 +350,7 @@ export function AutoGenerateQuizModal({
                 borderRadius: '8px',
                 color: 'var(--text-primary)',
                 fontSize: '0.88rem',
+                fontWeight: 600,
                 outline: 'none',
               }}
             >
@@ -288,13 +362,235 @@ export function AutoGenerateQuizModal({
             </select>
           </div>
 
-          {/* 2. Scope Selector: Bulanan vs 1 Materi */}
+          {/* 2. Custom Topic */}
           <div>
             <label
               style={{
                 display: 'block',
                 fontSize: '0.82rem',
-                fontWeight: 600,
+                fontWeight: 700,
+                color: 'var(--text-secondary)',
+                marginBottom: '6px',
+              }}
+            >
+              Topik / Materi Spesifik Soal (Opsional)
+            </label>
+            <input
+              type="text"
+              placeholder={`Contoh: Dinamika Gerak Lurus & Hukum Newton (atau biarkan kosong untuk materi umum ${selectedSubject})`}
+              value={topic}
+              onChange={e => {
+                setTopic(e.target.value);
+                setGeneratedResult(null);
+              }}
+              style={{
+                width: '100%',
+                padding: '9px 12px',
+                backgroundColor: 'var(--bg-surface)',
+                border: '1px solid var(--border-medium)',
+                borderRadius: '8px',
+                color: 'var(--text-primary)',
+                fontSize: '0.88rem',
+                outline: 'none',
+              }}
+            />
+          </div>
+
+          {/* 3. Grade Level & Difficulty Grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div>
+              <label
+                style={{
+                  display: 'block',
+                  fontSize: '0.82rem',
+                  fontWeight: 700,
+                  color: 'var(--text-secondary)',
+                  marginBottom: '6px',
+                }}
+              >
+                Jenjang / Tingkat Kelas
+              </label>
+              <select
+                value={gradeLevel}
+                onChange={e => {
+                  setGradeLevel(e.target.value);
+                  setGeneratedResult(null);
+                }}
+                style={{
+                  width: '100%',
+                  padding: '9px 12px',
+                  backgroundColor: 'var(--bg-surface)',
+                  border: '1px solid var(--border-medium)',
+                  borderRadius: '8px',
+                  color: 'var(--text-primary)',
+                  fontSize: '0.86rem',
+                  outline: 'none',
+                }}
+              >
+                <option value="Kelas 1 SD">Kelas 1 SD</option>
+                <option value="Kelas 2 SD">Kelas 2 SD</option>
+                <option value="Kelas 3 SD">Kelas 3 SD</option>
+                <option value="Kelas 4 SD">Kelas 4 SD</option>
+                <option value="Kelas 5 SD">Kelas 5 SD</option>
+                <option value="Kelas 6 SD">Kelas 6 SD</option>
+                <option value="Kelas 7 SMP">Kelas 7 SMP</option>
+                <option value="Kelas 8 SMP">Kelas 8 SMP</option>
+                <option value="Kelas 9 SMP">Kelas 9 SMP</option>
+                <option value="Kelas 10 SMA">Kelas 10 SMA</option>
+                <option value="Kelas 11 SMA">Kelas 11 SMA</option>
+                <option value="Kelas 12 SMA">Kelas 12 SMA</option>
+              </select>
+            </div>
+
+            <div>
+              <label
+                style={{
+                  display: 'block',
+                  fontSize: '0.82rem',
+                  fontWeight: 700,
+                  color: 'var(--text-secondary)',
+                  marginBottom: '6px',
+                }}
+              >
+                Tingkat Kesulitan
+              </label>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                {(['Mudah', 'Sedang', 'HOTS'] as const).map(d => (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => {
+                      setDifficulty(d);
+                      setGeneratedResult(null);
+                    }}
+                    style={{
+                      flex: 1,
+                      padding: '8px 4px',
+                      borderRadius: '8px',
+                      fontSize: '0.8rem',
+                      fontWeight: 700,
+                      border: `1px solid ${difficulty === d ? '#76B900' : 'var(--border-medium)'}`,
+                      backgroundColor: difficulty === d ? 'rgba(118, 185, 0, 0.15)' : 'var(--bg-surface)',
+                      color: difficulty === d ? '#76B900' : 'var(--text-secondary)',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    {d}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* 4. Question Count & Scope */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div>
+              <label
+                style={{
+                  display: 'block',
+                  fontSize: '0.82rem',
+                  fontWeight: 700,
+                  color: 'var(--text-secondary)',
+                  marginBottom: '6px',
+                }}
+              >
+                Jumlah Butir Soal
+              </label>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                {[5, 10, 15].map(cnt => (
+                  <button
+                    key={cnt}
+                    type="button"
+                    onClick={() => {
+                      setNumQuestions(cnt);
+                      setGeneratedResult(null);
+                    }}
+                    style={{
+                      flex: 1,
+                      padding: '8px 4px',
+                      borderRadius: '8px',
+                      fontSize: '0.8rem',
+                      fontWeight: 700,
+                      border: `1px solid ${numQuestions === cnt ? '#76B900' : 'var(--border-medium)'}`,
+                      backgroundColor: numQuestions === cnt ? 'rgba(118, 185, 0, 0.15)' : 'var(--bg-surface)',
+                      color: numQuestions === cnt ? '#76B900' : 'var(--text-secondary)',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    {cnt} Soal
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label
+                style={{
+                  display: 'block',
+                  fontSize: '0.82rem',
+                  fontWeight: 700,
+                  color: 'var(--text-secondary)',
+                  marginBottom: '6px',
+                }}
+              >
+                Komposisi Format
+              </label>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setQuizFormat('MCQ_ONLY');
+                    setGeneratedResult(null);
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: '8px 4px',
+                    borderRadius: '8px',
+                    fontSize: '0.78rem',
+                    fontWeight: 700,
+                    border: `1px solid ${quizFormat === 'MCQ_ONLY' ? '#76B900' : 'var(--border-medium)'}`,
+                    backgroundColor: quizFormat === 'MCQ_ONLY' ? 'rgba(118, 185, 0, 0.15)' : 'var(--bg-surface)',
+                    color: quizFormat === 'MCQ_ONLY' ? '#76B900' : 'var(--text-secondary)',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  Pilihan Ganda
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setQuizFormat('MCQ_AND_ESSAY');
+                    setGeneratedResult(null);
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: '8px 4px',
+                    borderRadius: '8px',
+                    fontSize: '0.78rem',
+                    fontWeight: 700,
+                    border: `1px solid ${quizFormat === 'MCQ_AND_ESSAY' ? '#76B900' : 'var(--border-medium)'}`,
+                    backgroundColor: quizFormat === 'MCQ_AND_ESSAY' ? 'rgba(118, 185, 0, 0.15)' : 'var(--bg-surface)',
+                    color: quizFormat === 'MCQ_AND_ESSAY' ? '#76B900' : 'var(--text-secondary)',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  PG + Essay
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* 5. Scope Selector: Bulanan vs 1 Materi */}
+          <div>
+            <label
+              style={{
+                display: 'block',
+                fontSize: '0.82rem',
+                fontWeight: 700,
                 color: 'var(--text-secondary)',
                 marginBottom: '6px',
               }}
@@ -310,20 +606,20 @@ export function AutoGenerateQuizModal({
                 style={{
                   padding: '12px 14px',
                   borderRadius: '10px',
-                  border: `2px solid ${examScope === 'MONTHLY_SUMMARY' ? 'var(--warning)' : 'var(--border-light)'}`,
-                  backgroundColor: examScope === 'MONTHLY_SUMMARY' ? 'rgba(245, 158, 11, 0.08)' : 'var(--bg-surface)',
+                  border: `2px solid ${examScope === 'MONTHLY_SUMMARY' ? '#76B900' : 'var(--border-light)'}`,
+                  backgroundColor: examScope === 'MONTHLY_SUMMARY' ? 'rgba(118, 185, 0, 0.08)' : 'var(--bg-surface)',
                   cursor: 'pointer',
                   transition: 'all 0.15s ease',
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                  <Calendar size={17} color={examScope === 'MONTHLY_SUMMARY' ? 'var(--warning)' : 'var(--text-muted)'} />
-                  <strong style={{ fontSize: '0.88rem', color: examScope === 'MONTHLY_SUMMARY' ? 'var(--warning)' : 'var(--text-primary)' }}>
+                  <Calendar size={17} color={examScope === 'MONTHLY_SUMMARY' ? '#76B900' : 'var(--text-muted)'} />
+                  <strong style={{ fontSize: '0.86rem', color: examScope === 'MONTHLY_SUMMARY' ? '#76B900' : 'var(--text-primary)' }}>
                     Ujian Bulanan (Rangkum 30 Hari)
                   </strong>
                 </div>
-                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0, lineHeight: 1.4 }}>
-                  Merangkum seluruh materi 1 bulan sebelumnya untuk dijadikan paket soal komprehensif.
+                <p style={{ fontSize: '0.76rem', color: 'var(--text-muted)', margin: 0, lineHeight: 1.4 }}>
+                  Merangkum seluruh capaian materi 1 bulan sebelumnya untuk paket soal komprehensif.
                 </p>
               </div>
 
@@ -335,104 +631,45 @@ export function AutoGenerateQuizModal({
                 style={{
                   padding: '12px 14px',
                   borderRadius: '10px',
-                  border: `2px solid ${examScope === 'SINGLE_MODULE' ? 'var(--accent)' : 'var(--border-light)'}`,
-                  backgroundColor: examScope === 'SINGLE_MODULE' ? 'var(--accent-light)' : 'var(--bg-surface)',
+                  border: `2px solid ${examScope === 'SINGLE_MODULE' ? '#76B900' : 'var(--border-light)'}`,
+                  backgroundColor: examScope === 'SINGLE_MODULE' ? 'rgba(118, 185, 0, 0.08)' : 'var(--bg-surface)',
                   cursor: 'pointer',
                   transition: 'all 0.15s ease',
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                  <BookOpen size={17} color={examScope === 'SINGLE_MODULE' ? 'var(--accent)' : 'var(--text-muted)'} />
-                  <strong style={{ fontSize: '0.88rem', color: examScope === 'SINGLE_MODULE' ? 'var(--accent)' : 'var(--text-primary)' }}>
-                    Kuis Materi Terakhir
+                  <BookOpen size={17} color={examScope === 'SINGLE_MODULE' ? '#76B900' : 'var(--text-muted)'} />
+                  <strong style={{ fontSize: '0.86rem', color: examScope === 'SINGLE_MODULE' ? '#76B900' : 'var(--text-primary)' }}>
+                    Kuis Materi Terakhir / Topik Terpilih
                   </strong>
                 </div>
-                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0, lineHeight: 1.4 }}>
-                  Menyusun kuis cepat berbasis materi yang baru saja diterbitkan di kelas.
+                <p style={{ fontSize: '0.76rem', color: 'var(--text-muted)', margin: 0, lineHeight: 1.4 }}>
+                  Menyusun kuis cepat berbasis topik spesifik atau materi terakhir yang baru diterbitkan.
                 </p>
               </div>
             </div>
           </div>
 
-          {/* 3. Format Selector */}
-          <div>
-            <label
-              style={{
-                display: 'block',
-                fontSize: '0.82rem',
-                fontWeight: 600,
-                color: 'var(--text-secondary)',
-                marginBottom: '6px',
-              }}
-            >
-              Komposisi Soal Ujian
-            </label>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button
-                type="button"
-                onClick={() => {
-                  setQuizFormat('MCQ_ONLY');
-                  setGeneratedResult(null);
-                }}
-                style={{
-                  flex: 1,
-                  padding: '8px 12px',
-                  borderRadius: '8px',
-                  fontSize: '0.82rem',
-                  fontWeight: 600,
-                  border: `1px solid ${quizFormat === 'MCQ_ONLY' ? 'var(--accent)' : 'var(--border-medium)'}`,
-                  backgroundColor: quizFormat === 'MCQ_ONLY' ? 'var(--accent)' : 'var(--bg-surface)',
-                  color: quizFormat === 'MCQ_ONLY' ? '#FFFFFF' : 'var(--text-secondary)',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                Hanya Pilihan Ganda (PG)
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setQuizFormat('MCQ_AND_ESSAY');
-                  setGeneratedResult(null);
-                }}
-                style={{
-                  flex: 1,
-                  padding: '8px 12px',
-                  borderRadius: '8px',
-                  fontSize: '0.82rem',
-                  fontWeight: 600,
-                  border: `1px solid ${quizFormat === 'MCQ_AND_ESSAY' ? 'var(--accent)' : 'var(--border-medium)'}`,
-                  backgroundColor: quizFormat === 'MCQ_AND_ESSAY' ? 'var(--accent)' : 'var(--bg-surface)',
-                  color: quizFormat === 'MCQ_AND_ESSAY' ? '#FFFFFF' : 'var(--text-secondary)',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease',
-                }}
-              >
-                Kombinasi PG &amp; Essay Analitis
-              </button>
-            </div>
-          </div>
-
           {/* Action Generate Button */}
           {!generatedResult && (
-            <div style={{ textAlign: 'center', paddingTop: '4px' }}>
+            <div style={{ textAlign: 'center', paddingTop: '6px' }}>
               <button
                 type="button"
                 onClick={handleGenerate}
                 disabled={isGenerating}
                 style={{
-                  padding: '11px 26px',
+                  padding: '11px 28px',
                   borderRadius: '10px',
-                  background: 'linear-gradient(135deg, #F59E0B 0%, #EA580C 100%)',
+                  background: 'linear-gradient(135deg, #76B900 0%, #10B981 100%)',
                   color: '#FFFFFF',
-                  fontWeight: 700,
-                  fontSize: '0.88rem',
+                  fontWeight: 800,
+                  fontSize: '0.9rem',
                   border: 'none',
                   cursor: isGenerating ? 'not-allowed' : 'pointer',
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '8px',
-                  boxShadow: 'var(--shadow-md)',
+                  boxShadow: '0 4px 14px rgba(118, 185, 0, 0.4)',
                   opacity: isGenerating ? 0.8 : 1,
                   transition: 'transform 0.15s ease, box-shadow 0.15s ease',
                 }}
@@ -445,11 +682,11 @@ export function AutoGenerateQuizModal({
               >
                 {isGenerating ? (
                   <>
-                    <Loader2 size={17} className="animate-spin" /> Sedang Menganalisis &amp; Menyusun Paket Ujian...
+                    <Loader2 size={18} className="animate-spin" /> Sedang Menganalisis &amp; Menyusun Ujian (NVIDIA NIM)...
                   </>
                 ) : (
                   <>
-                    <Sparkles size={17} /> Generate Paket Ujian Sekarang
+                    <Sparkles size={18} /> Generate Paket Ujian Sekarang (AI NVIDIA)
                   </>
                 )}
               </button>

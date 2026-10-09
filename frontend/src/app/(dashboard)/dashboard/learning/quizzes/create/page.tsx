@@ -552,22 +552,38 @@ export default function CreateQuizPage() {
               width: '42px',
               height: '42px',
               borderRadius: '10px',
-              background: 'linear-gradient(135deg, #d97706, #ea580c)',
+              background: 'linear-gradient(135deg, #76B900 0%, #10B981 100%)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               flexShrink: 0,
-              boxShadow: '0 4px 12px rgba(217, 119, 6, 0.3)',
+              boxShadow: '0 4px 12px rgba(118, 185, 0, 0.35)',
             }}
           >
             <Sparkles size={20} color="#FFFFFF" />
           </div>
           <div>
-            <div style={{ fontSize: '0.92rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-              Pembuat Kuis &amp; Ujian Otomatis (AI Engine)
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '0.92rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                Pembuat Kuis &amp; Ujian Otomatis (AI NVIDIA)
+              </span>
+              <span
+                style={{
+                  background: 'rgba(118, 185, 0, 0.15)',
+                  color: '#76B900',
+                  border: '1px solid rgba(118, 185, 0, 0.35)',
+                  padding: '2px 8px',
+                  borderRadius: '6px',
+                  fontSize: '0.72rem',
+                  fontWeight: 800,
+                  letterSpacing: '0.04em',
+                }}
+              >
+                NVIDIA NIM
+              </span>
             </div>
             <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-              Generate paket soal evaluasi (Kuis Harian, Ujian Tengah/Akhir Semester) otomatis berbasis modul kurikulum mapel terpilih.
+              Generate paket soal evaluasi (Kuis Harian, Ujian Tengah/Akhir Semester) otomatis dengan kecerdasan AI NVIDIA NIM berbasis materi kurikulum mapel terpilih.
             </div>
           </div>
         </div>
@@ -581,25 +597,25 @@ export default function CreateQuizPage() {
             gap: '8px',
             padding: '9px 18px',
             borderRadius: '10px',
-            background: 'rgba(245, 158, 11, 0.12)',
-            color: '#d97706',
+            background: 'rgba(118, 185, 0, 0.12)',
+            color: '#76B900',
             fontWeight: 800,
             fontSize: '0.84rem',
-            border: '1px solid rgba(245, 158, 11, 0.35)',
+            border: '1px solid rgba(118, 185, 0, 0.35)',
             cursor: 'pointer',
             transition: 'all 0.2s ease',
           }}
           onMouseEnter={e => {
-            e.currentTarget.style.background = '#d97706';
+            e.currentTarget.style.background = '#76B900';
             e.currentTarget.style.color = '#FFFFFF';
           }}
           onMouseLeave={e => {
-            e.currentTarget.style.background = 'rgba(245, 158, 11, 0.12)';
-            e.currentTarget.style.color = '#d97706';
+            e.currentTarget.style.background = 'rgba(118, 185, 0, 0.12)';
+            e.currentTarget.style.color = '#76B900';
           }}
         >
           <Sparkles size={16} />
-          <span>✨ Generate Kuis / Ujian Otomatis</span>
+          <span>✨ Generate Kuis / Ujian (AI NVIDIA)</span>
         </button>
       </div>
 

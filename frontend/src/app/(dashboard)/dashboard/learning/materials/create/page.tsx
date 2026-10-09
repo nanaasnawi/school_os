@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { listTeachers, listClasses } from '@/lib/sdk/sdk.gen';
 import { getApiUrl } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
-import { useLibraryBooks, useSubjects, LibraryBook } from '@/features/material';
+import { useLibraryBooks, useSubjects, LibraryBook, InfographicMagazineViewer, resolveSafeImageUrl } from '@/features/material';
 import {
   FileText,
   Video,
@@ -191,12 +191,40 @@ export default function CreateMaterialPage() {
 
   const handleAiGenerated = (data: any) => {
     if (aiModalMode === 'INFOGRAPHIC') {
+      const genTitle = data.title || title;
       if (data.title) setTitle(data.title);
       if (data.description) setDescription(data.description);
       if (data.blocks && data.blocks.length > 0) {
-        setInfographicBlocks(data.blocks);
+        const topicHint = (genTitle || 'materi edukasi visual').trim();
+        const normalized = data.blocks.map((b: any, idx: number) => {
+          const rawType = (b.type || b.block_type || 'TEXT').toUpperCase();
+          const type = rawType === 'IMAGE' ? 'IMAGE' : 'TEXT';
+          let blkContent = (b.content || '').trim();
+
+          if (type === 'IMAGE') {
+            blkContent = resolveSafeImageUrl(blkContent, idx, topicHint);
+          }
+
+          return {
+            id: b.id || `block-${idx + 1}-${Date.now()}`,
+            type,
+            content: blkContent,
+          };
+        });
+
+        // Ensure there is a hero cover at top
+        if (normalized.length > 0 && normalized[0].type !== 'IMAGE') {
+          normalized.unshift({
+            id: `hero-cover-${Date.now()}`,
+            type: 'IMAGE',
+            content: resolveSafeImageUrl('', 0, topicHint),
+          });
+        }
+
+        setInfographicBlocks(normalized);
+        setInfographicTab('PREVIEW');
       }
-      showToast('✨ Infografis materi berhasil dibuat otomatis oleh AI NVIDIA!', 'success');
+      showToast('✨ Majalah infografis edukasi berhasil disusun otomatis oleh AI!', 'success');
     } else if (aiModalMode === 'ARTICLE') {
       if (data.title) setTitle(data.title);
       if (data.description) setDescription(data.description);
@@ -431,6 +459,13 @@ export default function CreateMaterialPage() {
 
   const updateInfographicBlock = (id: string, content: string) => {
     setInfographicBlocks(prev => prev.map(b => b.id === id ? { ...b, content } : b));
+  };
+
+  const handleGenerateBlockImage = (blockId: string, customPrompt?: string) => {
+    const seed = (customPrompt || title || 'materi edukasi visual').trim();
+    const newUrl = resolveSafeImageUrl(seed, 0, title);
+    updateInfographicBlock(blockId, newUrl);
+    showToast('✨ Ilustrasi gambar visual berhasil di-generate AI!', 'success');
   };
 
   const removeInfographicBlock = (id: string) => {
@@ -1532,17 +1567,33 @@ export default function CreateMaterialPage() {
                         </div>
                       </div>
 
-                      {block.type === 'IMAGE' ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
-                          <div style={{ display: 'flex', gap: '0.45rem' }}>
+                      {((block.type || (block as any).block_type) === 'IMAGE') ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
+                          <div style={{ display: 'flex', gap: '0.45rem', flexWrap: 'wrap' }}>
                             <input
                               type="url"
-                              placeholder="Tempelkan URL Gambar Infografis (https://...)..."
+                              placeholder="URL Gambar Visual (https://...) atau Tulis Deskripsi Ide Ilustrasi..."
                               value={block.content}
                               onChange={e => updateInfographicBlock(block.id, e.target.value)}
                               className={styles.inputField}
-                              style={{ flex: 1 }}
+                              style={{ flex: 1, minWidth: '220px' }}
                             />
+                            <button
+                              type="button"
+                              onClick={() => handleGenerateBlockImage(block.id, block.content)}
+                              className={`${styles.btnSecondary} ${styles.btnSm}`}
+                              style={{
+                                background: 'rgba(124, 58, 237, 0.1)',
+                                borderColor: 'rgba(124, 58, 237, 0.35)',
+                                color: '#7c3aed',
+                                fontWeight: 700,
+                                whiteSpace: 'nowrap'
+                              }}
+                              title="Buat atau perbarui gambar dengan AI"
+                            >
+                              <Sparkles size={11} />
+                              <span>AI Buat Gambar</span>
+                            </button>
                             <button
                               type="button"
                               onClick={() => handlePasteClipboardToBlock(block.id)}
@@ -1556,20 +1607,23 @@ export default function CreateMaterialPage() {
 
                           {block.content && (
                             <div style={{
-                              maxHeight: '180px',
+                              maxHeight: '220px',
                               overflow: 'hidden',
-                              borderRadius: '8px',
+                              borderRadius: '10px',
                               border: '1px solid var(--border-light)',
-                              background: '#000',
+                              background: '#090d16',
                               display: 'flex',
                               alignItems: 'center',
-                              justifyContent: 'center'
+                              justifyContent: 'center',
+                              position: 'relative'
                             }}>
                               <img
-                                src={block.content}
-                                alt="Preview Infografis"
-                                style={{ maxHeight: '180px', width: 'auto', maxWidth: '100%', objectFit: 'contain' }}
-                                onError={(e) => { (e.target as any).style.display = 'none'; }}
+                                src={resolveSafeImageUrl(block.content, index, title)}
+                                alt={`Ilustrasi #${index + 1}`}
+                                style={{ maxHeight: '220px', width: 'auto', maxWidth: '100%', objectFit: 'contain' }}
+                                onError={(e) => {
+                                  (e.target as any).src = 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=800&q=80';
+                                }}
                               />
                             </div>
                           )}
@@ -1619,61 +1673,15 @@ export default function CreateMaterialPage() {
                   </div>
                 </div>
               ) : (
-                /* TAB 2: LIVE CANVAS PREVIEW */
-                <div style={{
-                  background: 'var(--bg-elevated)',
-                  border: '1px solid var(--border-light)',
-                  borderRadius: '9px',
-                  padding: '1rem',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '0.85rem'
-                }}>
-                  <div style={{ textAlign: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '0.55rem' }}>
-                    <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#7c3aed', textTransform: 'uppercase' }}>
-                      Pratinjau Lembar Interaktif Siswa
-                    </span>
-                    <h3 style={{ margin: '0.2rem 0 0 0', fontSize: '0.98rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                      {title || 'Judul Modul Infografis'}
-                    </h3>
-                  </div>
-
-                  {infographicBlocks.map((block) => (
-                    <div key={block.id}>
-                      {block.type === 'IMAGE' && block.content && (
-                        <div style={{
-                          borderRadius: '8px',
-                          overflow: 'hidden',
-                          border: '1px solid var(--border-light)',
-                          background: '#000',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center'
-                        }}>
-                          <img
-                            src={block.content}
-                            alt=""
-                            style={{ width: '100%', maxHeight: '360px', objectFit: 'contain' }}
-                          />
-                        </div>
-                      )}
-                      {block.type === 'TEXT' && block.content && (
-                        <div style={{
-                          background: 'var(--bg-card)',
-                          borderRadius: '8px',
-                          padding: '0.75rem',
-                          border: '1px solid var(--border-light)',
-                          fontSize: '0.8rem',
-                          lineHeight: 1.55,
-                          color: 'var(--text-primary)',
-                          marginTop: '0.35rem'
-                        }}>
-                          {block.content}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
+                /* TAB 2: LIVE CANVAS PREVIEW (MAGAZINE & INFOGRAPHIC) */
+                <InfographicMagazineViewer
+                  title={title || 'Judul Modul Infografis'}
+                  subtitle={description || 'Ringkasan visual materi pembelajaran interaktif'}
+                  subjectName={subject || 'Mata Pelajaran'}
+                  className={targetGrade || 'Paket A 4'}
+                  author={author || 'Guru Pengampu'}
+                  blocks={infographicBlocks}
+                />
               )}
             </div>
           )}
