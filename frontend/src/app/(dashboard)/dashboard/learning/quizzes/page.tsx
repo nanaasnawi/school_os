@@ -19,6 +19,8 @@ type QuizItem = {
   participants: number;
   maxParticipants: number;
   avgScore: number;
+  examMode?: string;
+  examToken?: string | null;
 };
 
 type StudentCbtScore = {
@@ -210,6 +212,8 @@ export default function QuizzesPage() {
             participants: 0,
             maxParticipants: 28,
             avgScore: 0,
+            examMode: String(q.exam_mode || 'HOMEWORK_QUIZ'),
+            examToken: q.exam_token ? String(q.exam_token) : null,
           }));
           setQuizzes(mapped);
         }
@@ -780,8 +784,37 @@ export default function QuizzesPage() {
                           >
                             <span>{q.title}</span>
                           </div>
-                          <div className="itemSubtitleCheck">
-                            <span>✓ Android CBT Ready</span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px', flexWrap: 'wrap' }}>
+                            <span style={{ fontSize: '0.68rem', fontWeight: 800, color: q.examMode === 'PROCTORED_CBT' ? '#b91c1c' : '#6d28d9', background: q.examMode === 'PROCTORED_CBT' ? '#fef2f2' : '#f5f3ff', border: q.examMode === 'PROCTORED_CBT' ? '1px solid #fecaca' : '1px solid #ddd6fe', padding: '1px 6px', borderRadius: '4px' }}>
+                              {q.examMode === 'PROCTORED_CBT' ? '🛡️ Proctored CBT' : '✓ Android CBT Ready'}
+                            </span>
+                            {q.examToken ? (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigator.clipboard.writeText(q.examToken || '');
+                                  showToast(`✓ Token ujian "${q.examToken}" disalin ke clipboard!`);
+                                }}
+                                title="Klik untuk salin token ujian CBT"
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '3px',
+                                  fontSize: '0.68rem',
+                                  fontWeight: 800,
+                                  color: '#1e40af',
+                                  background: '#eff6ff',
+                                  border: '1px solid #bfdbfe',
+                                  padding: '1px 6px',
+                                  borderRadius: '4px',
+                                  cursor: 'pointer',
+                                }}
+                              >
+                                <span>🔑 {q.examToken}</span>
+                                <span style={{ fontSize: '0.62rem', opacity: 0.7 }}>📋 Salin</span>
+                              </button>
+                            ) : null}
                           </div>
                         </td>
                         <td>

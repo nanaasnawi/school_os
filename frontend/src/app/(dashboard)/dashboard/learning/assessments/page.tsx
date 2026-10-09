@@ -6,6 +6,7 @@ import Link from 'next/link';
 import styles from './assessments.module.css';
 import { listStudents, listClasses } from '@/lib/sdk/sdk.gen';
 import { exportToExcel } from '@/lib/exportExcel';
+import { getApiUrl } from '@/lib/api';
 
 type SubjectGrade = {
   subjectName: string;
@@ -83,7 +84,7 @@ export default function AssessmentsPage() {
         const [studentRes, classRes, subjectRes] = await Promise.all([
           listStudents({ query: { page_size: 200 } }).catch(() => null),
           listClasses({ query: { page_size: 100 } }).catch(() => null),
-          fetch('/api/v1/academic/subjects', {
+          fetch(getApiUrl('/api/v1/academic/subjects'), {
             headers: token ? { Authorization: `Bearer ${token}` } : {}
           }).then(r => r.ok ? r.json() : null).catch(() => null)
         ]);

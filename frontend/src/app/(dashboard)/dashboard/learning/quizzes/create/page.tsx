@@ -44,6 +44,17 @@ export default function CreateQuizPage() {
   const [endDate, setEndDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
   const [endTime, setEndTime] = useState<string>('12:00');
   const [description, setDescription] = useState('');
+  const [examMode, setExamMode] = useState<'HOMEWORK_QUIZ' | 'PROCTORED_CBT'>('HOMEWORK_QUIZ');
+  const [examToken, setExamToken] = useState<string>('');
+
+  const generateRandomToken = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let res = '';
+    for (let i = 0; i < 6; i++) {
+      res += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setExamToken(res);
+  };
 
   // Questions Builder State
   const [questions, setQuestions] = useState<QuizQuestionForm[]>([
@@ -287,6 +298,9 @@ export default function CreateQuizPage() {
         class_id: classRoom,
         start_at: startAtIso,
         end_at: endAtIso,
+        exam_mode: examMode,
+        exam_token: examMode === 'PROCTORED_CBT' && examToken.trim() ? examToken.trim().toUpperCase() : null,
+        max_token_attempts: 5,
       };
 
       const res = await fetch(getApiUrl('/api/v1/learning/quizzes'), {
@@ -774,6 +788,118 @@ export default function CreateQuizPage() {
               <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
                 ℹ️ Siswa di aplikasi Android hanya dapat memulai ujian dalam rentang tanggal dan jam yang ditentukan di atas.
               </div>
+            </div>
+
+            {/* Exam Mode & CBT Security Token */}
+            <div style={{
+              background: examMode === 'PROCTORED_CBT' ? 'rgba(220, 38, 38, 0.04)' : 'rgba(109, 40, 217, 0.04)',
+              border: `1px solid ${examMode === 'PROCTORED_CBT' ? 'rgba(220, 38, 38, 0.25)' : 'rgba(109, 40, 217, 0.2)'}`,
+              borderRadius: '12px',
+              padding: '0.9rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.75rem',
+              transition: 'all 0.2s ease',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <label style={{ fontSize: '0.8rem', fontWeight: 800, color: examMode === 'PROCTORED_CBT' ? '#991b1b' : '#5b21b6', margin: 0 }}>
+                  🛡️ Mode Ujian &amp; Keamanan CBT
+                </label>
+                <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)' }}>
+                  Anti-Cheat Protection
+                </span>
+              </div>
+
+              {/* Mode Selection Buttons */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                <button
+                  type="button"
+                  onClick={() => setExamMode('HOMEWORK_QUIZ')}
+                  style={{
+                    padding: '0.55rem 0.75rem',
+                    borderRadius: '8px',
+                    border: `1.5px solid ${examMode === 'HOMEWORK_QUIZ' ? '#6d28d9' : 'var(--border-light)'}`,
+                    background: examMode === 'HOMEWORK_QUIZ' ? 'rgba(109, 40, 217, 0.1)' : 'var(--bg-card)',
+                    color: examMode === 'HOMEWORK_QUIZ' ? '#6d28d9' : 'var(--text-secondary)',
+                    fontWeight: 700,
+                    fontSize: '0.76rem',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '2px',
+                  }}
+                >
+                  <span>🏠 Kuis &amp; PR Mandiri</span>
+                  <span style={{ fontSize: '0.66rem', fontWeight: 500, color: 'var(--text-muted)' }}>
+                    Bebas token, belajar fleksibel
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setExamMode('PROCTORED_CBT');
+                    if (!examToken) generateRandomToken();
+                  }}
+                  style={{
+                    padding: '0.55rem 0.75rem',
+                    borderRadius: '8px',
+                    border: `1.5px solid ${examMode === 'PROCTORED_CBT' ? '#dc2626' : 'var(--border-light)'}`,
+                    background: examMode === 'PROCTORED_CBT' ? 'rgba(220, 38, 38, 0.1)' : 'var(--bg-card)',
+                    color: examMode === 'PROCTORED_CBT' ? '#dc2626' : 'var(--text-secondary)',
+                    fontWeight: 700,
+                    fontSize: '0.76rem',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '2px',
+                  }}
+                >
+                  <span>🛡️ Ujian CBT Terproktor</span>
+                  <span style={{ fontSize: '0.66rem', fontWeight: 500, color: 'var(--text-muted)' }}>
+                    Wajib token &amp; kunci layar
+                  </span>
+                </button>
+              </div>
+
+              {examMode === 'PROCTORED_CBT' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', paddingTop: '0.25rem' }}>
+                  <label style={{ fontSize: '0.74rem', fontWeight: 700, color: '#991b1b', margin: 0 }}>
+                    Token Ujian CBT (Bagikan kepada Siswa di Ruang Ujian):
+                  </label>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <input
+                      type="text"
+                      maxLength={10}
+                      value={examToken}
+                      onChange={(e) => setExamToken(e.target.value.toUpperCase())}
+                      placeholder="Contoh: PAS2026"
+                      className="input"
+                      style={{
+                        letterSpacing: '2px',
+                        fontWeight: 800,
+                        textTransform: 'uppercase',
+                        fontSize: '0.9rem',
+                        color: '#991b1b',
+                        borderColor: '#fca5a5',
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={generateRandomToken}
+                      className="btn btn-secondary btn-sm"
+                      style={{ fontSize: '0.74rem', whiteSpace: 'nowrap', fontWeight: 700 }}
+                    >
+                      🎲 Acak Token
+                    </button>
+                  </div>
+                  <span style={{ fontSize: '0.68rem', color: '#b91c1c' }}>
+                    ⚠️ Perlindungan Keamanan: Siswa dibatasi maksimal 5 kali percobaan token sebelum akses ujian terkunci selama 15 menit.
+                  </span>
+                </div>
+              )}
             </div>
 
             <div>

@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { getApiUrl } from '@/lib/api';
 import styles from './learning.module.css';
 import {
   Calendar,
@@ -20,6 +21,9 @@ import {
   Info,
   Check,
   X,
+  KeyRound,
+  Lock,
+  AlertTriangle,
 } from 'lucide-react';
 
 interface LearningSessionDto {
@@ -93,7 +97,9 @@ interface QuizItemDto {
   description?: string | null;
   duration_minutes: number;
   time_limit_minutes?: number;
+  exam_mode?: string | null;
   exam_token?: string | null;
+  max_token_attempts?: number | null;
   class_name?: string | null;
   subject_name?: string | null;
   status: string;
@@ -168,6 +174,12 @@ function LearningPortalContent() {
   const [cancelReason, setCancelReason] = useState<string>('');
   const [isSubmittingAction, setIsSubmittingAction] = useState<boolean>(false);
 
+  // ── CBT Exam Token Verification Modal State ──
+  const [activeTokenQuiz, setActiveTokenQuiz] = useState<QuizItemDto | null>(null);
+  const [tokenInput, setTokenInput] = useState('');
+  const [isVerifyingToken, setIsVerifyingToken] = useState(false);
+  const [tokenError, setTokenError] = useState<string | null>(null);
+
   // ── Toast Trigger ──
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -189,25 +201,25 @@ function LearningPortalContent() {
         complianceRes,
         classesRes,
       ] = await Promise.all([
-        fetch('/api/v1/learning/sessions', { headers }).then((r) =>
+        fetch(getApiUrl('/api/v1/learning/sessions'), { headers }).then((r) =>
           r.ok ? r.json() : null
         ),
-        fetch('/api/v1/academic/schedules', { headers }).then((r) =>
+        fetch(getApiUrl('/api/v1/academic/schedules'), { headers }).then((r) =>
           r.ok ? r.json() : null
         ),
-        fetch('/api/v1/learning/materials', { headers }).then((r) =>
+        fetch(getApiUrl('/api/v1/learning/materials'), { headers }).then((r) =>
           r.ok ? r.json() : null
         ),
-        fetch('/api/v1/learning/assignments', { headers }).then((r) =>
+        fetch(getApiUrl('/api/v1/learning/assignments'), { headers }).then((r) =>
           r.ok ? r.json() : null
         ),
-        fetch('/api/v1/learning/quizzes', { headers }).then((r) =>
+        fetch(getApiUrl('/api/v1/learning/quizzes'), { headers }).then((r) =>
           r.ok ? r.json() : null
         ),
-        fetch('/api/v1/analytics/schedule-compliance', { headers }).then((r) =>
+        fetch(getApiUrl('/api/v1/analytics/schedule-compliance'), { headers }).then((r) =>
           r.ok ? r.json() : null
         ),
-        fetch('/api/v1/academic/classes?page_size=200', { headers }).then((r) =>
+        fetch(getApiUrl('/api/v1/academic/classes?page_size=200'), { headers }).then((r) =>
           r.ok ? r.json() : null
         ),
       ]);
@@ -257,7 +269,7 @@ function LearningPortalContent() {
       const headers = getAuthHeaders();
       const todayDate = now.toISOString().split('T')[0];
 
-      const res = await fetch('/api/v1/learning/sessions', {
+      const res = await fetch(getApiUrl('/api/v1/learning/sessions'), {
         method: 'POST',
         headers,
         body: JSON.stringify({
@@ -294,7 +306,7 @@ function LearningPortalContent() {
     try {
       setIsSubmittingAction(true);
       const headers = getAuthHeaders();
-      const res = await fetch(`/api/v1/learning/sessions/${sessionId}/end`, {
+      const res = await fetch(getApiUrl(`/api/v1/learning/sessions/${sessionId}/end`), {
         method: 'POST',
         headers,
       });
@@ -322,7 +334,7 @@ function LearningPortalContent() {
       setIsSubmittingAction(true);
       const headers = getAuthHeaders();
       const res = await fetch(
-        `/api/v1/learning/sessions/${cancellingSessionId}/cancel`,
+        getApiUrl(`/api/v1/learning/sessions/${cancellingSessionId}/cancel`),
         {
           method: 'POST',
           headers,
@@ -342,6 +354,46 @@ function LearningPortalContent() {
       showToast('Gagal membatalkan sesi.');
     } finally {
       setIsSubmittingAction(false);
+    }
+  };
+
+  // ── Verify CBT Exam Token ──
+  const handleVerifyToken = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeTokenQuiz) return;
+    if (!tokenInput.trim()) {
+      setTokenError('Mohon masukkan token ujian CBT.');
+      return;
+    }
+    try {
+      setIsVerifyingToken(true);
+      setTokenError(null);
+      const headers = getAuthHeaders();
+      const res = await fetch(
+        getApiUrl(`/api/v1/learning/quizzes/${activeTokenQuiz.id}/verify-token`),
+        {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ token: tokenInput.trim().toUpperCase() }),
+        }
+      );
+      const json = await res.json().catch(() => null);
+      if (res.ok && json?.data?.valid) {
+        showToast('✓ Token ujian CBT terverifikasi valid! Mengarahkan...');
+        setActiveTokenQuiz(null);
+        setTokenInput('');
+        window.location.href = `/dashboard/learning/quizzes`;
+      } else {
+        const msg =
+          json?.error?.message ||
+          json?.data?.message ||
+          'Token ujian salah. Pastikan kode huruf kapital sesuai pengumuman pengawas ujian.';
+        setTokenError(msg);
+      }
+    } catch {
+      setTokenError('Terjadi kendala jaringan saat memverifikasi token ujian.');
+    } finally {
+      setIsVerifyingToken(false);
     }
   };
 
@@ -1161,13 +1213,14 @@ function LearningPortalContent() {
                     style={{
                       fontSize: '0.72rem',
                       fontWeight: 800,
-                      color: '#6d28d9',
-                      background: '#f5f3ff',
+                      color: q.exam_mode === 'PROCTORED_CBT' ? '#b91c1c' : '#6d28d9',
+                      background: q.exam_mode === 'PROCTORED_CBT' ? '#fef2f2' : '#f5f3ff',
+                      border: q.exam_mode === 'PROCTORED_CBT' ? '1px solid #fecaca' : 'none',
                       padding: '2px 8px',
                       borderRadius: '6px',
                     }}
                   >
-                    CBT ONLINE
+                    {q.exam_mode === 'PROCTORED_CBT' ? '🛡️ PROCTORED CBT' : 'CBT ONLINE'}
                   </span>
                   <span style={{ fontSize: '0.72rem', color: '#6d28d9', fontWeight: 700 }}>
                     ⏱️ {q.duration_minutes || q.time_limit_minutes || 30} Menit
@@ -1189,13 +1242,28 @@ function LearningPortalContent() {
                   <span style={{ fontSize: '0.74rem', color: '#64748b' }}>
                     Token: <strong>{q.exam_token ? 'Dilindungi Token' : 'Tanpa Token'}</strong>
                   </span>
-                  <Link
-                    href={`/dashboard/learning/quizzes`}
-                    className="btn btn-secondary btn-sm"
-                    style={{ fontSize: '0.74rem' }}
-                  >
-                    Ruang Ujian &rarr;
-                  </Link>
+                  {q.exam_token || q.exam_mode === 'PROCTORED_CBT' ? (
+                    <button
+                      onClick={() => {
+                        setActiveTokenQuiz(q);
+                        setTokenInput('');
+                        setTokenError(null);
+                      }}
+                      className="btn btn-primary btn-sm"
+                      style={{ fontSize: '0.74rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                    >
+                      <KeyRound size={12} />
+                      <span>Masuk CBT</span>
+                    </button>
+                  ) : (
+                    <Link
+                      href={`/dashboard/learning/quizzes`}
+                      className="btn btn-secondary btn-sm"
+                      style={{ fontSize: '0.74rem' }}
+                    >
+                      Ruang Ujian &rarr;
+                    </Link>
+                  )}
                 </div>
               </div>
             ))}
@@ -1314,6 +1382,118 @@ function LearningPortalContent() {
                 Konfirmasi Pembatalan
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── CBT Exam Token Verification Modal ── */}
+      {activeTokenQuiz && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalContent} style={{ maxWidth: '440px' }}>
+            <div className={styles.modalHeader}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Lock size={18} style={{ color: '#dc2626' }} />
+                <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 800 }}>
+                  Verifikasi Token Ujian CBT
+                </h4>
+              </div>
+              <button
+                onClick={() => {
+                  setActiveTokenQuiz(null);
+                  setTokenInput('');
+                  setTokenError(null);
+                }}
+                className={styles.closeBtn}
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <form onSubmit={handleVerifyToken}>
+              <div className={styles.modalBody} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div style={{ background: '#f8fafc', padding: '0.75rem', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+                  <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#1e293b' }}>
+                    {activeTokenQuiz.title}
+                  </div>
+                  <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '2px' }}>
+                    {activeTokenQuiz.class_name || 'Rombel'} • {activeTokenQuiz.subject_name || 'Mata Pelajaran'} • {activeTokenQuiz.duration_minutes || 45} Menit
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                  <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#334155' }}>
+                    Masukkan Token Ujian (Dari Pengawas / Proktor):
+                  </label>
+                  <input
+                    type="text"
+                    value={tokenInput}
+                    onChange={(e) => {
+                      setTokenInput(e.target.value.toUpperCase());
+                      setTokenError(null);
+                    }}
+                    placeholder="Contoh: CBT01 / PAS2026"
+                    className="input"
+                    maxLength={10}
+                    autoFocus
+                    style={{
+                      letterSpacing: '3px',
+                      textTransform: 'uppercase',
+                      fontWeight: 800,
+                      fontSize: '1.1rem',
+                      textAlign: 'center',
+                      padding: '0.6rem',
+                    }}
+                  />
+                  <span style={{ fontSize: '0.72rem', color: '#64748b' }}>
+                    ⚠️ Perlindungan Keamanan: 5 kali salah input berturut-turut akan mengunci akses ujian selama 15 menit.
+                  </span>
+                </div>
+
+                {tokenError && (
+                  <div
+                    style={{
+                      background: '#fef2f2',
+                      border: '1px solid #fecaca',
+                      color: '#b91c1c',
+                      padding: '0.6rem 0.8rem',
+                      borderRadius: '8px',
+                      fontSize: '0.78rem',
+                      fontWeight: 600,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                    }}
+                  >
+                    <AlertTriangle size={14} />
+                    <span>{tokenError}</span>
+                  </div>
+                )}
+              </div>
+              <div className={styles.modalFooter}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTokenQuiz(null);
+                    setTokenInput('');
+                    setTokenError(null);
+                  }}
+                  className="btn btn-ghost btn-sm"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={isVerifyingToken || !tokenInput.trim()}
+                  className="btn btn-primary btn-sm"
+                  style={{
+                    background: '#6d28d9',
+                    borderColor: '#6d28d9',
+                    fontWeight: 700,
+                  }}
+                >
+                  {isVerifyingToken ? 'Memverifikasi...' : 'Verifikasi & Mulai Ujian →'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
