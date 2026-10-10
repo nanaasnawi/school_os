@@ -7,6 +7,7 @@ export function middleware(request: NextRequest) {
   if (pathname.startsWith('/api/v1')) {
     // Bypass proxy rewriting for local Next.js App Router API routes
     if (
+      pathname.startsWith('/api/v1/ai/generate-content') ||
       pathname.startsWith('/api/v1/learning/auto-generate') ||
       pathname.startsWith('/api/v1/dapodik') ||
       pathname.startsWith('/api/v1/gamification') ||

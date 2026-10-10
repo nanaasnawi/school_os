@@ -202,17 +202,48 @@ Output HANYA JSON tanpa teks lain.`;
       const raw = await callNvidiaNim([
         { role: 'system', content: 'You are an expert Indonesian teacher creating educational articles in strict JSON.' },
         { role: 'user', content: prompt }
-      ], 2500);
+      ], 4000);
 
-      const parsed = JSON.parse(extractCleanJson(raw));
+      let parsed: any = null;
+      try {
+        parsed = JSON.parse(extractCleanJson(raw));
+      } catch (parseErr) {
+        // Coba perbaiki unclosed string & object jika terpotong
+        try {
+          const repaired = extractCleanJson(raw) + '"}';
+          parsed = JSON.parse(repaired);
+        } catch {
+          // Manual fallback extraction
+          const titleMatch = raw.match(/"title"\s*:\s*"([^"]+)"/);
+          const descMatch = raw.match(/"description"\s*:\s*"([^"]+)"/);
+          const articleIdx = raw.indexOf('"markdown_article"');
+          let content = raw;
+          if (articleIdx !== -1) {
+            const afterKey = raw.slice(articleIdx + 18);
+            const quoteStart = afterKey.indexOf('"');
+            if (quoteStart !== -1) {
+              content = afterKey.slice(quoteStart + 1);
+              const lastQuote = content.lastIndexOf('"');
+              if (lastQuote > 0) content = content.slice(0, lastQuote);
+              content = content.replace(/\\n/g, '\n').replace(/\\"/g, '"');
+            }
+          }
+          parsed = {
+            title: titleMatch ? titleMatch[1] : cleanTopic,
+            description: descMatch ? descMatch[1] : `Artikel pembelajaran ${cleanSubject}`,
+            markdown_article: content
+          };
+        }
+      }
+
       return NextResponse.json({
         success: true,
         data: {
           mode: 'ARTICLE',
           article: {
-            title: parsed.title || cleanTopic,
-            description: parsed.description || `Artikel pembelajaran ${cleanSubject}`,
-            article_content: parsed.markdown_article || ''
+            title: parsed?.title || cleanTopic,
+            description: parsed?.description || `Artikel pembelajaran ${cleanSubject}`,
+            article_content: parsed?.markdown_article || ''
           }
         }
       });
