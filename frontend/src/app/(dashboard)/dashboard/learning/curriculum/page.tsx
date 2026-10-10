@@ -12,7 +12,6 @@ import {
   Calendar,
   Clock,
   Edit3,
-  Send,
   RefreshCw,
   Info,
   ShieldCheck,
@@ -62,6 +61,7 @@ interface TpItem {
   pancasila_profiles: string[];
   evidence_indicators: string[];
   estimated_hours: number;
+  allocated_hours?: number;
   publication_status: 'DRAFT' | 'REVIEWED' | 'PUBLISHED' | 'ARCHIVED';
   version: number;
   semester?: 'ODD' | 'EVEN';
@@ -130,7 +130,7 @@ export default function CurriculumWorkstationPage() {
       setIsLoadingRegistry(true);
       try {
         const res = await fetch(
-          `/api/v1/learning/pedagogy/cp?phase=${phase}&subject=${encodeURIComponent(activeSubject.name)}`
+          `/api/v1/learning/pedagogy/cp?phase=${phase}&subject=${encodeURIComponent(activeSubject.name)}&verification=ALL`
         );
         const json = await res.json();
         if (json.success && json.data) {
@@ -325,298 +325,438 @@ export default function CurriculumWorkstationPage() {
     ...(atpMatrix?.even_semester.items || []),
   ];
 
+  const totalPlannedHours = allItems.reduce(
+    (sum, item) => sum + (parseInt(item.allocated_hours || item.estimated_hours, 10) || 0),
+    0
+  );
+
+  const publishedCount = allItems.filter((t) => t.publication_status === 'PUBLISHED').length;
+
   return (
     <div className={styles.container}>
-      {/* ── Breadcrumb ── */}
+      {/* ── 1. Breadcrumb ── */}
       <nav className={styles.breadcrumb}>
         <Link href="/dashboard">Dashboard</Link>
-        <ChevronRight size={14} />
-        <span>Workstation Guru</span>
-        <ChevronRight size={14} />
-        <span>Kurikulum Merdeka (CP, TP & ATP)</span>
+        <ChevronRight size={13} />
+        <Link href="/dashboard/teacher">Workstation Guru</Link>
+        <ChevronRight size={13} />
+        <span className={styles.breadcrumbCurrent}>Kurikulum Merdeka (CP, TP & ATP)</span>
       </nav>
 
-      {/* ── Toast Alert ── */}
+      {/* ── 2. Toast Alert ── */}
       {toastMessage && (
         <div
           className={`${styles.toast} ${
             toastMessage.type === 'success' ? styles.toastSuccess : styles.toastError
           }`}
         >
-          {toastMessage.type === 'success' ? <CheckCircle2 size={18} /> : <AlertTriangle size={18} />}
+          {toastMessage.type === 'success' ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
           <span>{toastMessage.text}</span>
         </div>
       )}
 
-      {/* ── Hero Banner ── */}
-      <section className={styles.heroBanner}>
-        <div className={styles.heroLeft}>
-          <div className={styles.heroIconWrapper}>
-            <Compass size={28} />
+      {/* ── 3. Executive Workspace Header ── */}
+      <header className={styles.header}>
+        <div className={styles.headerLeft}>
+          <div className={styles.headerIconBadge}>
+            <Compass size={22} />
           </div>
-          <div>
-            <h1 className={styles.heroTitle}>Ekosistem Pedagogis Kurikulum Merdeka</h1>
-            <p className={styles.heroSubtitle}>
-              Registry resmi Capaian Pembelajaran (CP), dekonstruksi TP cerdas dengan AI NVIDIA NIM, dan sinkronisasi
-              Alur Tujuan Pembelajaran (ATP) dengan Kalender Pendidikan (Kaldik).
+          <div className={styles.headerTitleArea}>
+            <div className={styles.workspaceTag}>
+              <span className={styles.pulseGreen} />
+              <span>Teacher Workstation • BSKAP 033/H/KR/2024</span>
+            </div>
+            <h1 className={styles.pageTitle}>Kurikulum Merdeka (CP, TP & ATP)</h1>
+            <p className={styles.pageSubtitle}>
+              Registry resmi Capaian Pembelajaran, dekonstruksi AI NVIDIA NIM, dan sinkronisasi Kalender Pendidikan.
             </p>
           </div>
         </div>
 
-        <div className={styles.heroActions}>
+        <div className={styles.headerActions}>
+          <Link href="/dashboard/teacher/calendar" className={styles.actionBtnSecondary}>
+            <Calendar size={13} />
+            <span>Kalender Kaldik</span>
+          </Link>
+
           <button
-            className={`${styles.btn} ${styles.btnAi}`}
+            className={styles.actionBtnAi}
             onClick={() => handleSynthesizeAi(false)}
             disabled={!selectedCp?.is_eligible_source || isSynthesizing}
+            title={!selectedCp?.is_eligible_source ? 'Pilih CP resmi terverifikasi terlebih dahulu' : 'Dekonstruksi CP menjadi TP dengan AI'}
           >
-            {isSynthesizing ? <RefreshCw size={18} className="animate-spin" /> : <Sparkles size={18} />}
-            {isSynthesizing ? 'Mendekonstruksi via AI...' : 'Sintesis TP & ATP (AI)'}
+            {isSynthesizing ? <RefreshCw size={13} className="animate-spin" /> : <Sparkles size={13} />}
+            <span>{isSynthesizing ? 'Mendekonstruksi...' : 'Sintesis TP & ATP (AI)'}</span>
           </button>
 
           {allItems.length > 0 && (
             <button
-              className={`${styles.btn} ${styles.btnSuccess}`}
+              className={styles.actionBtnSuccess}
               onClick={handlePublishAll}
               disabled={isPublishing}
             >
-              <FileCheck size={18} />
-              {isPublishing ? 'Menerbitkan...' : 'Publikasikan Perangkat'}
+              <FileCheck size={13} />
+              <span>{isPublishing ? 'Menerbitkan...' : 'Publikasikan Perangkat'}</span>
             </button>
           )}
         </div>
-      </section>
+      </header>
 
-      {/* ── Filter Bar ── */}
-      <section className={styles.filterBar}>
-        <div className={styles.filterGroup}>
-          <label className={styles.formLabel}>Jenjang / Fase:</label>
-          <select
-            className={styles.selectInput}
-            value={phase}
-            onChange={(e) => setPhase(e.target.value)}
-          >
-            {PHASES.map((p) => (
-              <option key={p.value} value={p.value}>
-                {p.label}
-              </option>
-            ))}
-          </select>
+      {/* ── 4. Unified Workstation Scope & Filter Toolbar ── */}
+      <section className={styles.workstationToolbar}>
+        <div className={styles.toolbarFilterGroup}>
+          <div className={styles.filterIconPill}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+            </svg>
+          </div>
 
-          <label className={styles.formLabel}>Mata Pelajaran:</label>
-          <select
-            className={styles.selectInput}
-            value={subjectCode}
-            onChange={(e) => setSubjectCode(e.target.value)}
-          >
-            {STANDARD_SUBJECTS.map((s) => (
-              <option key={s.code} value={s.code}>
-                {s.name}
-              </option>
-            ))}
-          </select>
+          <div className={styles.filterFieldItem}>
+            <label htmlFor="select-phase" className={styles.filterTitle}>Jenjang / Fase:</label>
+            <select
+              id="select-phase"
+              className={styles.toolbarSelect}
+              value={phase}
+              onChange={(e) => setPhase(e.target.value)}
+            >
+              {PHASES.map((p) => (
+                <option key={p.value} value={p.value}>
+                  {p.label}
+                </option>
+              ))}
+            </select>
+          </div>
 
-          <label className={styles.formLabel}>Kelas Target:</label>
-          <select
-            className={styles.selectInput}
-            value={gradeLevel}
-            onChange={(e) => setGradeLevel(e.target.value)}
-          >
-            <option value="Kelas 1 SD">Kelas 1 SD</option>
-            <option value="Kelas 2 SD">Kelas 2 SD</option>
-            <option value="Kelas 3 SD">Kelas 3 SD</option>
-            <option value="Kelas 4 SD">Kelas 4 SD</option>
-            <option value="Kelas 5 SD">Kelas 5 SD</option>
-            <option value="Kelas 6 SD">Kelas 6 SD</option>
-            <option value="Kelas 7 SMP">Kelas 7 SMP</option>
-            <option value="Kelas 8 SMP">Kelas 8 SMP</option>
-            <option value="Kelas 9 SMP">Kelas 9 SMP</option>
-            <option value="Kelas 10 SMA">Kelas 10 SMA</option>
-            <option value="Kelas 11 SMA">Kelas 11 SMA</option>
-            <option value="Kelas 12 SMA">Kelas 12 SMA</option>
-          </select>
+          <div className={styles.filterFieldItem}>
+            <label htmlFor="select-subject" className={styles.filterTitle}>Mata Pelajaran:</label>
+            <select
+              id="select-subject"
+              className={styles.toolbarSelect}
+              value={subjectCode}
+              onChange={(e) => setSubjectCode(e.target.value)}
+            >
+              {STANDARD_SUBJECTS.map((s) => (
+                <option key={s.code} value={s.code}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className={styles.filterFieldItem}>
+            <label htmlFor="select-grade" className={styles.filterTitle}>Kelas Target:</label>
+            <select
+              id="select-grade"
+              className={styles.toolbarSelect}
+              value={gradeLevel}
+              onChange={(e) => setGradeLevel(e.target.value)}
+            >
+              <option value="Kelas 1 SD">Kelas 1 SD</option>
+              <option value="Kelas 2 SD">Kelas 2 SD</option>
+              <option value="Kelas 3 SD">Kelas 3 SD</option>
+              <option value="Kelas 4 SD">Kelas 4 SD</option>
+              <option value="Kelas 5 SD">Kelas 5 SD</option>
+              <option value="Kelas 6 SD">Kelas 6 SD</option>
+              <option value="Kelas 7 SMP">Kelas 7 SMP</option>
+              <option value="Kelas 8 SMP">Kelas 8 SMP</option>
+              <option value="Kelas 9 SMP">Kelas 9 SMP</option>
+              <option value="Kelas 10 SMA">Kelas 10 SMA</option>
+              <option value="Kelas 11 SMA">Kelas 11 SMA</option>
+              <option value="Kelas 12 SMA">Kelas 12 SMA</option>
+            </select>
+          </div>
         </div>
 
-        <div className={styles.filterGroup}>
-          <span className={styles.badge} style={{ background: '#0284c7', color: '#fff' }}>
-            Tahun Ajaran: {academicYear}
-          </span>
+        <div className={styles.academicYearBadge}>
+          <Calendar size={13} />
+          <span>Tahun Ajaran: {academicYear}</span>
         </div>
       </section>
 
-      {/* ── CP Source Registry Status Banner ── */}
+      {/* ── 5. CP Source Registry Status Callout Banner ── */}
       {selectedCp ? (
         <section
-          className={`${styles.registryBanner} ${
+          className={`${styles.calloutBanner} ${
             selectedCp.verification_status === 'NATIONAL_VERIFIED'
-              ? styles.bannerVerified
+              ? styles.calloutBannerVerified
               : selectedCp.verification_status === 'SCHOOL_VERIFIED'
-              ? styles.bannerSchool
-              : styles.bannerDraft
+              ? styles.calloutBannerSchool
+              : styles.calloutBannerEmpty
           }`}
         >
-          <div className={styles.bannerContent}>
-            {selectedCp.is_eligible_source ? (
-              <ShieldCheck size={24} style={{ flexShrink: 0, marginTop: '2px' }} />
-            ) : (
-              <AlertTriangle size={24} style={{ flexShrink: 0, marginTop: '2px' }} />
-            )}
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.35rem' }}>
+          <div className={styles.calloutLeft}>
+            <div
+              className={`${styles.calloutIconPill} ${
+                selectedCp.verification_status === 'NATIONAL_VERIFIED'
+                  ? styles.calloutIconVerified
+                  : selectedCp.verification_status === 'SCHOOL_VERIFIED'
+                  ? styles.calloutIconSchool
+                  : styles.calloutIconEmpty
+              }`}
+            >
+              <ShieldCheck size={20} />
+            </div>
+            <div className={styles.calloutContent}>
+              <div className={styles.calloutHeaderRow}>
                 <span
-                  className={`${styles.badge} ${
+                  className={`${styles.calloutBadge} ${
                     selectedCp.verification_status === 'NATIONAL_VERIFIED'
-                      ? styles.badgeVerified
+                      ? styles.calloutBadgeVerified
                       : selectedCp.verification_status === 'SCHOOL_VERIFIED'
-                      ? styles.badgeSchool
-                      : styles.badgeDraft
+                      ? styles.calloutBadgeSchool
+                      : styles.calloutBadgeEmpty
                   }`}
                 >
                   {selectedCp.verification_status}
                 </span>
-                <strong style={{ fontSize: '0.92rem' }}>
+                <span className={styles.calloutTitle}>
                   {selectedCp.element_name} ({selectedCp.target_grades})
-                </strong>
+                </span>
               </div>
-              <p style={{ margin: 0, fontSize: '0.84rem', lineHeight: 1.45 }}>
-                {selectedCp.description}
-              </p>
-              <div style={{ marginTop: '0.45rem', fontSize: '0.78rem', opacity: 0.85 }}>
-                Sumber: {selectedCp.source_document || 'Dokumen Regulasi Kemendikdasmen'} ({selectedCp.source_version})
-                {selectedCp.document_page_ref ? ` • ${selectedCp.document_page_ref}` : ''}
-              </div>
+              <p className={styles.calloutDesc}>{selectedCp.description}</p>
+              <span className={styles.calloutMeta}>
+                Sumber: {selectedCp.source_document || 'Regulasi Kemendikdasmen BSKAP 033/H/KR/2024'} ({selectedCp.source_version})
+                {selectedCp.document_page_ref ? ` • Hal: ${selectedCp.document_page_ref}` : ''}
+              </span>
             </div>
           </div>
 
-          <div style={{ alignSelf: 'center' }}>
+          <div className={styles.calloutActions}>
             <button
-              className={`${styles.btn} ${styles.btnAi}`}
+              className={styles.actionBtnSecondary}
               onClick={() => handleSynthesizeAi(true)}
               disabled={!selectedCp.is_eligible_source || isSynthesizing}
-              title="Regenerasi akan membuat versi draf baru tanpa menimpa data yang telah dipublikasikan"
+              title="Regenerasi draf usulan TP tanpa merusak data terbitan"
             >
-              <RefreshCw size={15} />
-              Regenerasi Draf
+              <RefreshCw size={13} />
+              <span>Regenerasi Draf</span>
             </button>
           </div>
         </section>
       ) : (
-        <section className={`${styles.registryBanner} ${styles.bannerEmpty}`}>
-          <div className={styles.bannerContent}>
-            <AlertTriangle size={22} style={{ flexShrink: 0 }} />
-            <div>
-              <strong>Naskah Capaian Pembelajaran Belum Tersedia di Registry</strong>
-              <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.84rem' }}>
-                Belum ditemukan naskah CP resmi untuk {activeSubject.name} pada {phase}. Sesuai prinsip tata kelola data,
-                AI tidak diizinkan mengarang naskah CP sendiri. Silakan daftarkan dokumen KOSP resmi sekolah terlebih dahulu.
-              </p>
+        <section className={`${styles.calloutBanner} ${styles.calloutBannerEmpty}`}>
+          <div className={styles.calloutLeft}>
+            <div className={`${styles.calloutIconPill} ${styles.calloutIconEmpty}`}>
+              <AlertTriangle size={20} />
             </div>
+            <div className={styles.calloutContent}>
+              <div className={styles.calloutHeaderRow}>
+                <span className={`${styles.calloutBadge} ${styles.calloutBadgeEmpty}`}>
+                  REGISTRY STATUS: BELUM TERSEDIA
+                </span>
+                <span className={styles.calloutTitle}>
+                  Naskah Capaian Pembelajaran Belum Terdaftar di Registry
+                </span>
+              </div>
+              <p className={styles.calloutDesc}>
+                Belum ditemukan naskah CP terverifikasi untuk <strong>{activeSubject.name}</strong> pada <strong>{phase}</strong>. Sesuai prinsip tata kelola data Kemendikdasmen, AI tidak diperbolehkan mengarang rumusan CP mandiri.
+              </p>
+              <span className={styles.calloutMeta}>
+                Silakan pilih mata pelajaran lain yang telah terdaftar, atau daftarkan dokumen KOSP resmi sekolah.
+              </span>
+            </div>
+          </div>
+
+          <div className={styles.calloutActions}>
+            <Link href="/dashboard/settings" className={styles.actionBtnSecondary}>
+              <span>+ Daftarkan KOSP</span>
+            </Link>
           </div>
         </section>
       )}
 
-      {/* ── Kaldik MEB Alignment Stats ── */}
-      <section className={styles.kaldikStatsCard}>
-        <div className={styles.statItem}>
-          <span className={styles.statVal}>35 Pekan</span>
-          <span className={styles.statLabel}>Minggu Efektif Belajar (Kaldik)</span>
+      {/* ── 6. Executive 4-Metric KPI Grid ── */}
+      <section className={styles.metricGrid}>
+        {/* Card 1: Minggu Efektif (Kaldik) */}
+        <div className={styles.metricCard} style={{ '--card-color': '#10b981' } as React.CSSProperties}>
+          <div className={styles.metricTopRow}>
+            <div className={styles.metricIconPill} style={{ background: 'rgba(16, 185, 129, 0.12)', color: '#059669' }}>
+              <Calendar size={16} />
+            </div>
+            <span className={styles.metricStatusBadge} data-status="live">
+              <span className={styles.livePulse} />
+              Kaldik Live
+            </span>
+          </div>
+          <div className={styles.metricBody}>
+            <div className={styles.metricValue} style={{ color: '#059669' }}>35 Pekan</div>
+            <div className={styles.metricLabel}>Minggu Efektif Belajar (MEB)</div>
+            <div className={styles.metricSubLabel}>Kapasitas Kaldik Semester 1 &amp; 2</div>
+          </div>
         </div>
-        <div className={styles.statItem}>
-          <span className={styles.statVal}>
-            {allItems.reduce((sum, item) => sum + (parseInt(item.allocated_hours || item.estimated_hours, 10) || 0), 0)} JP
-          </span>
-          <span className={styles.statLabel}>Total Jam Terencana</span>
+
+        {/* Card 2: Total Jam Terencana (JP) */}
+        <div className={styles.metricCard} style={{ '--card-color': '#0284c7' } as React.CSSProperties}>
+          <div className={styles.metricTopRow}>
+            <div className={styles.metricIconPill} style={{ background: 'rgba(2, 132, 199, 0.12)', color: '#0284c7' }}>
+              <Clock size={16} />
+            </div>
+            <span className={styles.metricStatusBadge} data-status="info">
+              Alokasi JP
+            </span>
+          </div>
+          <div className={styles.metricBody}>
+            <div className={styles.metricValue} style={{ color: '#0284c7' }}>{totalPlannedHours} JP</div>
+            <div className={styles.metricLabel}>Total Jam Terencana</div>
+            <div className={styles.metricSubLabel}>Distribusi alur jam tatap muka</div>
+          </div>
         </div>
-        <div className={styles.statItem}>
-          <span className={styles.statVal}>{allItems.length} Butir</span>
-          <span className={styles.statLabel}>Total TP Terpetakan</span>
+
+        {/* Card 3: Total TP Terpetakan */}
+        <div className={styles.metricCard} style={{ '--card-color': '#7c3aed' } as React.CSSProperties}>
+          <div className={styles.metricTopRow}>
+            <div className={styles.metricIconPill} style={{ background: 'rgba(124, 58, 237, 0.12)', color: '#7c3aed' }}>
+              <Award size={16} />
+            </div>
+            <span className={styles.metricStatusBadge} data-status="normal">
+              {allItems.length} Butir
+            </span>
+          </div>
+          <div className={styles.metricBody}>
+            <div className={styles.metricValue} style={{ color: '#7c3aed' }}>{allItems.length} Butir</div>
+            <div className={styles.metricLabel}>Total TP Terpetakan</div>
+            <div className={styles.metricSubLabel}>Hasil dekonstruksi Taksonomi Bloom</div>
+          </div>
         </div>
-        <div className={styles.statItem}>
-          <span className={styles.statVal}>
-            {allItems.filter((t) => t.publication_status === 'PUBLISHED').length} / {allItems.length}
-          </span>
-          <span className={styles.statLabel}>Status Terpublikasi</span>
+
+        {/* Card 4: Rasio Publikasi Resmi */}
+        <div className={styles.metricCard} style={{ '--card-color': publishedCount > 0 ? '#059669' : '#d97706' } as React.CSSProperties}>
+          <div className={styles.metricTopRow}>
+            <div
+              className={styles.metricIconPill}
+              style={{
+                background: publishedCount > 0 ? 'rgba(16, 185, 129, 0.12)' : 'rgba(245, 158, 11, 0.12)',
+                color: publishedCount > 0 ? '#059669' : '#d97706',
+              }}
+            >
+              <ShieldCheck size={16} />
+            </div>
+            <span className={styles.metricStatusBadge} data-status={publishedCount > 0 ? 'good' : 'warn'}>
+              {publishedCount === allItems.length && allItems.length > 0
+                ? '100% Sah'
+                : publishedCount > 0
+                ? 'Sebagian Sah'
+                : 'Draf Awal'}
+            </span>
+          </div>
+          <div className={styles.metricBody}>
+            <div className={styles.metricValue} style={{ color: publishedCount > 0 ? '#059669' : '#d97706' }}>
+              {publishedCount} / {allItems.length}
+            </div>
+            <div className={styles.metricLabel}>Status Publikasi Resmi</div>
+            <div className={styles.metricSubLabel}>
+              {publishedCount === allItems.length && allItems.length > 0
+                ? 'Semua TP siap dihubungkan ke RPP'
+                : 'Menunggu publikasi resmi perangkat'}
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* ── Tabs Navigation ── */}
-      <div className={styles.tabsList}>
+      {/* ── 7. Tabs Navigation Strip ── */}
+      <nav className={styles.tabsContainer} aria-label="Navigasi Kurikulum">
         <button
           className={`${styles.tabBtn} ${activeTab === 'CP' ? styles.tabActive : ''}`}
           onClick={() => setActiveTab('CP')}
         >
-          <BookOpen size={17} />
-          1. Capaian Pembelajaran (CP)
+          <BookOpen size={15} />
+          <span>1. Capaian Pembelajaran (CP)</span>
+          <span className={styles.tabCountBadge}>{registryData?.elements_count || 0}</span>
         </button>
+
         <button
           className={`${styles.tabBtn} ${activeTab === 'TP' ? styles.tabActive : ''}`}
           onClick={() => setActiveTab('TP')}
         >
-          <Award size={17} />
-          2. Tujuan Pembelajaran (TP) [{allItems.length}]
+          <Award size={15} />
+          <span>2. Tujuan Pembelajaran (TP)</span>
+          <span className={styles.tabCountBadge}>{allItems.length}</span>
         </button>
+
         <button
           className={`${styles.tabBtn} ${activeTab === 'ATP' ? styles.tabActive : ''}`}
           onClick={() => setActiveTab('ATP')}
         >
-          <ListOrdered size={17} />
-          3. Alur Pembelajaran (ATP) & Kaldik
+          <ListOrdered size={15} />
+          <span>3. Alur Pembelajaran (ATP) &amp; Kaldik</span>
         </button>
-      </div>
+      </nav>
 
-      {/* ── TAB 1: Capaian Pembelajaran (CP) Registry ── */}
+      {/* ── 8. Tab Content Views ── */}
+
+      {/* TAB 1: Capaian Pembelajaran (CP) Registry */}
       {activeTab === 'CP' && (
-        <div className={styles.card}>
-          <h2 style={{ fontSize: '1.1rem', fontWeight: 700, margin: '0 0 1rem 0' }}>
-            Elemen Capaian Pembelajaran Terdaftar ({registryData?.elements_count || 0} Elemen)
-          </h2>
+        <section className={styles.card}>
+          <div className={styles.cardHeader}>
+            <h2 className={styles.cardTitle}>
+              <Layers size={17} style={{ color: '#0284c7' }} />
+              Elemen Capaian Pembelajaran Terdaftar ({registryData?.elements_count || 0} Elemen)
+            </h2>
+            <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+              Fase: {phase} • {activeSubject.name}
+            </span>
+          </div>
 
-          {registryData && registryData.elements.length > 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              {registryData.elements.map((el) => (
-                <div
-                  key={el.id}
-                  style={{
-                    padding: '1.1rem',
-                    borderRadius: '12px',
-                    border: el.id === selectedCp?.id ? '2px solid #0284c7' : '1px solid #e2e8f0',
-                    background: el.id === selectedCp?.id ? 'rgba(2, 132, 199, 0.03)' : '#fff',
-                    cursor: 'pointer',
-                  }}
-                  onClick={() => setSelectedCp(el)}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <span className={`${styles.badge} ${el.is_eligible_source ? styles.badgeVerified : styles.badgeDraft}`}>
-                        {el.verification_status}
+          {isLoadingRegistry ? (
+            <div className={styles.emptyState}>
+              <RefreshCw size={28} className="animate-spin" style={{ color: '#0284c7', opacity: 0.7 }} />
+              <p className={styles.emptyStateDesc}>Memuat naskah Capaian Pembelajaran dari registry...</p>
+            </div>
+          ) : registryData && registryData.elements.length > 0 ? (
+            <div className={styles.cpElementList}>
+              {registryData.elements.map((el) => {
+                const isSelected = el.id === selectedCp?.id;
+                return (
+                  <div
+                    key={el.id}
+                    className={`${styles.cpElementItem} ${isSelected ? styles.cpElementItemSelected : ''}`}
+                    onClick={() => setSelectedCp(el)}
+                  >
+                    <div className={styles.cpElementTop}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                        <span
+                          className={`${styles.calloutBadge} ${
+                            el.verification_status === 'NATIONAL_VERIFIED'
+                              ? styles.calloutBadgeVerified
+                              : el.verification_status === 'SCHOOL_VERIFIED'
+                              ? styles.calloutBadgeSchool
+                              : styles.calloutBadgeEmpty
+                          }`}
+                        >
+                          {el.verification_status}
+                        </span>
+                        <span className={styles.cpElementName}>{el.element_name}</span>
+                      </div>
+                      <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                        {el.target_grades}
                       </span>
-                      <strong>{el.element_name}</strong>
                     </div>
-                    <span style={{ fontSize: '0.8rem', color: '#64748b' }}>{el.target_grades}</span>
+                    <p className={styles.cpElementDesc}>{el.description}</p>
                   </div>
-                  <p style={{ margin: 0, fontSize: '0.88rem', color: '#334155', lineHeight: 1.5 }}>
-                    {el.description}
-                  </p>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
-            <div style={{ textAlign: 'center', padding: '3rem 1rem', color: '#64748b' }}>
-              <BookOpen size={40} style={{ opacity: 0.3, margin: '0 auto 0.75rem' }} />
-              <p>Belum ada naskah CP resmi yang terdaftar untuk mapel ini.</p>
+            <div className={styles.emptyState}>
+              <BookOpen size={36} style={{ color: '#94a3b8', opacity: 0.5 }} />
+              <h3 className={styles.emptyStateTitle}>Belum Ada Naskah CP Terdaftar</h3>
+              <p className={styles.emptyStateDesc}>
+                Belum ditemukan naskah Capaian Pembelajaran resmi untuk mata pelajaran ini pada {phase}.
+              </p>
             </div>
           )}
-        </div>
+        </section>
       )}
 
-      {/* ── TAB 2: Tujuan Pembelajaran (TP) ── */}
+      {/* TAB 2: Tujuan Pembelajaran (TP) Grid */}
       {activeTab === 'TP' && (
-        <div className={styles.tpGrid}>
+        <section className={styles.tpGrid}>
           {allItems.length > 0 ? (
             allItems.map((item, idx) => (
-              <div key={item.id || item.tp_id || idx} className={styles.card}>
+              <div key={item.id || item.tp_id || idx} className={styles.tpCard}>
                 <div className={styles.tpHeader}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span style={{ fontWeight: 700, color: '#0284c7' }}>{item.code}</span>
+                  <div className={styles.tpBadgeGroup}>
+                    <span className={styles.tpCode}>{item.code}</span>
                     <span
                       className={`${styles.bloomBadge} ${
                         styles[`bloom${item.bloom_level || 'C3'}`] || styles.bloomC3
@@ -638,26 +778,27 @@ export default function CurriculumWorkstationPage() {
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span style={{ fontSize: '0.82rem', fontWeight: 600, color: '#64748b' }}>
-                      <Clock size={13} style={{ display: 'inline', marginRight: '3px' }} />
+                    <span style={{ fontSize: '0.76rem', fontWeight: 700, color: '#0284c7' }}>
+                      <Clock size={12} style={{ display: 'inline', marginRight: '3px', verticalAlign: '-1px' }} />
                       {item.allocated_hours || item.estimated_hours} JP
                     </span>
                     <button
-                      className={`${styles.btn} ${styles.btnOutline}`}
-                      style={{ padding: '0.35rem 0.65rem', fontSize: '0.78rem' }}
+                      className={styles.actionBtnSecondary}
+                      style={{ padding: '0.28rem 0.6rem', fontSize: '0.72rem' }}
                       onClick={() => setEditingTp(item)}
                     >
-                      <Edit3 size={13} /> Edit / Review
+                      <Edit3 size={12} />
+                      <span>Edit / Telaah</span>
                     </button>
                   </div>
                 </div>
 
                 <p className={styles.tpStatement}>{item.statement}</p>
 
-                <div style={{ marginBottom: '0.5rem' }}>
-                  <small style={{ fontWeight: 600, color: '#64748b', display: 'block', marginBottom: '0.25rem' }}>
-                    Lingkup Materi: {item.content_scope}
-                  </small>
+                <div style={{ marginBottom: '0.45rem' }}>
+                  <span style={{ fontSize: '0.74rem', fontWeight: 600, color: 'var(--text-muted)' }}>
+                    Lingkup Materi: <strong>{item.content_scope}</strong>
+                  </span>
                 </div>
 
                 {item.pancasila_profiles && item.pancasila_profiles.length > 0 && (
@@ -672,9 +813,9 @@ export default function CurriculumWorkstationPage() {
 
                 {item.evidence_indicators && item.evidence_indicators.length > 0 && (
                   <div>
-                    <small style={{ fontWeight: 600, color: '#64748b', display: 'block', marginBottom: '0.2rem' }}>
+                    <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: '0.2rem' }}>
                       Indikator Ketercapaian (IKTP):
-                    </small>
+                    </span>
                     <ul className={styles.evidenceList}>
                       {item.evidence_indicators.map((ev: string, evIdx: number) => (
                         <li key={evIdx}>{ev}</li>
@@ -685,132 +826,112 @@ export default function CurriculumWorkstationPage() {
               </div>
             ))
           ) : (
-            <div className={styles.card} style={{ textAlign: 'center', padding: '3rem 1rem' }}>
-              <Sparkles size={40} style={{ color: '#8b5cf6', margin: '0 auto 1rem', opacity: 0.6 }} />
-              <h3 style={{ margin: '0 0 0.5rem 0', fontWeight: 700 }}>Belum Ada Usulan Tujuan Pembelajaran</h3>
-              <p style={{ color: '#64748b', maxWidth: '480px', margin: '0 auto 1.25rem' }}>
-                Gunakan tombol <strong>Sintesis TP & ATP (AI)</strong> untuk meminta asisten NVIDIA NIM membedah CP
-                terverifikasi menjadi butir-butir TP dengan Taksonomi Bloom.
-              </p>
-              <button
-                className={`${styles.btn} ${styles.btnAi}`}
-                onClick={() => handleSynthesizeAi(false)}
-                disabled={!selectedCp?.is_eligible_source || isSynthesizing}
-              >
-                <Sparkles size={16} /> Mulai Sintesis TP Sekarang
-              </button>
+            <div className={styles.card}>
+              <div className={styles.emptyState}>
+                <Sparkles size={38} style={{ color: '#7c3aed', opacity: 0.6 }} />
+                <h3 className={styles.emptyStateTitle}>Belum Ada Usulan Tujuan Pembelajaran</h3>
+                <p className={styles.emptyStateDesc}>
+                  Gunakan tombol <strong>Sintesis TP &amp; ATP (AI)</strong> di atas untuk meminta AI NVIDIA NIM membedah CP
+                  terverifikasi menjadi rumusan TP operasional sesuai Taksonomi Bloom.
+                </p>
+                <button
+                  className={styles.actionBtnAi}
+                  onClick={() => handleSynthesizeAi(false)}
+                  disabled={!selectedCp?.is_eligible_source || isSynthesizing}
+                  style={{ marginTop: '0.5rem' }}
+                >
+                  <Sparkles size={14} />
+                  <span>Mulai Sintesis TP Sekarang</span>
+                </button>
+              </div>
             </div>
           )}
-        </div>
+        </section>
       )}
 
-      {/* ── TAB 3: Alur Pembelajaran (ATP) & Kaldik ── */}
+      {/* TAB 3: Alur Pembelajaran (ATP) & Kaldik */}
       {activeTab === 'ATP' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+        <section className={styles.atpGrid}>
           {/* Semester Ganjil */}
           <div className={styles.card}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#10b981' }} />
-                <h3 style={{ margin: 0, fontWeight: 700, fontSize: '1.05rem' }}>
-                  Semester Ganjil (Juli – Desember)
-                </h3>
+            <div className={styles.cardHeader}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981' }} />
+                <h3 className={styles.cardTitle}>Semester Ganjil (Juli – Desember)</h3>
               </div>
-              <span className={styles.badge} style={{ background: '#e0f2fe', color: '#0369a1' }}>
-                {atpMatrix?.odd_semester.total_hours || 0} JP Terencana (dari ~18 Pekan MEB)
+              <span className={styles.calloutBadge} style={{ background: '#e0f2fe', color: '#0369a1' }}>
+                {atpMatrix?.odd_semester.total_hours || 0} JP Terencana (18 MEB)
               </span>
             </div>
 
             {atpMatrix?.odd_semester.items && atpMatrix.odd_semester.items.length > 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 {atpMatrix.odd_semester.items.map((flow, idx) => (
-                  <div
-                    key={flow.id || flow.atp_id || idx}
-                    style={{
-                      padding: '0.85rem 1rem',
-                      borderRadius: '10px',
-                      background: '#f8fafc',
-                      border: '1px solid #e2e8f0',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      gap: '1rem',
-                    }}
-                  >
+                  <div key={flow.id || flow.atp_id || idx} className={styles.atpItem}>
                     <div>
-                      <strong style={{ color: '#0284c7', marginRight: '0.5rem' }}>
-                        Urutan #{flow.sequence_order || idx + 1}: {flow.code}
-                      </strong>
-                      <span style={{ fontSize: '0.88rem', color: '#334155' }}>{flow.statement}</span>
+                      <span className={styles.atpOrderBadge}>
+                        #{flow.sequence_order || idx + 1} {flow.code}
+                      </span>
+                      <span className={styles.atpText}>{flow.statement}</span>
                     </div>
-                    <span style={{ fontSize: '0.82rem', fontWeight: 600, color: '#059669', whiteSpace: 'nowrap' }}>
+                    <span className={styles.atpHoursBadge}>
                       {flow.allocated_hours || flow.estimated_hours} JP
                     </span>
                   </div>
                 ))}
               </div>
             ) : (
-              <p style={{ color: '#64748b', fontSize: '0.88rem' }}>Belum ada alur TP di semester ganjil.</p>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem', margin: 0 }}>
+                Belum ada butir alur TP yang dipetakan di semester ganjil.
+              </p>
             )}
           </div>
 
           {/* Semester Genap */}
           <div className={styles.card}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#0284c7' }} />
-                <h3 style={{ margin: 0, fontWeight: 700, fontSize: '1.05rem' }}>
-                  Semester Genap (Januari – Juni)
-                </h3>
+            <div className={styles.cardHeader}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#0284c7' }} />
+                <h3 className={styles.cardTitle}>Semester Genap (Januari – Juni)</h3>
               </div>
-              <span className={styles.badge} style={{ background: '#e0f2fe', color: '#0369a1' }}>
-                {atpMatrix?.even_semester.total_hours || 0} JP Terencana (dari ~17 Pekan MEB)
+              <span className={styles.calloutBadge} style={{ background: '#e0f2fe', color: '#0369a1' }}>
+                {atpMatrix?.even_semester.total_hours || 0} JP Terencana (17 MEB)
               </span>
             </div>
 
             {atpMatrix?.even_semester.items && atpMatrix.even_semester.items.length > 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 {atpMatrix.even_semester.items.map((flow, idx) => (
-                  <div
-                    key={flow.id || flow.atp_id || idx}
-                    style={{
-                      padding: '0.85rem 1rem',
-                      borderRadius: '10px',
-                      background: '#f8fafc',
-                      border: '1px solid #e2e8f0',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      gap: '1rem',
-                    }}
-                  >
+                  <div key={flow.id || flow.atp_id || idx} className={styles.atpItem}>
                     <div>
-                      <strong style={{ color: '#0284c7', marginRight: '0.5rem' }}>
-                        Urutan #{flow.sequence_order || idx + 1}: {flow.code}
-                      </strong>
-                      <span style={{ fontSize: '0.88rem', color: '#334155' }}>{flow.statement}</span>
+                      <span className={styles.atpOrderBadge}>
+                        #{flow.sequence_order || idx + 1} {flow.code}
+                      </span>
+                      <span className={styles.atpText}>{flow.statement}</span>
                     </div>
-                    <span style={{ fontSize: '0.82rem', fontWeight: 600, color: '#059669', whiteSpace: 'nowrap' }}>
+                    <span className={styles.atpHoursBadge}>
                       {flow.allocated_hours || flow.estimated_hours} JP
                     </span>
                   </div>
                 ))}
               </div>
             ) : (
-              <p style={{ color: '#64748b', fontSize: '0.88rem' }}>Belum ada alur TP di semester genap.</p>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem', margin: 0 }}>
+                Belum ada butir alur TP yang dipetakan di semester genap.
+              </p>
             )}
           </div>
-        </div>
+        </section>
       )}
 
-      {/* ── Modal Edit / Review TP ── */}
+      {/* ── 9. Modal Edit / Review TP ── */}
       {editingTp && (
         <div className={styles.modalOverlay}>
           <div className={styles.modalBox}>
             <div className={styles.modalHeader}>
-              <h3 className={styles.modalTitle}>Sunting & Telaah: {editingTp.code}</h3>
-              <button className={styles.closeBtn} onClick={() => setEditingTp(null)}>
-                <X size={20} />
+              <h3 className={styles.modalTitle}>Sunting &amp; Telaah: {editingTp.code}</h3>
+              <button className={styles.closeBtn} onClick={() => setEditingTp(null)} aria-label="Tutup">
+                <X size={18} />
               </button>
             </div>
 
@@ -837,7 +958,7 @@ export default function CurriculumWorkstationPage() {
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Level Taksonomi Bloom:</label>
                 <select
-                  className={styles.selectInput}
+                  className={styles.modalSelect}
                   value={editingTp.bloom_level}
                   onChange={(e) => setEditingTp({ ...editingTp, bloom_level: e.target.value })}
                 >
@@ -877,12 +998,13 @@ export default function CurriculumWorkstationPage() {
               </div>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.25rem' }}>
-              <button className={`${styles.btn} ${styles.btnOutline}`} onClick={() => setEditingTp(null)}>
+            <div className={styles.modalFooter}>
+              <button className={styles.actionBtnSecondary} onClick={() => setEditingTp(null)}>
                 Batal
               </button>
-              <button className={`${styles.btn} ${styles.btnPrimary}`} onClick={handleSaveEditedTp}>
-                <CheckCircle2 size={16} /> Simpan Perubahan & Tandai REVIEWED
+              <button className={styles.actionBtnPrimary} onClick={handleSaveEditedTp}>
+                <CheckCircle2 size={14} />
+                <span>Simpan Perubahan &amp; Tandai REVIEWED</span>
               </button>
             </div>
           </div>
