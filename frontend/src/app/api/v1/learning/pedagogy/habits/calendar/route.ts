@@ -139,7 +139,108 @@ export async function GET(request: NextRequest) {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // SCENARIO 2: CLASS MONITORING OVERVIEW (HOMEROOM TEACHER WORKSTATION)
+    // SCENARIO 2: SCHOOL-WIDE SUPERVISION OVERVIEW (KEPALA SEKOLAH)
+    // ─────────────────────────────────────────────────────────────────────────
+    const isSchoolOverview = classId === 'ALL' || searchParams.get('school_overview') === 'true';
+    if (isSchoolOverview) {
+      // Ambil seluruh kelas dengan informasi wali kelas dan jumlah siswa
+      const classesRes = await pool.query(`
+        SELECT 
+          c.id, 
+          c.name, 
+          c.tingkat,
+          t.full_name AS homeroom_teacher_name,
+          COUNT(e.id)::int AS student_count
+        FROM classes c
+        LEFT JOIN teachers t ON c.homeroom_teacher_id = t.id
+        LEFT JOIN enrollments e ON c.id = e.class_id AND (e.status IS NULL OR LOWER(e.status) = 'active')
+        WHERE c.deleted_at IS NULL
+        GROUP BY c.id, c.name, c.tingkat, t.full_name
+        ORDER BY c.name ASC
+      `);
+
+      const classes = classesRes.rows;
+
+      // Ambil agregasi kebiasaan per kelas
+      const classAggRes = await pool.query(`
+        SELECT 
+          e.class_id,
+          COUNT(DISTINCT h.student_id)::int AS active_students,
+          COUNT(h.id)::int AS total_entries,
+          ROUND(COALESCE(AVG(h.compliance_rate), 0), 2)::numeric AS avg_compliance,
+          COUNT(CASE WHEN h.verification_status = 'PENDING' THEN 1 END)::int AS pending_count,
+          COUNT(CASE WHEN h.verification_status = 'SYSTEM_EXPIRED' THEN 1 END)::int AS expired_count,
+          COUNT(CASE WHEN h.verification_status = 'PARENT_VERIFIED' THEN 1 END)::int AS verified_count,
+          COUNT(CASE WHEN h.verification_status = 'TEACHER_OVERRIDE' THEN 1 END)::int AS override_count
+        FROM enrollments e
+        JOIN habit_tracker_entries h ON e.student_id = h.student_id
+        WHERE (e.status IS NULL OR LOWER(e.status) = 'active')
+          AND h.entry_date >= $1 AND h.entry_date <= $2
+        GROUP BY e.class_id
+      `, [startDate, endDate]);
+
+      const classAggMap = new Map();
+      for (const row of classAggRes.rows) {
+        classAggMap.set(row.class_id, row);
+      }
+
+      let schoolTotalEnrolled = 0;
+      let schoolActiveStudents = 0;
+      let schoolSumCompliance = 0;
+      let schoolTotalPending = 0;
+      let schoolTotalExpired = 0;
+
+      const classesWithStats = classes.map((c: any) => {
+        const stat = classAggMap.get(c.id) || {
+          active_students: 0,
+          total_entries: 0,
+          avg_compliance: 0,
+          pending_count: 0,
+          expired_count: 0,
+          verified_count: 0,
+          override_count: 0,
+        };
+
+        schoolTotalEnrolled += c.student_count;
+        schoolActiveStudents += stat.active_students;
+        if (stat.total_entries > 0) {
+          schoolSumCompliance += parseFloat(stat.avg_compliance);
+        }
+        schoolTotalPending += stat.pending_count;
+        schoolTotalExpired += stat.expired_count;
+
+        return {
+          ...c,
+          metrics: {
+            ...stat,
+            participation_rate: c.student_count > 0 ? Math.round((stat.active_students / c.student_count) * 100) : 0,
+          }
+        };
+      });
+
+      const schoolAvgCompliance = classesWithStats.filter((c: any) => c.metrics.total_entries > 0).length > 0
+        ? Math.round((schoolSumCompliance / classesWithStats.filter((c: any) => c.metrics.total_entries > 0).length) * 100) / 100
+        : 0;
+
+      return NextResponse.json({
+        success: true,
+        school_overview: true,
+        date_range: { start_date: startDate, end_date: endDate },
+        school_summary: {
+          total_classes: classes.length,
+          total_enrolled: schoolTotalEnrolled,
+          active_participating: schoolActiveStudents,
+          participation_rate: schoolTotalEnrolled > 0 ? Math.round((schoolActiveStudents / schoolTotalEnrolled) * 10000) / 100 : 0,
+          average_compliance_rate: schoolAvgCompliance,
+          total_pending_verifications: schoolTotalPending,
+          total_expired_needing_override: schoolTotalExpired,
+        },
+        classes: classesWithStats
+      });
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // SCENARIO 3: CLASS MONITORING OVERVIEW (HOMEROOM TEACHER WORKSTATION)
     // ─────────────────────────────────────────────────────────────────────────
     if (classId) {
       // Get enrolled students in class
@@ -156,7 +257,7 @@ export async function GET(request: NextRequest) {
         `SELECT s.id, s.full_name, s.nisn, s.gender
          FROM enrollments e
          JOIN students s ON e.student_id = s.id
-         WHERE e.class_id = $1 AND (e.status IS NULL OR e.status = 'ACTIVE') AND s.deleted_at IS NULL
+         WHERE e.class_id = $1 AND (e.status IS NULL OR LOWER(e.status) = 'active') AND s.deleted_at IS NULL
          ORDER BY s.full_name ASC`,
         [classId]
       );
@@ -164,26 +265,29 @@ export async function GET(request: NextRequest) {
       const students = studentsRes.rows;
 
       // Get habit aggregated metrics for these students in the range
-      const habitAggRes = await pool.query(
-        `SELECT 
-           h.student_id,
-           COUNT(h.id)::int as total_entries,
-           ROUND(AVG(h.compliance_rate), 2)::numeric as avg_compliance,
-           COUNT(CASE WHEN h.verification_status = 'PENDING' THEN 1 END)::int as pending_count,
-           COUNT(CASE WHEN h.verification_status = 'SYSTEM_EXPIRED' THEN 1 END)::int as expired_count,
-           COUNT(CASE WHEN h.verification_status = 'PARENT_VERIFIED' THEN 1 END)::int as verified_count,
-           COUNT(CASE WHEN h.verification_status = 'TEACHER_OVERRIDE' THEN 1 END)::int as override_count,
-           MAX(h.entry_date) as last_entry_date
-         FROM habit_tracker_entries h
-         WHERE h.student_id = ANY($1::uuid[])
-           AND h.entry_date >= $2 AND h.entry_date <= $3
-         GROUP BY h.student_id`,
-        [students.map((s: any) => s.id), startDate, endDate]
-      );
-
       const aggMap = new Map();
-      for (const row of habitAggRes.rows) {
-        aggMap.set(row.student_id, row);
+      if (students.length > 0) {
+        const studentIds = students.map((s: any) => s.id);
+        const habitAggRes = await pool.query(
+          `SELECT 
+             h.student_id,
+             COUNT(h.id)::int as total_entries,
+             ROUND(AVG(h.compliance_rate), 2)::numeric as avg_compliance,
+             COUNT(CASE WHEN h.verification_status = 'PENDING' THEN 1 END)::int as pending_count,
+             COUNT(CASE WHEN h.verification_status = 'SYSTEM_EXPIRED' THEN 1 END)::int as expired_count,
+             COUNT(CASE WHEN h.verification_status = 'PARENT_VERIFIED' THEN 1 END)::int as verified_count,
+             COUNT(CASE WHEN h.verification_status = 'TEACHER_OVERRIDE' THEN 1 END)::int as override_count,
+             MAX(h.entry_date) as last_entry_date
+           FROM habit_tracker_entries h
+           WHERE h.student_id = ANY($1::uuid[])
+             AND h.entry_date >= $2 AND h.entry_date <= $3
+           GROUP BY h.student_id`,
+          [studentIds, startDate, endDate]
+        );
+
+        for (const row of habitAggRes.rows) {
+          aggMap.set(row.student_id, row);
+        }
       }
 
       let classSumCompliance = 0;

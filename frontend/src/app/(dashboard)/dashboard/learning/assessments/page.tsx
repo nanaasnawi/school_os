@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useAuth } from '@/contexts/AuthContext';
 import styles from './assessments.module.css';
 
 interface AssessmentItem {
@@ -50,9 +51,13 @@ interface RaporEntry {
 }
 
 export default function PedagogicalAssessmentsPage() {
+  const { user } = useAuth();
+  const isPrincipal = user?.role === 'Kepala Sekolah' || user?.role?.toLowerCase().includes('kepala');
+
   const [activeTab, setActiveTab] = useState<'SUMMATIVE' | 'FORMATIVE' | 'DIAGNOSTIC' | 'RAPOR'>('SUMMATIVE');
   const [assessments, setAssessments] = useState<AssessmentItem[]>([]);
-  const [classesList, setClassesList] = useState<Array<{ id: string; name: string }>>([]);
+  const [classesList, setClassesList] = useState<Array<{ id: string; name: string; student_count?: number }>>([]);
+  const [subjectsList, setSubjectsList] = useState<Array<{ id: string; code: string; name: string }>>([]);
   const [publishedTps, setPublishedTps] = useState<Array<{ id: string; code: string; competency: string; content_scope: string; statement: string }>>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -83,18 +88,32 @@ export default function PedagogicalAssessmentsPage() {
   // Rapor Preview State
   const [raporEntries, setRaporEntries] = useState<RaporEntry[]>([]);
   const [raporSummary, setRaporSummary] = useState<any>(null);
+  const [ratifyingRapor, setRatifyingRapor] = useState<boolean>(false);
+  const [ratifySuccessMsg, setRatifySuccessMsg] = useState<string | null>(null);
 
-  // Load Classes & Initial Setup
+  // Load Classes, Subjects & Initial Setup
   useEffect(() => {
     const initData = async () => {
       try {
-        const clsRes = await fetch('/api/v1/academic/classes');
+        const roleQuery = encodeURIComponent(user?.role || '');
+        const userIdQuery = user?.id || '';
+        const clsRes = await fetch(`/api/v1/academic/classes?role=${roleQuery}&user_id=${userIdQuery}&all=${isPrincipal ? 'true' : 'false'}`);
         if (clsRes.ok) {
           const cData = await clsRes.json();
-          const list = cData.data || [];
+          const list = cData.data || cData.classes || [];
           setClassesList(list);
-          if (list.length > 0 && !selectedClass) {
-            setSelectedClass(list[0].id);
+          if (list.length > 0) {
+            setSelectedClass((prev) => (prev && list.some((c: any) => c.id === prev) ? prev : list[0].id));
+          }
+        }
+
+        const subjRes = await fetch('/api/v1/academic/subjects');
+        if (subjRes.ok) {
+          const sData = await subjRes.json();
+          const sList = sData.data || sData.subjects || [];
+          setSubjectsList(sList);
+          if (sList.length > 0) {
+            setSelectedSubject((prev) => (prev && sList.some((s: any) => s.code === prev) ? prev : sList[0].code));
           }
         }
 
@@ -113,7 +132,7 @@ export default function PedagogicalAssessmentsPage() {
       }
     };
     initData();
-  }, []);
+  }, [user?.role, user?.id, isPrincipal]);
 
   // Load Assessments & Tab Specific Data
   const loadTabContent = async () => {
@@ -252,6 +271,37 @@ export default function PedagogicalAssessmentsPage() {
     }
   };
 
+  // Approval e-Rapor oleh Kepala Sekolah
+  const handleApproveRapor = async () => {
+    if (!selectedClass) return;
+    try {
+      setRatifyingRapor(true);
+      setRatifySuccessMsg(null);
+      const res = await fetch('/api/v1/learning/pedagogy/assessments/approve-rapor', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          class_id: selectedClass,
+          academic_year: academicYear,
+          semester: selectedSemester,
+          subject_code: selectedSubject,
+          approved_by_role: user?.role || 'Kepala Sekolah',
+          approved_by_name: user?.full_name || 'Kepala Sekolah',
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setRatifySuccessMsg(data.message);
+      } else {
+        alert(data.error || 'Gagal mengesahkan rapor.');
+      }
+    } catch (err) {
+      console.error('Error approving rapor:', err);
+    } finally {
+      setRatifyingRapor(false);
+    }
+  };
+
   const filteredSummative = assessments.filter(
     (a) => a.taxonomy_type === 'SUMMATIVE_MATERIAL' || a.taxonomy_type === 'SUMMATIVE_SEMESTER'
   );
@@ -266,21 +316,24 @@ export default function PedagogicalAssessmentsPage() {
       <div className={styles.heroHeader}>
         <div className={styles.heroContent}>
           <div className={styles.heroBadge}>
-            <span>Fase 4: Integrasi Taksonomi Asesmen</span>
+            {isPrincipal ? (
+              <span style={{ background: '#7e22ce', color: '#f3e8ff' }}>
+                👑 SUPERVISI AKADEMIK &amp; KKTP • KEPALA SEKOLAH
+              </span>
+            ) : (
+              <span>Fase 4: Integrasi Taksonomi Asesmen</span>
+            )}
           </div>
-          <h1 className={styles.heroTitle}>Taksonomi Asesmen Kurikulum Merdeka</h1>
+          <h1 className={styles.heroTitle}>
+            {isPrincipal ? 'Supervisi Taksonomi Asesmen Kurikulum Merdeka' : 'Taksonomi Asesmen Kurikulum Merdeka'}
+          </h1>
           <p className={styles.heroSubtitle}>
-            Ekosistem evaluasi terpadu: Asesmen Diagnostik (VAK &amp; Kesiapan Kognitif), Asesmen Formatif (IKTP &amp; Rubrik Proses),
-            Asesmen Sumatif (Lingkup Materi TP &amp; SAS Kaldik), serta Rekapitulasi Otomatis Narasi Capaian e-Rapor.
+            {isPrincipal
+              ? 'Dashboard supervisi evaluasi kepala sekolah: Monitoring ketercapaian KKTP seluruh rombel, analisis diferensiasi diagnostik, dan pengesahan resmi narasi capaian e-Rapor sekolah.'
+              : 'Ekosistem evaluasi terpadu: Asesmen Diagnostik (VAK & Kesiapan Kognitif), Asesmen Formatif (IKTP & Rubrik Proses), Asesmen Sumatif (Lingkup Materi TP & SAS Kaldik), serta Rekapitulasi Otomatis Narasi Capaian e-Rapor.'}
           </p>
         </div>
         <div className={styles.heroActions}>
-          <Link href="/dashboard/learning/modul-ajar" className={styles.btnSecondary}>
-            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-              <path d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-            Modul Ajar
-          </Link>
           <button onClick={() => setIsCreateOpen(true)} className={styles.btnPrimary}>
             <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
               <path d="M10 5v10m-5-5h10" />
@@ -301,7 +354,7 @@ export default function PedagogicalAssessmentsPage() {
           >
             {classesList.map((c) => (
               <option key={c.id} value={c.id}>
-                {c.name}
+                {c.name} {c.student_count !== undefined ? `(${c.student_count} Siswa)` : ''}
               </option>
             ))}
           </select>
@@ -312,9 +365,19 @@ export default function PedagogicalAssessmentsPage() {
             onChange={(e) => setSelectedSubject(e.target.value)}
             className={styles.selectInput}
           >
-            <option value="401000000">Matematika</option>
-            <option value="IPAS">IPAS</option>
-            <option value="BIND">Bahasa Indonesia</option>
+            {subjectsList.length > 0 ? (
+              subjectsList.map((s) => (
+                <option key={s.id} value={s.code}>
+                  {s.name}
+                </option>
+              ))
+            ) : (
+              <>
+                <option value="401000000">Matematika (Umum)</option>
+                <option value="401900000">Ilmu Pengetahuan Alam dan Sosial (IPAS)</option>
+                <option value="300110000">Bahasa Indonesia</option>
+              </>
+            )}
           </select>
 
           <label style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Semester:</label>
@@ -609,6 +672,20 @@ export default function PedagogicalAssessmentsPage() {
       {/* ── TAB 4: REKAP KKTP & NARASI E-RAPOR ── */}
       {activeTab === 'RAPOR' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          {ratifySuccessMsg && (
+            <div style={{
+              background: '#ecfdf5',
+              color: '#065f46',
+              border: '1px solid #a7f3d0',
+              padding: '0.85rem 1.25rem',
+              borderRadius: '0.75rem',
+              fontSize: '0.88rem',
+              fontWeight: 600,
+            }}>
+              ✓ {ratifySuccessMsg}
+            </div>
+          )}
+
           <div style={{
             display: 'flex',
             justifyContent: 'space-between',
@@ -617,6 +694,8 @@ export default function PedagogicalAssessmentsPage() {
             border: '1px solid var(--border-color)',
             borderRadius: '1rem',
             padding: '1rem 1.5rem',
+            flexWrap: 'wrap',
+            gap: '1rem'
           }}>
             <div>
               <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700 }}>
@@ -626,9 +705,21 @@ export default function PedagogicalAssessmentsPage() {
                 Formula: Nilai Akhir (NA) = 60% Rata-rata Sumatif TP + 40% Sumatif Akhir Semester (SAS). Ambang KKTP: 75.0.
               </p>
             </div>
-            <button onClick={() => window.print()} className={styles.btnSecondary}>
-              🖨️ Cetak / Ekspor e-Rapor
-            </button>
+            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+              {isPrincipal && (
+                <button
+                  onClick={handleApproveRapor}
+                  disabled={ratifyingRapor || raporEntries.length === 0}
+                  className={styles.btnPrimary}
+                  style={{ background: '#7e22ce', borderColor: '#6b21a8' }}
+                >
+                  {ratifyingRapor ? 'Mengesahkan...' : '👑 Sahkan Nilai Rombel Ini'}
+                </button>
+              )}
+              <button onClick={() => window.print()} className={styles.btnSecondary}>
+                🖨️ Cetak / Ekspor e-Rapor
+              </button>
+            </div>
           </div>
 
           <div className={styles.tableContainer}>

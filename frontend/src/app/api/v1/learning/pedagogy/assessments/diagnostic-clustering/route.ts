@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
       `SELECT s.id, s.full_name, s.nisn
        FROM enrollments e
        JOIN students s ON e.student_id = s.id
-       WHERE e.class_id = $1
+       WHERE e.class_id = $1 AND (e.status IS NULL OR LOWER(e.status) = 'active') AND s.deleted_at IS NULL
        ORDER BY s.full_name ASC;`,
       [classId]
     );

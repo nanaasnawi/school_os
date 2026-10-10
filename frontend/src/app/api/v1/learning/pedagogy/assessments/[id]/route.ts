@@ -54,7 +54,7 @@ export async function GET(
       JOIN students s ON e.student_id = s.id
       LEFT JOIN assessment_student_results asr 
         ON asr.student_id = s.id AND asr.assessment_id = $1
-      WHERE e.class_id = $2
+      WHERE e.class_id = $2 AND (e.status IS NULL OR LOWER(e.status) = 'active') AND s.deleted_at IS NULL
       ORDER BY s.full_name ASC;
     `;
 

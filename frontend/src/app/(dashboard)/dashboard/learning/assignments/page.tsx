@@ -475,9 +475,6 @@ export default function AssignmentsPage() {
           <p className={styles.subtitle}>Pemantauan pengumpulan berkas jawaban siswa dari Android App &amp; koreksi nilai oleh guru (PR, Pilihan Ganda &amp; Essay)</p>
         </div>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <Link href="/dashboard/learning" className="btn btn-secondary btn-sm">
-            ← Kembali ke Workspace
-          </Link>
           <Link
             href="/dashboard/learning/assignments/create"
             className="btn btn-primary btn-sm"

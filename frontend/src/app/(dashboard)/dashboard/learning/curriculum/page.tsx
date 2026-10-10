@@ -20,7 +20,10 @@ import {
   ListOrdered,
   X,
   FileCheck,
+  PlusCircle,
+  CheckCheck,
 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 import styles from './curriculum.module.css';
 
 interface LearningOutcomeElement {
@@ -104,6 +107,9 @@ const STANDARD_SUBJECTS = [
 ];
 
 export default function CurriculumWorkstationPage() {
+  const { user } = useAuth();
+  const isPrincipal = user?.role === 'Kepala Sekolah' || user?.role === 'Administrator' || user?.role === 'Kurikulum';
+
   const [phase, setPhase] = useState('FASE_C');
   const [subjectCode, setSubjectCode] = useState('401900000');
   const [gradeLevel, setGradeLevel] = useState('Kelas 5 SD');
@@ -121,6 +127,14 @@ export default function CurriculumWorkstationPage() {
   // Edit TP Modal state
   const [editingTp, setEditingTp] = useState<TpItem | null>(null);
   const [toastMessage, setToastMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // KOSP Registration Modal state (Khusus Kepala Sekolah)
+  const [isKospModalOpen, setIsKospModalOpen] = useState(false);
+  const [kospElementName, setKospElementName] = useState('');
+  const [kospDescription, setKospDescription] = useState('');
+  const [kospDocument, setKospDocument] = useState('Dokumen KOSP PKBM As-Salafiyah 2026/2027');
+  const [kospPageRef, setKospPageRef] = useState('SK No. 421.2/012/2026');
+  const [isSubmittingKosp, setIsSubmittingKosp] = useState(false);
 
   const activeSubject = STANDARD_SUBJECTS.find((s) => s.code === subjectCode) || STANDARD_SUBJECTS[0];
 
@@ -181,7 +195,59 @@ export default function CurriculumWorkstationPage() {
     setTimeout(() => setToastMessage(null), 5000);
   };
 
-  // 3. Handler: Sintesis Usulan TP & ATP via NVIDIA NIM
+  // 3. Handler: Daftarkan Naskah KOSP (Otoritas Kepala Sekolah)
+  const handleRegisterSchoolKosp = async () => {
+    if (!kospElementName.trim() || !kospDescription.trim()) {
+      showToast('error', 'Nama elemen CP dan naskah rumusan KOSP wajib diisi.');
+      return;
+    }
+
+    setIsSubmittingKosp(true);
+    try {
+      const res = await fetch('/api/v1/learning/pedagogy/cp/school', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          subject_name: activeSubject.name,
+          subject_code: subjectCode,
+          phase: phase,
+          target_grades: gradeLevel,
+          element_name: kospElementName,
+          description: kospDescription,
+          source_document: kospDocument,
+          document_page_ref: kospPageRef,
+        }),
+      });
+
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        throw new Error(json.error || 'Gagal mengesahkan naskah KOSP satuan pendidikan.');
+      }
+
+      showToast('success', 'Naskah KOSP berhasil disahkan & terdaftar di registry sekolah!');
+      setIsKospModalOpen(false);
+      setKospElementName('');
+      setKospDescription('');
+
+      // Refresh registry
+      const regRes = await fetch(
+        `/api/v1/learning/pedagogy/cp?phase=${phase}&subject=${encodeURIComponent(activeSubject.name)}&verification=ALL`
+      );
+      const regJson = await regRes.json();
+      if (regJson.success && regJson.data) {
+        setRegistryData(regJson.data);
+        if (regJson.data.elements.length > 0) {
+          setSelectedCp(regJson.data.elements[regJson.data.elements.length - 1]);
+        }
+      }
+    } catch (err: any) {
+      showToast('error', err.message || 'Terjadi kesalahan saat menyimpan naskah KOSP.');
+    } finally {
+      setIsSubmittingKosp(false);
+    }
+  };
+
+  // 4. Handler: Sintesis Usulan TP & ATP via NVIDIA NIM
   const handleSynthesizeAi = async (forceRegenerate = false) => {
     if (!selectedCp) return;
 
@@ -226,7 +292,7 @@ export default function CurriculumWorkstationPage() {
     }
   };
 
-  // 4. Handler: Simpan Hasil Edit TP (Review)
+  // 5. Handler: Simpan Hasil Edit TP (Review)
   const handleSaveEditedTp = async () => {
     if (!editingTp || !editingTp.id) return;
 
@@ -252,7 +318,7 @@ export default function CurriculumWorkstationPage() {
         throw new Error(json.error || 'Gagal menyimpan perubahan TP.');
       }
 
-      showToast('success', `TP ${editingTp.code} berhasil diperbarui dan ditandai REVIEWED!`);
+      showToast('success', `TP ${editingTp.code} berhasil diverifikasi dan ditandai REVIEWED!`);
       setEditingTp(null);
 
       // Refresh data
@@ -270,7 +336,7 @@ export default function CurriculumWorkstationPage() {
     }
   };
 
-  // 5. Handler: Publikasi Transaksional TP & ATP
+  // 6. Handler: Pengesahan & Publikasi Resmi TP & ATP
   const handlePublishAll = async () => {
     const allTps = [
       ...(atpMatrix?.odd_semester.items || []),
@@ -280,7 +346,7 @@ export default function CurriculumWorkstationPage() {
     const tpIds = allTps.map((t) => t.tp_id || t.id).filter(Boolean);
 
     if (tpIds.length === 0) {
-      showToast('error', 'Tidak ada butir TP yang dapat dipublikasikan. Silakan rumuskan usulan TP terlebih dahulu.');
+      showToast('error', 'Tidak ada butir TP yang dapat disahkan. Silakan rumuskan usulan TP terlebih dahulu.');
       return;
     }
 
@@ -298,10 +364,15 @@ export default function CurriculumWorkstationPage() {
 
       const json = await res.json();
       if (!res.ok || !json.success) {
-        throw new Error(json.error || 'Gagal menerbitkan alur TP & ATP.');
+        throw new Error(json.error || 'Gagal mengesahkan alur TP & ATP.');
       }
 
-      showToast('success', json.message || 'Alur TP & ATP berhasil dipublikasikan secara resmi!');
+      showToast(
+        'success',
+        isPrincipal
+          ? 'Perangkat Pembelajaran resmi disahkan dan diratifikasi dengan legalitas Kepala Sekolah!'
+          : 'Alur TP & ATP berhasil dipublikasikan secara resmi!'
+      );
 
       // Refresh data
       if (selectedCp) {
@@ -334,13 +405,17 @@ export default function CurriculumWorkstationPage() {
 
   return (
     <div className={styles.container}>
-      {/* ── 1. Breadcrumb ── */}
+      {/* ── 1. Breadcrumb (Adaptif Role) ── */}
       <nav className={styles.breadcrumb}>
         <Link href="/dashboard">Dashboard</Link>
         <ChevronRight size={13} />
-        <Link href="/dashboard/teacher">Workstation Guru</Link>
+        <Link href={isPrincipal ? "/dashboard/learning" : "/dashboard/teacher"}>
+          {isPrincipal ? "Pembelajaran" : "Workstation Guru"}
+        </Link>
         <ChevronRight size={13} />
-        <span className={styles.breadcrumbCurrent}>Kurikulum Merdeka (CP, TP & ATP)</span>
+        <span className={styles.breadcrumbCurrent}>
+          {isPrincipal ? "Supervisi & Tata Kelola KOSP (CP & ATP)" : "Kurikulum Merdeka (CP, TP & ATP)"}
+        </span>
       </nav>
 
       {/* ── 2. Toast Alert ── */}
@@ -355,54 +430,100 @@ export default function CurriculumWorkstationPage() {
         </div>
       )}
 
-      {/* ── 3. Executive Workspace Header ── */}
+      {/* ── 3. Executive Workspace Header (Adaptif Role KS vs Guru) ── */}
       <header className={styles.header}>
         <div className={styles.headerLeft}>
-          <div className={styles.headerIconBadge}>
-            <Compass size={22} />
+          <div className={`${styles.headerIconBadge} ${isPrincipal ? styles.principalHeaderBadge : ''}`}>
+            {isPrincipal ? <ShieldCheck size={22} /> : <Compass size={22} />}
           </div>
           <div className={styles.headerTitleArea}>
-            <div className={styles.workspaceTag}>
+            <div className={`${styles.workspaceTag} ${isPrincipal ? styles.principalTag : ''}`}>
               <span className={styles.pulseGreen} />
-              <span>Teacher Workstation • BSKAP 033/H/KR/2024</span>
+              <span>
+                {isPrincipal
+                  ? 'SUPERVISI AKADEMIK • KEPALA SEKOLAH'
+                  : 'TEACHER WORKSTATION • BSKAP 033/H/KR/2024'}
+              </span>
             </div>
-            <h1 className={styles.pageTitle}>Kurikulum Merdeka (CP, TP & ATP)</h1>
+            <h1 className={styles.pageTitle}>
+              {isPrincipal
+                ? 'Supervisi & Pengesahan Kurikulum Merdeka (KOSP)'
+                : 'Kurikulum Merdeka (CP, TP & ATP)'}
+            </h1>
             <p className={styles.pageSubtitle}>
-              Registry resmi Capaian Pembelajaran, dekonstruksi AI NVIDIA NIM, dan sinkronisasi Kalender Pendidikan.
+              {isPrincipal
+                ? 'Panel pengesahan naskah KOSP, verifikasi Alur Tujuan Pembelajaran (ATP) guru, dan audit keselarasan Kalender Pendidikan.'
+                : 'Registry resmi Capaian Pembelajaran, dekonstruksi AI NVIDIA NIM, dan sinkronisasi Kalender Pendidikan.'}
             </p>
           </div>
         </div>
 
         <div className={styles.headerActions}>
-          <Link href="/dashboard/teacher/calendar" className={styles.actionBtnSecondary}>
+          <Link href="/dashboard/academic-years/calendar" className={styles.actionBtnSecondary}>
             <Calendar size={13} />
             <span>Kalender Kaldik</span>
           </Link>
 
-          <button
-            className={styles.actionBtnAi}
-            onClick={() => handleSynthesizeAi(false)}
-            disabled={!selectedCp?.is_eligible_source || isSynthesizing}
-            title={!selectedCp?.is_eligible_source ? 'Pilih CP resmi terverifikasi terlebih dahulu' : 'Dekonstruksi CP menjadi TP dengan AI'}
-          >
-            {isSynthesizing ? <RefreshCw size={13} className="animate-spin" /> : <Sparkles size={13} />}
-            <span>{isSynthesizing ? 'Mendekonstruksi...' : 'Sintesis TP & ATP (AI)'}</span>
-          </button>
+          {isPrincipal ? (
+            <>
+              <button
+                className={styles.actionBtnPrimary}
+                onClick={() => setIsKospModalOpen(true)}
+                title="Mendaftarkan rumusan KOSP resmi satuan pendidikan"
+              >
+                <PlusCircle size={13} />
+                <span>+ Daftarkan KOSP</span>
+              </button>
 
-          {allItems.length > 0 && (
-            <button
-              className={styles.actionBtnSuccess}
-              onClick={handlePublishAll}
-              disabled={isPublishing}
-            >
-              <FileCheck size={13} />
-              <span>{isPublishing ? 'Menerbitkan...' : 'Publikasikan Perangkat'}</span>
-            </button>
+              {allItems.length > 0 && (
+                <button
+                  className={styles.actionBtnSuccess}
+                  onClick={handlePublishAll}
+                  disabled={isPublishing}
+                >
+                  <CheckCheck size={13} />
+                  <span>{isPublishing ? 'Mengesahkan...' : 'Sahkan & Ratifikasi (SK KS)'}</span>
+                </button>
+              )}
+
+              <button
+                className={styles.actionBtnAi}
+                onClick={() => handleSynthesizeAi(false)}
+                disabled={!selectedCp?.is_eligible_source || isSynthesizing}
+                title="Uji coba dekonstruksi AI NVIDIA NIM untuk telaah kurikulum"
+              >
+                {isSynthesizing ? <RefreshCw size={13} className="animate-spin" /> : <Sparkles size={13} />}
+                <span>{isSynthesizing ? 'Memproses...' : 'Uji Simulasi AI'}</span>
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                className={styles.actionBtnAi}
+                onClick={() => handleSynthesizeAi(false)}
+                disabled={!selectedCp?.is_eligible_source || isSynthesizing}
+                title={!selectedCp?.is_eligible_source ? 'Pilih CP resmi terverifikasi terlebih dahulu' : 'Dekonstruksi CP menjadi TP dengan AI'}
+              >
+                {isSynthesizing ? <RefreshCw size={13} className="animate-spin" /> : <Sparkles size={13} />}
+                <span>{isSynthesizing ? 'Mendekonstruksi...' : 'Sintesis TP & ATP (AI)'}</span>
+              </button>
+
+              {allItems.length > 0 && (
+                <button
+                  className={styles.actionBtnSuccess}
+                  onClick={handlePublishAll}
+                  disabled={isPublishing}
+                >
+                  <FileCheck size={13} />
+                  <span>{isPublishing ? 'Menerbitkan...' : 'Publikasikan Perangkat'}</span>
+                </button>
+              )}
+            </>
           )}
         </div>
       </header>
 
-      {/* ── 4. Unified Workstation Scope & Filter Toolbar ── */}
+      {/* ── 4. Unified Scope & Filter Toolbar ── */}
       <section className={styles.workstationToolbar}>
         <div className={styles.toolbarFilterGroup}>
           <div className={styles.filterIconPill}>
@@ -516,7 +637,7 @@ export default function CurriculumWorkstationPage() {
               <p className={styles.calloutDesc}>{selectedCp.description}</p>
               <span className={styles.calloutMeta}>
                 Sumber: {selectedCp.source_document || 'Regulasi Kemendikdasmen BSKAP 033/H/KR/2024'} ({selectedCp.source_version})
-                {selectedCp.document_page_ref ? ` • Hal: ${selectedCp.document_page_ref}` : ''}
+                {selectedCp.document_page_ref ? ` • Rujukan: ${selectedCp.document_page_ref}` : ''}
               </span>
             </div>
           </div>
@@ -552,15 +673,28 @@ export default function CurriculumWorkstationPage() {
                 Belum ditemukan naskah CP terverifikasi untuk <strong>{activeSubject.name}</strong> pada <strong>{phase}</strong>. Sesuai prinsip tata kelola data Kemendikdasmen, AI tidak diperbolehkan mengarang rumusan CP mandiri.
               </p>
               <span className={styles.calloutMeta}>
-                Silakan pilih mata pelajaran lain yang telah terdaftar, atau daftarkan dokumen KOSP resmi sekolah.
+                {isPrincipal
+                  ? 'Sebagai Kepala Sekolah, Anda dapat mendaftarkan dokumen KOSP resmi satuan pendidikan secara langsung menggunakan tombol di sebelah kanan.'
+                  : 'Silakan pilih mata pelajaran lain yang telah terdaftar, atau koordinasikan dengan Kepala Sekolah untuk mendaftarkan dokumen KOSP.'}
               </span>
             </div>
           </div>
 
           <div className={styles.calloutActions}>
-            <Link href="/dashboard/settings" className={styles.actionBtnSecondary}>
-              <span>+ Daftarkan KOSP</span>
-            </Link>
+            {isPrincipal ? (
+              <button
+                type="button"
+                className={styles.actionBtnPrimary}
+                onClick={() => setIsKospModalOpen(true)}
+              >
+                <PlusCircle size={13} />
+                <span>+ Daftarkan KOSP</span>
+              </button>
+            ) : (
+              <Link href="/dashboard/settings" className={styles.actionBtnSecondary}>
+                <span>Panduan Dokumen KOSP</span>
+              </Link>
+            )}
           </div>
         </section>
       )}
@@ -580,7 +714,9 @@ export default function CurriculumWorkstationPage() {
           </div>
           <div className={styles.metricBody}>
             <div className={styles.metricValue} style={{ color: '#059669' }}>35 Pekan</div>
-            <div className={styles.metricLabel}>Minggu Efektif Belajar (MEB)</div>
+            <div className={styles.metricLabel}>
+              {isPrincipal ? 'Kapasitas MEB Satuan Pendidikan' : 'Minggu Efektif Belajar (MEB)'}
+            </div>
             <div className={styles.metricSubLabel}>Kapasitas Kaldik Semester 1 &amp; 2</div>
           </div>
         </div>
@@ -614,12 +750,14 @@ export default function CurriculumWorkstationPage() {
           </div>
           <div className={styles.metricBody}>
             <div className={styles.metricValue} style={{ color: '#7c3aed' }}>{allItems.length} Butir</div>
-            <div className={styles.metricLabel}>Total TP Terpetakan</div>
+            <div className={styles.metricLabel}>
+              {isPrincipal ? 'Target Kompetensi Guru' : 'Total TP Terpetakan'}
+            </div>
             <div className={styles.metricSubLabel}>Hasil dekonstruksi Taksonomi Bloom</div>
           </div>
         </div>
 
-        {/* Card 4: Rasio Publikasi Resmi */}
+        {/* Card 4: Rasio Publikasi & Validasi */}
         <div className={styles.metricCard} style={{ '--card-color': publishedCount > 0 ? '#059669' : '#d97706' } as React.CSSProperties}>
           <div className={styles.metricTopRow}>
             <div
@@ -643,10 +781,14 @@ export default function CurriculumWorkstationPage() {
             <div className={styles.metricValue} style={{ color: publishedCount > 0 ? '#059669' : '#d97706' }}>
               {publishedCount} / {allItems.length}
             </div>
-            <div className={styles.metricLabel}>Status Publikasi Resmi</div>
+            <div className={styles.metricLabel}>
+              {isPrincipal ? 'Kesiapan Pengesahan KS' : 'Status Publikasi Resmi'}
+            </div>
             <div className={styles.metricSubLabel}>
               {publishedCount === allItems.length && allItems.length > 0
                 ? 'Semua TP siap dihubungkan ke RPP'
+                : isPrincipal
+                ? 'Menunggu pengesahan resmi Kepala Sekolah'
                 : 'Menunggu publikasi resmi perangkat'}
             </div>
           </div>
@@ -660,7 +802,7 @@ export default function CurriculumWorkstationPage() {
           onClick={() => setActiveTab('CP')}
         >
           <BookOpen size={15} />
-          <span>1. Capaian Pembelajaran (CP)</span>
+          <span>{isPrincipal ? '1. Naskah KOSP Satuan Pendidikan' : '1. Capaian Pembelajaran (CP)'}</span>
           <span className={styles.tabCountBadge}>{registryData?.elements_count || 0}</span>
         </button>
 
@@ -669,7 +811,7 @@ export default function CurriculumWorkstationPage() {
           onClick={() => setActiveTab('TP')}
         >
           <Award size={15} />
-          <span>2. Tujuan Pembelajaran (TP)</span>
+          <span>{isPrincipal ? '2. Telaah Usulan TP Guru' : '2. Tujuan Pembelajaran (TP)'}</span>
           <span className={styles.tabCountBadge}>{allItems.length}</span>
         </button>
 
@@ -684,17 +826,32 @@ export default function CurriculumWorkstationPage() {
 
       {/* ── 8. Tab Content Views ── */}
 
-      {/* TAB 1: Capaian Pembelajaran (CP) Registry */}
+      {/* TAB 1: Capaian Pembelajaran (CP / KOSP) */}
       {activeTab === 'CP' && (
         <section className={styles.card}>
           <div className={styles.cardHeader}>
             <h2 className={styles.cardTitle}>
               <Layers size={17} style={{ color: '#0284c7' }} />
-              Elemen Capaian Pembelajaran Terdaftar ({registryData?.elements_count || 0} Elemen)
+              {isPrincipal
+                ? `Naskah KOSP Terdaftar (${registryData?.elements_count || 0} Elemen)`
+                : `Elemen Capaian Pembelajaran Terdaftar (${registryData?.elements_count || 0} Elemen)`}
             </h2>
-            <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
-              Fase: {phase} • {activeSubject.name}
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              {isPrincipal && (
+                <button
+                  type="button"
+                  className={styles.actionBtnPrimary}
+                  style={{ padding: '0.28rem 0.65rem', fontSize: '0.72rem' }}
+                  onClick={() => setIsKospModalOpen(true)}
+                >
+                  <PlusCircle size={12} />
+                  <span>+ Tambah Elemen KOSP</span>
+                </button>
+              )}
+              <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                Fase: {phase} • {activeSubject.name}
+              </span>
+            </div>
           </div>
 
           {isLoadingRegistry ? (
@@ -741,7 +898,9 @@ export default function CurriculumWorkstationPage() {
               <BookOpen size={36} style={{ color: '#94a3b8', opacity: 0.5 }} />
               <h3 className={styles.emptyStateTitle}>Belum Ada Naskah CP Terdaftar</h3>
               <p className={styles.emptyStateDesc}>
-                Belum ditemukan naskah Capaian Pembelajaran resmi untuk mata pelajaran ini pada {phase}.
+                {isPrincipal
+                  ? 'Belum ditemukan naskah CP untuk mata pelajaran ini. Silakan klik tombol "+ Tambah Elemen KOSP" untuk mendaftarkan naskah resmi sekolah.'
+                  : 'Belum ditemukan naskah Capaian Pembelajaran resmi untuk mata pelajaran ini pada ' + phase + '.'}
               </p>
             </div>
           )}
@@ -788,7 +947,7 @@ export default function CurriculumWorkstationPage() {
                       onClick={() => setEditingTp(item)}
                     >
                       <Edit3 size={12} />
-                      <span>Edit / Telaah</span>
+                      <span>{isPrincipal ? 'Telaah & Catatan' : 'Edit / Telaah'}</span>
                     </button>
                   </div>
                 </div>
@@ -829,10 +988,13 @@ export default function CurriculumWorkstationPage() {
             <div className={styles.card}>
               <div className={styles.emptyState}>
                 <Sparkles size={38} style={{ color: '#7c3aed', opacity: 0.6 }} />
-                <h3 className={styles.emptyStateTitle}>Belum Ada Usulan Tujuan Pembelajaran</h3>
+                <h3 className={styles.emptyStateTitle}>
+                  {isPrincipal ? 'Belum Ada Usulan TP Guru Terpetakan' : 'Belum Ada Usulan Tujuan Pembelajaran'}
+                </h3>
                 <p className={styles.emptyStateDesc}>
-                  Gunakan tombol <strong>Sintesis TP &amp; ATP (AI)</strong> di atas untuk meminta AI NVIDIA NIM membedah CP
-                  terverifikasi menjadi rumusan TP operasional sesuai Taksonomi Bloom.
+                  {isPrincipal
+                    ? 'Guru pengampu mata pelajaran belum merumuskan butir-butir TP. Anda dapat memicu simulasi perumusan AI atau meminta guru menyusun alur perangkat ajar.'
+                    : 'Gunakan tombol Sintesis TP & ATP (AI) di atas untuk meminta AI NVIDIA NIM membedah CP terverifikasi menjadi rumusan TP operasional.'}
                 </p>
                 <button
                   className={styles.actionBtnAi}
@@ -841,7 +1003,7 @@ export default function CurriculumWorkstationPage() {
                   style={{ marginTop: '0.5rem' }}
                 >
                   <Sparkles size={14} />
-                  <span>Mulai Sintesis TP Sekarang</span>
+                  <span>{isPrincipal ? 'Jalankan Uji Simulasi AI' : 'Mulai Sintesis TP Sekarang'}</span>
                 </button>
               </div>
             </div>
@@ -924,12 +1086,127 @@ export default function CurriculumWorkstationPage() {
         </section>
       )}
 
-      {/* ── 9. Modal Edit / Review TP ── */}
+      {/* ── 9. Modal Daftarkan Naskah KOSP (Khusus Kepala Sekolah) ── */}
+      {isKospModalOpen && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalBox}>
+            <div className={styles.modalHeader}>
+              <h3 className={styles.modalTitle}>Daftarkan Naskah KOSP Resmi Satuan Pendidikan</h3>
+              <button
+                className={styles.closeBtn}
+                onClick={() => setIsKospModalOpen(false)}
+                aria-label="Tutup"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div style={{ padding: '0.55rem 0.75rem', background: 'rgba(79, 70, 229, 0.06)', borderRadius: '8px', marginBottom: '0.85rem' }}>
+              <span style={{ fontSize: '0.72rem', color: '#4f46e5', fontWeight: 700 }}>
+                Legalitas Kepala Sekolah • SK Satuan Pendidikan
+              </span>
+              <p style={{ margin: '0.15rem 0 0 0', fontSize: '0.74rem', color: 'var(--text-secondary)' }}>
+                Naskah ini akan terdaftar sebagai <strong>SCHOOL_VERIFIED</strong> resmi sekolah dan menjadi basis penyusunan TP oleh guru pengampu.
+              </p>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>Mata Pelajaran:</label>
+                <input
+                  type="text"
+                  className={styles.textInput}
+                  value={activeSubject.name}
+                  disabled
+                  style={{ opacity: 0.8 }}
+                />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>Jenjang / Fase:</label>
+                <input
+                  type="text"
+                  className={styles.textInput}
+                  value={`${phase} (${gradeLevel})`}
+                  disabled
+                  style={{ opacity: 0.8 }}
+                />
+              </div>
+            </div>
+
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>Nama Elemen Capaian Pembelajaran (CP):</label>
+              <input
+                type="text"
+                className={styles.textInput}
+                placeholder="Contoh: Pemahaman IPAS (Sains dan Sosial) / Keterampilan Proses"
+                value={kospElementName}
+                onChange={(e) => setKospElementName(e.target.value)}
+              />
+            </div>
+
+            <div className={styles.formGroup}>
+              <label className={styles.formLabel}>Teks Lengkap Rumusan Naskah KOSP:</label>
+              <textarea
+                className={styles.textareaInput}
+                placeholder="Masukkan rumusan naskah Capaian Pembelajaran resmi satuan pendidikan..."
+                style={{ minHeight: '95px' }}
+                value={kospDescription}
+                onChange={(e) => setKospDescription(e.target.value)}
+              />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>Dokumen KOSP Satuan Pendidikan:</label>
+                <input
+                  type="text"
+                  className={styles.textInput}
+                  value={kospDocument}
+                  onChange={(e) => setKospDocument(e.target.value)}
+                />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>Nomor SK / Halaman Rujukan KOSP:</label>
+                <input
+                  type="text"
+                  className={styles.textInput}
+                  value={kospPageRef}
+                  onChange={(e) => setKospPageRef(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className={styles.modalFooter}>
+              <button
+                className={styles.actionBtnSecondary}
+                onClick={() => setIsKospModalOpen(false)}
+                disabled={isSubmittingKosp}
+              >
+                Batal
+              </button>
+              <button
+                className={styles.actionBtnPrimary}
+                onClick={handleRegisterSchoolKosp}
+                disabled={isSubmittingKosp}
+              >
+                {isSubmittingKosp ? <RefreshCw size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+                <span>{isSubmittingKosp ? 'Mengesahkan...' : 'Sahkan Naskah KOSP (SK KS)'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── 10. Modal Edit / Telaah TP ── */}
       {editingTp && (
         <div className={styles.modalOverlay}>
           <div className={styles.modalBox}>
             <div className={styles.modalHeader}>
-              <h3 className={styles.modalTitle}>Sunting &amp; Telaah: {editingTp.code}</h3>
+              <h3 className={styles.modalTitle}>
+                {isPrincipal ? `Supervisi & Telaah: ${editingTp.code}` : `Sunting & Telaah: ${editingTp.code}`}
+              </h3>
               <button className={styles.closeBtn} onClick={() => setEditingTp(null)} aria-label="Tutup">
                 <X size={18} />
               </button>
@@ -1004,7 +1281,9 @@ export default function CurriculumWorkstationPage() {
               </button>
               <button className={styles.actionBtnPrimary} onClick={handleSaveEditedTp}>
                 <CheckCircle2 size={14} />
-                <span>Simpan Perubahan &amp; Tandai REVIEWED</span>
+                <span>
+                  {isPrincipal ? 'Sahkan Perubahan & Tandai REVIEWED' : 'Simpan Perubahan & Tandai REVIEWED'}
+                </span>
               </button>
             </div>
           </div>

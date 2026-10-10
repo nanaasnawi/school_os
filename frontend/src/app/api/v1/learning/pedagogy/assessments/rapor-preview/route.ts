@@ -44,12 +44,12 @@ export async function GET(request: NextRequest) {
     const assessRes = await pool.query(assessQuery, [classId, academicYear, semester, subjectCode]);
     const assessments = assessRes.rows;
 
-    // 2. Ambil seluruh siswa di kelas
+    // 2. Ambil seluruh siswa aktif di kelas
     const studentsRes = await pool.query(
       `SELECT s.id, s.full_name, s.nisn
        FROM enrollments e
        JOIN students s ON e.student_id = s.id
-       WHERE e.class_id = $1
+       WHERE e.class_id = $1 AND (e.status IS NULL OR LOWER(e.status) = 'active') AND s.deleted_at IS NULL
        ORDER BY s.full_name ASC;`,
       [classId]
     );
@@ -150,6 +150,11 @@ export async function GET(request: NextRequest) {
     // Materialized Snapshot Persistence (Anti-Spike Load Cache)
     const tenantRes = await pool.query('SELECT tenant_id FROM classes WHERE id = $1', [classId]);
     const tenantId = tenantRes.rows[0]?.tenant_id || null;
+
+    // Ambil nama mapel sesungguhnya dari tabel subjects
+    const subjectRes = await pool.query('SELECT name FROM subjects WHERE code = $1 LIMIT 1', [subjectCode]);
+    const resolvedSubjectName = subjectRes.rows[0]?.name || (subjectCode === '401000000' ? 'Matematika (Umum)' : subjectCode);
+
     if (tenantId) {
       for (const entry of reportEntries) {
         await pool.query(
@@ -181,7 +186,7 @@ export async function GET(request: NextRequest) {
             classId,
             entry.student_id,
             subjectCode,
-            'IPAS',
+            resolvedSubjectName,
             entry.avg_tp_score,
             entry.sas_score,
             entry.final_score,

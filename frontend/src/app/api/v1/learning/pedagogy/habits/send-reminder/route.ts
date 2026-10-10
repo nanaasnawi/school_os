@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     } else if (class_id) {
       params.push(class_id);
       filterQuery += ` AND h.student_id IN (
-        SELECT student_id FROM enrollments WHERE class_id = $${params.length} AND (status IS NULL OR status = 'ACTIVE')
+        SELECT student_id FROM enrollments WHERE class_id = $${params.length} AND (status IS NULL OR LOWER(status) = 'active')
       )`;
     }
 

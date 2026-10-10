@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
       ];
 
       let filterConditions = `WHERE h.student_id IN (
-        SELECT student_id FROM enrollments WHERE class_id = $4 AND (status IS NULL OR status = 'ACTIVE')
+        SELECT student_id FROM enrollments WHERE class_id = $4 AND (status IS NULL OR LOWER(status) = 'active')
       )`;
 
       if (target_status === 'SYSTEM_EXPIRED') {

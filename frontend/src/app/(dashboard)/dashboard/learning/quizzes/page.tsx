@@ -102,6 +102,8 @@ export default function QuizzesPage() {
   const [quizzes, setQuizzes] = useState<QuizItem[]>(INITIAL_QUIZZES);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
+  const [subjectFilter, setSubjectFilter] = useState('ALL');
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   // Teachers, Classes, Subjects
   const [teachers, setTeachers] = useState<TeacherItem[]>([]);
@@ -725,15 +727,29 @@ export default function QuizzesPage() {
     showToast('✓ File CSV berhasil diunduh');
   };
 
+  const uniqueSubjects = Array.from(new Set(quizzes.map(q => q.subject).filter(Boolean)));
+
+  const totalAllQuestions = quizzes.reduce((acc, q) => acc + (q.totalQuestions || 0), 0);
+  const activeLiveCount = quizzes.filter(q => q.status === 'LIVE_EXAM' || q.status === 'PUBLISHED').length;
+  const liveCount = quizzes.filter(q => q.status === 'LIVE_EXAM').length;
+  const totalParticipantsSum = quizzes.reduce((acc, q) => acc + (q.participants || 0), 0);
+  const quizzesWithAvg = quizzes.filter(q => (q.avgScore || 0) > 0);
+  const overallAvgScore = quizzesWithAvg.length > 0 
+    ? Math.round(quizzesWithAvg.reduce((acc, q) => acc + q.avgScore, 0) / quizzesWithAvg.length) 
+    : 0;
+
   const filtered = quizzes.filter((q) => {
-    const matchSearch = q.title.toLowerCase().includes(search.toLowerCase()) || q.subject.toLowerCase().includes(search.toLowerCase()) || q.teacherName.toLowerCase().includes(search.toLowerCase());
+    const matchSearch = q.title.toLowerCase().includes(search.toLowerCase()) || 
+      q.subject.toLowerCase().includes(search.toLowerCase()) || 
+      q.teacherName.toLowerCase().includes(search.toLowerCase()) ||
+      (q.classRoom && q.classRoom.toLowerCase().includes(search.toLowerCase()));
     const matchStatus = statusFilter === 'ALL' || q.status === statusFilter;
-    return matchSearch && matchStatus;
+    const matchSubject = subjectFilter === 'ALL' || q.subject === subjectFilter;
+    return matchSearch && matchStatus && matchSubject;
   });
 
   // --- Client-Side Pagination ---
   const [currentPage, setCurrentPage] = React.useState(1);
-  const itemsPerPage = 10;
   const totalPages = Math.ceil(filtered.length / itemsPerPage) || 1;
   const safePage = Math.min(Math.max(1, currentPage), totalPages);
   const paginated = filtered.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
@@ -743,7 +759,7 @@ export default function QuizzesPage() {
   const totalCumulativePoints = questionsList.reduce((acc, q) => acc + (q.points || 0), 0);
 
   return (
-    <div className={styles.page}>
+    <div className={styles.container}>
       {/* Toast Notification */}
       {toastMessage && (
         <div className="toastContainer">
@@ -753,52 +769,64 @@ export default function QuizzesPage() {
         </div>
       )}
 
-      {/* Header */}
+      {/* ── Executive Workstation Header ── */}
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <h1 className={styles.title} style={{ margin: 0, fontSize: '1.3rem', fontWeight: 800 }}>
-            {activeView === 'ANALYSIS' ? 'Analisis Nilai & Hasil Ujian CBT Siswa' : activeView === 'QUESTIONS' ? 'Bank & Butir Soal CBT' : 'Kuis & Ujian Online (CBT)'}
-          </h1>
-          <p className={styles.subtitle}>
-            {activeView === 'ANALYSIS' && analyzedQuiz
-              ? `${analyzedQuiz.title} • ${analyzedQuiz.subject} (${analyzedQuiz.classRoom}) • Guru: ${analyzedQuiz.teacherName}`
-              : activeView === 'QUESTIONS' && viewQuestionsQuiz
-              ? `${viewQuestionsQuiz.title} • ${viewQuestionsQuiz.subject} (${viewQuestionsQuiz.classRoom})`
-              : 'Manajemen Bank Soal (Pilihan Ganda & Soal Uraian), Sinkronisasi Portal Android Guru & CBT Siswa'}
-          </p>
+          <div className={styles.headerIconBadge}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+              <path d="m9 15 2 2 4-4" />
+            </svg>
+          </div>
+          <div className={styles.headerTitleArea}>
+            <div className={styles.workspaceTag}>
+              <span className={styles.pulseGreen}></span>
+              <span>TEACHER WORKSTATION • KUIS &amp; UJIAN ONLINE CBT</span>
+            </div>
+            <h1 className={styles.pageTitle}>
+              {activeView === 'ANALYSIS' ? 'Analisis Nilai & Hasil Ujian CBT Siswa' : activeView === 'QUESTIONS' ? 'Bank & Butir Soal CBT' : 'Kuis & Ujian Online (CBT)'}
+            </h1>
+            <p className={styles.pageSubtitle}>
+              {activeView === 'ANALYSIS' && analyzedQuiz
+                ? `${analyzedQuiz.title} • ${analyzedQuiz.subject} (${analyzedQuiz.classRoom}) • Guru: ${analyzedQuiz.teacherName}`
+                : activeView === 'QUESTIONS' && viewQuestionsQuiz
+                ? `${viewQuestionsQuiz.title} • ${viewQuestionsQuiz.subject} (${viewQuestionsQuiz.classRoom})`
+                : 'Manajemen Bank Soal (Pilihan Ganda & Soal Uraian), Sinkronisasi Portal Android Guru & CBT Siswa'}
+            </p>
+          </div>
         </div>
-        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+
+        <div className={styles.headerActions}>
           {activeView === 'QUESTIONS' && (
             <>
               {viewQuestionsQuiz && (
                 viewQuestionsQuiz.status === 'DRAFT' ? (
                   <button
-                    className="btn btn-primary btn-sm"
+                    className={styles.btnPrimary}
                     onClick={() => setPublishingQuiz(viewQuestionsQuiz)}
-                    style={{ background: '#16a34a', borderColor: '#16a34a', color: '#fff', display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontWeight: 700 }}
+                    style={{ background: 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)' }}
                   >
                     <span>📢 Publish Kuis ({questionsList.length} Soal)</span>
                   </button>
                 ) : (
-                  <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#16a34a', background: '#dcfce7', border: '1px solid #bbf7d0', padding: '0.28rem 0.65rem', borderRadius: '6px' }}>
+                  <span className={styles.statusPillPublished}>
                     ✓ Kuis Published (Aktif)
                   </span>
                 )
               )}
               <button
-                className="btn btn-primary btn-sm"
+                className={styles.btnPrimary}
                 onClick={() => setShowAddQuestion(prev => !prev)}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontWeight: 700 }}
               >
-                {showAddQuestion ? '✕ Tutup Form' : '+ Tambah Butir Soal Baru'}
+                {showAddQuestion ? '✕ Tutup Form' : '+ Tambah Butir Soal'}
               </button>
               <button
                 onClick={() => {
                   setActiveView('LIST');
                   setViewQuestionsQuiz(null);
                 }}
-                className="btn btn-secondary btn-sm"
-                style={{ fontWeight: 700 }}
+                className={styles.btnSecondary}
               >
                 ← Kembali ke Daftar Kuis CBT
               </button>
@@ -808,18 +836,16 @@ export default function QuizzesPage() {
           {activeView === 'ANALYSIS' && (
             <>
               <button
-                className="btn btn-secondary btn-sm"
+                className={styles.btnSecondary}
                 onClick={() => analyzedQuiz && handleOpenAnalysisModal(analyzedQuiz)}
                 disabled={loadingAnalysis}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontWeight: 700 }}
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className={loadingAnalysis ? 'spinning' : ''}><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
                 <span>{loadingAnalysis ? 'Menyinkronkan...' : 'Segarkan Data'}</span>
               </button>
               <button
-                className="btn btn-secondary btn-sm"
+                className={styles.btnSecondary}
                 onClick={() => analyzedQuiz && exportCbtCsv(analyzedQuiz.title)}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontWeight: 700 }}
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
                 <span>Ekspor CSV</span>
@@ -830,8 +856,7 @@ export default function QuizzesPage() {
                   setAnalyzedQuiz(null);
                   setInspectingAttempt(null);
                 }}
-                className="btn btn-secondary btn-sm"
-                style={{ fontWeight: 700 }}
+                className={styles.btnSecondary}
               >
                 ← Kembali ke Daftar Kuis CBT
               </button>
@@ -839,149 +864,182 @@ export default function QuizzesPage() {
           )}
 
           {activeView === 'LIST' && (
-            <Link href="/dashboard/learning" className="btn btn-secondary btn-sm">
-              ← Kembali ke Workspace
-            </Link>
+            <>
+              <button
+                className={styles.btnSecondary}
+                onClick={() => {
+                  if (quizzes.length > 0) {
+                    exportCbtCsv(quizzes[0].title);
+                  } else {
+                    showToast('Belum ada data kuis untuk diekspor');
+                  }
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+                <span>Ekspor CSV</span>
+              </button>
+
+              <Link href="/dashboard/learning/quizzes/create" className={styles.btnSecondary}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <line x1="16" y1="13" x2="8" y2="13" />
+                  <line x1="16" y1="17" x2="8" y2="17" />
+                  <polyline points="10 9 9 9 8 9" />
+                </svg>
+                <span>Bank Soal</span>
+              </Link>
+
+              <button
+                className={styles.btnPrimary}
+                onClick={() => setShowAddModal(true)}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                <span>+ Buat Kuis CBT</span>
+              </button>
+            </>
           )}
         </div>
       </div>
 
       {activeView === 'LIST' && (
         <>
-          {/* Top Action Row (Enterprise Style - Screenshot Match) */}
-          <div className="tableActionRow">
-            <Link href="/dashboard/learning/quizzes/create" className="tableActionBtn">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                <polyline points="14 2 14 8 20 8" />
-                <line x1="16" y1="13" x2="8" y2="13" />
-                <line x1="16" y1="17" x2="8" y2="17" />
-                <polyline points="10 9 9 9 8 9" />
-              </svg>
-              <span>Bank &amp; Butir Soal</span>
-            </Link>
-
-            <button
-              className="tableActionBtn"
-              onClick={() => {
-                if (quizzes.length > 0) {
-                  exportCbtCsv(quizzes[0].title);
-                } else {
-                  showToast('Belum ada data kuis untuk diekspor');
-                }
-              }}
-            >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="7 10 12 15 17 10" />
-                <line x1="12" y1="15" x2="12" y2="3" />
-              </svg>
-              <span>Ekspor Hasil CBT (CSV)</span>
-            </button>
-          </div>
-
-          {/* Table Card (Screenshot Match) */}
-          <div className="tableCard">
-            {/* Table Toolbar */}
-            <div className="tableToolbar">
-              <div className="tableInfoText">
-                Showing <strong>{filtered.length === 0 ? 0 : (safePage - 1) * itemsPerPage + 1}</strong> to{' '}
-                <strong>{Math.min(safePage * itemsPerPage, filtered.length)}</strong> of{' '}
-                <strong>{filtered.length}</strong> entries
-                {filtered.length !== quizzes.length && (
-                  <span> (filtered from <strong>{quizzes.length}</strong> total entries)</span>
-                )}
+          {/* ── Executive 4-Card KPI Metric Grid ── */}
+          <div className={styles.metricGrid}>
+            <div className={styles.metricCard}>
+              <div className={styles.metricIcon} style={{ background: 'rgba(2, 132, 199, 0.08)', color: '#0284c7' }}>
+                📋
               </div>
-
-              <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                <div className="tableSearchBox">
-                  <input
-                    type="text"
-                    placeholder="Cari kuis, mapel, atau guru..."
-                    value={search}
-                    onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
-                    className="tableSearchInput"
-                  />
-                  <svg className="tableSearchIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="11" cy="11" r="8" />
-                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                  </svg>
-                </div>
-
-                <select
-                  value={statusFilter}
-                  onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
-                  className="entriesSelect"
-                  style={{ minWidth: '130px', height: '34px' }}
-                >
-                  <option value="ALL">Semua Status</option>
-                  <option value="PUBLISHED">Published</option>
-                  <option value="LIVE_EXAM">Live Exam</option>
-                  <option value="DRAFT">Draft</option>
-                </select>
+              <div className={styles.metricContent}>
+                <span className={styles.metricLabel}>Total Kuis CBT</span>
+                <span className={styles.metricValue}>{quizzes.length} Kuis</span>
+                <span className={styles.metricSubtext}>Bank Ujian &amp; Ulangan Harian</span>
               </div>
             </div>
 
+            <div className={styles.metricCard}>
+              <div className={styles.metricIcon} style={{ background: 'rgba(16, 185, 129, 0.08)', color: '#059669' }}>
+                ⚡
+              </div>
+              <div className={styles.metricContent}>
+                <span className={styles.metricLabel}>Sesi Aktif &amp; Live</span>
+                <span className={styles.metricValue}>{activeLiveCount} Sesi</span>
+                <span className={styles.metricSubtext}>{liveCount} Sesi CBT Live Sedang Berjalan</span>
+              </div>
+            </div>
+
+            <div className={styles.metricCard}>
+              <div className={styles.metricIcon} style={{ background: 'rgba(217, 119, 6, 0.08)', color: '#d97706' }}>
+                📝
+              </div>
+              <div className={styles.metricContent}>
+                <span className={styles.metricLabel}>Total Butir Soal</span>
+                <span className={styles.metricValue}>{totalAllQuestions} Butir</span>
+                <span className={styles.metricSubtext}>PG &amp; Soal Uraian Terdaftar</span>
+              </div>
+            </div>
+
+            <div className={styles.metricCard}>
+              <div className={styles.metricIcon} style={{ background: 'rgba(99, 102, 241, 0.08)', color: '#6366f1' }}>
+                🎯
+              </div>
+              <div className={styles.metricContent}>
+                <span className={styles.metricLabel}>Rata-Rata Nilai</span>
+                <span className={styles.metricValue}>{overallAvgScore > 0 ? overallAvgScore : '—'}</span>
+                <span className={styles.metricSubtext}>{totalParticipantsSum} Peserta Siswa Terdata</span>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Workstation Filter Toolbar ── */}
+          <div className={styles.toolbar}>
+            <div className={styles.toolbarLeft}>
+              <div className={styles.filterPill}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+                </svg>
+                <span>Filter:</span>
+              </div>
+
+              <div className={styles.searchBox}>
+                <svg className={styles.searchIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="11" cy="11" r="8" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+                <input
+                  type="text"
+                  placeholder="Cari judul kuis, mapel, rombel, guru..."
+                  value={search}
+                  onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
+                  className={styles.searchInput}
+                />
+              </div>
+
+              <select
+                value={statusFilter}
+                onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
+                className={styles.toolbarSelect}
+              >
+                <option value="ALL">Semua Status</option>
+                <option value="PUBLISHED">🟢 Published (Aktif)</option>
+                <option value="LIVE_EXAM">⚡ Live Exam</option>
+                <option value="DRAFT">⚪ Draft</option>
+              </select>
+
+              {uniqueSubjects.length > 0 && (
+                <select
+                  value={subjectFilter}
+                  onChange={(e) => { setSubjectFilter(e.target.value); setCurrentPage(1); }}
+                  className={styles.toolbarSelect}
+                >
+                  <option value="ALL">Semua Mata Pelajaran</option>
+                  {uniqueSubjects.map(subj => (
+                    <option key={subj} value={subj}>{subj}</option>
+                  ))}
+                </select>
+              )}
+            </div>
+
+            <div className={styles.toolbarRight}>
+              <span className={styles.countBadge}>
+                Menampilkan <strong>{filtered.length}</strong> dari <strong>{quizzes.length}</strong> kuis
+              </span>
+            </div>
+          </div>
+
+          {/* ── Table Container Card ── */}
+          <div className={styles.tableContainer}>
             {filtered.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '3.5rem 1rem' }}>
-                <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-                  Belum Ada Kuis atau Ujian CBT Terdaftar
-                </h3>
-                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '4px', maxWidth: '480px', margin: '8px auto 18px', lineHeight: 1.5 }}>
-                  Belum ada kuis atau ujian online CBT yang dibuat oleh guru. Klik tombol <strong>+ Buat &amp; Publish Kuis CBT</strong> di atas untuk menambahkan ujian bagi siswa.
+              <div className={styles.emptyState}>
+                <div className={styles.emptyIcon}>📝</div>
+                <h3 className={styles.emptyTitle}>Belum Ada Kuis atau Ujian CBT Terdaftar</h3>
+                <p className={styles.emptyDesc}>
+                  Belum ada ujian online CBT yang sesuai dengan kriteria filter. Buat kuis baru untuk mempublikasikan soal kepada siswa.
                 </p>
-                <button className="tableActionBtn" onClick={() => setShowAddModal(true)} style={{ display: 'inline-flex', margin: '0 auto' }}>
-                  + Buat &amp; Publish Kuis CBT Baru
+                <button className={styles.btnPrimary} onClick={() => setShowAddModal(true)} style={{ marginTop: '0.5rem' }}>
+                  + Buat Kuis CBT Baru
                 </button>
               </div>
             ) : (
-              <div className="tableWrap">
-                <table className={`table ${styles.table}`} style={{ tableLayout: 'auto', minWidth: '1080px' }}>
+              <div className={styles.tableWrap}>
+                <table className={styles.cbtTable}>
                   <thead>
                     <tr>
-                      <th className="thSortable" style={{ minWidth: '220px' }}>
-                        <div className="thSortContent">
-                          <span>Judul Kuis / Ujian CBT</span>
-                          <span className="sortArrows">⇅</span>
-                        </div>
-                      </th>
-                      <th className="thSortable" style={{ minWidth: '140px' }}>
-                        <div className="thSortContent">
-                          <span>Mapel &amp; Guru</span>
-                          <span className="sortArrows">⇅</span>
-                        </div>
-                      </th>
-                      <th className="thSortable" style={{ minWidth: '95px' }}>
-                        <div className="thSortContent">
-                          <span>Rombel</span>
-                          <span className="sortArrows">⇅</span>
-                        </div>
-                      </th>
-                      <th className="thSortable" style={{ minWidth: '180px' }}>
-                        <div className="thSortContent">
-                          <span>Jadwal Pelaksanaan</span>
-                          <span className="sortArrows">⇅</span>
-                        </div>
-                      </th>
-                      <th className="thSortable" style={{ minWidth: '110px' }}>
-                        <div className="thSortContent">
-                          <span>Durasi &amp; Soal</span>
-                          <span className="sortArrows">⇅</span>
-                        </div>
-                      </th>
-                      <th className="thSortable" style={{ minWidth: '95px' }}>
-                        <div className="thSortContent">
-                          <span>Status</span>
-                          <span className="sortArrows">⇅</span>
-                        </div>
-                      </th>
-                      <th className="thSortable" style={{ minWidth: '120px' }}>
-                        <div className="thSortContent">
-                          <span>Peserta &amp; Nilai</span>
-                          <span className="sortArrows">⇅</span>
-                        </div>
-                      </th>
-                      <th style={{ textAlign: 'right', minWidth: '160px', whiteSpace: 'nowrap' }}>Aksi</th>
+                      <th style={{ minWidth: '240px' }}>Judul Kuis / Ujian CBT</th>
+                      <th style={{ minWidth: '150px' }}>Mapel &amp; Guru</th>
+                      <th style={{ minWidth: '100px' }}>Rombel</th>
+                      <th style={{ minWidth: '190px' }}>Jadwal Pelaksanaan</th>
+                      <th style={{ minWidth: '120px' }}>Durasi &amp; Soal</th>
+                      <th style={{ minWidth: '100px' }}>Status</th>
+                      <th style={{ minWidth: '130px' }}>Peserta &amp; Nilai</th>
+                      <th style={{ textAlign: 'right', minWidth: '170px' }}>Aksi</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -990,26 +1048,16 @@ export default function QuizzesPage() {
                       return (
                         <tr key={q.id}>
                           {/* 1. Judul Kuis */}
-                          <td style={{ verticalAlign: 'middle' }}>
+                          <td>
                             <div
-                              className="itemPrimaryTitle"
-                              style={{ cursor: 'pointer', fontWeight: 700, fontSize: '0.84rem', color: 'var(--text-primary)', lineHeight: 1.35 }}
+                              className={styles.quizTitleLink}
                               onClick={() => handleOpenQuestionsModal(q)}
                               title="Klik untuk melihat / mengedit butir soal CBT"
                             >
                               <span>{q.title}</span>
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '3px', flexWrap: 'nowrap' }}>
-                              <span style={{
-                                fontSize: '0.64rem',
-                                fontWeight: 700,
-                                color: q.examMode === 'PROCTORED_CBT' ? '#b91c1c' : '#6d28d9',
-                                background: q.examMode === 'PROCTORED_CBT' ? '#fef2f2' : '#f5f3ff',
-                                border: q.examMode === 'PROCTORED_CBT' ? '1px solid #fecaca' : '1px solid #ddd6fe',
-                                padding: '1px 5px',
-                                borderRadius: '4px',
-                                whiteSpace: 'nowrap'
-                              }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '4px', flexWrap: 'wrap' }}>
+                              <span className={q.examMode === 'PROCTORED_CBT' ? styles.modeBadgeProctored : styles.modeBadgeAndroid}>
                                 {q.examMode === 'PROCTORED_CBT' ? '🛡️ Proctored' : '✓ CBT Android'}
                               </span>
                               {q.examToken ? (
@@ -1021,20 +1069,7 @@ export default function QuizzesPage() {
                                     showToast(`✓ Token ujian "${q.examToken}" disalin ke clipboard!`);
                                   }}
                                   title="Klik untuk salin token ujian CBT"
-                                  style={{
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '3px',
-                                    fontSize: '0.64rem',
-                                    fontWeight: 700,
-                                    color: '#1e40af',
-                                    background: '#eff6ff',
-                                    border: '1px solid #bfdbfe',
-                                    padding: '1px 5px',
-                                    borderRadius: '4px',
-                                    cursor: 'pointer',
-                                    whiteSpace: 'nowrap'
-                                  }}
+                                  className={styles.tokenBtn}
                                 >
                                   <span>🔑 {q.examToken}</span>
                                   <span style={{ fontSize: '0.58rem', opacity: 0.7 }}>📋</span>
@@ -1044,40 +1079,31 @@ export default function QuizzesPage() {
                           </td>
 
                           {/* 2. Mapel & Guru */}
-                          <td style={{ verticalAlign: 'middle' }}>
-                            <span className="statusPill statusPillMuted" style={{ fontWeight: 700, fontSize: '0.72rem', whiteSpace: 'nowrap' }}>
+                          <td>
+                            <span className={styles.subjectBadge}>
                               {q.subject}
                             </span>
-                            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600, marginTop: '2px', whiteSpace: 'nowrap' }}>
+                            <div className={styles.teacherMuted}>
                               {q.teacherName}
                             </div>
                           </td>
 
                           {/* 3. Rombel Target */}
-                          <td style={{ verticalAlign: 'middle' }}>
-                            <span style={{
-                              fontSize: '0.72rem',
-                              fontWeight: 700,
-                              color: '#334155',
-                              background: '#f1f5f9',
-                              padding: '2px 7px',
-                              borderRadius: '4px',
-                              border: '1px solid #e2e8f0',
-                              whiteSpace: 'nowrap'
-                            }}>
-                              {q.classRoom}
+                          <td>
+                            <span className={styles.classBadge}>
+                              {q.classRoom || 'Semua'}
                             </span>
                           </td>
 
                           {/* 4. Jadwal Pelaksanaan */}
-                          <td style={{ verticalAlign: 'middle' }}>
+                          <td>
                             {sched ? (
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
-                                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.76rem', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
-                                  <span style={{ color: '#2563eb' }}>📅</span>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                <div className={styles.scheduleDate}>
+                                  <span style={{ color: '#0284c7' }}>📅</span>
                                   <span>{sched.dateStr}</span>
                                 </div>
-                                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.72rem', color: '#1d4ed8', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                                <div className={styles.scheduleTime}>
                                   <span>⏰</span>
                                   <span>{sched.timeStr}</span>
                                   <button
@@ -1089,8 +1115,7 @@ export default function QuizzesPage() {
                                       border: 'none',
                                       cursor: 'pointer',
                                       padding: '0 2px',
-                                      fontSize: '0.7rem',
-                                      opacity: 0.75,
+                                      fontSize: '0.72rem',
                                     }}
                                   >
                                     ✏️
@@ -1101,20 +1126,7 @@ export default function QuizzesPage() {
                               <button
                                 type="button"
                                 onClick={() => handleOpenScheduleModal(q)}
-                                style={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '3px',
-                                  fontSize: '0.7rem',
-                                  fontWeight: 700,
-                                  color: '#b45309',
-                                  background: '#fef3c7',
-                                  border: '1px solid #fde68a',
-                                  padding: '2px 7px',
-                                  borderRadius: '5px',
-                                  cursor: 'pointer',
-                                  whiteSpace: 'nowrap',
-                                }}
+                                className={styles.scheduleSetBtn}
                                 title="Klik untuk mengatur tanggal dan jam ujian CBT"
                               >
                                 <span>📅 + Atur Jadwal</span>
@@ -1123,8 +1135,8 @@ export default function QuizzesPage() {
                           </td>
 
                           {/* 5. Durasi & Soal */}
-                          <td style={{ verticalAlign: 'middle' }}>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+                          <td>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                               <div style={{ fontSize: '0.76rem', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
                                 ⏱️ {q.duration}
                               </div>
@@ -1139,28 +1151,18 @@ export default function QuizzesPage() {
                           </td>
 
                           {/* 6. Status Ujian */}
-                          <td style={{ verticalAlign: 'middle' }}>
-                            <span
-                              style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '4px',
-                                fontSize: '0.7rem',
-                                fontWeight: 700,
-                                padding: '2px 7px',
-                                borderRadius: '999px',
-                                whiteSpace: 'nowrap',
-                                background: q.status === 'PUBLISHED' ? '#dcfce7' : q.status === 'LIVE_EXAM' ? '#f3e8ff' : '#f1f5f9',
-                                color: q.status === 'PUBLISHED' ? '#15803d' : q.status === 'LIVE_EXAM' ? '#7e22ce' : '#475569',
-                                border: `1px solid ${q.status === 'PUBLISHED' ? '#bbf7d0' : q.status === 'LIVE_EXAM' ? '#e9d5ff' : '#cbd5e1'}`,
-                              }}
-                            >
-                              {q.status === 'PUBLISHED' ? '🟢 Aktif' : q.status === 'LIVE_EXAM' ? '⚡ Live' : '⚪ Draft'}
-                            </span>
+                          <td>
+                            {q.status === 'PUBLISHED' ? (
+                              <span className={styles.statusPillPublished}>🟢 Aktif</span>
+                            ) : q.status === 'LIVE_EXAM' ? (
+                              <span className={styles.statusPillLive}>⚡ Live</span>
+                            ) : (
+                              <span className={styles.statusPillDraft}>⚪ Draft</span>
+                            )}
                           </td>
 
                           {/* 7. Peserta & Nilai */}
-                          <td style={{ verticalAlign: 'middle' }}>
+                          <td>
                             <div style={{ fontSize: '0.76rem', fontWeight: 700, color: '#0284c7', whiteSpace: 'nowrap' }}>
                               👥 {q.participants}/{q.maxParticipants} Peserta
                             </div>
@@ -1169,29 +1171,12 @@ export default function QuizzesPage() {
                             </div>
                           </td>
 
-                          {/* 8. Aksi (Strict Single-Line Horizontal Group) */}
-                          <td style={{ textAlign: 'right', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
-                            <div style={{
-                              display: 'inline-flex',
-                              gap: '0.35rem',
-                              justifyContent: 'flex-end',
-                              alignItems: 'center',
-                              flexWrap: 'nowrap',
-                              whiteSpace: 'nowrap'
-                            }}>
+                          {/* 8. Aksi */}
+                          <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                            <div className={styles.actionBtnGroup}>
                               <button
                                 type="button"
-                                className="btn btn-secondary btn-sm"
-                                style={{
-                                  padding: '0.26rem 0.52rem',
-                                  fontSize: '0.74rem',
-                                  borderRadius: '6px',
-                                  whiteSpace: 'nowrap',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '3px',
-                                  background: '#fff',
-                                }}
+                                className={styles.actionBtnOutline}
                                 onClick={() => handleOpenQuestionsModal(q)}
                                 title="Kelola butir soal CBT ini"
                               >
@@ -1199,17 +1184,7 @@ export default function QuizzesPage() {
                               </button>
                               <button
                                 type="button"
-                                className="btn btn-secondary btn-sm"
-                                style={{
-                                  padding: '0.26rem 0.52rem',
-                                  fontSize: '0.74rem',
-                                  borderRadius: '6px',
-                                  whiteSpace: 'nowrap',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '3px',
-                                  background: '#fff',
-                                }}
+                                className={styles.actionBtnAccent}
                                 onClick={() => handleOpenAnalysisModal(q)}
                                 title="Lihat hasil pengerjaan siswa & koreksi nilai"
                               >
@@ -1225,45 +1200,46 @@ export default function QuizzesPage() {
               </div>
             )}
 
-            {/* Table Footer / Pagination Controls */}
-            <div className="tableFooter">
-              <div className="entriesSelector">
-                <span>Show</span>
+            {/* ── Modern Pagination Footer ── */}
+            <div className={styles.paginationBar}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span>Tampilkan</span>
                 <select
                   value={itemsPerPage}
-                  onChange={() => {}}
-                  className="entriesSelect"
+                  onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+                  className={styles.toolbarSelect}
+                  style={{ padding: '0.25rem 0.5rem', fontSize: '0.74rem' }}
                 >
                   <option value={10}>10</option>
                   <option value={25}>25</option>
                   <option value={50}>50</option>
                 </select>
-                <span>entries</span>
+                <span>entri per halaman</span>
               </div>
 
-              <div className="paginationControls">
+              <div className={styles.paginationControls}>
                 <button
-                  className="pageBtnNav"
+                  className={styles.pageNavBtn}
                   disabled={safePage <= 1}
                   onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
                 >
-                  Previous
+                  ← Sebelumnya
                 </button>
                 {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
                   <button
                     key={pageNum}
-                    className={`pageBtnNum ${pageNum === safePage ? 'pageBtnActive' : ''}`}
+                    className={`${styles.pageNumBtn} ${pageNum === safePage ? styles.pageNumActive : ''}`}
                     onClick={() => setCurrentPage(pageNum)}
                   >
                     {pageNum}
                   </button>
                 ))}
                 <button
-                  className="pageBtnNav"
+                  className={styles.pageNavBtn}
                   disabled={safePage >= totalPages}
                   onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
                 >
-                  Next
+                  Selanjutnya →
                 </button>
               </div>
             </div>
@@ -1273,7 +1249,7 @@ export default function QuizzesPage() {
 
       {/* ── Dedicated In-Page Workspace: Bank Soal & Butir Soal CBT (PG & Soal Bukan PG) ── */}
       {activeView === 'QUESTIONS' && viewQuestionsQuiz && (
-        <div className={styles.tableCard} style={{ marginTop: '0.5rem', padding: '0', display: 'flex', flexDirection: 'column', overflow: 'hidden', border: '1px solid var(--border-light)', borderRadius: '16px' }}>
+        <div className={styles.tableContainer} style={{ marginTop: '0.5rem', padding: '0', display: 'flex', flexDirection: 'column' }}>
           {/* Body */}
           <div style={{ padding: '1.25rem 1.5rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             {/* Summary Stats Cards */}
@@ -2243,7 +2219,7 @@ export default function QuizzesPage() {
 
       {/* ── Dedicated In-Page Workspace: Analisis Nilai CBT & Koreksi Siswa ── */}
       {activeView === 'ANALYSIS' && analyzedQuiz && (
-        <div className={styles.tableCard} style={{ marginTop: '0.5rem', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+        <div className={styles.tableContainer} style={{ marginTop: '0.5rem', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           {/* KPI Cards */}
           {(() => {
             const totalParticipants = cbtScores.length;
@@ -2522,7 +2498,7 @@ export default function QuizzesPage() {
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><line x1="12" x2="12.01" y1="18" y2="18"/></svg> Nilai dan koreksi guru otomatis terkirim dan tersinkronkan ke HP Siswa
             </div>
             <button
-              className="btn btn-secondary btn-sm"
+              className={styles.btnSecondary}
               onClick={() => {
                 setActiveView('LIST');
                 setAnalyzedQuiz(null);

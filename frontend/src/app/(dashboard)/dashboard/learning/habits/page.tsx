@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useAuth } from '@/contexts/AuthContext';
 import styles from './habits.module.css';
 
 interface HabitItemInfo {
@@ -88,12 +89,19 @@ interface NarrativeItem {
 }
 
 export default function HabitTrackerWorkstationPage() {
+  const { user } = useAuth();
+  const isPrincipal = user?.role === 'Kepala Sekolah' || user?.role?.toLowerCase().includes('kepala');
+
   const [activeTab, setActiveTab] = useState<'MONITORING' | 'VERIFIKASI_OVERRIDE' | 'RAPOR_NARASI' | 'CHECKLIST_SIMULASI'>('MONITORING');
-  const [classesList, setClassesList] = useState<Array<{ id: string; name: string }>>([]);
+  const [classesList, setClassesList] = useState<Array<{ id: string; name: string; student_count?: number; homeroom_teacher_name?: string }>>([]);
   const [selectedClass, setSelectedClass] = useState<string>('');
   const [academicYear, setAcademicYear] = useState<string>('2026/2027');
   const [selectedSemester, setSelectedSemester] = useState<string>('GANJIL');
   const [loading, setLoading] = useState<boolean>(true);
+
+  // Mode Tampilan Supervisi Kepala Sekolah
+  const [viewMode, setViewMode] = useState<'CLASS' | 'SCHOOL_OVERVIEW'>('CLASS');
+  const [schoolOverviewData, setSchoolOverviewData] = useState<any>(null);
 
   // Class Monitoring Data
   const [classSummary, setClassSummary] = useState<any>(null);
@@ -127,17 +135,19 @@ export default function HabitTrackerWorkstationPage() {
   const [simNotes, setSimNotes] = useState<string>('');
   const [simSuccessMsg, setSimSuccessMsg] = useState<string | null>(null);
 
-  // 1. Initial Load of Classes
+  // 1. Initial Load of Classes & School Overview
   useEffect(() => {
     const fetchClasses = async () => {
       try {
-        const res = await fetch('/api/v1/academic/classes');
+        const roleQuery = encodeURIComponent(user?.role || '');
+        const userIdQuery = user?.id || '';
+        const res = await fetch(`/api/v1/academic/classes?role=${roleQuery}&user_id=${userIdQuery}&all=${isPrincipal ? 'true' : 'false'}`);
         if (res.ok) {
           const cData = await res.json();
-          const list = cData.data || [];
+          const list = cData.data || cData.classes || [];
           setClassesList(list);
-          if (list.length > 0 && !selectedClass) {
-            setSelectedClass(list[0].id);
+          if (list.length > 0) {
+            setSelectedClass((prev) => (prev && list.some((c: any) => c.id === prev) ? prev : list[0].id));
           }
         }
       } catch (e) {
@@ -145,7 +155,25 @@ export default function HabitTrackerWorkstationPage() {
       }
     };
     fetchClasses();
-  }, []);
+  }, [user?.role, user?.id, isPrincipal]);
+
+  // Load School Overview for Principal
+  const loadSchoolOverview = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch('/api/v1/learning/pedagogy/habits/calendar?school_overview=true');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          setSchoolOverviewData(data);
+        }
+      }
+    } catch (e) {
+      console.error('Error loading school overview:', e);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // 2. Load Class Monitoring Summary when Class or Semester changes
   const loadClassHabits = async () => {
@@ -158,8 +186,8 @@ export default function HabitTrackerWorkstationPage() {
         if (data.success) {
           setClassSummary(data.class_summary);
           setStudentsData(data.students || []);
-          if (data.students && data.students.length > 0 && !simStudentId) {
-            setSimStudentId(data.students[0].id);
+          if (data.students && data.students.length > 0) {
+            setSimStudentId((prev) => (prev && data.students.some((s: any) => s.id === prev) ? prev : data.students[0].id));
           }
         }
       }
@@ -171,8 +199,10 @@ export default function HabitTrackerWorkstationPage() {
   };
 
   useEffect(() => {
-    loadClassHabits();
-  }, [selectedClass, selectedSemester]);
+    if (viewMode === 'CLASS') {
+      loadClassHabits();
+    }
+  }, [selectedClass, selectedSemester, viewMode]);
 
   // 3. Load Student Calendar details when inspected
   const handleInspectStudent = async (studentId: string) => {
@@ -334,15 +364,41 @@ export default function HabitTrackerWorkstationPage() {
       <div className={styles.heroHeader}>
         <div className={styles.heroContent}>
           <div className={styles.heroBadge}>
-            <span>⭐ FASE 5: KARAKTER & PEMBIASAAN</span>
+            {isPrincipal ? (
+              <span style={{ background: '#7e22ce', color: '#f3e8ff' }}>
+                👑 SUPERVISI PEMBIASAAN KARAKTER (G7KAIH) • KEPALA SEKOLAH
+              </span>
+            ) : (
+              <span>⭐ FASE 5: KARAKTER &amp; PEMBIASAAN</span>
+            )}
           </div>
-          <h1 className={styles.heroTitle}>Gerakan 7 Kebiasaan Anak Indonesia Hebat (G7KAIH)</h1>
+          <h1 className={styles.heroTitle}>
+            {isPrincipal
+              ? 'Supervisi Karakter & Pembiasaan Peserta Didik (G7KAIH)'
+              : 'Gerakan 7 Kebiasaan Anak Indonesia Hebat (G7KAIH)'}
+          </h1>
           <p className={styles.heroSubtitle}>
-            Modul pemantauan longitudinal kebiasaan karakter harian siswa (Bangun Pagi, Beribadah, Berolahraga, Makan Sehat, Gemar Belajar, Bermasyarakat, Tidur Tepat Waktu) terintegrasi verifikasi orang tua dan sintesis narasi sikap Rapor Kurikulum Merdeka.
+            {isPrincipal
+              ? 'Dashboard supervisi kepala sekolah untuk memantau indeks kepatuhan 7 kebiasaan seluruh rombel di sekolah, validasi rekapitulasi sikap e-Rapor, dan pembinaan karakter peserta didik.'
+              : 'Modul pemantauan longitudinal kebiasaan karakter harian siswa (Bangun Pagi, Beribadah, Berolahraga, Makan Sehat, Gemar Belajar, Bermasyarakat, Tidur Tepat Waktu) terintegrasi verifikasi orang tua dan sintesis narasi sikap Rapor Kurikulum Merdeka.'}
           </p>
         </div>
 
         <div className={styles.heroActions}>
+          {isPrincipal && (
+            <button 
+              className={styles.btnSecondary}
+              style={{ background: viewMode === 'SCHOOL_OVERVIEW' ? '#7e22ce' : undefined, color: viewMode === 'SCHOOL_OVERVIEW' ? '#fff' : undefined }}
+              onClick={() => {
+                const next = viewMode === 'SCHOOL_OVERVIEW' ? 'CLASS' : 'SCHOOL_OVERVIEW';
+                setViewMode(next);
+                if (next === 'SCHOOL_OVERVIEW') loadSchoolOverview();
+              }}
+              id="btn-toggle-school-overview"
+            >
+              {viewMode === 'SCHOOL_OVERVIEW' ? '🔍 Kembali ke Rombel Spesifik' : '🏫 Matriks Supervisi Seluruh Rombel'}
+            </button>
+          )}
           <button 
             className={styles.btnSecondary}
             onClick={() => setIsReminderModalOpen(true)}
@@ -399,41 +455,132 @@ export default function HabitTrackerWorkstationPage() {
       )}
 
       {/* ── STATS OVERVIEW ── */}
-      <div className={styles.statsGrid}>
-        <div className={styles.statCard}>
-          <span className={styles.statLabel}>Total Siswa Terdaftar</span>
-          <span className={styles.statValue}>{classSummary?.total_enrolled || 0}</span>
-          <span className={styles.statSub}>Rombel {classesList.find(c => c.id === selectedClass)?.name || '-'}</span>
+      {viewMode === 'SCHOOL_OVERVIEW' && schoolOverviewData ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
+          <div className={styles.statsGrid}>
+            <div className={styles.statCard}>
+              <span className={styles.statLabel}>Total Seluruh Siswa Sekolah</span>
+              <span className={styles.statValue}>{schoolOverviewData.school_summary?.total_enrolled || 0}</span>
+              <span className={styles.statSub}>{schoolOverviewData.school_summary?.total_classes || 0} Rombongan Belajar</span>
+            </div>
+            <div className={styles.statCard}>
+              <span className={styles.statLabel}>Partisipasi Sekolah Aktif</span>
+              <span className={styles.statValue}>{schoolOverviewData.school_summary?.participation_rate || 0}%</span>
+              <span className={styles.statSub}>{schoolOverviewData.school_summary?.active_participating || 0} siswa aktif mencatat</span>
+            </div>
+            <div className={styles.statCard}>
+              <span className={styles.statLabel}>Rerata Kepatuhan Sekolah</span>
+              <span className={styles.statValue} style={{ color: '#7e22ce' }}>
+                {schoolOverviewData.school_summary?.average_compliance_rate || 0}%
+              </span>
+              <span className={styles.statSub}>Indeks Karakter Kumulatif</span>
+            </div>
+            <div className={styles.statCard}>
+              <span className={styles.statLabel}>Total Pending Ortu</span>
+              <span className={styles.statValue} style={{ color: '#d97706' }}>
+                {schoolOverviewData.school_summary?.total_pending_verifications || 0}
+              </span>
+              <span className={styles.statSub}>Menunggu Verifikasi</span>
+            </div>
+            <div className={styles.statCard}>
+              <span className={styles.statLabel}>Total Butuh Override</span>
+              <span className={styles.statValue} style={{ color: '#ef4444' }}>
+                {schoolOverviewData.school_summary?.total_expired_needing_override || 0}
+              </span>
+              <span className={styles.statSub}>Batas 7 hari terlewati</span>
+            </div>
+          </div>
+
+          {/* Tabel Matriks Seluruh Rombel untuk Kepala Sekolah */}
+          <div className={styles.tableContainer} style={{ background: 'var(--bg-surface)', borderRadius: '1rem', padding: '1rem' }}>
+            <h3 style={{ margin: '0 0 1rem', fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+              Matriks Supervisi Kepatuhan 7 Kebiasaan Seluruh Rombel
+            </h3>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th>No</th>
+                  <th>Nama Rombel / Kelas</th>
+                  <th>Wali Kelas</th>
+                  <th>Total Siswa</th>
+                  <th>Partisipasi Aktif</th>
+                  <th>Rerata Kepatuhan</th>
+                  <th>Pending Ortu</th>
+                  <th>Aksi Supervisi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {schoolOverviewData.classes?.map((c: any, idx: number) => (
+                  <tr key={c.id}>
+                    <td>{idx + 1}</td>
+                    <td><strong>{c.name}</strong></td>
+                    <td>{c.homeroom_teacher_name || '-'}</td>
+                    <td>{c.student_count || 0} Siswa</td>
+                    <td>{c.metrics?.participation_rate || 0}%</td>
+                    <td>
+                      <span style={{ fontWeight: 700, color: (c.metrics?.avg_compliance || 0) >= 75 ? '#059669' : '#ea580c' }}>
+                        {c.metrics?.avg_compliance || 0}%
+                      </span>
+                    </td>
+                    <td>
+                      <span style={{ color: c.metrics?.pending_count > 0 ? '#d97706' : 'var(--text-secondary)' }}>
+                        {c.metrics?.pending_count || 0}
+                      </span>
+                    </td>
+                    <td>
+                      <button
+                        className={styles.btnSm}
+                        onClick={() => {
+                          setSelectedClass(c.id);
+                          setViewMode('CLASS');
+                        }}
+                      >
+                        🔍 Buka Rombel
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
-        <div className={styles.statCard}>
-          <span className={styles.statLabel}>Partisipasi Aktif</span>
-          <span className={styles.statValue}>{classSummary?.participation_rate || 0}%</span>
-          <span className={styles.statSub}>{classSummary?.active_participating || 0} siswa aktif mencatat</span>
+      ) : (
+        <div className={styles.statsGrid}>
+          <div className={styles.statCard}>
+            <span className={styles.statLabel}>Total Siswa Terdaftar</span>
+            <span className={styles.statValue}>{classSummary?.total_enrolled || 0}</span>
+            <span className={styles.statSub}>Rombel {classesList.find(c => c.id === selectedClass)?.name || '-'}</span>
+          </div>
+          <div className={styles.statCard}>
+            <span className={styles.statLabel}>Partisipasi Aktif</span>
+            <span className={styles.statValue}>{classSummary?.participation_rate || 0}%</span>
+            <span className={styles.statSub}>{classSummary?.active_participating || 0} siswa aktif mencatat</span>
+          </div>
+          <div className={styles.statCard}>
+            <span className={styles.statLabel}>Rerata Kepatuhan Kelas</span>
+            <span className={styles.statValue} style={{ color: '#ea580c' }}>
+              {classSummary?.average_compliance_rate || 0}%
+            </span>
+            <span className={styles.statSub}>
+              {(classSummary?.average_compliance_rate || 0) >= 85 ? '🌟 Sangat Membudaya' : (classSummary?.average_compliance_rate || 0) >= 70 ? '👍 Berkembang Baik' : '⚠️ Perlu Penguatan'}
+            </span>
+          </div>
+          <div className={styles.statCard}>
+            <span className={styles.statLabel}>Pending Ortu</span>
+            <span className={styles.statValue} style={{ color: '#d97706' }}>
+              {classSummary?.total_pending_verifications || 0}
+            </span>
+            <span className={styles.statSub}>Menunggu verifikasi</span>
+          </div>
+          <div className={styles.statCard}>
+            <span className={styles.statLabel}>Expired / Siap Override</span>
+            <span className={styles.statValue} style={{ color: '#ef4444' }}>
+              {classSummary?.total_expired_needing_override || 0}
+            </span>
+            <span className={styles.statSub}>Batas 7 hari terlewati</span>
+          </div>
         </div>
-        <div className={styles.statCard}>
-          <span className={styles.statLabel}>Rerata Kepatuhan Kelas</span>
-          <span className={styles.statValue} style={{ color: '#ea580c' }}>
-            {classSummary?.average_compliance_rate || 0}%
-          </span>
-          <span className={styles.statSub}>
-            {(classSummary?.average_compliance_rate || 0) >= 85 ? '🌟 Sangat Membudaya' : (classSummary?.average_compliance_rate || 0) >= 70 ? '👍 Berkembang Baik' : '⚠️ Perlu Penguatan'}
-          </span>
-        </div>
-        <div className={styles.statCard}>
-          <span className={styles.statLabel}>Pending Ortu</span>
-          <span className={styles.statValue} style={{ color: '#d97706' }}>
-            {classSummary?.total_pending_verifications || 0}
-          </span>
-          <span className={styles.statSub}>Menunggu verifikasi</span>
-        </div>
-        <div className={styles.statCard}>
-          <span className={styles.statLabel}>Expired / Siap Override</span>
-          <span className={styles.statValue} style={{ color: '#ef4444' }}>
-            {classSummary?.total_expired_needing_override || 0}
-          </span>
-          <span className={styles.statSub}>Batas 7 hari terlewati</span>
-        </div>
-      </div>
+      )}
 
       {/* ── FILTER CONTROLS ── */}
       <div className={styles.filterBar}>
@@ -442,11 +589,16 @@ export default function HabitTrackerWorkstationPage() {
           <select 
             className={styles.selectInput}
             value={selectedClass}
-            onChange={(e) => setSelectedClass(e.target.value)}
+            onChange={(e) => {
+              setSelectedClass(e.target.value);
+              if (viewMode === 'SCHOOL_OVERVIEW') setViewMode('CLASS');
+            }}
             id="select-habits-class"
           >
             {classesList.map(c => (
-              <option key={c.id} value={c.id}>{c.name}</option>
+              <option key={c.id} value={c.id}>
+                {c.name} {c.student_count !== undefined ? `(${c.student_count} Siswa)` : ''}
+              </option>
             ))}
           </select>
         </div>

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useAuth } from '@/contexts/AuthContext';
 import styles from './modul-ajar.module.css';
 
 interface KaldikBudget {
@@ -75,8 +76,12 @@ interface PublishedTp {
 }
 
 export default function ModulAjarPage() {
+  const { user } = useAuth();
+  const isPrincipal = user?.role === 'Kepala Sekolah' || user?.role?.toLowerCase().includes('kepala');
+
   const [modulList, setModulList] = useState<ModulAjarItem[]>([]);
   const [publishedTps, setPublishedTps] = useState<PublishedTp[]>([]);
+  const [subjectsList, setSubjectsList] = useState<Array<{ id: string; code: string; name: string }>>([]);
   const [budget, setBudget] = useState<KaldikBudget | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -100,6 +105,23 @@ export default function ModulAjarPage() {
   const [isSynthesizing, setIsSynthesizing] = useState<boolean>(false);
   const [synError, setSynError] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
+
+  // Load Subjects Dynamically
+  useEffect(() => {
+    const fetchSubjects = async () => {
+      try {
+        const res = await fetch('/api/v1/academic/subjects');
+        if (res.ok) {
+          const data = await res.json();
+          const list = data.data || data.subjects || [];
+          setSubjectsList(list);
+        }
+      } catch (err) {
+        console.error('Error fetching subjects:', err);
+      }
+    };
+    fetchSubjects();
+  }, []);
 
   // Load Data
   const loadData = async () => {
@@ -153,6 +175,32 @@ export default function ModulAjarPage() {
   useEffect(() => {
     loadData();
   }, [academicYear, selectedSemester, selectedSubject, selectedStatus]);
+
+  // Supervisi Modul Ajar oleh Kepala Sekolah
+  const handleSupervise = async (id: string, status: string, notes?: string) => {
+    try {
+      const res = await fetch(`/api/v1/learning/pedagogy/modul-ajar/${id}/supervise`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status,
+          notes,
+          supervisor_id: user?.id,
+          supervisor_name: user?.full_name || 'Kepala Sekolah',
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setActionSuccess(data.message);
+        setTimeout(() => setActionSuccess(null), 5000);
+        await loadData();
+      } else {
+        alert(data.error || 'Gagal memproses supervisi modul ajar.');
+      }
+    } catch (err) {
+      console.error('Error supervising modul ajar:', err);
+    }
+  };
 
   // Handle AI Synthesis
   const handleSynthesize = async (e: React.FormEvent) => {
@@ -238,21 +286,24 @@ export default function ModulAjarPage() {
       <div className={styles.heroHeader}>
         <div className={styles.heroContent}>
           <div className={styles.heroBadge}>
-            <span>Fase 3: RPP / Modul Ajar Generator & Hub</span>
+            {isPrincipal ? (
+              <span style={{ background: '#7e22ce', color: '#f3e8ff' }}>
+                👑 SUPERVISI KOSP / RPP • KEPALA SEKOLAH
+              </span>
+            ) : (
+              <span>Fase 3: RPP / Modul Ajar Generator &amp; Hub</span>
+            )}
           </div>
-          <h1 className={styles.heroTitle}>Workstation Modul Ajar (RPP Merdeka)</h1>
+          <h1 className={styles.heroTitle}>
+            {isPrincipal ? 'Supervisi Dokumen Modul Ajar (RPP Merdeka)' : 'Workstation Modul Ajar (RPP Merdeka)'}
+          </h1>
           <p className={styles.heroSubtitle}>
-            Perencanaan pembelajaran berdiferensiasi (Konten, Proses: VAK/Scaffolding, Produk) yang
-            tersinkronisasi penuh dengan alokasi Minggu Efektif Kaldik &amp; Tujuan Pembelajaran (TP) berstatus PUBLISHED.
+            {isPrincipal
+              ? 'Pemeriksaan keselarasan alokasi waktu Kaldik MEB, validasi diferensiasi proses peserta didik, dan pengesahan resmi Modul Ajar seluruh pendidik satuan pendidikan.'
+              : 'Perencanaan pembelajaran berdiferensiasi (Konten, Proses: VAK/Scaffolding, Produk) yang tersinkronisasi penuh dengan alokasi Minggu Efektif Kaldik & Tujuan Pembelajaran (TP) berstatus PUBLISHED.'}
           </p>
         </div>
         <div className={styles.heroActions}>
-          <Link href="/dashboard/learning/curriculum" className={styles.btnSecondary}>
-            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-              <path d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-            Kembali ke Kurikulum
-          </Link>
           <button
             onClick={() => {
               setSynError(null);
@@ -356,10 +407,23 @@ export default function ModulAjarPage() {
             onChange={(e) => setSelectedSubject(e.target.value)}
             className={styles.selectInput}
           >
-            <option value="401000000">Matematika (4 JP/mg)</option>
-            <option value="IPAS">IPAS (5 JP/mg)</option>
-            <option value="BIND">Bahasa Indonesia (4 JP/mg)</option>
-            <option value="ALL">Semua Mapel</option>
+            {subjectsList.length > 0 ? (
+              <>
+                <option value="ALL">Semua Mapel</option>
+                {subjectsList.map((s) => (
+                  <option key={s.id} value={s.code}>
+                    {s.name}
+                  </option>
+                ))}
+              </>
+            ) : (
+              <>
+                <option value="401000000">Matematika (4 JP/mg)</option>
+                <option value="401900000">IPAS (5 JP/mg)</option>
+                <option value="300110000">Bahasa Indonesia (4 JP/mg)</option>
+                <option value="ALL">Semua Mapel</option>
+              </>
+            )}
           </select>
 
           <label style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Status:</label>
@@ -507,14 +571,25 @@ export default function ModulAjarPage() {
                     Buka Dokumen
                   </button>
 
-                  {m.status !== 'ACTIVE' && (
+                  {isPrincipal && m.status !== 'ACTIVE' ? (
                     <button
-                      onClick={() => handleActivate(m.id)}
-                      className={`${styles.btnSm} ${styles.btnSmActive}`}
-                      title={m.status === 'SUSPENDED' ? 'Aktifkan kembali setelah TP disahkan' : 'Aktifkan Modul'}
+                      onClick={() => handleSupervise(m.id, 'ACTIVE')}
+                      className={styles.btnSm}
+                      style={{ background: '#7e22ce', color: '#fff', borderColor: '#6b21a8' }}
+                      title="Sahkan Modul Ajar sebagai Kepala Sekolah"
                     >
-                      Aktifkan
+                      👑 Sahkan RPP
                     </button>
+                  ) : (
+                    m.status !== 'ACTIVE' && (
+                      <button
+                        onClick={() => handleActivate(m.id)}
+                        className={`${styles.btnSm} ${styles.btnSmActive}`}
+                        title={m.status === 'SUSPENDED' ? 'Aktifkan kembali setelah TP disahkan' : 'Aktifkan Modul'}
+                      >
+                        Aktifkan
+                      </button>
+                    )
                   )}
                 </div>
               </div>
