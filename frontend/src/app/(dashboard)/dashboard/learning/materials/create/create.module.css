@@ -852,32 +852,89 @@
   border-color: #3f3f46;
 }
 
-/* ── Video Search & Grid ── */
+/* ── Video Search & Grid Redesign ── */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.videoSectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding: 0.25rem 0 0.45rem 0;
+}
+
+.videoSectionTitle {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-primary, #0f172a);
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.videoBadgeCount {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.6rem;
+  background: rgba(220, 38, 38, 0.08);
+  color: #dc2626;
+  border: 1px solid rgba(220, 38, 38, 0.2);
+  border-radius: 9999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+[data-theme="dark"] .videoBadgeCount {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #f87171;
+}
+
 .videoGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
-  gap: 0.65rem;
-  max-height: 380px;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1.1rem;
+  max-height: 560px;
   overflow-y: auto;
-  padding: 0.25rem;
+  padding: 0.65rem;
   border: 1px solid var(--border-light, #e2e8f0);
-  border-radius: 9px;
+  border-radius: 14px;
   background: var(--bg-elevated, #f8fafc);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.5) transparent;
+}
+
+.videoGrid::-webkit-scrollbar {
+  width: 6px;
+}
+.videoGrid::-webkit-scrollbar-track {
+  background: transparent;
+}
+.videoGrid::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.4);
+  border-radius: 9999px;
 }
 
 [data-theme="dark"] .videoGrid {
-  background: #1e1e24;
-  border-color: #2e2e38;
+  background: #18181b;
+  border-color: #27272a;
 }
 
 .videoCard {
   background: var(--bg-card, #ffffff);
-  border: 1px solid var(--border-light, #e2e8f0);
-  border-radius: 8px;
+  border: 1.5px solid var(--border-light, #e2e8f0);
+  border-radius: 12px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  transition: all 0.15s ease;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, border-color 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  position: relative;
 }
 
 [data-theme="dark"] .videoCard {
@@ -886,37 +943,47 @@
 }
 
 .videoCard:hover {
-  border-color: #ef4444;
-  transform: translateY(-1px);
+  border-color: rgba(239, 68, 68, 0.55);
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px -4px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+}
+
+.videoCardSelected {
+  border-color: #ef4444 !important;
+  background: rgba(239, 68, 68, 0.02) !important;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.25), 0 8px 20px -3px rgba(239, 68, 68, 0.15) !important;
+}
+
+[data-theme="dark"] .videoCardSelected {
+  background: rgba(239, 68, 68, 0.08) !important;
 }
 
 .videoThumbnailBox {
   position: relative;
   width: 100%;
-  padding-bottom: 56.25%;
-  background: #000;
+  aspect-ratio: 16 / 9;
+  background: #0f172a;
   overflow: hidden;
   cursor: pointer;
 }
 
 .videoThumbnailImg {
-  position: absolute;
-  top: 0;
-  left: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.2s ease;
+  display: block;
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .videoCard:hover .videoThumbnailImg {
-  transform: scale(1.04);
+  transform: scale(1.05);
 }
 
 .videoPlayOverlay {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.35);
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(2px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -926,6 +993,222 @@
 
 .videoThumbnailBox:hover .videoPlayOverlay {
   opacity: 1;
+}
+
+.videoPlayBtnCircle {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #ef4444;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.5);
+  transition: transform 0.2s ease;
+}
+
+.videoThumbnailBox:hover .videoPlayBtnCircle {
+  transform: scale(1.1);
+}
+
+.videoBadgeTopLeft {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 700;
+  padding: 0.18rem 0.45rem;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  letter-spacing: 0.02em;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.videoBadgeTopRight {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: #10b981;
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 800;
+  padding: 0.18rem 0.5rem;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.videoBadgeBottomRight {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(4px);
+  color: #f1f5f9;
+  font-size: 0.62rem;
+  font-weight: 700;
+  padding: 0.15rem 0.4rem;
+  border-radius: 5px;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.videoCardBody {
+  padding: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  flex: 1;
+}
+
+.videoCardTitle {
+  font-weight: 700;
+  font-size: 0.82rem;
+  color: var(--text-primary, #0f172a);
+  line-height: 1.35;
+  min-height: 2.25rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.videoCardChannel {
+  font-size: 0.72rem;
+  color: var(--text-muted, #64748b);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.videoCardChannelIcon {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.videoCardSnippet {
+  font-size: 0.68rem;
+  color: var(--text-muted, #64748b);
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  opacity: 0.85;
+}
+
+.videoCardActions {
+  display: grid;
+  grid-template-columns: 1fr 1.15fr;
+  gap: 0.45rem;
+  margin-top: auto;
+  padding-top: 0.65rem;
+  border-top: 1px solid var(--border-light, #f1f5f9);
+}
+
+[data-theme="dark"] .videoCardActions {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Selected Video Feature Banner */
+.selectedVideoBanner {
+  background: rgba(220, 38, 38, 0.04);
+  border: 1.5px solid rgba(220, 38, 38, 0.35);
+  border-radius: 12px;
+  padding: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.05);
+}
+
+[data-theme="dark"] .selectedVideoBanner {
+  background: rgba(220, 38, 38, 0.1);
+  border-color: rgba(220, 38, 38, 0.4);
+}
+
+.selectedVideoThumb {
+  width: 96px;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid rgba(220, 38, 38, 0.25);
+  flex-shrink: 0;
+  background: #0f172a;
+}
+
+/* Skeleton Loading Cards */
+.videoSkeletonCard {
+  background: var(--bg-card, #ffffff);
+  border: 1px solid var(--border-light, #e2e8f0);
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+[data-theme="dark"] .videoSkeletonCard {
+  background: var(--bg-elevated, #27272a);
+  border-color: var(--border-light, #3f3f46);
+}
+
+.videoSkeletonThumb {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+[data-theme="dark"] .videoSkeletonThumb {
+  background: linear-gradient(90deg, #27272a 25%, #3f3f46 50%, #27272a 75%);
+  background-size: 200% 100%;
+}
+
+.videoSkeletonBody {
+  padding: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.videoSkeletonLine {
+  height: 12px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+[data-theme="dark"] .videoSkeletonLine {
+  background: linear-gradient(90deg, #27272a 25%, #3f3f46 50%, #27272a 75%);
+  background-size: 200% 100%;
 }
 
 /* ── Form Labels & Controls in Right Column ── */

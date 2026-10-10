@@ -780,13 +780,13 @@ export default function CreateMaterialPage() {
               </button>
             </div>
 
-            <div style={{ position: 'relative', width: '100%', paddingBottom: '56.25%', background: '#000' }}>
+            <div style={{ position: 'relative', width: '100%', aspectRatio: '16 / 9', background: '#000', overflow: 'hidden' }}>
               <iframe
                 src={`https://www.youtube.com/embed/${previewYtVideo.id}?autoplay=1`}
                 title={previewYtVideo.title}
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
-                style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
+                style={{ width: '100%', height: '100%', border: 'none', display: 'block' }}
               />
             </div>
 
@@ -1226,7 +1226,7 @@ export default function CreateMaterialPage() {
                 <div style={{ position: 'relative', flex: 1 }}>
                   <input
                     type="text"
-                    placeholder="Ketik topik materi (contoh: Hukum Newton Fisika Kelas 10)..."
+                    placeholder="Ketik topik materi (contoh: Bahasa Indonesia Kelas 5 SD, Siklus Air)..."
                     value={ytSearchQuery}
                     onChange={e => setYtSearchQuery(e.target.value)}
                     className={styles.inputField}
@@ -1238,7 +1238,7 @@ export default function CreateMaterialPage() {
                   type="submit"
                   disabled={isSearchingYt}
                   className={styles.btnPrimary}
-                  style={{ background: '#dc2626', borderColor: '#dc2626' }}
+                  style={{ background: '#dc2626', borderColor: '#dc2626', minWidth: '110px', justifyContent: 'center' }}
                 >
                   {isSearchingYt ? (
                     <>
@@ -1254,55 +1254,63 @@ export default function CreateMaterialPage() {
                 </button>
               </form>
 
-              {/* Selected Video Pill */}
+              {/* Selected Video Banner */}
               {selectedYtVideo && (
-                <div style={{
-                  background: 'rgba(220, 38, 38, 0.05)',
-                  border: '1px solid rgba(220, 38, 38, 0.3)',
-                  borderRadius: '9px',
-                  padding: '0.75rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  flexWrap: 'wrap',
-                  gap: '0.65rem'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flex: 1, minWidth: '220px' }}>
+                <div className={styles.selectedVideoBanner}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1, minWidth: '240px' }}>
                     {selectedYtVideo.thumbnailUrl && (
-                      <img
-                        src={selectedYtVideo.thumbnailUrl}
-                        alt=""
-                        style={{ width: '70px', height: '42px', objectFit: 'cover', borderRadius: '6px', border: '1px solid rgba(220, 38, 38, 0.2)' }}
-                      />
-                    )}
-                    <div>
-                      <div style={{ fontSize: '0.66rem', fontWeight: 800, color: '#dc2626', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                        <CheckCircle2 size={11} />
-                        <span>Video Terpilih Untuk Materi Siswa</span>
+                      <div
+                        onClick={() => setPreviewYtVideo(selectedYtVideo)}
+                        style={{ position: 'relative', cursor: 'pointer', flexShrink: 0 }}
+                        title="Klik untuk putar preview"
+                      >
+                        <img
+                          src={selectedYtVideo.thumbnailUrl}
+                          alt=""
+                          className={styles.selectedVideoThumb}
+                        />
+                        <div style={{
+                          position: 'absolute',
+                          inset: 0,
+                          background: 'rgba(0,0,0,0.3)',
+                          borderRadius: '8px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}>
+                          <Play size={16} fill="#fff" color="#fff" />
+                        </div>
                       </div>
-                      <div style={{ fontWeight: 800, fontSize: '0.8rem', color: 'var(--text-primary)', lineHeight: 1.3 }}>
+                    )}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', minWidth: 0 }}>
+                      <div style={{ fontSize: '0.66rem', fontWeight: 800, color: '#dc2626', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <CheckCircle2 size={12} color="#10b981" />
+                        <span style={{ color: '#10b981' }}>Video Terpilih Untuk Modul Ajar</span>
+                      </div>
+                      <div style={{ fontWeight: 800, fontSize: '0.82rem', color: 'var(--text-primary)', lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                         {selectedYtVideo.title}
                       </div>
-                      <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
-                        Channel: {selectedYtVideo.channelTitle}
+                      <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                        <span>Channel: <strong>{selectedYtVideo.channelTitle}</strong></span>
                       </div>
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', gap: '0.4rem' }}>
+                  <div style={{ display: 'flex', gap: '0.45rem', flexShrink: 0 }}>
                     <button
                       type="button"
                       onClick={() => setPreviewYtVideo(selectedYtVideo)}
                       className={`${styles.btnSecondary} ${styles.btnSm}`}
+                      style={{ gap: '0.3rem' }}
                     >
-                      <Play size={11} />
+                      <Play size={12} />
                       <span>Putar Preview</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setSelectedYtVideo(null)}
                       className={`${styles.btnSecondary} ${styles.btnSm}`}
-                      style={{ color: '#dc2626' }}
+                      style={{ color: '#dc2626', borderColor: 'rgba(220, 38, 38, 0.3)' }}
                     >
                       Ganti Video
                     </button>
@@ -1310,70 +1318,162 @@ export default function CreateMaterialPage() {
                 </div>
               )}
 
-              {/* Search Results Grid */}
-              {ytSearchResults.length > 0 && (
+              {/* Skeleton Loader during search */}
+              {isSearchingYt && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
-                  <div style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-muted)' }}>
-                    Hasil Pencarian YouTube Data API ({ytSearchResults.length} Video):
+                  <div className={styles.videoSectionHeader}>
+                    <div className={styles.videoSectionTitle}>
+                      <span style={{ color: '#ef4444' }}>▶</span>
+                      <span>Sedang Mengambil Video YouTube Data API...</span>
+                    </div>
                   </div>
-
                   <div className={styles.videoGrid}>
-                    {ytSearchResults.map(video => (
-                      <div key={video.id} className={styles.videoCard}>
-                        <div
-                          onClick={() => setPreviewYtVideo(video)}
-                          className={styles.videoThumbnailBox}
-                        >
-                          <img
-                            src={video.thumbnailUrl}
-                            alt={video.title}
-                            className={styles.videoThumbnailImg}
-                          />
-                          <div className={styles.videoPlayOverlay}>
-                            <span style={{
-                              background: 'rgba(0,0,0,0.7)',
-                              color: '#fff',
-                              borderRadius: '50%',
-                              width: '32px',
-                              height: '32px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                            }}>
-                              <Play size={14} fill="#fff" />
-                            </span>
-                          </div>
-                        </div>
-
-                        <div style={{ padding: '0.65rem', display: 'flex', flexDirection: 'column', gap: '0.35rem', flex: 1 }}>
-                          <div style={{ fontWeight: 800, fontSize: '0.76rem', color: 'var(--text-primary)', lineHeight: 1.3, minHeight: '2rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                            {video.title}
-                          </div>
-                          <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
-                            Channel: {video.channelTitle}
-                          </div>
-
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.35rem', marginTop: 'auto', paddingTop: '0.45rem', borderTop: '1px solid var(--border-light)' }}>
-                            <button
-                              type="button"
-                              onClick={() => setPreviewYtVideo(video)}
-                              className={`${styles.btnSecondary} ${styles.btnSm}`}
-                              style={{ justifyContent: 'center' }}
-                            >
-                              Pratinjau
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleSelectYouTubeVideo(video)}
-                              className={`${styles.btnPrimary} ${styles.btnSm}`}
-                              style={{ background: '#dc2626', borderColor: '#dc2626', justifyContent: 'center' }}
-                            >
-                              Pilih Video
-                            </button>
+                    {[...Array(6)].map((_, i) => (
+                      <div key={`yt-skeleton-${i}`} className={styles.videoSkeletonCard}>
+                        <div className={styles.videoSkeletonThumb} />
+                        <div className={styles.videoSkeletonBody}>
+                          <div className={styles.videoSkeletonLine} style={{ width: '92%' }} />
+                          <div className={styles.videoSkeletonLine} style={{ width: '65%' }} />
+                          <div className={styles.videoSkeletonLine} style={{ width: '45%', height: '10px', marginTop: '4px' }} />
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', marginTop: '8px' }}>
+                            <div className={styles.videoSkeletonLine} style={{ height: '30px' }} />
+                            <div className={styles.videoSkeletonLine} style={{ height: '30px' }} />
                           </div>
                         </div>
                       </div>
                     ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Search Results Grid */}
+              {!isSearchingYt && ytSearchResults.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
+                  <div className={styles.videoSectionHeader}>
+                    <div className={styles.videoSectionTitle}>
+                      <span style={{ color: '#ef4444' }}>▶</span>
+                      <span>Hasil Pencarian YouTube Data API</span>
+                      <span className={styles.videoBadgeCount}>
+                        {ytSearchResults.length} Video Edukasi
+                      </span>
+                    </div>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                      Pilih video untuk mengisi judul &amp; petunjuk materi otomatis
+                    </span>
+                  </div>
+
+                  <div className={styles.videoGrid}>
+                    {ytSearchResults.map(video => {
+                      const isSelected = selectedYtVideo?.id === video.id;
+                      return (
+                        <div
+                          key={video.id}
+                          className={`${styles.videoCard} ${isSelected ? styles.videoCardSelected : ''}`}
+                        >
+                          {/* 16:9 Native Aspect Ratio Thumbnail Box */}
+                          <div
+                            onClick={() => setPreviewYtVideo(video)}
+                            className={styles.videoThumbnailBox}
+                            title={`Pratinjau: ${video.title}`}
+                          >
+                            <img
+                              src={video.thumbnailUrl}
+                              alt={video.title}
+                              className={styles.videoThumbnailImg}
+                              loading="lazy"
+                            />
+
+                            {/* Top Left: YouTube Brand Tag */}
+                            <div className={styles.videoBadgeTopLeft}>
+                              <span style={{ color: '#ef4444', fontSize: '0.68rem' }}>▶</span>
+                              <span>YouTube</span>
+                            </div>
+
+                            {/* Top Right: Selected Status Tag */}
+                            {isSelected && (
+                              <div className={styles.videoBadgeTopRight}>
+                                <CheckCircle2 size={11} />
+                                <span>Terpilih</span>
+                              </div>
+                            )}
+
+                            {/* Bottom Right: HD Tag */}
+                            <div className={styles.videoBadgeBottomRight}>
+                              HD Video
+                            </div>
+
+                            {/* Center Play Overlay */}
+                            <div className={styles.videoPlayOverlay}>
+                              <div className={styles.videoPlayBtnCircle}>
+                                <Play size={18} fill="#ffffff" color="#ffffff" style={{ marginLeft: '2px' }} />
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Video Card Content */}
+                          <div className={styles.videoCardBody}>
+                            <div
+                              className={styles.videoCardTitle}
+                              title={video.title}
+                            >
+                              {video.title}
+                            </div>
+
+                            <div className={styles.videoCardChannel}>
+                              <span className={styles.videoCardChannelIcon}>
+                                <Video size={10} />
+                              </span>
+                              <span style={{ fontWeight: 600 }}>{video.channelTitle}</span>
+                            </div>
+
+                            {video.description && (
+                              <div className={styles.videoCardSnippet} title={video.description}>
+                                {video.description}
+                              </div>
+                            )}
+
+                            {/* Card Actions */}
+                            <div className={styles.videoCardActions}>
+                              <button
+                                type="button"
+                                onClick={() => setPreviewYtVideo(video)}
+                                className={`${styles.btnSecondary} ${styles.btnSm}`}
+                                style={{ justifyContent: 'center', gap: '0.3rem' }}
+                                title="Putar pratinjau video langsung"
+                              >
+                                <Play size={12} />
+                                <span>Pratinjau</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleSelectYouTubeVideo(video)}
+                                className={`${styles.btnPrimary} ${styles.btnSm}`}
+                                style={{
+                                  background: isSelected ? '#059669' : '#dc2626',
+                                  borderColor: isSelected ? '#059669' : '#dc2626',
+                                  justifyContent: 'center',
+                                  gap: '0.3rem',
+                                  fontWeight: 700
+                                }}
+                                title="Pilih video ini untuk materi siswa"
+                              >
+                                {isSelected ? (
+                                  <>
+                                    <CheckCircle2 size={12} />
+                                    <span>Terpilih</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Check size={12} />
+                                    <span>Gunakan</span>
+                                  </>
+                                )}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
