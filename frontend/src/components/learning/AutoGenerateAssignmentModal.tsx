@@ -19,6 +19,16 @@ interface AutoGenerateAssignmentModalProps {
   }) => void;
 }
 
+function cleanRobotText(text: string): string {
+  if (!text) return '';
+  return text
+    .replace(/\s*\(AI\s+NVIDIA\s+NIM\)/gi, '')
+    .replace(/\s*\(NVIDIA\s+NIM\)/gi, '')
+    .replace(/\s*oleh\s+AI\s+NVIDIA\s+NIM/gi, '')
+    .replace(/\s*dari\s+AI\s+NVIDIA\s+NIM/gi, '')
+    .trim();
+}
+
 export function AutoGenerateAssignmentModal({
   isOpen,
   onClose,
@@ -32,6 +42,12 @@ export function AutoGenerateAssignmentModal({
   const [difficulty, setDifficulty] = useState<'Mudah' | 'Sedang' | 'HOTS'>('Sedang');
   const [sourceMode, setSourceMode] = useState<'LATEST' | 'HISTORY'>('LATEST');
   const [assignmentFormat, setAssignmentFormat] = useState<'STRUCTURED_QUESTIONS' | 'HOMEWORK_PR'>('STRUCTURED_QUESTIONS');
+  
+  // Customizable Question Counts & Visual Diagram options
+  const [numMcq, setNumMcq] = useState<number>(4);
+  const [numEssay, setNumEssay] = useState<number>(2);
+  const [includeImages, setIncludeImages] = useState<boolean>(true);
+
   const [subjectMaterials, setSubjectMaterials] = useState<any[]>([]);
   const [selectedMaterialId, setSelectedMaterialId] = useState<string>('');
   const [isLoadingMaterials, setIsLoadingMaterials] = useState(false);
@@ -114,6 +130,9 @@ export function AutoGenerateAssignmentModal({
         topic: effectiveTopic,
         grade_level: gradeLevel,
         difficulty,
+        num_mcq: assignmentFormat === 'STRUCTURED_QUESTIONS' ? numMcq : 0,
+        num_essay: assignmentFormat === 'STRUCTURED_QUESTIONS' ? numEssay : numEssay,
+        include_images: includeImages,
         source_mode: sourceMode === 'HISTORY' && selectedMaterialId ? 'SELECTED_IDS' : 'LATEST_PUBLISHED',
         material_ids: sourceMode === 'HISTORY' && selectedMaterialId ? [selectedMaterialId] : [],
       };
@@ -152,14 +171,14 @@ export function AutoGenerateAssignmentModal({
             const fallbackResult = {
               title: aiTask.title,
               assignment_type: assignmentFormat,
-              instructions: `${aiTask.instructions}\n\nRubrik Penilaian Objektif (AI NVIDIA NIM):\n${aiTask.rubric}`,
+              instructions: `${cleanRobotText(aiTask.instructions || '')}\n\nRubrik Penilaian Objektif:\n${cleanRobotText(aiTask.rubric || '')}`,
               questions: (aiTask.tasks || []).map((t: string, idx: number) => ({
                 id: `task-${idx + 1}-${Date.now()}`,
-                question_text: t,
+                question_text: cleanRobotText(t),
                 question_type: 'ESSAY' as const,
                 points: Math.round(100 / Math.max(1, (aiTask.tasks || []).length)),
                 choices: [],
-                explanation: aiTask.rubric || 'Rubrik penilaian AI NVIDIA NIM',
+                explanation: cleanRobotText(aiTask.rubric || 'Rubrik Penilaian Objektif'),
               })),
             };
             setGeneratedResult(fallbackResult);
@@ -171,13 +190,25 @@ export function AutoGenerateAssignmentModal({
       const json = await res.json().catch(() => null);
 
       if (!res.ok || !json?.success) {
-        const message = json?.error || (res.status === 404 ? 'Materi belum tersedia untuk mata pelajaran ini.' : `Gagal menghubungi server AI NVIDIA NIM (${res.status}).`);
+        const message = json?.error || (res.status === 404 ? 'Materi belum tersedia untuk mata pelajaran ini.' : `Gagal menghubungi server AI (${res.status}).`);
         throw new Error(message);
       }
 
-      setGeneratedResult(json.data);
+      const data = json.data;
+      if (data) {
+        data.instructions = cleanRobotText(data.instructions);
+        if (Array.isArray(data.questions)) {
+          data.questions = data.questions.map((q: any) => ({
+            ...q,
+            question_text: cleanRobotText(q.question_text),
+            explanation: cleanRobotText(q.explanation),
+          }));
+        }
+      }
+
+      setGeneratedResult(data);
     } catch (err: any) {
-      setErrorMsg(err.message || 'Terjadi kendala saat menyusun tugas otomatis dengan AI NVIDIA NIM.');
+      setErrorMsg(err.message || 'Terjadi kendala saat menyusun tugas otomatis dengan AI.');
     } finally {
       setIsGenerating(false);
     }
@@ -195,6 +226,7 @@ export function AutoGenerateAssignmentModal({
         question_text: q.question_text,
         question_type: q.question_type,
         points: q.points || 20,
+        image_url: q.image_url || undefined,
         choices: (q.choices || []).map((c: any) => ({
           choice_text: c.choice_text || c.text || '',
           is_correct: !!c.is_correct || !!c.isCorrect,
@@ -518,7 +550,7 @@ export function AutoGenerateAssignmentModal({
             >
               Format Tugas yang Diinginkan
             </label>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
               <div
                 onClick={() => {
                   setAssignmentFormat('STRUCTURED_QUESTIONS');
@@ -540,7 +572,7 @@ export function AutoGenerateAssignmentModal({
                   </strong>
                 </div>
                 <p style={{ fontSize: '0.76rem', color: 'var(--text-muted)', margin: 0, lineHeight: 1.4 }}>
-                  4 Butir Soal PG &amp; 2 Soal Essay analitis HOTS lengkap dengan rubrik penilaian.
+                  Kombinasi soal pilihan ganda otomatis dan uraian analitis dengan rubrik penilaian lengkap.
                 </p>
               </div>
 
@@ -568,6 +600,230 @@ export function AutoGenerateAssignmentModal({
                   Instruksi tugas mandiri, petunjuk unggah foto lembar kerja, &amp; rubrik komprehensif.
                 </p>
               </div>
+            </div>
+
+            {/* Sub-selector for Structured Questions: Num PG & Num Essay */}
+            {assignmentFormat === 'STRUCTURED_QUESTIONS' ? (
+              <div
+                style={{
+                  backgroundColor: 'rgba(118, 185, 0, 0.05)',
+                  border: '1px solid rgba(118, 185, 0, 0.25)',
+                  borderRadius: '10px',
+                  padding: '12px 14px',
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: '12px',
+                  marginBottom: '10px',
+                }}
+              >
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '5px' }}>
+                    Jumlah Soal Pilihan Ganda (PG)
+                  </label>
+                  <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
+                    {[2, 4, 5, 10].map(cnt => (
+                      <button
+                        key={cnt}
+                        type="button"
+                        onClick={() => {
+                          setNumMcq(cnt);
+                          setGeneratedResult(null);
+                        }}
+                        style={{
+                          flex: 1,
+                          padding: '6px 2px',
+                          borderRadius: '6px',
+                          fontSize: '0.76rem',
+                          fontWeight: 700,
+                          border: `1px solid ${numMcq === cnt ? '#76B900' : 'var(--border-medium)'}`,
+                          backgroundColor: numMcq === cnt ? '#76B900' : 'var(--bg-surface)',
+                          color: numMcq === cnt ? '#FFFFFF' : 'var(--text-secondary)',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {cnt} PG
+                      </button>
+                    ))}
+                    <input
+                      type="number"
+                      min={1}
+                      max={30}
+                      value={numMcq}
+                      onChange={e => {
+                        setNumMcq(Math.max(1, parseInt(e.target.value) || 1));
+                        setGeneratedResult(null);
+                      }}
+                      style={{
+                        width: '46px',
+                        padding: '5px 4px',
+                        borderRadius: '6px',
+                        border: '1px solid var(--border-medium)',
+                        backgroundColor: 'var(--bg-surface)',
+                        color: 'var(--text-primary)',
+                        fontSize: '0.78rem',
+                        fontWeight: 700,
+                        textAlign: 'center',
+                      }}
+                      title="Jumlah Kustom PG"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '5px' }}>
+                    Jumlah Soal Uraian / Essay
+                  </label>
+                  <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
+                    {[1, 2, 3, 5].map(cnt => (
+                      <button
+                        key={cnt}
+                        type="button"
+                        onClick={() => {
+                          setNumEssay(cnt);
+                          setGeneratedResult(null);
+                        }}
+                        style={{
+                          flex: 1,
+                          padding: '6px 2px',
+                          borderRadius: '6px',
+                          fontSize: '0.76rem',
+                          fontWeight: 700,
+                          border: `1px solid ${numEssay === cnt ? '#9333ea' : 'var(--border-medium)'}`,
+                          backgroundColor: numEssay === cnt ? '#9333ea' : 'var(--bg-surface)',
+                          color: numEssay === cnt ? '#FFFFFF' : 'var(--text-secondary)',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {cnt} Essay
+                      </button>
+                    ))}
+                    <input
+                      type="number"
+                      min={1}
+                      max={20}
+                      value={numEssay}
+                      onChange={e => {
+                        setNumEssay(Math.max(1, parseInt(e.target.value) || 1));
+                        setGeneratedResult(null);
+                      }}
+                      style={{
+                        width: '46px',
+                        padding: '5px 4px',
+                        borderRadius: '6px',
+                        border: '1px solid var(--border-medium)',
+                        backgroundColor: 'var(--bg-surface)',
+                        color: 'var(--text-primary)',
+                        fontSize: '0.78rem',
+                        fontWeight: 700,
+                        textAlign: 'center',
+                      }}
+                      title="Jumlah Kustom Essay"
+                    />
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div
+                style={{
+                  backgroundColor: 'rgba(118, 185, 0, 0.05)',
+                  border: '1px solid rgba(118, 185, 0, 0.25)',
+                  borderRadius: '10px',
+                  padding: '12px 14px',
+                  marginBottom: '10px',
+                }}
+              >
+                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '5px' }}>
+                  Jumlah Butir Lembar Kerja / Tugas Mandiri
+                </label>
+                <div style={{ display: 'flex', gap: '8px', maxWidth: '320px' }}>
+                  {[2, 3, 5].map(cnt => (
+                    <button
+                      key={cnt}
+                      type="button"
+                      onClick={() => {
+                        setNumEssay(cnt);
+                        setGeneratedResult(null);
+                      }}
+                      style={{
+                        flex: 1,
+                        padding: '6px 8px',
+                        borderRadius: '6px',
+                        fontSize: '0.78rem',
+                        fontWeight: 700,
+                        border: `1px solid ${numEssay === cnt ? '#76B900' : 'var(--border-medium)'}`,
+                        backgroundColor: numEssay === cnt ? '#76B900' : 'var(--bg-surface)',
+                        color: numEssay === cnt ? '#FFFFFF' : 'var(--text-secondary)',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {cnt} Butir Tugas
+                    </button>
+                  ))}
+                  <input
+                    type="number"
+                    min={1}
+                    max={15}
+                    value={numEssay}
+                    onChange={e => {
+                      setNumEssay(Math.max(1, parseInt(e.target.value) || 1));
+                      setGeneratedResult(null);
+                    }}
+                    style={{
+                      width: '60px',
+                      padding: '5px 8px',
+                      borderRadius: '6px',
+                      border: '1px solid var(--border-medium)',
+                      backgroundColor: 'var(--bg-surface)',
+                      color: 'var(--text-primary)',
+                      fontSize: '0.8rem',
+                      fontWeight: 700,
+                      textAlign: 'center',
+                    }}
+                    title="Jumlah Kustom Tugas"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Visual Stimulus Toggle */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '8px 12px',
+                backgroundColor: includeImages ? 'rgba(16, 185, 129, 0.08)' : 'var(--bg-surface)',
+                border: `1px solid ${includeImages ? 'rgba(16, 185, 129, 0.3)' : 'var(--border-medium)'}`,
+                borderRadius: '8px',
+                cursor: 'pointer',
+              }}
+              onClick={() => {
+                setIncludeImages(!includeImages);
+                setGeneratedResult(null);
+              }}
+            >
+              <input
+                type="checkbox"
+                id="includeImagesCheckbox"
+                checked={includeImages}
+                onChange={e => {
+                  setIncludeImages(e.target.checked);
+                  setGeneratedResult(null);
+                }}
+                style={{ cursor: 'pointer', accentColor: '#10B981', width: '16px', height: '16px' }}
+              />
+              <label
+                htmlFor="includeImagesCheckbox"
+                style={{
+                  fontSize: '0.8rem',
+                  fontWeight: 600,
+                  color: 'var(--text-primary)',
+                  cursor: 'pointer',
+                  userSelect: 'none',
+                }}
+              >
+                🎨 <strong>Sertakan Soal Bergambar / Diagram</strong> (Diagram sains, bagan alur, grafik, geometri, peta)
+              </label>
             </div>
           </div>
 
@@ -736,10 +992,10 @@ export function AutoGenerateAssignmentModal({
                   }}
                 >
                   <CheckCircle2 size={13} />
-                  Berhasil Disusun oleh AI NVIDIA NIM
+                  Paket Tugas Terstruktur Berhasil Disusun
                 </span>
                 <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                  {generatedResult.assignment_type === 'HOMEWORK_PR' ? 'Tugas Mandiri (PR)' : `${generatedResult.questions?.length || 0} Soal (PG &amp; Essay)`}
+                  {generatedResult.assignment_type === 'HOMEWORK_PR' ? 'Tugas Mandiri (PR)' : `${generatedResult.questions?.length || 0} Soal (${numMcq} PG &amp; ${numEssay} Essay)`}
                 </span>
               </div>
 
@@ -777,17 +1033,46 @@ export function AutoGenerateAssignmentModal({
                           backgroundColor: 'var(--bg-surface)',
                           border: '1px solid var(--border-light)',
                           borderRadius: '8px',
-                          padding: '8px 10px',
+                          padding: '10px 12px',
                           fontSize: '0.8rem',
                         }}
                       >
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                          <span style={{ fontWeight: 700, color: '#76B900' }}>
+                          <span style={{ fontWeight: 700, color: q.question_type === 'MULTIPLE_CHOICE' ? '#76B900' : '#9333ea' }}>
                             Soal #{idx + 1} ({q.question_type === 'MULTIPLE_CHOICE' ? 'Pilihan Ganda' : 'Essay'})
                           </span>
                           <span style={{ color: 'var(--warning)', fontWeight: 600 }}>{q.points} Poin</span>
                         </div>
-                        <div style={{ color: 'var(--text-primary)' }}>{q.question_text}</div>
+                        {q.image_url && (
+                          <div style={{ margin: '6px 0', borderRadius: '6px', overflow: 'hidden', border: '1px solid var(--border-light)', maxHeight: '160px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#000' }}>
+                            <img src={q.image_url} alt="Stimulus Visual" style={{ maxHeight: '160px', maxWidth: '100%', objectFit: 'contain' }} />
+                          </div>
+                        )}
+                        <div style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{q.question_text}</div>
+                        {q.question_type === 'MULTIPLE_CHOICE' && Array.isArray(q.choices) && q.choices.length > 0 && (
+                          <div style={{ marginTop: '6px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px' }}>
+                            {q.choices.map((c: any, cIdx: number) => {
+                              const label = String.fromCharCode(65 + cIdx);
+                              const isCorrect = !!c.is_correct || !!c.isCorrect;
+                              return (
+                                <div
+                                  key={cIdx}
+                                  style={{
+                                    padding: '3px 6px',
+                                    borderRadius: '4px',
+                                    fontSize: '0.74rem',
+                                    backgroundColor: isCorrect ? 'rgba(16, 185, 129, 0.15)' : 'var(--bg-elevated)',
+                                    color: isCorrect ? '#10B981' : 'var(--text-secondary)',
+                                    fontWeight: isCorrect ? 700 : 400,
+                                    border: `1px solid ${isCorrect ? 'rgba(16, 185, 129, 0.3)' : 'transparent'}`,
+                                  }}
+                                >
+                                  <strong>{label}.</strong> {c.choice_text || c.text || ''} {isCorrect && '✓'}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>

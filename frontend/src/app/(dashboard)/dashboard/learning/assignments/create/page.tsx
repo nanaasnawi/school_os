@@ -32,6 +32,7 @@ type AssignmentQuestionForm = {
   question_text: string;
   question_type: 'MULTIPLE_CHOICE' | 'ESSAY';
   points: number;
+  image_url?: string;
   choices: QuestionChoice[];
 };
 
@@ -184,6 +185,7 @@ export default function CreateAssignmentPage() {
           question_text: q.question_text,
           question_type: q.question_type,
           points: q.points || 10,
+          image_url: q.image_url || undefined,
           choices: (q.choices || []).map((c: any) => ({
             choice_text: c.choice_text || c.text || '',
             is_correct: !!c.is_correct || !!c.isCorrect,
@@ -195,6 +197,10 @@ export default function CreateAssignmentPage() {
   };
 
   // Questions Helper Methods
+  const updateQuestionImageUrl = (qIndex: number, url?: string) => {
+    setQuestions(prev => prev.map((q, i) => i === qIndex ? { ...q, image_url: url } : q));
+  };
+
   const addQuestion = (type: 'MULTIPLE_CHOICE' | 'ESSAY') => {
     const newId = `q-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`;
     if (type === 'MULTIPLE_CHOICE') {
@@ -294,21 +300,27 @@ export default function CreateAssignmentPage() {
         }
       }
 
-      payloadQuestions = validQuestions.map((q, idx) => ({
-        question_text: q.question_text.trim(),
-        question_type: q.question_type,
-        points: Number(q.points) || 10,
-        order_index: idx + 1,
-        choices: q.question_type === 'MULTIPLE_CHOICE'
-          ? q.choices
-              .filter(c => c.choice_text.trim().length > 0)
-              .map((c, cIdx) => ({
-                choice_text: c.choice_text.trim(),
-                is_correct: c.is_correct,
-                order_index: cIdx + 1,
-              }))
-          : [],
-      }));
+      payloadQuestions = validQuestions.map((q, idx) => {
+        let text = q.question_text.trim();
+        if (q.image_url && !text.includes(q.image_url)) {
+          text = `![Diagram Soal](${q.image_url})\n\n${text}`;
+        }
+        return {
+          question_text: text,
+          question_type: q.question_type,
+          points: Number(q.points) || 10,
+          order_index: idx + 1,
+          choices: q.question_type === 'MULTIPLE_CHOICE'
+            ? q.choices
+                .filter(c => c.choice_text.trim().length > 0)
+                .map((c, cIdx) => ({
+                  choice_text: c.choice_text.trim(),
+                  is_correct: c.is_correct,
+                  order_index: cIdx + 1,
+                }))
+            : [],
+        };
+      });
     }
 
     setIsSubmitting(true);
@@ -1052,6 +1064,88 @@ export default function CreateAssignmentPage() {
                           </button>
                         </div>
                       </div>
+
+                      {/* Diagram / Image Stimulus */}
+                      {q.image_url ? (
+                        <div
+                          style={{
+                            borderRadius: '8px',
+                            border: '1px solid var(--border-light)',
+                            backgroundColor: 'var(--bg-elevated)',
+                            padding: '8px 12px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '6px',
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              🖼️ Diagram / Stimulus Visual Soal
+                            </span>
+                            <div style={{ display: 'flex', gap: '6px' }}>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const newUrl = window.prompt('Ubah URL Gambar / Diagram:', q.image_url || '');
+                                  if (newUrl !== null) updateQuestionImageUrl(qIdx, newUrl.trim() || undefined);
+                                }}
+                                style={{
+                                  background: 'none',
+                                  border: 'none',
+                                  color: 'var(--text-muted)',
+                                  fontSize: '0.72rem',
+                                  cursor: 'pointer',
+                                  textDecoration: 'underline',
+                                }}
+                              >
+                                Ganti URL
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => updateQuestionImageUrl(qIdx, undefined)}
+                                style={{
+                                  background: 'none',
+                                  border: 'none',
+                                  color: '#ef4444',
+                                  fontSize: '0.72rem',
+                                  cursor: 'pointer',
+                                }}
+                              >
+                                ✕ Hapus
+                              </button>
+                            </div>
+                          </div>
+                          <div style={{ maxHeight: '180px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#000', borderRadius: '6px', overflow: 'hidden' }}>
+                            <img src={q.image_url} alt="Diagram Soal" style={{ maxHeight: '180px', maxWidth: '100%', objectFit: 'contain' }} />
+                          </div>
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const url = window.prompt('Masukkan URL Gambar / Diagram untuk butir soal ini:');
+                              if (url && url.trim()) {
+                                updateQuestionImageUrl(qIdx, url.trim());
+                              }
+                            }}
+                            style={{
+                              background: 'transparent',
+                              border: '1px dashed var(--border-medium)',
+                              borderRadius: '6px',
+                              padding: '4px 10px',
+                              fontSize: '0.74rem',
+                              color: 'var(--text-secondary)',
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                            }}
+                          >
+                            <span>🖼️</span> Sisipkan Gambar / Diagram Soal
+                          </button>
+                        </div>
+                      )}
 
                       {/* Question Textarea */}
                       <div>

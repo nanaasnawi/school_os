@@ -18,6 +18,7 @@ type QuizQuestionForm = {
   question_text: string;
   question_type: 'MULTIPLE_CHOICE' | 'ESSAY';
   points: number;
+  image_url?: string;
   choices: QuestionChoice[];
 };
 
@@ -161,8 +162,9 @@ export default function CreateQuizPage() {
         data.questions.map((q, idx) => ({
           id: `q-auto-${idx + 1}`,
           question_text: q.question_text,
-          question_type: q.question_type,
+          question_type: q.question_type || 'MULTIPLE_CHOICE',
           points: q.points || 10,
+          image_url: q.image_url || undefined,
           choices: (q.choices || []).map((c: any) => ({
             text: c.text || c.choice_text || '',
             isCorrect: !!c.isCorrect || !!c.is_correct,
@@ -174,6 +176,10 @@ export default function CreateQuizPage() {
   };
 
   // Helper Methods for Questions Builder
+  const updateQuestionImageUrl = (qIndex: number, url?: string) => {
+    setQuestions(prev => prev.map((q, i) => i === qIndex ? { ...q, image_url: url } : q));
+  };
+
   const addQuestion = (type: 'MULTIPLE_CHOICE' | 'ESSAY') => {
     const newId = `q-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`;
     if (type === 'MULTIPLE_CHOICE') {
@@ -327,11 +333,16 @@ export default function CreateQuizPage() {
       // 2. Add Questions sequentially
       for (let idx = 0; idx < validQuestions.length; idx++) {
         const q = validQuestions[idx];
+        let cleanText = q.question_text.trim();
+        if (q.image_url && !cleanText.includes(q.image_url)) {
+          cleanText = `![Diagram Soal](${q.image_url})\n\n${cleanText}`;
+        }
         const questionPayload = {
-          question_text: q.question_text.trim(),
+          question_text: cleanText,
           question_type: q.question_type,
           points: Number(q.points) || 10,
           order_index: idx + 1,
+          image_url: q.image_url || null,
           choices: q.question_type === 'MULTIPLE_CHOICE'
             ? q.choices
                 .filter(c => c.text.trim().length > 0)
@@ -1077,6 +1088,88 @@ export default function CreateQuizPage() {
                         </button>
                       </div>
                     </div>
+
+                    {/* Diagram / Image Stimulus */}
+                    {q.image_url ? (
+                      <div
+                        style={{
+                          borderRadius: '12px',
+                          border: '1px solid var(--border-light)',
+                          backgroundColor: 'var(--bg-elevated)',
+                          padding: '10px 14px',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '8px',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <span style={{ fontSize: '0.74rem', fontWeight: 800, color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                            🖼️ Diagram / Stimulus Visual Soal
+                          </span>
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const newUrl = window.prompt('Ubah URL Gambar / Diagram:', q.image_url || '');
+                                if (newUrl !== null) updateQuestionImageUrl(qIdx, newUrl.trim() || undefined);
+                              }}
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                color: 'var(--text-muted)',
+                                fontSize: '0.74rem',
+                                cursor: 'pointer',
+                                textDecoration: 'underline',
+                              }}
+                            >
+                              Ganti URL
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => updateQuestionImageUrl(qIdx, undefined)}
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                color: '#ef4444',
+                                fontSize: '0.74rem',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              ✕ Hapus
+                            </button>
+                          </div>
+                        </div>
+                        <div style={{ maxHeight: '180px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#000', borderRadius: '8px', overflow: 'hidden' }}>
+                          <img src={q.image_url} alt="Diagram Soal" style={{ maxHeight: '180px', maxWidth: '100%', objectFit: 'contain' }} />
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const url = window.prompt('Masukkan URL Gambar / Diagram untuk butir soal ini:');
+                            if (url && url.trim()) {
+                              updateQuestionImageUrl(qIdx, url.trim());
+                            }
+                          }}
+                          style={{
+                            background: 'transparent',
+                            border: '1px dashed var(--border-medium)',
+                            borderRadius: '8px',
+                            padding: '5px 12px',
+                            fontSize: '0.76rem',
+                            color: 'var(--text-secondary)',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '5px',
+                          }}
+                        >
+                          <span>🖼️</span> Sisipkan Gambar / Diagram Soal
+                        </button>
+                      </div>
+                    )}
 
                     {/* Question Text */}
                     <div>

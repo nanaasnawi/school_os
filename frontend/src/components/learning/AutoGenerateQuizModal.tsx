@@ -3,6 +3,54 @@ import { AcademicSubject } from '@/features/material';
 import { Sparkles, CheckCircle2, Calendar, BookOpen, Layers, AlertCircle, Loader2, X, Sliders } from 'lucide-react';
 import { getApiUrl, apiClient } from '@/lib/api';
 
+/**
+ * Strips choices (e.g. "A. ...", "B) ...") if accidentally written inside question_text by LLM
+ */
+function sanitizeQuestionText(raw: string): string {
+  if (!raw) return '';
+  const lines = raw.split('\n');
+  const cleanLines: string[] = [];
+  let inOptionsSection = false;
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (/^([A-Ea-e][\.\)]|\([A-Ea-e]\)|\[[A-Ea-e]\])\s+/.test(trimmed)) {
+      inOptionsSection = true;
+      continue;
+    }
+    if (inOptionsSection && trimmed.length === 0) continue;
+    if (!inOptionsSection) {
+      cleanLines.push(line);
+    }
+  }
+
+  return cleanLines
+    .join('\n')
+    .replace(/(?:Pilihan\s+jawaban|Opsi\s+jawaban|Pilihan|Opsi)\s*:?\s*$/i, '')
+    .trim();
+}
+
+/**
+ * Strips duplicate leading letter (e.g. "A. ", "B) ") from choice text
+ */
+function sanitizeChoiceText(choice: string): string {
+  if (!choice) return '';
+  return choice.replace(/^[A-Ea-e][\.\)]\s*/, '').trim();
+}
+
+/**
+ * Cleans robotic AI text
+ */
+function cleanRobotText(text: string): string {
+  if (!text) return '';
+  return text
+    .replace(/\s*\(AI\s+NVIDIA\s+NIM\)/gi, '')
+    .replace(/\s*\(NVIDIA\s+NIM\)/gi, '')
+    .replace(/\s*oleh\s+AI\s+NVIDIA\s+NIM/gi, '')
+    .replace(/\s*dari\s+AI\s+NVIDIA\s+NIM/gi, '')
+    .trim();
+}
+
 interface AutoGenerateQuizModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -29,7 +77,10 @@ export function AutoGenerateQuizModal({
   const [topic, setTopic] = useState('');
   const [gradeLevel, setGradeLevel] = useState('Kelas 5 SD');
   const [difficulty, setDifficulty] = useState<'Mudah' | 'Sedang' | 'HOTS'>('Sedang');
-  const [numQuestions, setNumQuestions] = useState<number>(5);
+  const [numQuestions, setNumQuestions] = useState<number>(10);
+  const [numMcq, setNumMcq] = useState<number>(10);
+  const [numEssay, setNumEssay] = useState<number>(5);
+  const [includeImages, setIncludeImages] = useState<boolean>(true);
   const [examScope, setExamScope] = useState<'MONTHLY_SUMMARY' | 'SINGLE_MODULE'>('MONTHLY_SUMMARY');
   const [quizFormat, setQuizFormat] = useState<'MCQ_ONLY' | 'MCQ_AND_ESSAY'>('MCQ_ONLY');
 
@@ -63,8 +114,10 @@ export function AutoGenerateQuizModal({
     try {
       const isMonthly = examScope === 'MONTHLY_SUMMARY';
       const effectiveTopic = topic.trim() || currentSubjectObj.name;
-      const numQ = isMonthly ? 10 : numQuestions;
       const effectiveDiff = isMonthly ? 'HOTS' : difficulty;
+
+      const effectiveMcqCount = quizFormat === 'MCQ_ONLY' ? (isMonthly ? 10 : numQuestions) : numMcq;
+      const effectiveEssayCount = quizFormat === 'MCQ_ONLY' ? 0 : (isMonthly ? 5 : numEssay);
 
       const token = apiClient.getToken() || (typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null);
 
@@ -82,7 +135,10 @@ export function AutoGenerateQuizModal({
           subject_name: currentSubjectObj.name,
           topic: effectiveTopic,
           grade_level: gradeLevel,
-          num_questions: numQ,
+          num_questions: effectiveMcqCount + effectiveEssayCount,
+          num_mcq: effectiveMcqCount,
+          num_essay: effectiveEssayCount,
+          include_images: includeImages,
           difficulty: effectiveDiff,
           source_mode: isMonthly ? 'PAST_MONTH' : 'LATEST_PUBLISHED',
         }),
@@ -102,7 +158,7 @@ export function AutoGenerateQuizModal({
             topic: effectiveTopic,
             subject_name: currentSubjectObj.name,
             grade_level: gradeLevel,
-            num_questions: numQ,
+            num_questions: effectiveMcqCount,
             difficulty: effectiveDiff,
           }),
         });
@@ -111,19 +167,19 @@ export function AutoGenerateQuizModal({
       const json = await res.json().catch(() => null);
 
       if (!res.ok || !json?.success) {
-        const message = json?.error || (res.status === 404 ? 'Materi belum tersedia untuk mata pelajaran ini.' : `Gagal menghubungi server AI NVIDIA NIM (${res.status}).`);
+        const message = json?.error || (res.status === 404 ? 'Materi belum tersedia untuk mata pelajaran ini.' : `Gagal menghubungi server AI (${res.status}).`);
         throw new Error(message);
       }
 
       const aiQuiz = json?.data?.quiz || json?.data;
       if (!aiQuiz || !aiQuiz.questions || aiQuiz.questions.length === 0) {
-        throw new Error('Respons butir soal dari AI NVIDIA NIM kosong.');
+        throw new Error('Respons butir soal dari AI kosong.');
       }
 
       const mappedQuestions = (aiQuiz.questions || []).map((q: any, idx: number) => {
         let choices = q.choices || [];
         const mappedChoices = choices.map((c: any) => ({
-          text: typeof c === 'string' ? c : (c.choice_text || c.text || ''),
+          text: sanitizeChoiceText(typeof c === 'string' ? c : (c.choice_text || c.text || '')),
           isCorrect: typeof c === 'object' ? Boolean(c.is_correct || c.isCorrect) : false,
         }));
 
@@ -136,25 +192,28 @@ export function AutoGenerateQuizModal({
           }
         }
 
+        const cleanQuestion = sanitizeQuestionText(q.question_text || q.text || '');
+
         return {
           id: q.id || `q-${idx + 1}-${Date.now()}`,
-          question_text: q.question_text || q.text,
-          question_type: q.question_type || 'MULTIPLE_CHOICE',
+          question_text: cleanQuestion,
+          question_type: q.question_type || (mappedChoices.length > 0 ? 'MULTIPLE_CHOICE' : 'ESSAY'),
           points: q.points || Math.round(100 / Math.max(1, aiQuiz.questions.length)),
+          image_url: q.image_url || undefined,
           choices: mappedChoices,
-          explanation: q.explanation || 'Disusun oleh AI NVIDIA NIM',
+          explanation: cleanRobotText(q.explanation || 'Pembahasan Kunci Jawaban.'),
         };
       });
 
       setGeneratedResult({
-        title: aiQuiz.title || `Paket Soal CBT: ${effectiveTopic}`,
-        description: aiQuiz.description || `Ujian CBT resmi disusun otomatis oleh AI NVIDIA NIM.`,
+        title: cleanRobotText(aiQuiz.title || `Paket Soal CBT: ${effectiveTopic}`),
+        description: cleanRobotText(aiQuiz.description || `Ujian CBT resmi disusun berdasarkan Kurikulum Merdeka.`),
         time_limit_minutes: isMonthly ? 90 : 45,
         passing_score: 75,
         questions: mappedQuestions,
       });
     } catch (err: any) {
-      setErrorMsg(err.message || 'Terjadi kendala saat menyusun soal kuis otomatis dengan AI NVIDIA NIM.');
+      setErrorMsg(err.message || 'Terjadi kendala saat menyusun soal kuis otomatis dengan AI.');
     } finally {
       setIsGenerating(false);
     }
@@ -173,6 +232,7 @@ export function AutoGenerateQuizModal({
         question_text: q.question_text,
         question_type: q.question_type,
         points: q.points,
+        image_url: q.image_url || undefined,
         choices: (q.choices || []).map((c: any) => ({
           text: c.text || c.choice_text || '',
           isCorrect: !!c.isCorrect || !!c.is_correct,
@@ -483,104 +543,287 @@ export function AutoGenerateQuizModal({
             </div>
           </div>
 
-          {/* 4. Question Count & Scope */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-            <div>
-              <label
+          {/* 4. Format & Question Count Configuration */}
+          <div>
+            <label
+              style={{
+                display: 'block',
+                fontSize: '0.82rem',
+                fontWeight: 700,
+                color: 'var(--text-secondary)',
+                marginBottom: '6px',
+              }}
+            >
+              Komposisi Format Ujian
+            </label>
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setQuizFormat('MCQ_ONLY');
+                  setGeneratedResult(null);
+                }}
                 style={{
-                  display: 'block',
+                  flex: 1,
+                  padding: '9px 12px',
+                  borderRadius: '8px',
                   fontSize: '0.82rem',
                   fontWeight: 700,
-                  color: 'var(--text-secondary)',
-                  marginBottom: '6px',
+                  border: `2px solid ${quizFormat === 'MCQ_ONLY' ? '#76B900' : 'var(--border-light)'}`,
+                  backgroundColor: quizFormat === 'MCQ_ONLY' ? 'rgba(118, 185, 0, 0.15)' : 'var(--bg-surface)',
+                  color: quizFormat === 'MCQ_ONLY' ? '#76B900' : 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
                 }}
               >
-                Jumlah Butir Soal
-              </label>
-              <div style={{ display: 'flex', gap: '6px' }}>
-                {[5, 10, 15].map(cnt => (
-                  <button
-                    key={cnt}
-                    type="button"
-                    onClick={() => {
-                      setNumQuestions(cnt);
+                Pilihan Ganda (Full PG)
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setQuizFormat('MCQ_AND_ESSAY');
+                  setGeneratedResult(null);
+                }}
+                style={{
+                  flex: 1,
+                  padding: '9px 12px',
+                  borderRadius: '8px',
+                  fontSize: '0.82rem',
+                  fontWeight: 700,
+                  border: `2px solid ${quizFormat === 'MCQ_AND_ESSAY' ? '#76B900' : 'var(--border-light)'}`,
+                  backgroundColor: quizFormat === 'MCQ_AND_ESSAY' ? 'rgba(118, 185, 0, 0.15)' : 'var(--bg-surface)',
+                  color: quizFormat === 'MCQ_AND_ESSAY' ? '#76B900' : 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                PG + Uraian / Essay (Campuran)
+              </button>
+            </div>
+
+            {/* Sub-selector for counts */}
+            {quizFormat === 'MCQ_ONLY' ? (
+              <div
+                style={{
+                  backgroundColor: 'rgba(118, 185, 0, 0.05)',
+                  border: '1px solid rgba(118, 185, 0, 0.25)',
+                  borderRadius: '10px',
+                  padding: '12px 14px',
+                  marginBottom: '10px',
+                }}
+              >
+                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '5px' }}>
+                  Jumlah Butir Soal Pilihan Ganda (PG)
+                </label>
+                <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                  {[5, 10, 15, 20].map(cnt => (
+                    <button
+                      key={cnt}
+                      type="button"
+                      onClick={() => {
+                        setNumQuestions(cnt);
+                        setGeneratedResult(null);
+                      }}
+                      style={{
+                        flex: 1,
+                        padding: '6px 4px',
+                        borderRadius: '6px',
+                        fontSize: '0.8rem',
+                        fontWeight: 700,
+                        border: `1px solid ${numQuestions === cnt ? '#76B900' : 'var(--border-medium)'}`,
+                        backgroundColor: numQuestions === cnt ? '#76B900' : 'var(--bg-surface)',
+                        color: numQuestions === cnt ? '#FFFFFF' : 'var(--text-secondary)',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {cnt} Soal
+                    </button>
+                  ))}
+                  <input
+                    type="number"
+                    min={1}
+                    max={50}
+                    value={numQuestions}
+                    onChange={e => {
+                      setNumQuestions(Math.max(1, parseInt(e.target.value) || 1));
                       setGeneratedResult(null);
                     }}
                     style={{
-                      flex: 1,
-                      padding: '8px 4px',
-                      borderRadius: '8px',
+                      width: '54px',
+                      padding: '5px 4px',
+                      borderRadius: '6px',
+                      border: '1px solid var(--border-medium)',
+                      backgroundColor: 'var(--bg-surface)',
+                      color: 'var(--text-primary)',
                       fontSize: '0.8rem',
                       fontWeight: 700,
-                      border: `1px solid ${numQuestions === cnt ? '#76B900' : 'var(--border-medium)'}`,
-                      backgroundColor: numQuestions === cnt ? 'rgba(118, 185, 0, 0.15)' : 'var(--bg-surface)',
-                      color: numQuestions === cnt ? '#76B900' : 'var(--text-secondary)',
-                      cursor: 'pointer',
-                      transition: 'all 0.15s ease',
+                      textAlign: 'center',
                     }}
-                  >
-                    {cnt} Soal
-                  </button>
-                ))}
+                    title="Jumlah Kustom Soal PG"
+                  />
+                </div>
               </div>
-            </div>
-
-            <div>
-              <label
+            ) : (
+              <div
                 style={{
-                  display: 'block',
-                  fontSize: '0.82rem',
-                  fontWeight: 700,
-                  color: 'var(--text-secondary)',
-                  marginBottom: '6px',
+                  backgroundColor: 'rgba(118, 185, 0, 0.05)',
+                  border: '1px solid rgba(118, 185, 0, 0.25)',
+                  borderRadius: '10px',
+                  padding: '12px 14px',
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: '12px',
+                  marginBottom: '10px',
                 }}
               >
-                Komposisi Format
-              </label>
-              <div style={{ display: 'flex', gap: '6px' }}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setQuizFormat('MCQ_ONLY');
-                    setGeneratedResult(null);
-                  }}
-                  style={{
-                    flex: 1,
-                    padding: '8px 4px',
-                    borderRadius: '8px',
-                    fontSize: '0.78rem',
-                    fontWeight: 700,
-                    border: `1px solid ${quizFormat === 'MCQ_ONLY' ? '#76B900' : 'var(--border-medium)'}`,
-                    backgroundColor: quizFormat === 'MCQ_ONLY' ? 'rgba(118, 185, 0, 0.15)' : 'var(--bg-surface)',
-                    color: quizFormat === 'MCQ_ONLY' ? '#76B900' : 'var(--text-secondary)',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease',
-                  }}
-                >
-                  Pilihan Ganda
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setQuizFormat('MCQ_AND_ESSAY');
-                    setGeneratedResult(null);
-                  }}
-                  style={{
-                    flex: 1,
-                    padding: '8px 4px',
-                    borderRadius: '8px',
-                    fontSize: '0.78rem',
-                    fontWeight: 700,
-                    border: `1px solid ${quizFormat === 'MCQ_AND_ESSAY' ? '#76B900' : 'var(--border-medium)'}`,
-                    backgroundColor: quizFormat === 'MCQ_AND_ESSAY' ? 'rgba(118, 185, 0, 0.15)' : 'var(--bg-surface)',
-                    color: quizFormat === 'MCQ_AND_ESSAY' ? '#76B900' : 'var(--text-secondary)',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease',
-                  }}
-                >
-                  PG + Essay
-                </button>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '5px' }}>
+                    Jumlah Soal Pilihan Ganda (PG)
+                  </label>
+                  <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
+                    {[5, 10, 15, 20].map(cnt => (
+                      <button
+                        key={cnt}
+                        type="button"
+                        onClick={() => {
+                          setNumMcq(cnt);
+                          setGeneratedResult(null);
+                        }}
+                        style={{
+                          flex: 1,
+                          padding: '6px 2px',
+                          borderRadius: '6px',
+                          fontSize: '0.76rem',
+                          fontWeight: 700,
+                          border: `1px solid ${numMcq === cnt ? '#76B900' : 'var(--border-medium)'}`,
+                          backgroundColor: numMcq === cnt ? '#76B900' : 'var(--bg-surface)',
+                          color: numMcq === cnt ? '#FFFFFF' : 'var(--text-secondary)',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {cnt} PG
+                      </button>
+                    ))}
+                    <input
+                      type="number"
+                      min={1}
+                      max={40}
+                      value={numMcq}
+                      onChange={e => {
+                        setNumMcq(Math.max(1, parseInt(e.target.value) || 1));
+                        setGeneratedResult(null);
+                      }}
+                      style={{
+                        width: '46px',
+                        padding: '5px 4px',
+                        borderRadius: '6px',
+                        border: '1px solid var(--border-medium)',
+                        backgroundColor: 'var(--bg-surface)',
+                        color: 'var(--text-primary)',
+                        fontSize: '0.78rem',
+                        fontWeight: 700,
+                        textAlign: 'center',
+                      }}
+                      title="Jumlah Kustom PG"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '5px' }}>
+                    Jumlah Soal Uraian / Essay
+                  </label>
+                  <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
+                    {[2, 3, 5, 10].map(cnt => (
+                      <button
+                        key={cnt}
+                        type="button"
+                        onClick={() => {
+                          setNumEssay(cnt);
+                          setGeneratedResult(null);
+                        }}
+                        style={{
+                          flex: 1,
+                          padding: '6px 2px',
+                          borderRadius: '6px',
+                          fontSize: '0.76rem',
+                          fontWeight: 700,
+                          border: `1px solid ${numEssay === cnt ? '#9333ea' : 'var(--border-medium)'}`,
+                          backgroundColor: numEssay === cnt ? '#9333ea' : 'var(--bg-surface)',
+                          color: numEssay === cnt ? '#FFFFFF' : 'var(--text-secondary)',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {cnt} Essay
+                      </button>
+                    ))}
+                    <input
+                      type="number"
+                      min={1}
+                      max={20}
+                      value={numEssay}
+                      onChange={e => {
+                        setNumEssay(Math.max(1, parseInt(e.target.value) || 1));
+                        setGeneratedResult(null);
+                      }}
+                      style={{
+                        width: '46px',
+                        padding: '5px 4px',
+                        borderRadius: '6px',
+                        border: '1px solid var(--border-medium)',
+                        backgroundColor: 'var(--bg-surface)',
+                        color: 'var(--text-primary)',
+                        fontSize: '0.78rem',
+                        fontWeight: 700,
+                        textAlign: 'center',
+                      }}
+                      title="Jumlah Kustom Essay"
+                    />
+                  </div>
+                </div>
               </div>
+            )}
+
+            {/* Visual Stimulus Toggle */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '8px 12px',
+                backgroundColor: includeImages ? 'rgba(16, 185, 129, 0.08)' : 'var(--bg-surface)',
+                border: `1px solid ${includeImages ? 'rgba(16, 185, 129, 0.3)' : 'var(--border-medium)'}`,
+                borderRadius: '8px',
+                cursor: 'pointer',
+                marginBottom: '4px',
+              }}
+              onClick={() => {
+                setIncludeImages(!includeImages);
+                setGeneratedResult(null);
+              }}
+            >
+              <input
+                type="checkbox"
+                id="includeQuizImagesCheckbox"
+                checked={includeImages}
+                onChange={e => {
+                  setIncludeImages(e.target.checked);
+                  setGeneratedResult(null);
+                }}
+                style={{ cursor: 'pointer', accentColor: '#10B981', width: '16px', height: '16px' }}
+              />
+              <label
+                htmlFor="includeQuizImagesCheckbox"
+                style={{
+                  fontSize: '0.8rem',
+                  fontWeight: 600,
+                  color: 'var(--text-primary)',
+                  cursor: 'pointer',
+                  userSelect: 'none',
+                }}
+              >
+                🎨 <strong>Sertakan Soal Bergambar / Diagram</strong> (Diagram sains, bagan siklus, geometri, grafik, peta)
+              </label>
             </div>
           </div>
 
@@ -749,7 +992,7 @@ export function AutoGenerateQuizModal({
               {generatedResult.questions?.length > 0 && (
                 <div style={{ marginBottom: '14px' }}>
                   <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                    Daftar Butir Soal CBT ({generatedResult.questions.length} Soal):
+                    Daftar Butir Soal CBT ({generatedResult.questions.length} Soal {quizFormat === 'MCQ_AND_ESSAY' ? `• ${numMcq} PG + ${numEssay} Essay` : '• Pilihan Ganda'}):
                   </span>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '6px' }}>
                     {generatedResult.questions.map((q: any, idx: number) => (
@@ -759,17 +1002,46 @@ export function AutoGenerateQuizModal({
                           backgroundColor: 'var(--bg-surface)',
                           border: '1px solid var(--border-light)',
                           borderRadius: '8px',
-                          padding: '8px 10px',
+                          padding: '10px 12px',
                           fontSize: '0.8rem',
                         }}
                       >
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                          <span style={{ fontWeight: 700, color: 'var(--accent)' }}>
-                            Soal #{idx + 1} ({q.question_type === 'MULTIPLE_CHOICE' ? 'Pilihan Ganda' : 'Essay'})
+                          <span style={{ fontWeight: 700, color: q.question_type === 'MULTIPLE_CHOICE' ? 'var(--accent)' : '#9333ea' }}>
+                            Soal #{idx + 1} ({q.question_type === 'MULTIPLE_CHOICE' ? 'Pilihan Ganda' : 'Uraian / Essay'})
                           </span>
                           <span style={{ color: 'var(--warning)', fontWeight: 600 }}>{q.points} Poin</span>
                         </div>
-                        <div style={{ color: 'var(--text-primary)' }}>{q.question_text}</div>
+                        {q.image_url && (
+                          <div style={{ margin: '6px 0', borderRadius: '6px', overflow: 'hidden', border: '1px solid var(--border-light)', maxHeight: '160px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#000' }}>
+                            <img src={q.image_url} alt="Stimulus Visual" style={{ maxHeight: '160px', maxWidth: '100%', objectFit: 'contain' }} />
+                          </div>
+                        )}
+                        <div style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{q.question_text}</div>
+                        {q.question_type === 'MULTIPLE_CHOICE' && Array.isArray(q.choices) && q.choices.length > 0 && (
+                          <div style={{ marginTop: '6px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px' }}>
+                            {q.choices.map((c: any, cIdx: number) => {
+                              const label = String.fromCharCode(65 + cIdx);
+                              const isCorrect = !!c.isCorrect || !!c.is_correct;
+                              return (
+                                <div
+                                  key={cIdx}
+                                  style={{
+                                    padding: '3px 6px',
+                                    borderRadius: '4px',
+                                    fontSize: '0.74rem',
+                                    backgroundColor: isCorrect ? 'rgba(16, 185, 129, 0.15)' : 'var(--bg-elevated)',
+                                    color: isCorrect ? '#10B981' : 'var(--text-secondary)',
+                                    fontWeight: isCorrect ? 700 : 400,
+                                    border: `1px solid ${isCorrect ? 'rgba(16, 185, 129, 0.3)' : 'transparent'}`,
+                                  }}
+                                >
+                                  <strong>{label}.</strong> {c.text || c.choice_text || ''} {isCorrect && '✓'}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>

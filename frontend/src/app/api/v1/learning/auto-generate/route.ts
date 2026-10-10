@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDbPool } from '@/lib/db';
 import { getApiUrl } from '@/lib/api';
+
 export interface SourceMaterial {
   id: string;
   title: string;
@@ -17,6 +18,131 @@ export interface SourceMaterial {
 export type AssignmentGenFormat = 'STRUCTURED_QUESTIONS' | 'HOMEWORK_PR';
 export type QuizGenFormat = 'MCQ_ONLY' | 'MCQ_AND_ESSAY';
 
+const NVIDIA_API_KEY = process.env.NVIDIA_API_KEY || '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';
+const NVIDIA_MODEL = process.env.NVIDIA_MODEL || 'nvidia/ising-calibration-1.5-31b';
+const NVIDIA_URL = process.env.NVIDIA_API_URL || 'https://integrate.api.nvidia.com/v1/chat/completions';
+
+/**
+ * Strips choices (e.g. "A. ...", "B) ...") if accidentally written inside question_text by LLM
+ */
+export function sanitizeQuestionText(raw: string): string {
+  if (!raw) return '';
+  const lines = raw.split('\n');
+  const cleanLines: string[] = [];
+  let inOptionsSection = false;
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (/^([A-Ea-e][\.\)]|\([A-Ea-e]\)|\[[A-Ea-e]\])\s+/.test(trimmed)) {
+      inOptionsSection = true;
+      continue;
+    }
+    if (inOptionsSection && trimmed.length === 0) continue;
+    if (!inOptionsSection) {
+      cleanLines.push(line);
+    }
+  }
+
+  return cleanLines
+    .join('\n')
+    .replace(/(?:Pilihan\s+jawaban|Opsi\s+jawaban|Pilihan|Opsi)\s*:?\s*$/i, '')
+    .trim();
+}
+
+/**
+ * Strips duplicate leading letter (e.g. "A. ", "B) ") from choice text
+ */
+export function sanitizeChoiceText(choice: string): string {
+  if (!choice) return '';
+  return choice.replace(/^[A-Ea-e][\.\)]\s*/, '').trim();
+}
+
+/**
+ * Cleans any robotic '(AI NVIDIA NIM)' or 'oleh AI NVIDIA NIM' branding from educational text
+ */
+export function cleanRobotText(text: string): string {
+  if (!text) return '';
+  return text
+    .replace(/\s*\(AI\s+NVIDIA\s+NIM\)/gi, '')
+    .replace(/\s*\(NVIDIA\s+NIM\)/gi, '')
+    .replace(/\s*oleh\s+AI\s+NVIDIA\s+NIM/gi, '')
+    .replace(/\s*dari\s+AI\s+NVIDIA\s+NIM/gi, '')
+    .trim();
+}
+
+/**
+ * Builds high-resolution educational diagram image URL
+ */
+export function resolveDiagramUrl(prompt: string): string {
+  if (!prompt || prompt.trim().length === 0) return '';
+  if (prompt.startsWith('http://') || prompt.startsWith('https://') || prompt.startsWith('data:image')) {
+    return prompt;
+  }
+  const cleanPrompt = prompt
+    .replace(/^gambar\s+(seorang\s+|tentang\s+|dari\s+)?/i, '')
+    .replace(/^diagram\s+(tentang\s+|dari\s+)?/i, '')
+    .replace(/^ilustrasi\s+(tentang\s+|dari\s+)?/i, '')
+    .trim();
+  const encoded = encodeURIComponent(`${cleanPrompt} educational science diagram infographic clean vector aesthetic`);
+  return `https://image.pollinations.ai/prompt/${encoded}?width=800&height=500&nologo=true`;
+}
+
+/**
+ * Calls NVIDIA NIM API directly
+ */
+async function callNvidiaNimDirect(messages: Array<{ role: string; content: string }>, maxTokens = 2800): Promise<string> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 65000);
+
+  try {
+    const res = await fetch(NVIDIA_URL, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${NVIDIA_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: NVIDIA_MODEL,
+        messages,
+        temperature: 0.3,
+        max_tokens: maxTokens,
+      }),
+      signal: controller.signal,
+    });
+
+    if (!res.ok) {
+      const errText = await res.text().catch(() => '');
+      throw new Error(`NVIDIA NIM returned HTTP ${res.status}: ${errText}`);
+    }
+
+    const json = await res.json();
+    const content = json.choices?.[0]?.message?.content;
+    if (!content) {
+      throw new Error('NVIDIA NIM returned empty content');
+    }
+    return content;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+function extractJson(text: string): any {
+  let trimmed = text.trim();
+  if (trimmed.startsWith('```json')) {
+    trimmed = trimmed.replace(/^```json\s*/, '').replace(/```\s*$/, '').trim();
+  } else if (trimmed.startsWith('```')) {
+    trimmed = trimmed.replace(/^```\s*/, '').replace(/```\s*$/, '').trim();
+  }
+
+  const first = trimmed.search(/[\{\[]/);
+  const last = Math.max(trimmed.lastIndexOf('}'), trimmed.lastIndexOf(']'));
+  if (first !== -1 && last > first) {
+    trimmed = trimmed.substring(first, last + 1);
+  }
+
+  return JSON.parse(trimmed);
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -25,10 +151,13 @@ export async function POST(req: NextRequest) {
       subject_id,
       subject_name: inputSubjectName,
       topic: inputTopic,
-      grade_level: inputGradeLevel,
+      grade_level: inputGradeLevel = 'Kelas 5 SD',
       num_questions: inputNumQuestions,
-      difficulty: inputDifficulty,
-      source_mode = 'LATEST_PUBLISHED', // 'CURRENT_UNSAVED' | 'LATEST_PUBLISHED' | 'SELECTED_IDS' | 'PAST_MONTH'
+      num_mcq: inputNumMcq,
+      num_essay: inputNumEssay,
+      include_images = true,
+      difficulty: inputDifficulty = 'Sedang',
+      source_mode = 'LATEST_PUBLISHED',
       material_ids = [],
       material_data = null,
     } = body;
@@ -130,16 +259,70 @@ export async function POST(req: NextRequest) {
       ];
     }
 
-    // 3. Generate questions or task using NVIDIA NIM AI exclusively
-    if (type === 'ASSIGNMENT_STRUCTURED' || type === 'ASSIGNMENT_HOMEWORK') {
-      const isHomework = type === 'ASSIGNMENT_HOMEWORK';
-      const topic = inputTopic?.trim() || materials.map(m => m.title).slice(0, 2).join(', ') || subjectName;
-      const gradeLevel = inputGradeLevel || 'Kelas 5 SD';
-      const backendEndpoint = getApiUrl('/api/v1/ai/generate-content');
-      const authHeader = req.headers.get('authorization');
+    const topic = inputTopic?.trim() || materials.map(m => m.title).slice(0, 2).join(', ') || subjectName;
+    const gradeLevel = inputGradeLevel || 'Kelas 5 SD';
+    const difficulty = inputDifficulty || 'Sedang';
 
-      if (type === 'ASSIGNMENT_STRUCTURED') {
-        // Parallel call to NVIDIA NIM for both Assignment task & MCQ questions
+    // ─────────────────────────────────────────────────────────────────────────
+    // 3A. ASSIGNMENT: STRUCTURED (PG + ESSAY)
+    // ─────────────────────────────────────────────────────────────────────────
+    if (type === 'ASSIGNMENT_STRUCTURED') {
+      const targetMcqCount = Math.max(1, inputNumMcq ?? (inputNumQuestions ? Math.max(1, Math.floor(inputNumQuestions * 0.6)) : 4));
+      const targetEssayCount = Math.max(1, inputNumEssay ?? (inputNumQuestions ? Math.max(1, Math.ceil(inputNumQuestions * 0.4)) : 2));
+
+      const systemPrompt = `Anda adalah guru pengembang asesmen penugasan Kurikulum Merdeka di Indonesia.
+Hasilkan paket penugasan terstruktur yang terdiri dari TEPAT ${targetMcqCount} butir Pilihan Ganda (mcq_questions) dan TEPAT ${targetEssayCount} butir Uraian/Essay (essay_questions).
+
+ATURAN WAJIB FORMAT:
+1. "question_text" HANYA berisi teks stimulus dan pertanyaan. DILARANG KERAS mencantumkan opsi pilihan A, B, C, D di dalam "question_text".
+2. Opsi pilihan jawaban HANYA dimasukkan pada objek "options" dengan key "A", "B", "C", "D". Nilai teks pada "options" TIDAK PERLU diawali huruf A/B/C/D.
+3. ${include_images ? `Sertakan 1-2 butir soal (baik PG atau essay) yang memiliki "image_prompt" berupa deskripsi diagram sains, bagan alur, peta, grafik, atau bangun datar yang relevan untuk memperkuat stimulus visual.` : `Jangan menyertakan image_prompt.`}
+4. JANGAN gunakan frasa seperti "(AI NVIDIA NIM)" pada teks rubrik atau instruksi. Gunakan "Rubrik Penilaian Objektif:".
+
+Format output HARUS berupa JSON murni dengan skema:
+{
+  "title": "Tugas Terstruktur: ${topic}",
+  "instructions": "Petunjuk pengerjaan tugas bagi siswa...",
+  "rubric": "Rubrik Penilaian Objektif: Kriteria penilaian 1-100...",
+  "mcq_questions": [
+    {
+      "question_text": "Pertanyaan pilihan ganda 1...",
+      "options": {
+        "A": "Teks opsi A",
+        "B": "Teks opsi B",
+        "C": "Teks opsi C",
+        "D": "Teks opsi D"
+      },
+      "correct_key": "A",
+      "explanation": "Pembahasan jawaban...",
+      "image_prompt": "Diagram atau gambar stimulus (opsional)"
+    }
+  ],
+  "essay_questions": [
+    {
+      "question_text": "Pertanyaan essay/analitis 1...",
+      "rubric": "Kriteria penilaian soal essay ini...",
+      "image_prompt": "Diagram atau grafik stimulus (opsional)"
+    }
+  ]
+}
+
+Output HANYA JSON tanpa teks pengantar atau penutup.`;
+
+      const userPrompt = `Buatkan tugas terstruktur mata pelajaran ${subjectName} jenjang ${gradeLevel} topik "${topic}" dengan kesulitan ${difficulty}.
+Wajib TEPAT ${targetMcqCount} soal PG dan TEPAT ${targetEssayCount} soal Essay.`;
+
+      let parsedAi: any = null;
+      try {
+        const rawContent = await callNvidiaNimDirect([
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ], 3000);
+        parsedAi = extractJson(rawContent);
+      } catch (nimErr) {
+        console.warn('Direct NVIDIA NIM call failed, attempting fallback to backend endpoint:', nimErr);
+        const backendEndpoint = getApiUrl('/api/v1/ai/generate-content');
+        const authHeader = req.headers.get('authorization');
         const [taskRes, quizRes] = await Promise.all([
           fetch(backendEndpoint, {
             method: 'POST',
@@ -147,12 +330,7 @@ export async function POST(req: NextRequest) {
               'Content-Type': 'application/json',
               ...(authHeader ? { Authorization: authHeader } : {}),
             },
-            body: JSON.stringify({
-              mode: 'ASSIGNMENT',
-              topic,
-              grade_level: gradeLevel,
-              subject_name: subjectName,
-            }),
+            body: JSON.stringify({ mode: 'ASSIGNMENT', topic, grade_level: gradeLevel, subject_name: subjectName }),
           }),
           fetch(backendEndpoint, {
             method: 'POST',
@@ -160,294 +338,343 @@ export async function POST(req: NextRequest) {
               'Content-Type': 'application/json',
               ...(authHeader ? { Authorization: authHeader } : {}),
             },
-            body: JSON.stringify({
-              mode: 'QUIZ',
-              topic,
-              grade_level: gradeLevel,
-              subject_name: subjectName,
-              num_questions: inputNumQuestions || 4,
-              difficulty: inputDifficulty || 'Sedang',
-            }),
+            body: JSON.stringify({ mode: 'QUIZ', topic, grade_level: gradeLevel, subject_name: subjectName, num_questions: targetMcqCount, difficulty }),
           }),
         ]);
 
-        if (!taskRes.ok && !quizRes.ok) {
-          const failedRes = !taskRes.ok ? taskRes : quizRes;
-          const errJson = await failedRes.json().catch(() => null);
-          return NextResponse.json(
-            {
-              success: false,
-              error: errJson?.error?.message || errJson?.message || `Gagal menghubungi AI NVIDIA NIM (${failedRes.status}). Pastikan API server aktif.`
-            },
-            { status: failedRes.status }
-          );
+        const taskJson = taskRes.ok ? await taskRes.json().catch(() => null) : null;
+        const quizJson = quizRes.ok ? await quizRes.json().catch(() => null) : null;
+
+        if (quizJson?.data?.quiz || taskJson?.data?.assignment) {
+          parsedAi = {
+            title: taskJson?.data?.assignment?.title || quizJson?.data?.quiz?.title || `Tugas: ${topic}`,
+            instructions: taskJson?.data?.assignment?.instructions || 'Kerjakan seluruh butir soal dengan teliti.',
+            rubric: taskJson?.data?.assignment?.rubric || 'Penilaian berdasarkan kebenaran konsep dan pemahaman.',
+            mcq_questions: quizJson?.data?.quiz?.questions || [],
+            essay_questions: (taskJson?.data?.assignment?.tasks || []).map((t: string) => ({ question_text: t })),
+          };
         }
-
-        const taskJson = taskRes.ok ? await taskRes.json() : null;
-        const quizJson = quizRes.ok ? await quizRes.json() : null;
-
-        const aiTask = taskJson?.data?.assignment;
-        const aiQuiz = quizJson?.data?.quiz;
-
-        const structuredQuestions: any[] = [];
-
-        // 1. Add MCQ questions from AI Quiz
-        if (aiQuiz?.questions) {
-          aiQuiz.questions.forEach((q: any, idx: number) => {
-            structuredQuestions.push({
-              id: `task-mcq-${idx + 1}-${Date.now()}`,
-              question_text: q.question_text,
-              question_type: 'MULTIPLE_CHOICE' as const,
-              points: 15,
-              choices: (q.choices || []).map((c: any) => ({
-                choice_text: typeof c === 'string' ? c : (c.choice_text || c.text || ''),
-                is_correct: typeof c === 'object' ? Boolean(c.is_correct || c.isCorrect) : false,
-              })),
-              explanation: q.explanation || 'Pembahasan kunci oleh AI NVIDIA NIM',
-            });
-          });
-        }
-
-        // 2. Add Essay questions from AI Assignment tasks
-        if (aiTask?.tasks) {
-          aiTask.tasks.slice(0, 2).forEach((t: string, idx: number) => {
-            structuredQuestions.push({
-              id: `task-essay-${idx + 1}-${Date.now()}`,
-              question_text: t,
-              question_type: 'ESSAY' as const,
-              points: 20,
-              choices: [],
-              explanation: aiTask.rubric || 'Rubrik penilaian objektif AI NVIDIA NIM',
-            });
-          });
-        }
-
-        const title = aiTask?.title || aiQuiz?.title || `Tugas Mandiri: ${topic}`;
-        const instructions = aiTask?.instructions
-          ? `${aiTask.instructions}\n\nRubrik Penilaian Objektif (AI NVIDIA NIM):\n${aiTask.rubric || ''}`
-          : `Kerjakan seluruh butir soal pilihan ganda dan essay analitis berikut dengan teliti.`;
-
-        const result = {
-          title,
-          assignment_type: 'STRUCTURED_QUESTIONS',
-          instructions,
-          questions: structuredQuestions,
-          subject_id: effectiveSubjectId,
-          subject_name: subjectName,
-          source_materials: materials.map(m => ({ id: m.id, title: m.title, type: m.material_type || 'document' })),
-        };
-        return NextResponse.json({ success: true, data: result });
       }
 
-      // Pure Homework
-      const aiRes = await fetch(backendEndpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(authHeader ? { Authorization: authHeader } : {}),
-        },
-        body: JSON.stringify({
-          mode: 'ASSIGNMENT',
-          topic,
-          grade_level: gradeLevel,
-          subject_name: subjectName,
-        }),
-      });
-
-      if (!aiRes.ok) {
-        const errJson = await aiRes.json().catch(() => null);
+      if (!parsedAi) {
         return NextResponse.json(
-          {
-            success: false,
-            error: errJson?.error?.message || errJson?.message || `Gagal menghubungi AI NVIDIA NIM (${aiRes.status}). Pastikan API server aktif.`
-          },
-          { status: aiRes.status }
-        );
-      }
-
-      const aiJson = await aiRes.json();
-      const aiTask = aiJson?.data?.assignment;
-      if (!aiTask || !aiTask.title) {
-        return NextResponse.json(
-          { success: false, error: 'Respons format penugasan dari AI NVIDIA NIM tidak valid.' },
+          { success: false, error: 'Gagal mendapatkan hasil penyusunan soal tugas dari AI. Silakan coba kembali.' },
           { status: 502 }
         );
       }
 
-      const questions = (aiTask.tasks || []).map((t: string, idx: number) => ({
-        id: `task-q-${idx + 1}-${Date.now()}`,
-        question_text: t,
-        question_type: 'ESSAY' as const,
-        points: Math.round(100 / Math.max(1, aiTask.tasks?.length || 1)),
-        choices: [],
-        explanation: aiTask.rubric || '',
-      }));
+      const rawMcq = Array.isArray(parsedAi.mcq_questions) ? parsedAi.mcq_questions : [];
+      const rawEssay = Array.isArray(parsedAi.essay_questions) ? parsedAi.essay_questions : [];
+
+      const totalItems = rawMcq.length + rawEssay.length;
+      const mcqPoints = Math.max(5, Math.floor(60 / Math.max(1, rawMcq.length)));
+      const essayPoints = Math.max(10, Math.floor(40 / Math.max(1, rawEssay.length)));
+
+      const structuredQuestions: any[] = [];
+      const nowTs = Date.now();
+
+      // 1. Multiple Choice Questions
+      rawMcq.forEach((q: any, idx: number) => {
+        const cleanQuestion = sanitizeQuestionText(q.question_text || q.text || '');
+        let choices: any[] = [];
+
+        if (q.options && typeof q.options === 'object') {
+          const correctKey = (q.correct_key || 'A').toUpperCase().trim();
+          choices = Object.entries(q.options).map(([k, v]) => ({
+            choice_text: sanitizeChoiceText(String(v)),
+            is_correct: k.toUpperCase().trim() === correctKey,
+          }));
+        } else if (Array.isArray(q.choices)) {
+          choices = q.choices.map((c: any) => ({
+            choice_text: sanitizeChoiceText(typeof c === 'string' ? c : (c.choice_text || c.text || '')),
+            is_correct: typeof c === 'object' ? Boolean(c.is_correct || c.isCorrect) : false,
+          }));
+        }
+
+        const diagramUrl = q.image_prompt ? resolveDiagramUrl(q.image_prompt) : (q.image_url || undefined);
+
+        structuredQuestions.push({
+          id: `task-mcq-${idx + 1}-${nowTs}`,
+          question_text: cleanQuestion,
+          question_type: 'MULTIPLE_CHOICE',
+          points: mcqPoints,
+          image_url: diagramUrl,
+          choices,
+          explanation: cleanRobotText(q.explanation || 'Pembahasan Kunci Jawaban.'),
+        });
+      });
+
+      // 2. Essay Questions
+      rawEssay.forEach((q: any, idx: number) => {
+        const questionText = sanitizeQuestionText(typeof q === 'string' ? q : (q.question_text || q.text || ''));
+        const diagramUrl = q.image_prompt ? resolveDiagramUrl(q.image_prompt) : (q.image_url || undefined);
+
+        structuredQuestions.push({
+          id: `task-essay-${idx + 1}-${nowTs}`,
+          question_text: questionText,
+          question_type: 'ESSAY',
+          points: essayPoints,
+          image_url: diagramUrl,
+          choices: [],
+          explanation: cleanRobotText(q.rubric || parsedAi.rubric || 'Rubrik Penilaian Objektif.'),
+        });
+      });
+
+      const cleanInstructions = cleanRobotText(
+        parsedAi.instructions
+          ? `${parsedAi.instructions}\n\nRubrik Penilaian Objektif:\n${cleanRobotText(parsedAi.rubric || '')}`
+          : 'Kerjakan seluruh butir soal pilihan ganda dan essay analitis berikut dengan teliti.'
+      );
 
       const result = {
-        title: aiTask.title,
-        assignment_type: isHomework ? 'HOMEWORK_PR' : 'STRUCTURED_QUESTIONS',
-        instructions: `${aiTask.instructions}\n\nRubrik Penilaian Objektif (AI NVIDIA NIM):\n${aiTask.rubric}`,
+        title: parsedAi.title || `Tugas Terstruktur: ${topic}`,
+        assignment_type: 'STRUCTURED_QUESTIONS',
+        instructions: cleanInstructions,
+        questions: structuredQuestions,
+        subject_id: effectiveSubjectId,
+        subject_name: subjectName,
+        source_materials: materials.map(m => ({ id: m.id, title: m.title, type: m.material_type || 'document' })),
+      };
+
+      return NextResponse.json({ success: true, data: result });
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // 3B. ASSIGNMENT: HOMEWORK PR / LEMBAR KERJA
+    // ─────────────────────────────────────────────────────────────────────────
+    if (type === 'ASSIGNMENT_HOMEWORK') {
+      const targetCount = Math.max(1, inputNumEssay || inputNumQuestions || 3);
+      const systemPrompt = `Anda adalah guru pengembang tugas mandiri Kurikulum Merdeka di Indonesia.
+Buatkan LEMBAR TUGAS MANDIRI / PR untuk jenjang ${gradeLevel} mata pelajaran ${subjectName} topik "${topic}".
+Sertakan tepat ${targetCount} butir tugas aplikatif mandiri.
+JANGAN gunakan label "(AI NVIDIA NIM)". Gunakan "Rubrik Penilaian Objektif:".
+
+Format output HARUS berupa JSON murni dengan skema:
+{
+  "title": "Tugas Mandiri: ${topic}",
+  "instructions": "Petunjuk pengerjaan tugas mandiri...",
+  "tasks": [
+    "Tugas 1: ...",
+    "Tugas 2: ..."
+  ],
+  "rubric": "Kriteria penilaian objektif tugas mandiri..."
+}
+Output HANYA JSON.`;
+
+      let parsedAi: any = null;
+      try {
+        const rawContent = await callNvidiaNimDirect([
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: `Buatkan tugas mandiri dengan tepat ${targetCount} butir tugas.` },
+        ], 2000);
+        parsedAi = extractJson(rawContent);
+      } catch (err) {
+        console.warn('Fallback homework call:', err);
+      }
+
+      if (!parsedAi) {
+        return NextResponse.json(
+          { success: false, error: 'Gagal membuat tugas mandiri otomatis. Silakan coba kembali.' },
+          { status: 502 }
+        );
+      }
+
+      const tasks = Array.isArray(parsedAi.tasks) ? parsedAi.tasks : [];
+      const pts = Math.max(10, Math.floor(100 / Math.max(1, tasks.length)));
+      const nowTs = Date.now();
+
+      const questions = tasks.map((t: string, idx: number) => ({
+        id: `homework-${idx + 1}-${nowTs}`,
+        question_text: sanitizeQuestionText(t),
+        question_type: 'ESSAY',
+        points: pts,
+        choices: [],
+        explanation: cleanRobotText(parsedAi.rubric || 'Rubrik Penilaian Objektif.'),
+      }));
+
+      const cleanInstructions = cleanRobotText(
+        `${parsedAi.instructions || 'Kerjakan tugas mandiri berikut dengan teliti.'}\n\nRubrik Penilaian Objektif:\n${cleanRobotText(parsedAi.rubric || '')}`
+      );
+
+      const result = {
+        title: parsedAi.title || `Tugas Mandiri: ${topic}`,
+        assignment_type: 'HOMEWORK_PR',
+        instructions: cleanInstructions,
         questions,
         subject_id: effectiveSubjectId,
         subject_name: subjectName,
         source_materials: materials.map(m => ({ id: m.id, title: m.title, type: m.material_type || 'document' })),
       };
+
       return NextResponse.json({ success: true, data: result });
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // 3C. CBT QUIZ / EXAM (MCQ ONLY or MCQ + ESSAY)
+    // ─────────────────────────────────────────────────────────────────────────
     if (type === 'QUIZ_MCQ_ONLY' || type === 'QUIZ_MCQ_ESSAY' || type === 'EXAM_MONTHLY') {
       const isMonthly = type === 'EXAM_MONTHLY';
-      const format: QuizGenFormat = (type === 'QUIZ_MCQ_ONLY' || body.format === 'MCQ_ONLY') ? 'MCQ_ONLY' : 'MCQ_AND_ESSAY';
-      const numQuestions = inputNumQuestions || (isMonthly ? 10 : 5);
-      const difficulty = inputDifficulty || (isMonthly ? 'HOTS' : 'Sedang');
-      const topic = inputTopic?.trim() || materials.map(m => m.title).slice(0, 3).join(', ') || subjectName;
-      const gradeLevel = inputGradeLevel || 'Kelas 5 SD';
+      const isMcqOnly = type === 'QUIZ_MCQ_ONLY' || body.format === 'MCQ_ONLY';
 
-      const backendEndpoint = getApiUrl('/api/v1/ai/generate-content');
-      const authHeader = req.headers.get('authorization');
+      const targetMcqCount = isMcqOnly
+        ? Math.max(1, inputNumMcq ?? (inputNumQuestions || (isMonthly ? 10 : 5)))
+        : Math.max(1, inputNumMcq ?? (isMonthly ? 10 : 5));
 
-      if (format === 'MCQ_AND_ESSAY') {
-        const [quizRes, taskRes] = await Promise.all([
-          fetch(backendEndpoint, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              ...(authHeader ? { Authorization: authHeader } : {}),
-            },
-            body: JSON.stringify({
-              mode: 'QUIZ',
-              topic,
-              grade_level: gradeLevel,
-              subject_name: subjectName,
-              num_questions: numQuestions,
-              difficulty,
-            }),
-          }),
-          fetch(backendEndpoint, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              ...(authHeader ? { Authorization: authHeader } : {}),
-            },
-            body: JSON.stringify({
-              mode: 'ASSIGNMENT',
-              topic,
-              grade_level: gradeLevel,
-              subject_name: subjectName,
-            }),
-          }),
-        ]);
+      const targetEssayCount = isMcqOnly
+        ? 0
+        : Math.max(1, inputNumEssay ?? (isMonthly ? 5 : 2));
 
-        if (!quizRes.ok) {
-          const errJson = await quizRes.json().catch(() => null);
-          return NextResponse.json(
-            {
-              success: false,
-              error: errJson?.error?.message || errJson?.message || `Gagal menghubungi AI NVIDIA NIM (${quizRes.status}).`
-            },
-            { status: quizRes.status }
-          );
-        }
+      const systemPrompt = `Anda adalah tim pembuat bank soal ujian CBT resmi sekolah (Kurikulum Merdeka).
+Buatkan paket soal ujian untuk jenjang ${gradeLevel} mata pelajaran ${subjectName} topik "${topic}" tingkat kesulitan ${difficulty}.
 
-        const quizJson = await quizRes.json();
-        const taskJson = taskRes.ok ? await taskRes.json() : null;
+KOMPOSISI SOAL:
+- Soal Pilihan Ganda (mcq_questions): TEPAT ${targetMcqCount} butir soal (opsi A-D).
+${!isMcqOnly ? `- Soal Uraian / Essay (essay_questions): TEPAT ${targetEssayCount} butir soal analitis/HOTS.` : `- TIDAK ADA soal essay.`}
 
-        const aiQuiz = quizJson?.data?.quiz;
-        const aiTask = taskJson?.data?.assignment;
+ATURAN WAJIB (PENTING):
+1. "question_text" HANYA berisi kalimat stimulus dan pertanyaan. DILARANG KERAS mencantumkan opsi A, B, C, D di dalam "question_text" karena sudah disediakan kolom tersendiri di dalam "options".
+2. Pada "options", HANYA tuliskan isi teks pilihan tanpa mengulang huruf opsi A/B/C/D.
+3. ${include_images ? `Sertakan 1-2 butir soal yang memiliki "image_prompt" berupa deskripsi diagram sains, bagan siklus, bangun geometri, grafik, atau peta yang relevan sebagai stimulus visual.` : `Jangan menyertakan image_prompt.`}
+4. JANGAN gunakan teks seperti "(AI NVIDIA NIM)" pada deskripsi atau pembahasan.
 
-        const generatedQuestions = (aiQuiz?.questions || []).map((q: any, idx: number) => ({
-          id: `gen-mcq-${idx + 1}-${Date.now()}`,
-          question_text: q.question_text,
-          question_type: 'MULTIPLE_CHOICE' as const,
-          points: q.points || 15,
-          choices: (q.choices || []).map((c: any) => ({
-            choice_text: typeof c === 'string' ? c : (c.choice_text || c.text || ''),
-            is_correct: typeof c === 'object' ? Boolean(c.is_correct || c.isCorrect) : false,
-          })),
-          explanation: q.explanation || 'Pembahasan kunci jawaban oleh AI NVIDIA NIM.',
-        }));
+Format output HARUS berupa JSON murni dengan skema:
+{
+  "title": "${isMonthly ? 'Ujian Bulanan CBT' : 'Kuis CBT'}: ${topic}",
+  "description": "Paket soal CBT resmi Kurikulum Merdeka materi ${topic}.",
+  "mcq_questions": [
+    {
+      "question_text": "Kalimat stimulus dan pertanyaan...",
+      "options": {
+        "A": "Teks opsi A",
+        "B": "Teks opsi B",
+        "C": "Teks opsi C",
+        "D": "Teks opsi D"
+      },
+      "correct_key": "B",
+      "explanation": "Pembahasan kenapa jawaban B benar...",
+      "image_prompt": "Diagram atau gambar stimulus visual (opsional)"
+    }
+  ],
+  "essay_questions": [
+    {
+      "question_text": "Kalimat pertanyaan essay/uraian...",
+      "rubric": "Kriteria penilaian jawaban essay...",
+      "image_prompt": "Diagram atau gambar stimulus visual (opsional)"
+    }
+  ]
+}
 
-        if (aiTask?.tasks) {
-          aiTask.tasks.slice(0, 2).forEach((t: string, idx: number) => {
-            generatedQuestions.push({
-              id: `gen-essay-${idx + 1}-${Date.now()}`,
-              question_text: t,
-              question_type: 'ESSAY' as const,
-              points: 20,
-              choices: [],
-              explanation: aiTask.rubric || 'Kriteria penilaian essay AI NVIDIA NIM.',
-            });
-          });
-        }
+Output HANYA JSON.`;
 
-        const result = {
-          title: aiQuiz?.title || (isMonthly ? `Ujian Bulanan CBT: ${subjectName}` : `Kuis Pembelajaran: ${subjectName}`),
-          description: aiQuiz?.description || `Paket soal CBT resmi disusun otomatis oleh AI NVIDIA NIM berbasis materi ${subjectName}.`,
-          format,
-          time_limit_minutes: isMonthly ? 90 : 45,
-          passing_score: 75,
-          questions: generatedQuestions,
-          subject_id: effectiveSubjectId,
-          subject_name: subjectName,
-          is_monthly_exam: isMonthly,
-          source_materials: materials.map(m => ({ id: m.id, title: m.title, type: m.material_type || 'document' })),
-        };
-        return NextResponse.json({ success: true, data: result });
-      }
-
-      // MCQ Only
-      const aiRes = await fetch(backendEndpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(authHeader ? { Authorization: authHeader } : {}),
-        },
-        body: JSON.stringify({
-          mode: 'QUIZ',
-          topic,
-          grade_level: gradeLevel,
-          subject_name: subjectName,
-          num_questions: numQuestions,
-          difficulty,
-        }),
-      });
-
-      if (!aiRes.ok) {
-        const errJson = await aiRes.json().catch(() => null);
-        return NextResponse.json(
-          {
-            success: false,
-            error: errJson?.error?.message || errJson?.message || `Gagal menghubungi AI NVIDIA NIM (${aiRes.status}). Pastikan API server aktif.`
+      let parsedAi: any = null;
+      try {
+        const rawContent = await callNvidiaNimDirect([
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: `Buatkan ujian ${subjectName} topik "${topic}". Wajib tepat ${targetMcqCount} PG dan ${targetEssayCount} Essay.` },
+        ], 3200);
+        parsedAi = extractJson(rawContent);
+      } catch (nimErr) {
+        console.warn('Direct CBT NIM call fallback to backend:', nimErr);
+        const backendEndpoint = getApiUrl('/api/v1/ai/generate-content');
+        const authHeader = req.headers.get('authorization');
+        const aiRes = await fetch(backendEndpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(authHeader ? { Authorization: authHeader } : {}),
           },
-          { status: aiRes.status }
-        );
+          body: JSON.stringify({
+            mode: 'QUIZ',
+            topic,
+            grade_level: gradeLevel,
+            subject_name: subjectName,
+            num_questions: targetMcqCount,
+            difficulty,
+          }),
+        });
+
+        if (aiRes.ok) {
+          const aiJson = await aiRes.json().catch(() => null);
+          const aiQuiz = aiJson?.data?.quiz;
+          if (aiQuiz?.questions) {
+            parsedAi = {
+              title: aiQuiz.title,
+              description: aiQuiz.description,
+              mcq_questions: aiQuiz.questions,
+              essay_questions: [],
+            };
+          }
+        }
       }
 
-      const aiJson = await aiRes.json();
-      const aiQuiz = aiJson?.data?.quiz;
-      if (!aiQuiz || !aiQuiz.questions || aiQuiz.questions.length === 0) {
+      if (!parsedAi) {
         return NextResponse.json(
-          { success: false, error: 'Respons bank butir soal dari AI NVIDIA NIM kosong.' },
+          { success: false, error: 'Gagal menyusun paket soal kuis/ujian dari AI. Silakan coba kembali.' },
           { status: 502 }
         );
       }
 
-      const generatedQuestions = aiQuiz.questions.map((q: any, idx: number) => ({
-        id: `gen-q-${idx + 1}-${Date.now()}`,
-        question_text: q.question_text,
-        question_type: 'MULTIPLE_CHOICE' as const,
-        points: q.points || 20,
-        choices: (q.choices || []).map((c: any) => ({
-          choice_text: typeof c === 'string' ? c : (c.choice_text || c.text || ''),
-          is_correct: typeof c === 'object' ? Boolean(c.is_correct || c.isCorrect) : false,
-        })),
-        explanation: q.explanation || 'Pembahasan kunci jawaban oleh AI NVIDIA NIM.',
-      }));
+      const rawMcq = Array.isArray(parsedAi.mcq_questions) ? parsedAi.mcq_questions : [];
+      const rawEssay = Array.isArray(parsedAi.essay_questions) ? parsedAi.essay_questions : [];
+
+      const totalItems = rawMcq.length + rawEssay.length;
+      const mcqWeight = isMcqOnly ? Math.max(5, Math.floor(100 / Math.max(1, rawMcq.length))) : Math.max(5, Math.floor(65 / Math.max(1, rawMcq.length)));
+      const essayWeight = isMcqOnly ? 0 : Math.max(10, Math.floor(35 / Math.max(1, rawEssay.length)));
+
+      const generatedQuestions: any[] = [];
+      const nowTs = Date.now();
+
+      // 1. Multiple Choice Questions
+      rawMcq.forEach((q: any, idx: number) => {
+        const cleanQuestion = sanitizeQuestionText(q.question_text || q.text || '');
+        let choices: any[] = [];
+
+        if (q.options && typeof q.options === 'object') {
+          const correctKey = (q.correct_key || 'A').toUpperCase().trim();
+          choices = Object.entries(q.options).map(([k, v]) => ({
+            choice_text: sanitizeChoiceText(String(v)),
+            is_correct: k.toUpperCase().trim() === correctKey,
+          }));
+        } else if (Array.isArray(q.choices)) {
+          choices = q.choices.map((c: any) => ({
+            choice_text: sanitizeChoiceText(typeof c === 'string' ? c : (c.choice_text || c.text || '')),
+            is_correct: typeof c === 'object' ? Boolean(c.is_correct || c.isCorrect) : false,
+          }));
+        }
+
+        const diagramUrl = q.image_prompt ? resolveDiagramUrl(q.image_prompt) : (q.image_url || undefined);
+
+        generatedQuestions.push({
+          id: `cbt-mcq-${idx + 1}-${nowTs}`,
+          question_text: cleanQuestion,
+          question_type: 'MULTIPLE_CHOICE',
+          points: mcqWeight,
+          image_url: diagramUrl,
+          choices,
+          explanation: cleanRobotText(q.explanation || 'Pembahasan Kunci Jawaban.'),
+        });
+      });
+
+      // 2. Essay Questions
+      rawEssay.forEach((q: any, idx: number) => {
+        const questionText = sanitizeQuestionText(typeof q === 'string' ? q : (q.question_text || q.text || ''));
+        const diagramUrl = q.image_prompt ? resolveDiagramUrl(q.image_prompt) : (q.image_url || undefined);
+
+        generatedQuestions.push({
+          id: `cbt-essay-${idx + 1}-${nowTs}`,
+          question_text: questionText,
+          question_type: 'ESSAY',
+          points: essayWeight,
+          image_url: diagramUrl,
+          choices: [],
+          explanation: cleanRobotText(q.rubric || 'Rubrik Penilaian Objektif.'),
+        });
+      });
 
       const result = {
-        title: aiQuiz.title || (isMonthly ? `Ujian Bulanan CBT: ${subjectName}` : `Kuis Pembelajaran: ${subjectName}`),
-        description: aiQuiz.description || `Paket soal CBT resmi disusun otomatis oleh AI NVIDIA NIM berbasis materi ${subjectName}.`,
-        format,
+        title: parsedAi.title || (isMonthly ? `Ujian Bulanan CBT: ${subjectName}` : `Kuis Pembelajaran: ${subjectName}`),
+        description: cleanRobotText(parsedAi.description || `Paket soal CBT resmi Kurikulum Merdeka materi ${subjectName}.`),
+        format: isMcqOnly ? 'MCQ_ONLY' : 'MCQ_AND_ESSAY',
         time_limit_minutes: isMonthly ? 90 : 45,
         passing_score: 75,
         questions: generatedQuestions,
@@ -456,6 +683,7 @@ export async function POST(req: NextRequest) {
         is_monthly_exam: isMonthly,
         source_materials: materials.map(m => ({ id: m.id, title: m.title, type: m.material_type || 'document' })),
       };
+
       return NextResponse.json({ success: true, data: result });
     }
 
