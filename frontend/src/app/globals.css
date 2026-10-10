@@ -670,31 +670,25 @@ code, pre {
 .workstationHero {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.85rem;
-  background: var(--bg-card, #ffffff);
-  border: 1px solid var(--border-light, #e2e8f0);
-  border-radius: 12px;
-  padding: 0.95rem 1.25rem;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 0.25rem 0 !important;
   position: relative;
-  overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  box-shadow: none !important;
   flex-wrap: wrap;
 }
 
 .workstationHero::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, #0284c7, #4f46e5);
+  display: none !important;
 }
 
 [data-theme='dark'] .workstationHero {
-  background: #18181b;
-  border-color: #27272a;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
 .workstationHeroContent {

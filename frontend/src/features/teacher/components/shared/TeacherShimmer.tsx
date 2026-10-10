@@ -10,24 +10,19 @@ import styles from './shimmer.module.css';
 export function ActionCenterSkeleton() {
   return (
     <div className={styles.pageContainer} aria-busy="true" aria-label="Memuat Teacher Workstation">
-      {/* 1. Header Card Skeleton */}
-      <div className={styles.headerCard}>
-        <div className={styles.headerLeft}>
-          <div className={`${styles.shimmer} ${styles.avatarSkeleton}`} />
-          <div className={styles.headerTextGroup}>
-            <div className={`${styles.shimmer} ${styles.badgeSkeleton}`} />
-            <div className={`${styles.shimmer} ${styles.titleSkeleton}`} />
-            <div className={`${styles.shimmer} ${styles.subtitleSkeleton}`} />
-          </div>
+      {/* 0. Sub-Bar Skeleton */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem', padding: '0.25rem 0', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          <div className={styles.shimmer} style={{ width: 140, height: 32, borderRadius: 8 }} />
+          <div className={styles.shimmer} style={{ width: 220, height: 32, borderRadius: 8 }} />
         </div>
-        <div className={styles.headerActions}>
-          <div className={`${styles.shimmer} ${styles.btnSkeleton}`} />
-          <div className={`${styles.shimmer} ${styles.btnSkeleton}`} />
-          <div className={`${styles.shimmer} ${styles.btnSkeletonPrimary}`} />
+        <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center' }}>
+          <div className={styles.shimmer} style={{ width: 120, height: 32, borderRadius: 8 }} />
+          <div className={styles.shimmer} style={{ width: 240, height: 32, borderRadius: 8 }} />
         </div>
       </div>
 
-      {/* 2. Metric Grid Skeleton (4 cards) */}
+      {/* 1. Metric Grid Skeleton (4 cards) */}
       <div className={styles.metricGrid}>
         {[1, 2, 3, 4].map((i) => (
           <div key={i} className={styles.metricCard}>

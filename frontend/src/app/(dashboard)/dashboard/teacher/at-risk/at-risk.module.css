@@ -54,23 +54,24 @@
   border-color: #94a3b8;
 }
 
-/* ── Header Card ── */
+/* ── Header ── */
 .headerCard {
-  background: var(--bg-surface, #ffffff);
-  border: 1px solid var(--border-light, #e2e8f0);
-  border-radius: 12px;
-  padding: 0.85rem 1.15rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0.25rem 0;
+  box-shadow: none;
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   flex-wrap: wrap;
   gap: 0.85rem;
 }
 
 [data-theme="dark"] .headerCard {
-  background: #18181b;
-  border-color: #27272a;
+  background: transparent;
+  border: none;
+  box-shadow: none;
 }
 
 .headerLeft {

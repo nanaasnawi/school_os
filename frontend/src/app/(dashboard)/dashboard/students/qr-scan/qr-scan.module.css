@@ -26,27 +26,19 @@
 .header {
   position: relative;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-light);
-  border-radius: 12px;
-  padding: 0.95rem 1.25rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0.25rem 0;
+  box-shadow: none;
   flex-wrap: wrap;
-  overflow: hidden;
-  transition: box-shadow 0.2s ease;
 }
 
 .header::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, #0284c7, #4f46e5);
+  display: none;
 }
 
 .headerTitleGroup {

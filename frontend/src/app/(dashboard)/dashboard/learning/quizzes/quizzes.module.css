@@ -29,34 +29,27 @@
 
 /* ── Executive Header ── */
 .header {
-  background: var(--bg-card, #ffffff);
-  border: 1px solid var(--border-light, #e2e8f0);
-  border-radius: var(--radius-md, 12px);
-  padding: 0.95rem 1.25rem;
-  box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.04));
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0.25rem 0;
+  box-shadow: none;
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   flex-wrap: wrap;
   gap: 0.85rem;
   position: relative;
-  overflow: hidden;
-  transition: border-color 0.15s ease;
 }
 
 .header::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, #0284c7, #6366f1);
+  display: none;
 }
 
 [data-theme="dark"] .header {
-  background: var(--bg-card, #18181b);
-  border-color: var(--border-light, #27272a);
+  background: transparent;
+  border: none;
+  box-shadow: none;
 }
 
 .headerLeft {

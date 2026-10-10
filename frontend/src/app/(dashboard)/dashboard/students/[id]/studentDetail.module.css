@@ -45,17 +45,18 @@
 .breadSep { opacity: 0.4; }
 .breadCurrent { color: var(--text-secondary); font-weight: 600; }
 
-/* Hero Card */
+/* Hero */
 .heroCard {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-dim);
-  border-radius: var(--radius-lg);
-  padding: 1.75rem 2rem;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0.25rem 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1.5rem;
   flex-wrap: wrap;
+  box-shadow: none;
 }
 
 .heroLeft {
