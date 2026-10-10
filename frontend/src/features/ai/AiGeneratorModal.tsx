@@ -74,28 +74,58 @@ export const AiGeneratorModal: React.FC<AiGeneratorModalProps> = ({
     setErrorMessage(null);
 
     try {
-      const token = apiClient.getToken();
-      const endpoint = getApiUrl('/api/v1/ai/generate-content');
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          mode,
-          topic: topic.trim(),
-          subject_name: subjectName.trim(),
-          grade_level: gradeLevel.trim(),
-          num_questions: numQuestions,
-          difficulty,
-        }),
-      });
+      const token = apiClient.getToken() || (typeof window !== 'undefined' ? localStorage.getItem('token') : null);
+      const payload = {
+        mode,
+        topic: topic.trim(),
+        subject_name: subjectName.trim(),
+        grade_level: gradeLevel.trim(),
+        num_questions: numQuestions,
+        difficulty,
+      };
 
-      const result = await response.json();
+      // 1. Coba panggil server-side route internal Next.js terlebih dahulu (Zero-latency & Zero auth blocker)
+      let result: any = null;
+      let lastErrorMessage = '';
 
-      if (!response.ok || !result.success) {
-        throw new Error(result.error || result.message || 'Gagal memproses dengan AI NVIDIA di backend.');
+      try {
+        const localRes = await fetch('/api/v1/ai/generate-content', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const localJson = await localRes.json().catch(() => null);
+        if (localRes.ok && localJson?.success) {
+          result = localJson;
+        } else {
+          lastErrorMessage = typeof localJson?.error === 'string'
+            ? localJson.error
+            : localJson?.error?.message || localJson?.message || '';
+        }
+      } catch (localErr: any) {
+        lastErrorMessage = localErr?.message || '';
+      }
+
+      // 2. Fallback ke endpoint backend utama jika local route belum menghasilkan
+      if (!result) {
+        const endpoint = getApiUrl('/api/v1/ai/generate-content');
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify(payload),
+        });
+
+        result = await response.json().catch(() => null);
+
+        if (!response.ok || !result?.success) {
+          const errText = typeof result?.error === 'string'
+            ? result.error
+            : result?.error?.message || result?.message || lastErrorMessage || 'Gagal memproses materi dengan AI NVIDIA.';
+          throw new Error(errText);
+        }
       }
 
       const content = result.data;
@@ -151,7 +181,10 @@ export const AiGeneratorModal: React.FC<AiGeneratorModalProps> = ({
       onGenerated(generatedData || content);
       onClose();
     } catch (err: any) {
-      setErrorMessage(err.message || 'Terjadi kesalahan saat memanggil AI.');
+      const msg = typeof err === 'string'
+        ? err
+        : err?.message || (typeof err?.error === 'string' ? err.error : err?.error?.message) || 'Terjadi kesalahan saat memproses materi dengan AI.';
+      setErrorMessage(msg);
     } finally {
       setIsLoading(false);
     }
