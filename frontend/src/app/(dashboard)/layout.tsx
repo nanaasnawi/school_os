@@ -223,6 +223,8 @@ const NAV_SECTIONS = [
   {
     label: 'Pembelajaran',
     items: [
+      { label: 'Kurikulum (CP & ATP)', path: '/dashboard/learning/curriculum', icon: 'learning' },
+      { label: 'Modul Ajar (RPP)', path: '/dashboard/learning/modul-ajar', icon: 'materials' },
       { label: 'Materi', path: '/dashboard/learning/materials', icon: 'materials' },
       { label: 'Pembelajaran', path: '/dashboard/enrollments', icon: 'enrollments' },
       { label: 'Tugas', path: '/dashboard/learning/assignments', icon: 'assignments' },
@@ -230,8 +232,10 @@ const NAV_SECTIONS = [
     ],
   },
   {
-    label: 'Penilaian',
+    label: 'Penilaian & Karakter',
     items: [
+      { label: 'Taksonomi Asesmen', path: '/dashboard/learning/assessments', icon: 'gradebook' },
+      { label: 'Jurnal Karakter (G7KAIH)', path: '/dashboard/learning/habits', icon: 'students' },
       { label: 'Buku Nilai', path: '/dashboard/grading/gradebook', icon: 'gradebook' },
       { label: 'Nilai Akhir', path: '/dashboard/grading/final-grades', icon: 'final_grades' },
     ],
@@ -275,17 +279,21 @@ const TEACHER_NAV_SECTIONS = [
     ],
   },
   {
-    label: 'Pembelajaran',
+    label: 'Kurikulum & Pembelajaran',
     items: [
+      { label: 'Kurikulum (CP/ATP)', path: '/dashboard/teacher/curriculum', icon: 'learning' },
+      { label: 'Modul Ajar (RPP)', path: '/dashboard/teacher/modul-ajar', icon: 'materials' },
       { label: 'Materi & Buku', path: '/dashboard/learning/materials', icon: 'materials' },
       { label: 'Tugas Siswa', path: '/dashboard/learning/assignments', icon: 'assignments' },
-      { label: 'Koreksi Massal', path: '/dashboard/teacher/grading', icon: 'gradebook' },
       { label: 'Kuis & CBT', path: '/dashboard/learning/quizzes', icon: 'quizzes' },
     ],
   },
   {
-    label: 'Penilaian & Analitik',
+    label: 'Penilaian & Karakter',
     items: [
+      { label: 'Taksonomi Asesmen', path: '/dashboard/teacher/assessments', icon: 'gradebook' },
+      { label: 'Jurnal Karakter (G7KAIH)', path: '/dashboard/teacher/habits', icon: 'students' },
+      { label: 'Koreksi Massal', path: '/dashboard/teacher/grading', icon: 'gradebook' },
       { label: 'Buku Nilai', path: '/dashboard/grading/gradebook', icon: 'gradebook' },
       { label: 'Teacher Analytics', path: '/dashboard/teacher/analytics', icon: 'analytics' },
       { label: 'Tanya Guru', path: '/dashboard/teacher/inquiry', icon: 'announcement' },
@@ -639,6 +647,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (pathname.includes('/students/new'))         return 'Tambah Siswa Baru';
     if (pathname.includes('/students'))             return 'Manajemen Siswa';
     if (pathname.includes('/learning/materials'))   return 'Materi Pembelajaran';
+    if (pathname.includes('/learning/modul-ajar'))  return 'Modul Ajar & RPP Merdeka';
+    if (pathname.includes('/learning/curriculum'))  return 'Kurikulum Merdeka (CP & ATP)';
+    if (pathname.includes('/learning/assessments')) return 'Taksonomi Asesmen Kurikulum Merdeka';
     if (pathname.includes('/learning/assignments')) return 'Tugas Siswa';
     if (pathname.includes('/learning/quizzes'))     return 'Kuis & CBT';
     if (pathname.includes('/learning'))             return 'Mata Pelajaran & Kurikulum';

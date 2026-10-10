@@ -21,7 +21,11 @@ Modul ini mengintegrasikan lima instrumen utama tata kelola pembelajaran dan pen
   * Penyusunan Alur Tujuan Pembelajaran (ATP) berjenjang per semester.
 
 ### 2. RPP / Modul Ajar Kurikulum Merdeka
-* **Deskripsi:** Dokumen perencanaan pelaksanaan pembelajaran per pertemuan atau per lingkup materi.
+* **Deskripsi:** Dokumen perencanaan pelaksanaan pembelajaran per pertemuan atau per lingkup materi yang terintegrasi secara relasional dan taat asas.
+* **3 Aturan Arsitektur Kunci (Fase 3):**
+  1. **Sinkronisasi Alokasi Waktu Kaldik (MEB Engine):** Alokasi jam pelajaran (JP) diverifikasi terhadap sisa alokasi JP efektif semester dari Kaldik (18 MEB Ganjil / 17 MEB Genap). Sistem menolak jika `alokasi_rpp_jp > sisa_jp_efektif_semester`.
+  2. **Relasi Otoritatif TP PUBLISHED & Suspensi Reaktif:** RPP wajib terikat pada `learning_objectives(id)` berstatus `PUBLISHED`. Jika status TP induk diturunkan kembali ke `DRAFT` atau `REVIEWED`, seluruh RPP terikat otomatis beralih ke status `SUSPENDED` melalui trigger database.
+  3. **Strategi Pembelajaran Berdiferensiasi 3-Pilar:** Menampung diferensiasi Konten, Proses (Visual, Auditori, Kinestetik, serta Scaffolding), dan Produk sebagai jembatan ke Asesmen Diagnostik.
 * **Komponen Standar:**
   * **Identitas Modul:** Nama Guru, Satuan Pendidikan, Fase/Kelas, Alokasi Waktu, Mata Pelajaran.
   * **Target Profil Pelajar Pancasila (P3):** Mandiri, Bernalar Kritis, Gotong Royong, Kreatif, Kebinekaan Global, Beriman & Bertakwa.
@@ -77,8 +81,15 @@ Modul ini mengintegrasikan lima instrumen utama tata kelola pembelajaran dan pen
 
 | Fase | Modul | Status |
 |:---:|---|:---:|
-| **Fase 1** | **Kalender Pendidikan (Kaldik)** | **Sedang Dikerjakan (In-Progress)** |
-| **Fase 2** | Master Data CP & Alur TP/ATP | Terjadwal Berikutnya |
-| **Fase 3** | RPP / Modul Ajar Generator & Hub | Terjadwal |
-| **Fase 4** | Integrasi Taksonomi Asesmen (Diagnostik, Formatif, Sumatif) | Terjadwal |
-| **Fase 5** | Jurnal Pembiasaan Karakter G7KAIH & Verifikasi Wali | Terjadwal |
+| **Fase 1** | **Kalender Pendidikan (Kaldik)** | **Selesai (Completed: Kaldik MEB Engine, Academic Calendar Events)** |
+| **Fase 2** | **Master Data CP & Alur TP/ATP (AI On-Demand)** | **Selesai (Completed: Registry, NIM Synthesizer, Workstation UI)** |
+| **Fase 3** | **RPP / Modul Ajar Generator & Hub** | **Selesai (Completed: Kaldik MEB Engine, TP Relational Guard & Cascade Trigger, Differentiated Strategies 3-Pilar)** |
+| **Fase 4** | **Integrasi Taksonomi Asesmen (Diagnostik, Formatif, Sumatif)** | **Selesai (Completed: PPA Formula Engine, Hybrid Quantitative-Qualitative Schema, Pre-Calculated Snapshot Cache, Suspended Guard)** |
+| **Fase 5** | **Jurnal Pembiasaan Karakter G7KAIH & Verifikasi Wali** | **Selesai (Completed: Single-Row JSONB Storage, 7-Day Fallback Window, Teacher Override Authority, Automated Attitude Narrative Engine)** |
+
+---
+
+## 4. Ekosistem Pedagogis Kurikulum Merdeka Resmi Berstatus Selesai (All 5 Pillars Completed)
+
+Seluruh 5 pilar dalam rancangan arsitektur pedagogis Kurikulum Merdeka (Kemendikdasmen RI / BSKAP No. 033/H/KR/2024) telah diimplementasikan secara komprehensif, teruji secara integratif, serta siap melayani kegiatan akademik guru, siswa, dan orang tua.
+
