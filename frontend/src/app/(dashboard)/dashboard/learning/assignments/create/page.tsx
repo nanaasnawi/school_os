@@ -378,7 +378,7 @@ export default function CreateAssignmentPage() {
   };
 
   return (
-    <div style={{ maxWidth: '1240px', margin: '0 auto', padding: '1.25rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+    <div style={{ maxWidth: '1680px', margin: '0 auto', width: '100%', boxSizing: 'border-box', padding: '1rem 1.25rem 2.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
       {/* Toast Notification */}
       {toastMessage && (
         <div style={{

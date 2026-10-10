@@ -1,12 +1,26 @@
 /* ── Class Detail — Light Premium Compact ── */
 .page {
-  padding: 1.25rem 1.5rem;
-  max-width: 1360px;
+  padding: 1rem 1.25rem 2.5rem;
+  max-width: 1680px;
   margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1rem;
   animation: fadeInUp 0.35s var(--ease-out) forwards;
+}
+
+@media (max-width: 1024px) {
+  .page {
+    padding: 0.85rem 1rem 2rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .page {
+    padding: 0.75rem 0.75rem 1.5rem;
+  }
 }
 
 .loadingScreen {
