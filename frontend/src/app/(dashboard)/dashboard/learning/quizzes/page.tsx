@@ -936,208 +936,290 @@ export default function QuizzesPage() {
               </div>
             ) : (
               <div className="tableWrap">
-                <table className="table">
+                <table className={`table ${styles.table}`} style={{ tableLayout: 'auto', minWidth: '1080px' }}>
                   <thead>
                     <tr>
-                      <th className="thSortable">
+                      <th className="thSortable" style={{ minWidth: '220px' }}>
                         <div className="thSortContent">
                           <span>Judul Kuis / Ujian CBT</span>
                           <span className="sortArrows">⇅</span>
                         </div>
                       </th>
-                      <th className="thSortable">
+                      <th className="thSortable" style={{ minWidth: '140px' }}>
                         <div className="thSortContent">
                           <span>Mapel &amp; Guru</span>
                           <span className="sortArrows">⇅</span>
                         </div>
                       </th>
-                      <th className="thSortable">
+                      <th className="thSortable" style={{ minWidth: '95px' }}>
                         <div className="thSortContent">
-                          <span>Rombel Target</span>
+                          <span>Rombel</span>
                           <span className="sortArrows">⇅</span>
                         </div>
                       </th>
-                      <th className="thSortable">
+                      <th className="thSortable" style={{ minWidth: '180px' }}>
                         <div className="thSortContent">
                           <span>Jadwal Pelaksanaan</span>
                           <span className="sortArrows">⇅</span>
                         </div>
                       </th>
-                      <th className="thSortable">
+                      <th className="thSortable" style={{ minWidth: '110px' }}>
                         <div className="thSortContent">
                           <span>Durasi &amp; Soal</span>
                           <span className="sortArrows">⇅</span>
                         </div>
                       </th>
-                      <th className="thSortable">
+                      <th className="thSortable" style={{ minWidth: '95px' }}>
                         <div className="thSortContent">
-                          <span>Status Ujian</span>
+                          <span>Status</span>
                           <span className="sortArrows">⇅</span>
                         </div>
                       </th>
-                      <th className="thSortable">
+                      <th className="thSortable" style={{ minWidth: '120px' }}>
                         <div className="thSortContent">
-                          <span>Peserta &amp; Rata-Rata</span>
+                          <span>Peserta &amp; Nilai</span>
                           <span className="sortArrows">⇅</span>
                         </div>
                       </th>
-                      <th style={{ textAlign: 'right' }}>Aksi</th>
+                      <th style={{ textAlign: 'right', minWidth: '160px', whiteSpace: 'nowrap' }}>Aksi</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {paginated.map((q) => (
-                      <tr key={q.id}>
-                        <td>
-                          <div
-                            className="itemPrimaryTitle"
-                            style={{ cursor: 'pointer' }}
-                            onClick={() => handleOpenQuestionsModal(q)}
-                          >
-                            <span>{q.title}</span>
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px', flexWrap: 'wrap' }}>
-                            <span style={{ fontSize: '0.68rem', fontWeight: 800, color: q.examMode === 'PROCTORED_CBT' ? '#b91c1c' : '#6d28d9', background: q.examMode === 'PROCTORED_CBT' ? '#fef2f2' : '#f5f3ff', border: q.examMode === 'PROCTORED_CBT' ? '1px solid #fecaca' : '1px solid #ddd6fe', padding: '1px 6px', borderRadius: '4px' }}>
-                              {q.examMode === 'PROCTORED_CBT' ? '🛡️ Proctored CBT' : '✓ Android CBT Ready'}
+                    {paginated.map((q) => {
+                      const sched = formatScheduleIndo(q.startAt, q.endAt);
+                      return (
+                        <tr key={q.id}>
+                          {/* 1. Judul Kuis */}
+                          <td style={{ verticalAlign: 'middle' }}>
+                            <div
+                              className="itemPrimaryTitle"
+                              style={{ cursor: 'pointer', fontWeight: 700, fontSize: '0.84rem', color: 'var(--text-primary)', lineHeight: 1.35 }}
+                              onClick={() => handleOpenQuestionsModal(q)}
+                              title="Klik untuk melihat / mengedit butir soal CBT"
+                            >
+                              <span>{q.title}</span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '3px', flexWrap: 'nowrap' }}>
+                              <span style={{
+                                fontSize: '0.64rem',
+                                fontWeight: 700,
+                                color: q.examMode === 'PROCTORED_CBT' ? '#b91c1c' : '#6d28d9',
+                                background: q.examMode === 'PROCTORED_CBT' ? '#fef2f2' : '#f5f3ff',
+                                border: q.examMode === 'PROCTORED_CBT' ? '1px solid #fecaca' : '1px solid #ddd6fe',
+                                padding: '1px 5px',
+                                borderRadius: '4px',
+                                whiteSpace: 'nowrap'
+                              }}>
+                                {q.examMode === 'PROCTORED_CBT' ? '🛡️ Proctored' : '✓ CBT Android'}
+                              </span>
+                              {q.examToken ? (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigator.clipboard.writeText(q.examToken || '');
+                                    showToast(`✓ Token ujian "${q.examToken}" disalin ke clipboard!`);
+                                  }}
+                                  title="Klik untuk salin token ujian CBT"
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '3px',
+                                    fontSize: '0.64rem',
+                                    fontWeight: 700,
+                                    color: '#1e40af',
+                                    background: '#eff6ff',
+                                    border: '1px solid #bfdbfe',
+                                    padding: '1px 5px',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer',
+                                    whiteSpace: 'nowrap'
+                                  }}
+                                >
+                                  <span>🔑 {q.examToken}</span>
+                                  <span style={{ fontSize: '0.58rem', opacity: 0.7 }}>📋</span>
+                                </button>
+                              ) : null}
+                            </div>
+                          </td>
+
+                          {/* 2. Mapel & Guru */}
+                          <td style={{ verticalAlign: 'middle' }}>
+                            <span className="statusPill statusPillMuted" style={{ fontWeight: 700, fontSize: '0.72rem', whiteSpace: 'nowrap' }}>
+                              {q.subject}
                             </span>
-                            {q.examToken ? (
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  navigator.clipboard.writeText(q.examToken || '');
-                                  showToast(`✓ Token ujian "${q.examToken}" disalin ke clipboard!`);
-                                }}
-                                title="Klik untuk salin token ujian CBT"
-                                style={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '3px',
-                                  fontSize: '0.68rem',
-                                  fontWeight: 800,
-                                  color: '#1e40af',
-                                  background: '#eff6ff',
-                                  border: '1px solid #bfdbfe',
-                                  padding: '1px 6px',
-                                  borderRadius: '4px',
-                                  cursor: 'pointer',
-                                }}
-                              >
-                                <span>🔑 {q.examToken}</span>
-                                <span style={{ fontSize: '0.62rem', opacity: 0.7 }}>📋 Salin</span>
-                              </button>
-                            ) : null}
-                          </div>
-                        </td>
-                        <td>
-                          <span className="statusPill statusPillMuted" style={{ fontWeight: 800 }}>{q.subject}</span>
-                          <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 600, marginTop: '2px' }}>{q.teacherName}</div>
-                        </td>
-                        <td style={{ fontWeight: 700 }}>{q.classRoom}</td>
-                        <td>
-                          {(() => {
-                            const sched = formatScheduleIndo(q.startAt, q.endAt);
-                            if (sched) {
-                              return (
-                                <div>
-                                  <div style={{ fontWeight: 800, fontSize: '0.82rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                    <span>📅</span>
-                                    <span>{sched.dateStr}</span>
-                                  </div>
-                                  <div style={{ fontSize: '0.74rem', color: '#1d4ed8', fontWeight: 700, marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                    <span>⏰</span>
-                                    <span>{sched.timeStr}</span>
-                                  </div>
+                            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600, marginTop: '2px', whiteSpace: 'nowrap' }}>
+                              {q.teacherName}
+                            </div>
+                          </td>
+
+                          {/* 3. Rombel Target */}
+                          <td style={{ verticalAlign: 'middle' }}>
+                            <span style={{
+                              fontSize: '0.72rem',
+                              fontWeight: 700,
+                              color: '#334155',
+                              background: '#f1f5f9',
+                              padding: '2px 7px',
+                              borderRadius: '4px',
+                              border: '1px solid #e2e8f0',
+                              whiteSpace: 'nowrap'
+                            }}>
+                              {q.classRoom}
+                            </span>
+                          </td>
+
+                          {/* 4. Jadwal Pelaksanaan */}
+                          <td style={{ verticalAlign: 'middle' }}>
+                            {sched ? (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+                                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.76rem', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
+                                  <span style={{ color: '#2563eb' }}>📅</span>
+                                  <span>{sched.dateStr}</span>
                                 </div>
-                              );
-                            }
-                            return (
+                                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.72rem', color: '#1d4ed8', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                                  <span>⏰</span>
+                                  <span>{sched.timeStr}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenScheduleModal(q)}
+                                    title="Ubah tanggal dan jam pelaksanaan ujian CBT"
+                                    style={{
+                                      background: 'none',
+                                      border: 'none',
+                                      cursor: 'pointer',
+                                      padding: '0 2px',
+                                      fontSize: '0.7rem',
+                                      opacity: 0.75,
+                                    }}
+                                  >
+                                    ✏️
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
                               <button
                                 type="button"
                                 onClick={() => handleOpenScheduleModal(q)}
                                 style={{
                                   display: 'inline-flex',
                                   alignItems: 'center',
-                                  gap: '4px',
-                                  fontSize: '0.72rem',
+                                  gap: '3px',
+                                  fontSize: '0.7rem',
                                   fontWeight: 700,
                                   color: '#b45309',
-                                  background: '#fffbeb',
-                                  border: '1px dashed #fde68a',
-                                  padding: '3px 8px',
-                                  borderRadius: '6px',
-                                  cursor: 'pointer'
+                                  background: '#fef3c7',
+                                  border: '1px solid #fde68a',
+                                  padding: '2px 7px',
+                                  borderRadius: '5px',
+                                  cursor: 'pointer',
+                                  whiteSpace: 'nowrap',
                                 }}
                                 title="Klik untuk mengatur tanggal dan jam ujian CBT"
                               >
                                 <span>📅 + Atur Jadwal</span>
                               </button>
-                            );
-                          })()}
-                        </td>
-                        <td style={{ fontWeight: 600 }}>{q.duration} • {q.totalQuestions} Soal</td>
-                        <td>
-                          <span className={`statusPill ${q.status === 'PUBLISHED' ? 'statusPillActive' : q.status === 'LIVE_EXAM' ? 'statusPillWarning' : 'statusPillMuted'}`}>
-                            {q.status === 'PUBLISHED' ? 'Active' : q.status === 'LIVE_EXAM' ? 'Live Exam' : 'Draft'}
-                          </span>
-                          {q.status === 'DRAFT' && (
-                            <div style={{ fontSize: '0.68rem', color: '#b45309', fontWeight: 600, marginTop: '2px' }}>
-                              Belum Terbit
+                            )}
+                          </td>
+
+                          {/* 5. Durasi & Soal */}
+                          <td style={{ verticalAlign: 'middle' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+                              <div style={{ fontSize: '0.76rem', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
+                                ⏱️ {q.duration}
+                              </div>
+                              <div
+                                style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600, whiteSpace: 'nowrap', cursor: 'pointer' }}
+                                onClick={() => handleOpenQuestionsModal(q)}
+                                title="Klik untuk melihat daftar butir soal"
+                              >
+                                📝 <strong>{q.totalQuestions}</strong> Soal
+                              </div>
                             </div>
-                          )}
-                        </td>
-                        <td>
-                          <div style={{ fontWeight: 700, color: '#0284c7' }}>{q.participants}/{q.maxParticipants} Peserta</div>
-                          <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>Rata-rata: <strong>{q.avgScore > 0 ? q.avgScore : '-'}</strong></div>
-                        </td>
-                        <td style={{ textAlign: 'right' }}>
-                          <div style={{ display: 'inline-flex', gap: '0.35rem', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-                            {q.status === 'DRAFT' && (
+                          </td>
+
+                          {/* 6. Status Ujian */}
+                          <td style={{ verticalAlign: 'middle' }}>
+                            <span
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                fontSize: '0.7rem',
+                                fontWeight: 700,
+                                padding: '2px 7px',
+                                borderRadius: '999px',
+                                whiteSpace: 'nowrap',
+                                background: q.status === 'PUBLISHED' ? '#dcfce7' : q.status === 'LIVE_EXAM' ? '#f3e8ff' : '#f1f5f9',
+                                color: q.status === 'PUBLISHED' ? '#15803d' : q.status === 'LIVE_EXAM' ? '#7e22ce' : '#475569',
+                                border: `1px solid ${q.status === 'PUBLISHED' ? '#bbf7d0' : q.status === 'LIVE_EXAM' ? '#e9d5ff' : '#cbd5e1'}`,
+                              }}
+                            >
+                              {q.status === 'PUBLISHED' ? '🟢 Aktif' : q.status === 'LIVE_EXAM' ? '⚡ Live' : '⚪ Draft'}
+                            </span>
+                          </td>
+
+                          {/* 7. Peserta & Nilai */}
+                          <td style={{ verticalAlign: 'middle' }}>
+                            <div style={{ fontSize: '0.76rem', fontWeight: 700, color: '#0284c7', whiteSpace: 'nowrap' }}>
+                              👥 {q.participants}/{q.maxParticipants} Peserta
+                            </div>
+                            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                              Rata-rata: <strong>{q.avgScore > 0 ? q.avgScore : '—'}</strong>
+                            </div>
+                          </td>
+
+                          {/* 8. Aksi (Strict Single-Line Horizontal Group) */}
+                          <td style={{ textAlign: 'right', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                            <div style={{
+                              display: 'inline-flex',
+                              gap: '0.35rem',
+                              justifyContent: 'flex-end',
+                              alignItems: 'center',
+                              flexWrap: 'nowrap',
+                              whiteSpace: 'nowrap'
+                            }}>
                               <button
-                                className="btn btn-primary btn-sm"
+                                type="button"
+                                className="btn btn-secondary btn-sm"
                                 style={{
-                                  background: '#16a34a',
-                                  borderColor: '#16a34a',
-                                  color: '#fff',
-                                  padding: '0.28rem 0.62rem',
-                                  fontSize: '0.76rem',
-                                  fontWeight: 800,
+                                  padding: '0.26rem 0.52rem',
+                                  fontSize: '0.74rem',
+                                  borderRadius: '6px',
+                                  whiteSpace: 'nowrap',
                                   display: 'inline-flex',
                                   alignItems: 'center',
                                   gap: '3px',
+                                  background: '#fff',
                                 }}
-                                onClick={() => setPublishingQuiz(q)}
-                                title="Publish kuis agar dapat dikerjakan siswa di HP Android"
+                                onClick={() => handleOpenQuestionsModal(q)}
+                                title="Kelola butir soal CBT ini"
                               >
-                                <span>📢</span>
-                                <span>Publish</span>
+                                <span>📝 Soal ({q.totalQuestions})</span>
                               </button>
-                            )}
-                            <button
-                              className="pageBtnNav"
-                              style={{ border: '1px solid #cbd5e1', padding: '0.28rem 0.55rem', fontSize: '0.76rem' }}
-                              onClick={() => handleOpenScheduleModal(q)}
-                              title="Atur tanggal dan jam pelaksanaan"
-                            >
-                              📅 Jadwal
-                            </button>
-                            <button
-                              className="pageBtnNav"
-                              style={{ border: '1px solid #cbd5e1', padding: '0.28rem 0.55rem', fontSize: '0.76rem' }}
-                              onClick={() => handleOpenQuestionsModal(q)}
-                            >
-                              Butir Soal ({q.totalQuestions})
-                            </button>
-                            <button
-                              className="pageBtnNav"
-                              style={{ border: '1px solid #cbd5e1', padding: '0.28rem 0.55rem', fontSize: '0.76rem' }}
-                              onClick={() => handleOpenAnalysisModal(q)}
-                            >
-                              Analisis Nilai
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                              <button
+                                type="button"
+                                className="btn btn-secondary btn-sm"
+                                style={{
+                                  padding: '0.26rem 0.52rem',
+                                  fontSize: '0.74rem',
+                                  borderRadius: '6px',
+                                  whiteSpace: 'nowrap',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '3px',
+                                  background: '#fff',
+                                }}
+                                onClick={() => handleOpenAnalysisModal(q)}
+                                title="Lihat hasil pengerjaan siswa & koreksi nilai"
+                              >
+                                <span>📊 Nilai</span>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
