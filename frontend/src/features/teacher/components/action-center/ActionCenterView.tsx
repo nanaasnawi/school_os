@@ -9,6 +9,7 @@ import { AtRiskStudentsWidget } from './AtRiskStudentsWidget';
 import { PendingGradingWidget } from './PendingGradingWidget';
 import { TodayScheduleWidget } from './TodayScheduleWidget';
 import { RecentMaterialsWidget } from './RecentMaterialsWidget';
+import { TeacherCalendarWidget } from './TeacherCalendarWidget';
 
 export function ActionCenterView() {
   const {
@@ -112,6 +113,7 @@ export function ActionCenterView() {
         {/* Left Column: Teaching Sessions & Student Risk Early Warning System */}
         <div className={styles.leftCol}>
           <TodayScheduleWidget schedules={todaySchedule} />
+          <TeacherCalendarWidget />
           <AtRiskStudentsWidget
             students={atRiskStudents}
             onResolve={handleResolveRisk}

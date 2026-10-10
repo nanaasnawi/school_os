@@ -270,7 +270,7 @@ const TEACHER_NAV_SECTIONS = [
     items: [
       { label: 'Action Center', path: '/dashboard/teacher', icon: 'dashboard' },
       { label: 'Presensi & Kehadiran', path: '/dashboard/attendance', icon: 'attendance' },
-      { label: 'Kalender Pendidikan', path: '/dashboard/academic-years/calendar', icon: 'calendar' },
+      { label: 'Kalender Pendidikan', path: '/dashboard/teacher/calendar', icon: 'calendar' },
       { label: 'Kelas Saya', path: '/dashboard/teacher/classes', icon: 'classes' },
     ],
   },
@@ -479,6 +479,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // List of path prefixes strictly reserved for Administrator & Tata Usaha (Non-Teachers)
   const isForbiddenForTeacher = useCallback((path: string) => {
     if (path === '/dashboard') return true;
+    // Kalender Pendidikan (Kaldik) is shared and required for teachers (Action Center / Prota / Promes)
+    if (
+      path === '/dashboard/academic-years/calendar' ||
+      path.startsWith('/dashboard/academic-years/calendar') ||
+      path === '/dashboard/teacher/calendar' ||
+      path.startsWith('/dashboard/teacher/calendar')
+    ) {
+      return false;
+    }
     const adminPrefixes = [
       '/dashboard/academic-years',
       '/dashboard/classes',
@@ -621,6 +630,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   /* ── Breadcrumb label ── */
   const getBreadcrumbLabel = () => {
     if (pathname === '/dashboard/teacher')           return 'Teacher Workstation (Action Center)';
+    if (pathname.includes('/calendar'))             return 'Kalender Pendidikan';
     if (pathname.includes('/teacher/classes'))      return 'Kelas Saya';
     if (pathname.includes('/teacher/grading'))      return 'Koreksi Massal Siswa';
     if (pathname.includes('/teacher/analytics'))    return 'Teacher Analytics';

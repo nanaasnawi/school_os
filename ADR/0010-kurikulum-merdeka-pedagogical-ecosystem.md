@@ -54,9 +54,12 @@ graph TD
 - Nilai diagregasikan ke `GradeBook` dan `ReportCard`.
 
 ### 4. Bounded Context Kalender Pendidikan (Kaldik)
-- Entitas: `AcademicCalendar`, `CalendarEvent`, `EffectiveWeekAllocation`.
-- Menghitung otomatis Minggu Efektif Belajar (MEB) dan Hari Efektif Belajar (HEB) per semester.
-- Mengunci timeline pelaksanaan asesmen dan sinkronisasi agenda mengajar guru.
+- Entitas: `academic_calendar_events` (PostgreSQL), `CalendarEvent`, `EffectiveWeekAllocation`.
+- Menghitung otomatis Minggu Efektif Belajar (MEB: 18 Ganjil + 17 Genap = 35 Pekan) dan Hari Efektif Belajar (HEB: ~175-180 Hari) per semester.
+- **Integrasi Teacher Workstation**:
+  * Tampil di sidebar Teacher Workstation (`/dashboard/teacher/calendar`).
+  * Widget `TeacherCalendarWidget` terpasang di **Action Center Dashboard Guru** (`/dashboard/teacher`) untuk memantau sisa pekan efektif dan timeline asesmen (STS/SAS/ANBK) secara real-time.
+  * Mengunci timeline pelaksanaan asesmen dan sinkronisasi agenda mengajar guru sebagai acuan penyusunan Prota, Promes, dan RPP/Modul Ajar.
 
 ### 5. Bounded Context G7KAIH (Karakter & Pembiasaan)
 - Entitas: `HabitTrackerEntry`, `HabitCategory`, `ParentVerification`.
