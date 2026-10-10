@@ -31,8 +31,21 @@
   flex-wrap: wrap;
 }
 .headerLeft { display: flex; flex-direction: column; gap: 0.25rem; }
-.title { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.03em; color: var(--text-primary); }
-.subtitle { font-size: 0.8rem; color: var(--text-muted); }
+.title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0;
+}
+.subtitle {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+  font-weight: 500;
+  margin: 0;
+}
 
 .tableCard {
   background: var(--bg-surface);

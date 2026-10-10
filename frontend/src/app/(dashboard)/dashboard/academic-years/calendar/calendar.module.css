@@ -84,13 +84,14 @@
 
 .mainTitle {
   margin: 0;
-  font-size: 1.05rem;
+  font-size: 1.25rem;
   font-weight: 800;
   color: var(--text-primary, #0f172a);
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em;
+  line-height: 1.25;
 }
 
 .calendarIconWrap {
@@ -145,9 +146,10 @@
 
 .subtitle {
   margin: 0;
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   color: var(--text-muted, #64748b);
-  line-height: 1.4;
+  line-height: 1.45;
+  font-weight: 500;
 }
 
 .headerActions {

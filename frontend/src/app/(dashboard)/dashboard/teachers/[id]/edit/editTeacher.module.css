@@ -1,12 +1,26 @@
 /* ── Edit Form — Dark Premium ── */
 .page {
-  padding: 2.25rem 2.5rem;
-  max-width: 1000px;
+  padding: 1rem 1.25rem 2.5rem;
+  max-width: 1680px;
+  width: 100%;
+  box-sizing: border-box;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
-  animation: fadeInUp 0.4s var(--ease-out) forwards;
+  gap: 1rem;
+  animation: fadeInUp 0.35s var(--ease-out) forwards;
+}
+
+@media (max-width: 1024px) {
+  .page {
+    padding: 0.85rem 1rem 2rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .page {
+    padding: 0.75rem 0.75rem 1.5rem;
+  }
 }
 
 .header {
@@ -24,8 +38,21 @@
 .breadSep { opacity: 0.4; }
 .breadCurrent { color: var(--text-secondary); font-weight: 600; }
 
-.title { font-size: 1.875rem; font-weight: 800; letter-spacing: -0.03em; color: var(--text-primary); }
-.subtitle { font-size: 0.85rem; color: var(--text-muted); }
+.title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0;
+}
+.subtitle {
+  font-size: 0.8rem;
+  color: var(--text-secondary, #64748b);
+  line-height: 1.45;
+  font-weight: 500;
+  margin: 0;
+}
 
 .successBanner {
   padding: 0.875rem 1.125rem;

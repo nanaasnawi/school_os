@@ -78,8 +78,7 @@ export default function NewStudentPage() {
       {/* Header & Breadcrumb */}
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          
-          <h1 className={styles.title} style={{ fontSize: '1.3rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
+          <h1 className={styles.title}>
             + Registrasi Peserta Didik Baru (Dapodik Master)
           </h1>
           <p className={styles.subtitle}>Input data pokok siswa, penempatan Rombel, dan data wali murid</p>

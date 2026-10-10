@@ -24,15 +24,20 @@
 }
 
 .title {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-weight: 800;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.025em;
+  line-height: 1.25;
   color: var(--text-primary);
+  margin: 0;
 }
 
 .subtitle {
   font-size: 0.8rem;
-  color: var(--text-muted);
+  color: var(--text-secondary, #64748b);
+  line-height: 1.45;
+  font-weight: 500;
+  margin: 0;
 }
 
 .notifItem {

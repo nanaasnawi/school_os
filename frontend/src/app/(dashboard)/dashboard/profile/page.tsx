@@ -160,14 +160,14 @@ export default function ProfilePage() {
     : null;
 
   return (
-    <div style={{ padding: '1.75rem', maxWidth: '1200px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+    <div style={{ maxWidth: '1680px', width: '100%', boxSizing: 'border-box', margin: '0 auto', padding: '1rem 1.25rem 2.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
       {/* ── Header ── */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-card)', padding: '1.25rem 1.75rem', borderRadius: '18px', border: '1px solid var(--border-light)', boxShadow: '0 4px 20px rgba(15,23,42,0.04)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'var(--accent-dim)', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', fontWeight: 800 }}>👤</div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'transparent', padding: '0.25rem 0', borderRadius: 0, border: 'none', boxShadow: 'none' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+          <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'var(--accent-dim)', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.25rem', fontWeight: 800 }}>👤</div>
           <div>
-            <h1 style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Profil Pengguna &amp; Keamanan Akun</h1>
-            <p style={{ fontSize: '0.84rem', color: 'var(--text-muted)', fontWeight: 500, margin: '2px 0 0 0' }}>Kelola foto pengguna, informasi identitas, dan kredensial autentikasi</p>
+            <h1 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.025em', lineHeight: 1.25 }}>Profil Pengguna &amp; Keamanan Akun</h1>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary, #64748b)', fontWeight: 500, margin: '2px 0 0 0', lineHeight: 1.45 }}>Kelola foto pengguna, informasi identitas, dan kredensial autentikasi</p>
           </div>
         </div>
       </div>

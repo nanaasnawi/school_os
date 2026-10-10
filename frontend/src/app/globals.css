@@ -721,9 +721,9 @@ code, pre {
 }
 
 .workstationHeroTitle {
-  font-size: 1.05rem;
+  font-size: 1.25rem;
   font-weight: 800;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em;
   color: var(--text-primary, #0f172a);
   margin: 0;
   line-height: 1.25;
@@ -734,8 +734,8 @@ code, pre {
 }
 
 .workstationHeroSubtitle {
-  font-size: 0.72rem;
-  line-height: 1.4;
+  font-size: 0.8rem;
+  line-height: 1.45;
   color: var(--text-secondary, #64748b);
   margin: 0;
   font-weight: 500;

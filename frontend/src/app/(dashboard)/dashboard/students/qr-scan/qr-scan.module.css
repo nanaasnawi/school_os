@@ -121,20 +121,20 @@
 }
 
 .headerTitle {
-  font-size: 1.05rem;
+  font-size: 1.25rem;
   font-weight: 800;
   color: var(--text-primary);
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em;
   line-height: 1.25;
   margin: 0;
 }
 
 .headerSub {
-  font-size: 0.72rem;
-  color: var(--text-muted);
+  font-size: 0.8rem;
+  color: var(--text-secondary, #64748b);
   font-weight: 500;
   max-width: 680px;
-  line-height: 1.4;
+  line-height: 1.45;
   margin: 0;
 }
 

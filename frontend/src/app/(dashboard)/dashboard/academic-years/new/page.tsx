@@ -59,15 +59,14 @@ export default function NewAcademicYearPage() {
   };
 
   return (
-    <div className={styles.container} style={{ maxWidth: '680px', margin: '0 auto', padding: '1.5rem 1rem' }}>
+    <div className={styles.container}>
       {/* Header */}
-      <div className={styles.header} style={{ marginBottom: '1.5rem' }}>
+      <div className={styles.header}>
         <div>
-          
-          <h1 className={styles.title} style={{ fontSize: '1.3rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
+          <h1 className={styles.title}>
             + Buat Periode Tahun Ajaran &amp; Semester Baru
           </h1>
-          <p className={styles.subtitle} style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: 0 }}>
+          <p className={styles.subtitle}>
             Konfigurasi kalender akademik dan penetapan semester aktif
           </p>
         </div>
@@ -80,7 +79,7 @@ export default function NewAcademicYearPage() {
       {successMsg && <div style={{ background: 'rgba(22, 163, 74, 0.10)', border: '1px solid rgba(22, 163, 74, 0.25)', color: '#16a34a', padding: '0.85rem', borderRadius: '10px', fontSize: '0.82rem', marginBottom: '1rem', fontWeight: 700 }}>{successMsg}</div>}
 
       {/* Form Card Container */}
-      <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: '16px', padding: '1.5rem', boxShadow: '0 4px 6px -1px rgba(15,23,42,0.04)' }}>
+      <div style={{ maxWidth: '760px', background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: '16px', padding: '1.5rem', boxShadow: '0 4px 6px -1px rgba(15,23,42,0.04)' }}>
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           <div>
             <label style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-primary)', display: 'block', marginBottom: '0.35rem' }}>

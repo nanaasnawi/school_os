@@ -383,7 +383,7 @@ export default function CreateQuizPage() {
   };
 
   return (
-    <div style={{ maxWidth: '1240px', margin: '0 auto', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+    <div style={{ maxWidth: '1680px', width: '100%', boxSizing: 'border-box', margin: '0 auto', padding: '1rem 1.25rem 2.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
       {/* Toast Notification */}
       {toastMessage && (
         <div style={{
@@ -457,9 +457,10 @@ export default function CreateQuizPage() {
             <h1
               style={{
                 margin: 0,
-                fontSize: '1.5rem',
+                fontSize: '1.25rem',
                 fontWeight: 800,
-                letterSpacing: '-0.02em',
+                letterSpacing: '-0.025em',
+                lineHeight: 1.25,
                 color: 'var(--text-primary)',
               }}
             >

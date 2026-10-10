@@ -1,12 +1,26 @@
 /* ── Student Detail Page — Dark Premium v2 ── */
 .page {
-  padding: 2.25rem 2.5rem;
-  max-width: 1200px;
+  padding: 1rem 1.25rem 2.5rem;
+  max-width: 1680px;
+  width: 100%;
+  box-sizing: border-box;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
-  animation: fadeInUp 0.4s var(--ease-out) forwards;
+  gap: 1rem;
+  animation: fadeInUp 0.35s var(--ease-out) forwards;
+}
+
+@media (max-width: 1024px) {
+  .page {
+    padding: 0.85rem 1rem 2rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .page {
+    padding: 0.75rem 0.75rem 1.5rem;
+  }
 }
 
 /* Loading */
