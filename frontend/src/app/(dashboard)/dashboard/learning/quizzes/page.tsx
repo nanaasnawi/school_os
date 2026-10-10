@@ -14,13 +14,16 @@ type QuizItem = {
   classRoom: string;
   teacherName: string;
   duration: string;
+  durationMinutes: number;
   totalQuestions: number;
-  status: 'PUBLISHED' | 'LIVE_EXAM' | 'DRAFT';
+  status: 'PUBLISHED' | 'LIVE_EXAM' | 'DRAFT' | string;
   participants: number;
   maxParticipants: number;
   avgScore: number;
   examMode?: string;
   examToken?: string | null;
+  startAt?: string | null;
+  endAt?: string | null;
 };
 
 type StudentCbtScore = {
@@ -112,13 +115,32 @@ export default function QuizzesPage() {
     title: '',
     description: '',
     passingScore: 70,
-    examDate: '2026-08-25',
+    examDate: new Date().toISOString().split('T')[0],
+    startDate: new Date().toISOString().split('T')[0],
+    startTime: '07:30',
+    endDate: new Date().toISOString().split('T')[0],
+    endTime: '09:00',
     subject: '',
     classRoom: '',
     teacherName: '',
-    duration: '30 Menit',
+    duration: '45 Menit',
     totalQuestions: 20,
   });
+
+  // Modal Atur Jadwal Ujian (Tanggal & Jam Mulai/Selesai)
+  const [scheduleQuiz, setScheduleQuiz] = useState<QuizItem | null>(null);
+  const [scheduleForm, setScheduleForm] = useState({
+    startDate: '',
+    startTime: '07:30',
+    endDate: '',
+    endTime: '09:00',
+    durationMinutes: 45,
+  });
+  const [isSavingSchedule, setIsSavingSchedule] = useState(false);
+
+  // Modal Publish Kuis
+  const [publishingQuiz, setPublishingQuiz] = useState<QuizItem | null>(null);
+  const [isPublishing, setIsPublishing] = useState(false);
 
   // Selected Quiz Analysis State (In-Page)
   const [analyzedQuiz, setAnalyzedQuiz] = useState<QuizItem | null>(null);
@@ -200,21 +222,34 @@ export default function QuizzesPage() {
               })
             : rawList;
 
-          const mapped: QuizItem[] = filteredList.map((q: Record<string, unknown>) => ({
-            id: String(q.id),
-            title: String(q.title || ''),
-            subject: String(q.subject_name || '-'),
-            classRoom: String(q.class_name || '-'),
-            teacherName: String(q.teacher_name || '-'),
-            duration: `${q.duration_minutes || q.time_limit_minutes || 30} Menit`,
-            totalQuestions: Number(q.questions_count) || 0,
-            status: (q.status as QuizItem['status']) || 'PUBLISHED',
-            participants: 0,
-            maxParticipants: 28,
-            avgScore: 0,
-            examMode: String(q.exam_mode || 'HOMEWORK_QUIZ'),
-            examToken: q.exam_token ? String(q.exam_token) : null,
-          }));
+          const mapped: QuizItem[] = filteredList.map((q: Record<string, unknown>) => {
+            const dur = Number(q.duration_minutes || q.time_limit_minutes || 30);
+            const rawStatus = String(q.status || 'draft').toUpperCase();
+            const normalizedStatus = (rawStatus === 'PUBLISHED' || rawStatus === 'ACTIVE')
+              ? 'PUBLISHED'
+              : (rawStatus === 'LIVE_EXAM' || rawStatus === 'LIVE')
+              ? 'LIVE_EXAM'
+              : 'DRAFT';
+
+            return {
+              id: String(q.id),
+              title: String(q.title || ''),
+              subject: String(q.subject_name || '-'),
+              classRoom: String(q.class_name || '-'),
+              teacherName: String(q.teacher_name || '-'),
+              duration: `${dur} Menit`,
+              durationMinutes: dur,
+              totalQuestions: Number(q.questions_count) || 0,
+              status: normalizedStatus,
+              participants: 0,
+              maxParticipants: 28,
+              avgScore: 0,
+              examMode: String(q.exam_mode || 'HOMEWORK_QUIZ'),
+              examToken: q.exam_token ? String(q.exam_token) : null,
+              startAt: q.start_at ? String(q.start_at) : null,
+              endAt: q.end_at ? String(q.end_at) : null,
+            };
+          });
           setQuizzes(mapped);
         }
       } catch (err) {
@@ -357,20 +392,194 @@ export default function QuizzesPage() {
     }
   };
 
+  const formatScheduleIndo = (startAt?: string | null, endAt?: string | null) => {
+    if (!startAt) return null;
+    try {
+      const sDate = new Date(startAt);
+      if (isNaN(sDate.getTime())) return null;
+
+      const dateStr = sDate.toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      });
+
+      const startTimeStr = sDate.toLocaleTimeString('id-ID', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      });
+
+      let endTimeStr = '';
+      if (endAt) {
+        const eDate = new Date(endAt);
+        if (!isNaN(eDate.getTime())) {
+          endTimeStr = eDate.toLocaleTimeString('id-ID', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false,
+          });
+        }
+      }
+
+      return {
+        dateStr,
+        timeStr: endTimeStr ? `${startTimeStr} - ${endTimeStr} WIB` : `Mulai ${startTimeStr} WIB`,
+      };
+    } catch {
+      return null;
+    }
+  };
+
+  const handleOpenScheduleModal = (q: QuizItem) => {
+    const today = new Date().toISOString().split('T')[0];
+    let sDate = today;
+    let sTime = '07:30';
+    let eDate = today;
+    let eTime = '09:00';
+
+    if (q.startAt) {
+      try {
+        const d = new Date(q.startAt);
+        if (!isNaN(d.getTime())) {
+          sDate = d.toISOString().split('T')[0];
+          sTime = d.toTimeString().slice(0, 5);
+        }
+      } catch {}
+    }
+    if (q.endAt) {
+      try {
+        const d = new Date(q.endAt);
+        if (!isNaN(d.getTime())) {
+          eDate = d.toISOString().split('T')[0];
+          eTime = d.toTimeString().slice(0, 5);
+        }
+      } catch {}
+    }
+
+    setScheduleForm({
+      startDate: sDate,
+      startTime: sTime,
+      endDate: eDate,
+      endTime: eTime,
+      durationMinutes: q.durationMinutes || parseInt(q.duration.replace(/\D/g, '')) || 45,
+    });
+    setScheduleQuiz(q);
+  };
+
+  const handleSaveSchedule = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!scheduleQuiz) return;
+
+    setIsSavingSchedule(true);
+    try {
+      const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
+      let startAtIso: string | null = null;
+      let endAtIso: string | null = null;
+      if (scheduleForm.startDate && scheduleForm.startTime) {
+        startAtIso = new Date(`${scheduleForm.startDate}T${scheduleForm.startTime}:00`).toISOString();
+      }
+      if (scheduleForm.endDate && scheduleForm.endTime) {
+        endAtIso = new Date(`${scheduleForm.endDate}T${scheduleForm.endTime}:00`).toISOString();
+      }
+
+      const payload = {
+        duration_minutes: Number(scheduleForm.durationMinutes) || 45,
+        start_at: startAtIso,
+        end_at: endAtIso,
+      };
+
+      const res = await fetch(getApiUrl(`/api/v1/learning/quizzes/${scheduleQuiz.id}`), {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        showToast('✓ Jadwal pelaksanaan ujian CBT berhasil disimpan & disinkronkan!');
+        setQuizzes(prev => prev.map(q => q.id === scheduleQuiz.id ? {
+          ...q,
+          duration: `${scheduleForm.durationMinutes} Menit`,
+          durationMinutes: scheduleForm.durationMinutes,
+          startAt: startAtIso,
+          endAt: endAtIso,
+        } : q));
+        setScheduleQuiz(null);
+      } else {
+        showToast('⚠️ Gagal menyimpan jadwal kuis');
+      }
+    } catch (err) {
+      console.error('Error saving schedule:', err);
+      showToast('⚠️ Terjadi kesalahan jaringan saat menyimpan jadwal');
+    } finally {
+      setIsSavingSchedule(false);
+    }
+  };
+
+  const handlePublishQuiz = async (quiz: QuizItem) => {
+    if (quiz.totalQuestions === 0) {
+      showToast('⚠️ Kuis harus memiliki minimal 1 butir soal sebelum dipublish!');
+      setPublishingQuiz(null);
+      handleOpenQuestionsModal(quiz);
+      return;
+    }
+
+    setIsPublishing(true);
+    try {
+      const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
+      const res = await fetch(getApiUrl(`/api/v1/learning/quizzes/${quiz.id}/publish`), {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+
+      if (res.ok) {
+        showToast(`✓ Kuis "${quiz.title}" berhasil dipublish & otomatis tersinkronkan ke HP Siswa!`);
+        setQuizzes(prev => prev.map(q => q.id === quiz.id ? { ...q, status: 'PUBLISHED' } : q));
+        if (viewQuestionsQuiz && viewQuestionsQuiz.id === quiz.id) {
+          setViewQuestionsQuiz(prev => prev ? { ...prev, status: 'PUBLISHED' } : null);
+        }
+        setPublishingQuiz(null);
+      } else {
+        const errJson = await res.json().catch(() => null);
+        showToast(`⚠️ Gagal mempublish kuis: ${errJson?.error?.message || 'Pastikan kuis memiliki minimal 1 butir soal'}`);
+      }
+    } catch (err) {
+      console.error('Error publishing quiz:', err);
+      showToast('⚠️ Terjadi kesalahan jaringan saat mempublish kuis');
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
   const handleCreateQuiz = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newQuiz.title) return;
 
     try {
       const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null;
-      const durationMinutes = parseInt(newQuiz.duration.replace(/\D/g, '')) || 30;
+      const durationMinutes = parseInt(newQuiz.duration.replace(/\D/g, '')) || 45;
       const effectiveTeacherName = (isTeacher && user?.full_name) ? user.full_name : (newQuiz.teacherName || user?.full_name || 'Guru');
+
+      let startAtIso: string | undefined = undefined;
+      let endAtIso: string | undefined = undefined;
+      if (newQuiz.startDate && newQuiz.startTime) {
+        startAtIso = new Date(`${newQuiz.startDate}T${newQuiz.startTime}:00`).toISOString();
+      }
+      if (newQuiz.endDate && newQuiz.endTime) {
+        endAtIso = new Date(`${newQuiz.endDate}T${newQuiz.endTime}:00`).toISOString();
+      }
+
       const payload = {
         title: newQuiz.title,
         description: `${newQuiz.subject} • ${newQuiz.classRoom} • ${effectiveTeacherName} • ${newQuiz.description || 'Kuis online CBT'}`,
         duration_minutes: durationMinutes,
         passing_score: Number(newQuiz.passingScore) || 70,
         class_id: newQuiz.classRoom,
+        start_at: startAtIso,
+        end_at: endAtIso,
       };
 
       const res = await fetch(getApiUrl('/api/v1/learning/quizzes'), {
@@ -385,12 +594,6 @@ export default function QuizzesPage() {
       if (res.ok) {
         const resJson = await res.json();
         const created = resJson.data;
-        if (created?.id) {
-          await fetch(getApiUrl(`/api/v1/learning/quizzes/${created.id}/publish`), {
-            method: 'POST',
-            headers: token ? { Authorization: `Bearer ${token}` } : {}
-          }).catch(() => null);
-        }
 
         const item: QuizItem = {
           id: created?.id || `quiz-${Date.now()}`,
@@ -399,18 +602,21 @@ export default function QuizzesPage() {
           classRoom: newQuiz.classRoom,
           teacherName: effectiveTeacherName,
           duration: `${durationMinutes} Menit`,
+          durationMinutes: durationMinutes,
           totalQuestions: 0,
-          status: 'PUBLISHED',
+          status: 'DRAFT',
           participants: 0,
           maxParticipants: 28,
           avgScore: 0,
+          startAt: startAtIso,
+          endAt: endAtIso,
         };
 
         setQuizzes(prev => [item, ...prev]);
         setShowAddModal(false);
-        showToast('✓ Kuis berhasil dipublish & disinkronkan ke Android');
+        showToast('✓ Kuis baru tersimpan sebagai Draft. Silakan tambahkan butir soal di menu "Butir Soal", lalu klik Publish!');
       } else {
-        showToast('⚠️ Gagal mempublish kuis');
+        showToast('⚠️ Gagal membuat kuis baru');
       }
     } catch (err) {
       console.error('Error creating quiz:', err);
@@ -564,6 +770,21 @@ export default function QuizzesPage() {
         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
           {activeView === 'QUESTIONS' && (
             <>
+              {viewQuestionsQuiz && (
+                viewQuestionsQuiz.status === 'DRAFT' ? (
+                  <button
+                    className="btn btn-primary btn-sm"
+                    onClick={() => setPublishingQuiz(viewQuestionsQuiz)}
+                    style={{ background: '#16a34a', borderColor: '#16a34a', color: '#fff', display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontWeight: 700 }}
+                  >
+                    <span>📢 Publish Kuis ({questionsList.length} Soal)</span>
+                  </button>
+                ) : (
+                  <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#16a34a', background: '#dcfce7', border: '1px solid #bbf7d0', padding: '0.28rem 0.65rem', borderRadius: '6px' }}>
+                    ✓ Kuis Published (Aktif)
+                  </span>
+                )
+              )}
               <button
                 className="btn btn-primary btn-sm"
                 onClick={() => setShowAddQuestion(prev => !prev)}
@@ -738,6 +959,12 @@ export default function QuizzesPage() {
                       </th>
                       <th className="thSortable">
                         <div className="thSortContent">
+                          <span>Jadwal Pelaksanaan</span>
+                          <span className="sortArrows">⇅</span>
+                        </div>
+                      </th>
+                      <th className="thSortable">
+                        <div className="thSortContent">
                           <span>Durasi &amp; Soal</span>
                           <span className="sortArrows">⇅</span>
                         </div>
@@ -806,28 +1033,103 @@ export default function QuizzesPage() {
                           <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 600, marginTop: '2px' }}>{q.teacherName}</div>
                         </td>
                         <td style={{ fontWeight: 700 }}>{q.classRoom}</td>
+                        <td>
+                          {(() => {
+                            const sched = formatScheduleIndo(q.startAt, q.endAt);
+                            if (sched) {
+                              return (
+                                <div>
+                                  <div style={{ fontWeight: 800, fontSize: '0.82rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    <span>📅</span>
+                                    <span>{sched.dateStr}</span>
+                                  </div>
+                                  <div style={{ fontSize: '0.74rem', color: '#1d4ed8', fontWeight: 700, marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    <span>⏰</span>
+                                    <span>{sched.timeStr}</span>
+                                  </div>
+                                </div>
+                              );
+                            }
+                            return (
+                              <button
+                                type="button"
+                                onClick={() => handleOpenScheduleModal(q)}
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px',
+                                  fontSize: '0.72rem',
+                                  fontWeight: 700,
+                                  color: '#b45309',
+                                  background: '#fffbeb',
+                                  border: '1px dashed #fde68a',
+                                  padding: '3px 8px',
+                                  borderRadius: '6px',
+                                  cursor: 'pointer'
+                                }}
+                                title="Klik untuk mengatur tanggal dan jam ujian CBT"
+                              >
+                                <span>📅 + Atur Jadwal</span>
+                              </button>
+                            );
+                          })()}
+                        </td>
                         <td style={{ fontWeight: 600 }}>{q.duration} • {q.totalQuestions} Soal</td>
                         <td>
                           <span className={`statusPill ${q.status === 'PUBLISHED' ? 'statusPillActive' : q.status === 'LIVE_EXAM' ? 'statusPillWarning' : 'statusPillMuted'}`}>
                             {q.status === 'PUBLISHED' ? 'Active' : q.status === 'LIVE_EXAM' ? 'Live Exam' : 'Draft'}
                           </span>
+                          {q.status === 'DRAFT' && (
+                            <div style={{ fontSize: '0.68rem', color: '#b45309', fontWeight: 600, marginTop: '2px' }}>
+                              Belum Terbit
+                            </div>
+                          )}
                         </td>
                         <td>
                           <div style={{ fontWeight: 700, color: '#0284c7' }}>{q.participants}/{q.maxParticipants} Peserta</div>
                           <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>Rata-rata: <strong>{q.avgScore > 0 ? q.avgScore : '-'}</strong></div>
                         </td>
                         <td style={{ textAlign: 'right' }}>
-                          <div style={{ display: 'inline-flex', gap: '0.4rem', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                          <div style={{ display: 'inline-flex', gap: '0.35rem', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                            {q.status === 'DRAFT' && (
+                              <button
+                                className="btn btn-primary btn-sm"
+                                style={{
+                                  background: '#16a34a',
+                                  borderColor: '#16a34a',
+                                  color: '#fff',
+                                  padding: '0.28rem 0.62rem',
+                                  fontSize: '0.76rem',
+                                  fontWeight: 800,
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '3px',
+                                }}
+                                onClick={() => setPublishingQuiz(q)}
+                                title="Publish kuis agar dapat dikerjakan siswa di HP Android"
+                              >
+                                <span>📢</span>
+                                <span>Publish</span>
+                              </button>
+                            )}
                             <button
                               className="pageBtnNav"
-                              style={{ border: '1px solid #cbd5e1', padding: '0.28rem 0.6rem', fontSize: '0.78rem' }}
+                              style={{ border: '1px solid #cbd5e1', padding: '0.28rem 0.55rem', fontSize: '0.76rem' }}
+                              onClick={() => handleOpenScheduleModal(q)}
+                              title="Atur tanggal dan jam pelaksanaan"
+                            >
+                              📅 Jadwal
+                            </button>
+                            <button
+                              className="pageBtnNav"
+                              style={{ border: '1px solid #cbd5e1', padding: '0.28rem 0.55rem', fontSize: '0.76rem' }}
                               onClick={() => handleOpenQuestionsModal(q)}
                             >
                               Butir Soal ({q.totalQuestions})
                             </button>
                             <button
                               className="pageBtnNav"
-                              style={{ border: '1px solid #cbd5e1', padding: '0.28rem 0.6rem', fontSize: '0.78rem' }}
+                              style={{ border: '1px solid #cbd5e1', padding: '0.28rem 0.55rem', fontSize: '0.76rem' }}
                               onClick={() => handleOpenAnalysisModal(q)}
                             >
                               Analisis Nilai
@@ -914,6 +1216,33 @@ export default function QuizzesPage() {
                 <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#047857', marginTop: '2px' }}>{totalCumulativePoints} Poin</div>
               </div>
             </div>
+
+            {viewQuestionsQuiz.status === 'DRAFT' && (
+              <div style={{
+                background: '#eff6ff',
+                border: '1px solid #bfdbfe',
+                borderRadius: '12px',
+                padding: '0.85rem 1.15rem',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '0.75rem'
+              }}>
+                <div style={{ fontSize: '0.82rem', color: '#1e40af' }}>
+                  <strong>📢 Status Ujian: DRAFT.</strong> {questionsList.length > 0 ? `Kuis sudah memiliki ${questionsList.length} butir soal. Klik tombol "Publish Kuis" di samping agar kuis aktif dan dapat dikerjakan siswa di aplikasi Android.` : 'Silakan tambahkan butir soal di bawah terlebih dahulu, lalu klik Publish jika sudah siap.'}
+                </div>
+                {questionsList.length > 0 && (
+                  <button
+                    className="btn btn-primary btn-sm"
+                    style={{ background: '#16a34a', borderColor: '#16a34a', fontWeight: 800, color: '#fff', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
+                    onClick={() => setPublishingQuiz(viewQuestionsQuiz)}
+                  >
+                    <span>📢 Publish Kuis Sekarang</span>
+                  </button>
+                )}
+              </div>
+            )}
 
             {/* Action Bar */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.75rem' }}>
@@ -1466,6 +1795,51 @@ export default function QuizzesPage() {
                 </div>
               </div>
 
+              {/* Jadwal Pelaksanaan Ujian (Tanggal & Jam) */}
+              <div style={{ background: '#f8fafc', padding: '0.85rem', borderRadius: '10px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#1e40af', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <span>📅</span> Jadwal Pelaksanaan Ujian (Tanggal &amp; Waktu)
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, marginBottom: '0.25rem', color: 'var(--text-muted)' }}>
+                    Tanggal Pelaksanaan Ujian:
+                  </label>
+                  <input
+                    type="date"
+                    value={newQuiz.startDate}
+                    onChange={e => setNewQuiz({ ...newQuiz, startDate: e.target.value, endDate: e.target.value })}
+                    className="input"
+                    style={{ width: '100%', fontWeight: 700 }}
+                  />
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, marginBottom: '0.25rem', color: 'var(--text-muted)' }}>
+                      Jam Awal / Mulai (WIB):
+                    </label>
+                    <input
+                      type="time"
+                      value={newQuiz.startTime}
+                      onChange={e => setNewQuiz({ ...newQuiz, startTime: e.target.value })}
+                      className="input"
+                      style={{ width: '100%', fontWeight: 700 }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, marginBottom: '0.25rem', color: 'var(--text-muted)' }}>
+                      Jam Akhir / Selesai (WIB):
+                    </label>
+                    <input
+                      type="time"
+                      value={newQuiz.endTime}
+                      onChange={e => setNewQuiz({ ...newQuiz, endTime: e.target.value })}
+                      className="input"
+                      style={{ width: '100%', fontWeight: 700 }}
+                    />
+                  </div>
+                </div>
+              </div>
+
               <div>
                 <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, marginBottom: '0.35rem', color: 'var(--text-primary)' }}>
                   Deskripsi / Petunjuk Pengerjaan:
@@ -1481,14 +1855,306 @@ export default function QuizzesPage() {
               </div>
 
               <div style={{ background: '#f8fafc', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                ℹ️ Setelah kuis dibuat, Anda dapat langsung menambahkan butir soal pilihan ganda maupun esai melalui menu <strong> Butir Soal</strong> atau dari <strong>Aplikasi Android Guru</strong>.
+                ℹ️ Setelah kuis dibuat, status awal adalah <strong>Draft</strong>. Anda dapat langsung menambahkan butir soal pilihan ganda maupun esai melalui menu <strong>Butir Soal</strong>, lalu klik <strong>Publish</strong> untuk mengaktifkan ke siswa.
               </div>
 
               <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
                 <button type="button" className="btn btn-secondary btn-sm" onClick={() => setShowAddModal(false)}>Batal</button>
-                <button type="submit" className="btn btn-primary btn-sm">Publish Kuis Sekarang</button>
+                <button type="submit" className="btn btn-primary btn-sm">💾 Simpan Kuis Baru (Draft)</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal Atur Jadwal Pelaksanaan CBT ── */}
+      {scheduleQuiz && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.75)',
+          backdropFilter: 'blur(5px)',
+          zIndex: 999999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '1rem',
+        }} onClick={() => !isSavingSchedule && setScheduleQuiz(null)}>
+          <div style={{
+            background: 'var(--bg-card)',
+            borderRadius: '16px',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            width: '100%',
+            maxWidth: '520px',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            border: '1px solid var(--border-light)',
+          }} onClick={e => e.stopPropagation()}>
+            <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid var(--border-light)', background: 'var(--bg-elevated)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <h2 style={{ margin: 0, fontSize: '1.08rem', fontWeight: 800, color: 'var(--text-primary)' }}>📅 Atur Jadwal Pelaksanaan CBT</h2>
+                <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>Tentukan tanggal, jam awal, dan jam akhir ujian</div>
+              </div>
+              <button onClick={() => !isSavingSchedule && setScheduleQuiz(null)} style={{ background: 'none', border: 'none', fontSize: '1.25rem', cursor: 'pointer', color: 'var(--text-muted)' }}>✕</button>
+            </div>
+
+            <form onSubmit={handleSaveSchedule} style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+              <div style={{ background: '#f8fafc', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.82rem' }}>
+                <strong style={{ color: 'var(--text-primary)' }}>{scheduleQuiz.title}</strong>
+                <div style={{ fontSize: '0.74rem', color: '#64748b', marginTop: '2px' }}>
+                  {scheduleQuiz.subject} • Rombel: {scheduleQuiz.classRoom} • Guru: {scheduleQuiz.teacherName}
+                </div>
+              </div>
+
+              {/* Tanggal Pelaksanaan */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, marginBottom: '0.35rem', color: 'var(--text-primary)' }}>
+                  Tanggal Pelaksanaan Ujian (Tanggal / Bulan / Tahun): <span style={{ color: '#ef4444' }}>*</span>
+                </label>
+                <input
+                  type="date"
+                  required
+                  value={scheduleForm.startDate}
+                  onChange={e => setScheduleForm({ ...scheduleForm, startDate: e.target.value, endDate: e.target.value })}
+                  className="input"
+                  style={{ width: '100%', fontWeight: 700 }}
+                />
+              </div>
+
+              {/* Jam Mulai & Jam Selesai */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, marginBottom: '0.35rem', color: 'var(--text-primary)' }}>
+                    Jam Awal / Mulai (WIB): <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <input
+                    type="time"
+                    required
+                    value={scheduleForm.startTime}
+                    onChange={e => setScheduleForm({ ...scheduleForm, startTime: e.target.value })}
+                    className="input"
+                    style={{ width: '100%', fontWeight: 700 }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, marginBottom: '0.35rem', color: 'var(--text-primary)' }}>
+                    Jam Akhir / Selesai (WIB): <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <input
+                    type="time"
+                    required
+                    value={scheduleForm.endTime}
+                    onChange={e => setScheduleForm({ ...scheduleForm, endTime: e.target.value })}
+                    className="input"
+                    style={{ width: '100%', fontWeight: 700 }}
+                  />
+                </div>
+              </div>
+
+              {/* Durasi Pengerjaan */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, marginBottom: '0.35rem', color: 'var(--text-primary)' }}>
+                  Durasi Pengerjaan Siswa (Menit):
+                </label>
+                <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                  {[30, 45, 60, 90, 120].map(mins => (
+                    <button
+                      key={mins}
+                      type="button"
+                      onClick={() => setScheduleForm({ ...scheduleForm, durationMinutes: mins })}
+                      style={{
+                        padding: '0.3rem 0.65rem',
+                        borderRadius: '6px',
+                        border: scheduleForm.durationMinutes === mins ? '2px solid #2563eb' : '1px solid #cbd5e1',
+                        background: scheduleForm.durationMinutes === mins ? '#eff6ff' : '#fff',
+                        color: scheduleForm.durationMinutes === mins ? '#1d4ed8' : '#334155',
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {mins} Mnt
+                    </button>
+                  ))}
+                  <input
+                    type="number"
+                    min={5}
+                    max={300}
+                    value={scheduleForm.durationMinutes}
+                    onChange={e => setScheduleForm({ ...scheduleForm, durationMinutes: Number(e.target.value) })}
+                    className="input"
+                    style={{ width: '75px', padding: '0.3rem 0.5rem', fontSize: '0.75rem' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ background: '#f8fafc', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                ℹ️ Jadwal tanggal dan jam ini akan ditampilkan di portal CBT guru dan aplikasi Android siswa.
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => setScheduleQuiz(null)}
+                  disabled={isSavingSchedule}
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary btn-sm"
+                  disabled={isSavingSchedule}
+                >
+                  {isSavingSchedule ? 'Menyimpan...' : '💾 Simpan Jadwal'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal Publish Ujian Online CBT ── */}
+      {publishingQuiz && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.75)',
+          backdropFilter: 'blur(5px)',
+          zIndex: 999999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '1rem',
+        }} onClick={() => !isPublishing && setPublishingQuiz(null)}>
+          <div style={{
+            background: 'var(--bg-card)',
+            borderRadius: '16px',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            width: '100%',
+            maxWidth: '520px',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            border: '1px solid var(--border-light)',
+          }} onClick={e => e.stopPropagation()}>
+            <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid var(--border-light)', background: 'var(--bg-elevated)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <h2 style={{ margin: 0, fontSize: '1.08rem', fontWeight: 800, color: 'var(--text-primary)' }}>📢 Publish Ujian Online (CBT)</h2>
+                <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>Menerbitkan kuis ke aplikasi Android siswa</div>
+              </div>
+              <button onClick={() => !isPublishing && setPublishingQuiz(null)} style={{ background: 'none', border: 'none', fontSize: '1.25rem', cursor: 'pointer', color: 'var(--text-muted)' }}>✕</button>
+            </div>
+
+            <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {/* Quiz details summary */}
+              <div style={{ background: '#f8fafc', padding: '0.85rem 1rem', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+                <div style={{ fontWeight: 800, fontSize: '0.95rem', color: '#0f172a' }}>{publishingQuiz.title}</div>
+                <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '2px' }}>
+                  {publishingQuiz.subject} • Rombel: {publishingQuiz.classRoom} • Guru: {publishingQuiz.teacherName}
+                </div>
+                <div style={{ display: 'flex', gap: '0.5rem', marginTop: '8px', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '0.72rem', fontWeight: 700, padding: '2px 8px', borderRadius: '6px', background: '#e0f2fe', color: '#0369a1' }}>
+                    ⏱️ Durasi: {publishingQuiz.duration}
+                  </span>
+                  <span style={{ fontSize: '0.72rem', fontWeight: 700, padding: '2px 8px', borderRadius: '6px', background: publishingQuiz.totalQuestions > 0 ? '#dcfce7' : '#fee2e2', color: publishingQuiz.totalQuestions > 0 ? '#15803d' : '#b91c1c' }}>
+                    📝 {publishingQuiz.totalQuestions} Butir Soal
+                  </span>
+                  {publishingQuiz.startAt ? (
+                    <span style={{ fontSize: '0.72rem', fontWeight: 700, padding: '2px 8px', borderRadius: '6px', background: '#f3e8ff', color: '#7e22ce' }}>
+                      📅 {formatScheduleIndo(publishingQuiz.startAt, publishingQuiz.endAt)?.dateStr} ({formatScheduleIndo(publishingQuiz.startAt, publishingQuiz.endAt)?.timeStr})
+                    </span>
+                  ) : (
+                    <span style={{ fontSize: '0.72rem', fontWeight: 700, padding: '2px 8px', borderRadius: '6px', background: '#fef3c7', color: '#b45309' }}>
+                      ⚠️ Belum ada jadwal waktu
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Validation or Ready */}
+              {publishingQuiz.totalQuestions === 0 ? (
+                <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '10px', padding: '1rem', color: '#991b1b', fontSize: '0.82rem', lineHeight: 1.5 }}>
+                  <div style={{ fontWeight: 800, marginBottom: '4px' }}>⚠️ Kuis Masih Kosong (0 Soal)</div>
+                  Kuis ini belum memiliki butir soal. Sistem CBT mewajibkan minimal 1 butir soal sebelum kuis dapat dipublish agar siswa tidak mengerjakan ujian kosong.
+                  <div style={{ marginTop: '0.75rem' }}>
+                    <button
+                      type="button"
+                      className="btn btn-primary btn-sm"
+                      onClick={() => {
+                        const target = publishingQuiz;
+                        setPublishingQuiz(null);
+                        handleOpenQuestionsModal(target);
+                      }}
+                    >
+                      + Tambah Butir Soal Sekarang
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '10px', padding: '0.85rem 1rem', color: '#166534', fontSize: '0.82rem', lineHeight: 1.5 }}>
+                    <div style={{ fontWeight: 800, marginBottom: '2px' }}>✓ Kuis Siap Dipublish!</div>
+                    Semua <strong>{publishingQuiz.totalQuestions} butir soal</strong> sudah siap. Setelah dipublish:
+                    <ul style={{ margin: '4px 0 0 1rem', padding: 0 }}>
+                      <li>Status ujian berubah menjadi <strong>Active / Published</strong>.</li>
+                      <li>Notifikasi otomatis terkirim ke portal &amp; HP siswa kelas <strong>{publishingQuiz.classRoom}</strong>.</li>
+                      <li>Siswa dapat langsung mengerjakan ujian CBT sesuai jadwal yang ditentukan.</li>
+                    </ul>
+                  </div>
+
+                  {!publishingQuiz.startAt && (
+                    <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '10px', padding: '0.75rem 1rem', fontSize: '0.78rem', color: '#92400e' }}>
+                      💡 <strong>Tips:</strong> Anda belum mengatur tanggal &amp; jam ujian. Anda dapat tetap mempublishnya sekarang atau klik tombol <strong>Atur Jadwal</strong> di bawah.
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => setPublishingQuiz(null)}
+                  disabled={isPublishing}
+                >
+                  Batal
+                </button>
+                {!publishingQuiz.startAt && publishingQuiz.totalQuestions > 0 && (
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-sm"
+                    onClick={() => {
+                      const target = publishingQuiz;
+                      setPublishingQuiz(null);
+                      handleOpenScheduleModal(target);
+                    }}
+                    disabled={isPublishing}
+                  >
+                    📅 Atur Jadwal Dulu
+                  </button>
+                )}
+                {publishingQuiz.totalQuestions > 0 && (
+                  <button
+                    type="button"
+                    className="btn btn-primary btn-sm"
+                    style={{ background: '#16a34a', borderColor: '#16a34a', fontWeight: 800 }}
+                    onClick={() => handlePublishQuiz(publishingQuiz)}
+                    disabled={isPublishing}
+                  >
+                    {isPublishing ? 'Mempublish...' : '📢 Ya, Publish Kuis Sekarang'}
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}
