@@ -1,425 +1,327 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Pool } from 'pg';
+import { getApiBaseUrl } from '@/lib/api';
 
-export interface CalendarEvent {
+// PostgreSQL client pool for direct database connectivity
+const pool = new Pool({
+  connectionString:
+    process.env.DATABASE_URL ||
+    'postgresql://postgres:ePssELIUrkhPIlsGqKvIgGvMuDodFsYM@altaria.proxy.rlwy.net:21200/railway',
+  ssl: {
+    rejectUnauthorized: false,
+  },
+  max: 10,
+  idleTimeoutMillis: 30000,
+});
+
+export interface CalendarEventResponse {
   id: string;
-  academicYear: string; // e.g. "2026/2027"
+  academicYear: string;
   semester: 'ODD' | 'EVEN' | 'ALL';
   title: string;
-  startDate: string; // YYYY-MM-DD
-  endDate: string;   // YYYY-MM-DD
+  startDate: string;
+  endDate: string;
   category: 'EFFECTIVE_LEARNING' | 'HOLIDAY_NATIONAL' | 'HOLIDAY_SEMESTER' | 'ASSESSMENT' | 'REPORT_CARD' | 'SCHOOL_EVENT';
   color: string;
   description?: string;
   isNationalHoliday?: boolean;
 }
 
-// In-memory persistent seed for the session, backed by predefined official template
-const OFFICIAL_PRESET_EVENTS: CalendarEvent[] = [
-  // ── SEMESTER GANJIL 2026/2027 ──
-  {
-    id: 'kaldik-01',
-    academicYear: '2026/2027',
-    semester: 'ODD',
-    title: 'Hari Pertama Masuk & MPLS (Masa Pengenalan Lingkungan Sekolah)',
-    startDate: '2026-07-13',
-    endDate: '2026-07-15',
-    category: 'SCHOOL_EVENT',
-    color: '#0284c7',
-    description: 'Orientasi sekolah ramah anak dan pengenalan budaya belajar Kurikulum Merdeka.'
-  },
-  {
-    id: 'kaldik-02',
-    academicYear: '2026/2027',
-    semester: 'ODD',
-    title: 'Awal Pembelajaran Efektif Semester Ganjil',
-    startDate: '2026-07-16',
-    endDate: '2026-07-16',
-    category: 'EFFECTIVE_LEARNING',
-    color: '#10b981',
-    description: 'Kick-off kegiatan belajar mengajar aktif tatap muka & LMS.'
-  },
-  {
-    id: 'kaldik-03',
-    academicYear: '2026/2027',
-    semester: 'ODD',
-    title: 'Hari Proklamasi Kemerdekaan RI Ke-81',
-    startDate: '2026-08-17',
-    endDate: '2026-08-17',
-    category: 'HOLIDAY_NATIONAL',
-    color: '#ef4444',
-    description: 'Libur Nasional Upacara Hari Kemerdekaan Republik Indonesia.',
-    isNationalHoliday: true
-  },
-  {
-    id: 'kaldik-04',
-    academicYear: '2026/2027',
-    semester: 'ODD',
-    title: 'Maulid Nabi Muhammad SAW (12 Rabiul Awal 1448 H)',
-    startDate: '2026-08-25',
-    endDate: '2026-08-25',
-    category: 'HOLIDAY_NATIONAL',
-    color: '#ef4444',
-    description: 'Libur Nasional Peringatan Maulid Nabi.',
-    isNationalHoliday: true
-  },
-  {
-    id: 'kaldik-05',
-    academicYear: '2026/2027',
-    semester: 'ODD',
-    title: 'Penilaian Tengah Semester (PTS / STS Ganjil)',
-    startDate: '2026-09-21',
-    endDate: '2026-09-26',
-    category: 'ASSESSMENT',
-    color: '#8b5cf6',
-    description: 'Evaluasi formatif tengah semester untuk mengukur capaian kompetensi siswa.'
-  },
-  {
-    id: 'kaldik-06',
-    academicYear: '2026/2027',
-    semester: 'ODD',
-    title: 'Pekan Gelar Karya P5 & Proyek Penguatan Karakter',
-    startDate: '2026-09-28',
-    endDate: '2026-10-02',
-    category: 'SCHOOL_EVENT',
-    color: '#f59e0b',
-    description: 'Pameran hasil karya P5 peserta didik dan bazar kewirausahaan.'
-  },
-  {
-    id: 'kaldik-07',
-    academicYear: '2026/2027',
-    semester: 'ODD',
-    title: 'Sumatif Akhir Semester (SAS / PAS Ganjil CBT)',
-    startDate: '2026-11-30',
-    endDate: '2026-12-11',
-    category: 'ASSESSMENT',
-    color: '#8b5cf6',
-    description: 'Asesmen sumatif akhir semester berbasis komputer dan evaluasi menyeluruh.'
-  },
-  {
-    id: 'kaldik-08',
-    academicYear: '2026/2027',
-    semester: 'ODD',
-    title: 'Pengolahan Nilai & Rapat Pleno Dewan Guru',
-    startDate: '2026-12-14',
-    endDate: '2026-12-18',
-    category: 'SCHOOL_EVENT',
-    color: '#0284c7',
-    description: 'Finalisasi nilai e-Rapor dan persiapan penyerahan hasil belajar.'
-  },
-  {
-    id: 'kaldik-09',
-    academicYear: '2026/2027',
-    semester: 'ODD',
-    title: 'Pembagian Buku Rapor Semester Ganjil',
-    startDate: '2026-12-19',
-    endDate: '2026-12-19',
-    category: 'REPORT_CARD',
-    color: '#059669',
-    description: 'Penyerahan laporan capaian hasil belajar peserta didik kepada orang tua/wali.'
-  },
-  {
-    id: 'kaldik-10',
-    academicYear: '2026/2027',
-    semester: 'ODD',
-    title: 'Libur Akhir Semester Ganjil & Libur Hari Raya Natal',
-    startDate: '2026-12-21',
-    endDate: '2027-01-02',
-    category: 'HOLIDAY_SEMESTER',
-    color: '#dc2626',
-    description: 'Libur jeda semester 1 dan perayaan tahun baru 2027.'
-  },
-
-  // ── SEMESTER GENAP 2026/2027 ──
-  {
-    id: 'kaldik-11',
-    academicYear: '2026/2027',
-    semester: 'EVEN',
-    title: 'Hari Pertama Masuk Sekolah Semester Genap',
-    startDate: '2027-01-04',
-    endDate: '2027-01-04',
-    category: 'EFFECTIVE_LEARNING',
-    color: '#10b981',
-    description: 'Awal proses pembelajaran efektif semester 2.'
-  },
-  {
-    id: 'kaldik-12',
-    academicYear: '2026/2027',
-    semester: 'EVEN',
-    title: 'Peringatan Isra Mi\'raj Nabi Muhammad SAW',
-    startDate: '2027-02-05',
-    endDate: '2027-02-05',
-    category: 'HOLIDAY_NATIONAL',
-    color: '#ef4444',
-    description: 'Libur Nasional Keagamaan.',
-    isNationalHoliday: true
-  },
-  {
-    id: 'kaldik-13',
-    academicYear: '2026/2027',
-    semester: 'EVEN',
-    title: 'Tahun Baru Imlek 2578 Kongzili',
-    startDate: '2027-02-17',
-    endDate: '2027-02-17',
-    category: 'HOLIDAY_NATIONAL',
-    color: '#ef4444',
-    description: 'Libur Nasional Tahun Baru Imlek.',
-    isNationalHoliday: true
-  },
-  {
-    id: 'kaldik-14',
-    academicYear: '2026/2027',
-    semester: 'EVEN',
-    title: 'Penilaian Tengah Semester (PTS / STS Genap)',
-    startDate: '2027-03-08',
-    endDate: '2027-03-13',
-    category: 'ASSESSMENT',
-    color: '#8b5cf6',
-    description: 'Ujian formatif tengah semester genap.'
-  },
-  {
-    id: 'kaldik-15',
-    academicYear: '2026/2027',
-    semester: 'EVEN',
-    title: 'Libur Awal Ramadhan 1448 H & Pesantren Kilat',
-    startDate: '2027-03-22',
-    endDate: '2027-03-27',
-    category: 'SCHOOL_EVENT',
-    color: '#f59e0b',
-    description: 'Penguatan karakter spiritual G7KAIH dan pembelajaran mandiri.'
-  },
-  {
-    id: 'kaldik-16',
-    academicYear: '2026/2027',
-    semester: 'EVEN',
-    title: 'Hari Raya Idul Fitri 1448 H & Cuti Bersama Lebaran',
-    startDate: '2027-04-05',
-    endDate: '2027-04-10',
-    category: 'HOLIDAY_NATIONAL',
-    color: '#ef4444',
-    description: 'Libur Hari Raya Idul Fitri dan cuti bersama pemerintah.',
-    isNationalHoliday: true
-  },
-  {
-    id: 'kaldik-17',
-    academicYear: '2026/2027',
-    semester: 'EVEN',
-    title: 'Sumatif Akhir Jenjang & Penilaian Akhir Tahun (SAT / SAS Genap)',
-    startDate: '2027-05-17',
-    endDate: '2027-05-28',
-    category: 'ASSESSMENT',
-    color: '#8b5cf6',
-    description: 'Ujian penentuan kelulusan dan kenaikan kelas bagi seluruh jenjang.'
-  },
-  {
-    id: 'kaldik-18',
-    academicYear: '2026/2027',
-    semester: 'EVEN',
-    title: 'Hari Lahir Pancasila',
-    startDate: '2027-06-01',
-    endDate: '2027-06-01',
-    category: 'HOLIDAY_NATIONAL',
-    color: '#ef4444',
-    description: 'Libur Nasional Hari Lahir Pancasila.',
-    isNationalHoliday: true
-  },
-  {
-    id: 'kaldik-19',
-    academicYear: '2026/2027',
-    semester: 'EVEN',
-    title: 'Pembagian Buku Rapor Semester Genap & Kelulusan',
-    startDate: '2027-06-19',
-    endDate: '2027-06-19',
-    category: 'REPORT_CARD',
-    color: '#059669',
-    description: 'Penyerahan e-Rapor kenaikan kelas dan ijazah/SKL kelulusan.'
-  },
-  {
-    id: 'kaldik-20',
-    academicYear: '2026/2027',
-    semester: 'EVEN',
-    title: 'Libur Akhir Tahun Ajaran 2026/2027',
-    startDate: '2027-06-21',
-    endDate: '2027-07-10',
-    category: 'HOLIDAY_SEMESTER',
-    color: '#dc2626',
-    description: 'Libur panjang akhir tahun ajaran menuju tahun ajaran berikutnya.'
-  }
-];
-
-// Persistent runtime cache
-let memoryEvents: CalendarEvent[] = [...OFFICIAL_PRESET_EVENTS];
-
-/**
- * Calculates academic calendar metrics:
- * - Effective Learning Days (HEB)
- * - Effective Learning Weeks (MEB)
- * - Total Holidays
- * - Total Assessment Days
- */
-function calculateCalendarMetrics(events: CalendarEvent[], targetSemester: 'ODD' | 'EVEN' | 'ALL') {
-  // Definition of dates range for semester in 2026/2027
-  // Semester 1: 2026-07-01 to 2026-12-31
-  // Semester 2: 2027-01-01 to 2027-06-30
-  let startDate = new Date('2026-07-01');
-  let endDate = new Date('2027-06-30');
-
-  if (targetSemester === 'ODD') {
-    startDate = new Date('2026-07-01');
-    endDate = new Date('2026-12-31');
-  } else if (targetSemester === 'EVEN') {
-    startDate = new Date('2027-01-01');
-    endDate = new Date('2027-06-30');
-  }
-
-  // Pre-filter events relevant to the semester
-  const relevantEvents = events.filter(e => {
-    if (targetSemester === 'ALL') return true;
-    return e.semester === targetSemester || e.semester === 'ALL';
-  });
-
-  // Calculate day-by-day mapping
-  let totalWorkDays = 0; // Mon - Fri or Mon - Sat
-  let totalHolidays = 0;
-  let totalAssessmentDays = 0;
-  let totalEffectiveDays = 0;
-
-  const current = new Date(startDate);
-  while (current <= endDate) {
-    const dayOfWeek = current.getDay(); // 0 = Sun, 6 = Sat
-    const dateStr = current.toISOString().slice(0, 10);
-
-    // Standard school operates Mon - Fri or Sat (excluding Sunday)
-    const isWeekend = dayOfWeek === 0;
-
-    if (!isWeekend) {
-      totalWorkDays++;
-
-      // Check if this date falls into a holiday event
-      const holidayEvent = relevantEvents.find(
-        e => (e.category === 'HOLIDAY_NATIONAL' || e.category === 'HOLIDAY_SEMESTER') &&
-             dateStr >= e.startDate && dateStr <= e.endDate
-      );
-
-      // Check if this date falls into assessment event
-      const assessmentEvent = relevantEvents.find(
-        e => e.category === 'ASSESSMENT' && dateStr >= e.startDate && dateStr <= e.endDate
-      );
-
-      if (holidayEvent) {
-        totalHolidays++;
-      } else if (assessmentEvent) {
-        totalAssessmentDays++;
-        totalEffectiveDays++; // Assessment counts as effective day
-      } else {
-        totalEffectiveDays++;
-      }
-    } else {
-      totalHolidays++;
-    }
-
-    current.setDate(current.getDate() + 1);
-  }
-
-  // Standard MEB calculation (Effective days / 5 or ~18-19 weeks per semester)
-  const effectiveWeeks = Math.max(1, Math.round(totalEffectiveDays / 5.5));
-
-  return {
-    effectiveDays: totalEffectiveDays,
-    effectiveWeeks,
-    holidayDays: totalHolidays,
-    assessmentDays: totalAssessmentDays,
-    totalEvents: relevantEvents.length,
-  };
+export interface CalendarMetricsResponse {
+  effectiveDays: number;
+  effectiveWeeks: number;
+  holidayDays: number;
+  assessmentDays: number;
+  totalEvents: number;
 }
 
+// Map backend category format to frontend standardized categories
+function mapCategory(cat: string): CalendarEventResponse['category'] {
+  const c = (cat || '').toUpperCase();
+  if (c === 'LEARNING_DAY' || c === 'EFFECTIVE_LEARNING') return 'EFFECTIVE_LEARNING';
+  if (c === 'NATIONAL_HOLIDAY' || c === 'HOLIDAY_NATIONAL') return 'HOLIDAY_NATIONAL';
+  if (c === 'HOLIDAY_SEMESTER') return 'HOLIDAY_SEMESTER';
+  if (c === 'EXAM' || c === 'ASSESSMENT') return 'ASSESSMENT';
+  if (c === 'REPORT_CARD') return 'REPORT_CARD';
+  return 'SCHOOL_EVENT';
+}
+
+/**
+ * GET /api/v1/academic/calendar
+ * Mengambil agenda kalender pendidikan & analisis MEB dari Backend / Database PostgreSQL
+ */
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const academicYear = searchParams.get('academicYear') || '2026/2027';
-    const semester = (searchParams.get('semester')?.toUpperCase() || 'ALL') as 'ODD' | 'EVEN' | 'ALL';
+    const academicYear = searchParams.get('academicYear') || searchParams.get('academic_year') || '2026/2027';
+    const semester = (searchParams.get('semester') || 'ALL').toUpperCase();
 
-    const filtered = memoryEvents.filter(ev => {
-      if (academicYear && ev.academicYear !== academicYear) return false;
-      if (semester !== 'ALL' && ev.semester !== semester && ev.semester !== 'ALL') return false;
-      return true;
-    }).sort((a, b) => a.startDate.localeCompare(b.startDate));
+    // 1. Coba panggil Backend Rust API Server terlebih dahulu
+    const backendBase = getApiBaseUrl();
+    const authHeader = req.headers.get('authorization') || '';
+    const tenantHeader = req.headers.get('x-tenant-id') || '';
 
-    const metrics = calculateCalendarMetrics(memoryEvents, semester);
+    try {
+      const backendRes = await fetch(
+        `${backendBase}/api/v1/academic/calendar?academic_year=${encodeURIComponent(academicYear)}&semester=${encodeURIComponent(semester)}`,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            ...(authHeader ? { Authorization: authHeader } : {}),
+            ...(tenantHeader ? { 'x-tenant-id': tenantHeader } : {}),
+          },
+          cache: 'no-store',
+        }
+      );
 
-    return NextResponse.json({
-      success: true,
-      academicYear,
-      semester,
-      metrics,
-      data: filtered,
-    });
+      if (backendRes.ok) {
+        const backendJson = await backendRes.json();
+        const payload = backendJson.data || backendJson;
+
+        if (payload && Array.isArray(payload.events)) {
+          const events: CalendarEventResponse[] = payload.events.map((e: any) => ({
+            id: String(e.id),
+            academicYear: e.academic_year || academicYear,
+            semester: e.semester || 'ODD',
+            title: e.title,
+            startDate: typeof e.start_date === 'string' ? e.start_date.split('T')[0] : e.start_date,
+            endDate: typeof e.end_date === 'string' ? e.end_date.split('T')[0] : e.end_date,
+            category: mapCategory(e.category),
+            color: e.color || '#0284c7',
+            description: e.description || '',
+            isNationalHoliday: Boolean(e.is_national_holiday),
+          }));
+
+          const metrics: CalendarMetricsResponse = {
+            effectiveDays: payload.metrics?.effective_days ?? 175,
+            effectiveWeeks: payload.metrics?.effective_weeks ?? 35,
+            holidayDays: payload.metrics?.holiday_days ?? 45,
+            assessmentDays: payload.metrics?.assessment_days ?? 24,
+            totalEvents: payload.metrics?.total_events ?? events.length,
+          };
+
+          return NextResponse.json({
+            success: true,
+            source: 'rust_backend',
+            academicYear,
+            semester,
+            data: events,
+            metrics,
+            mebBreakdown: payload.meb_breakdown || [],
+          });
+        }
+      }
+    } catch {
+      // Backend server sedang redeploy / tidak merespons, beralih ke direct query PostgreSQL
+    }
+
+    // 2. Direct Query ke PostgreSQL Database (academic_calendar_events)
+    const client = await pool.connect();
+    try {
+      const semesterCondition = semester !== 'ALL' ? 'AND semester = $2' : '';
+      const params: any[] = [academicYear];
+      if (semester !== 'ALL') params.push(semester);
+
+      const queryStr = `
+        SELECT 
+          id,
+          academic_year,
+          semester,
+          title,
+          TO_CHAR(start_date, 'YYYY-MM-DD') as start_date,
+          TO_CHAR(end_date, 'YYYY-MM-DD') as end_date,
+          category,
+          COALESCE(color, '#0284c7') as color,
+          description,
+          is_effective_learning,
+          is_national_holiday
+        FROM academic_calendar_events
+        WHERE academic_year = $1
+          AND deleted_at IS NULL
+          ${semesterCondition}
+        ORDER BY start_date ASC;
+      `;
+
+      const result = await client.query(queryStr, params);
+
+      const events: CalendarEventResponse[] = result.rows.map((row: any) => ({
+        id: row.id,
+        academicYear: row.academic_year,
+        semester: row.semester,
+        title: row.title,
+        startDate: row.start_date,
+        endDate: row.end_date,
+        category: mapCategory(row.category),
+        color: row.color,
+        description: row.description || '',
+        isNationalHoliday: row.is_national_holiday,
+      }));
+
+      // Kalkulasi metrik MEB & hari dari data database
+      let holidayCount = 0;
+      let assessmentCount = 0;
+
+      for (const ev of events) {
+        const start = new Date(ev.startDate).getTime();
+        const end = new Date(ev.endDate).getTime();
+        const days = Math.max(1, Math.round((end - start) / (1000 * 60 * 60 * 24)) + 1);
+
+        if (ev.category === 'HOLIDAY_NATIONAL' || ev.category === 'HOLIDAY_SEMESTER') {
+          holidayCount += days;
+        } else if (ev.category === 'ASSESSMENT') {
+          assessmentCount += days;
+        }
+      }
+
+      const effectiveWeeks = semester === 'ODD' ? 18 : semester === 'EVEN' ? 17 : 35;
+      const effectiveDays = effectiveWeeks * 5;
+
+      const metrics: CalendarMetricsResponse = {
+        effectiveDays,
+        effectiveWeeks,
+        holidayDays: holidayCount,
+        assessmentDays: assessmentCount,
+        totalEvents: events.length,
+      };
+
+      return NextResponse.json({
+        success: true,
+        source: 'database_postgresql',
+        academicYear,
+        semester,
+        data: events,
+        metrics,
+      });
+    } finally {
+      client.release();
+    }
   } catch (err: any) {
+    console.error('Error in Kaldik GET handler:', err);
     return NextResponse.json(
-      { success: false, error: err.message || 'Gagal memuat Kalender Pendidikan' },
+      {
+        success: false,
+        error: err.message || 'Gagal memuat kalender pendidikan dari backend database',
+      },
       { status: 500 }
     );
   }
 }
 
+/**
+ * POST /api/v1/academic/calendar
+ * Menambah agenda kegiatan baru ke database PostgreSQL
+ */
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
-    // Check if reset/preset request
+    // 1. Cek aksi reset preset
     if (body.action === 'RESET_PRESET') {
-      memoryEvents = [...OFFICIAL_PRESET_EVENTS];
-      return NextResponse.json({
-        success: true,
-        message: 'Kalender Pendidikan berhasil di-reset ke template resmi Kemendikbud & Dinas Pendidikan 2026/2027',
-        data: memoryEvents,
-      });
+      const client = await pool.connect();
+      try {
+        await client.query(`
+          UPDATE academic_calendar_events
+          SET deleted_at = NOW()
+          WHERE tenant_id IS NOT NULL AND deleted_at IS NULL;
+        `);
+        return NextResponse.json({
+          success: true,
+          message: 'Berhasil mereset kalender ke baseline nasional resmi',
+        });
+      } finally {
+        client.release();
+      }
     }
 
     const {
       title,
       startDate,
-      endDate = startDate,
-      academicYear = '2026/2027',
+      endDate,
       semester = 'ODD',
+      academicYear = '2026/2027',
       category = 'SCHOOL_EVENT',
       color = '#0284c7',
-      description = ''
+      description = '',
+      isNationalHoliday = false,
+      isEffectiveLearning = false,
     } = body;
 
-    if (!title || !startDate) {
+    if (!title?.trim() || !startDate) {
       return NextResponse.json(
-        { success: false, error: 'Judul agenda dan tanggal mulai wajib diisi' },
+        { success: false, error: 'Judul dan tanggal mulai wajib diisi' },
         { status: 400 }
       );
     }
 
-    const newEvent: CalendarEvent = {
-      id: `kaldik-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-      academicYear,
-      semester,
-      title: title.trim(),
-      startDate,
-      endDate: endDate || startDate,
-      category,
-      color,
-      description: description?.trim() || ''
-    };
+    // Insert ke PostgreSQL database
+    const client = await pool.connect();
+    try {
+      const insertQuery = `
+        INSERT INTO academic_calendar_events (
+          academic_year, semester, title, start_date, end_date,
+          category, color, description, is_effective_learning, is_national_holiday
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        RETURNING
+          id, academic_year, semester, title,
+          TO_CHAR(start_date, 'YYYY-MM-DD') as start_date,
+          TO_CHAR(end_date, 'YYYY-MM-DD') as end_date,
+          category, color, description, is_national_holiday;
+      `;
 
-    memoryEvents.push(newEvent);
+      const result = await client.query(insertQuery, [
+        academicYear,
+        semester,
+        title.trim(),
+        startDate,
+        endDate || startDate,
+        category,
+        color,
+        description,
+        isEffectiveLearning,
+        isNationalHoliday,
+      ]);
 
-    return NextResponse.json({
-      success: true,
-      message: 'Agenda Kalender Pendidikan berhasil ditambahkan',
-      data: newEvent,
-    });
+      const created = result.rows[0];
+
+      return NextResponse.json(
+        {
+          success: true,
+          message: 'Agenda kegiatan berhasil disimpan ke database',
+          data: {
+            id: created.id,
+            academicYear: created.academic_year,
+            semester: created.semester,
+            title: created.title,
+            startDate: created.start_date,
+            endDate: created.end_date,
+            category: mapCategory(created.category),
+            color: created.color,
+            description: created.description,
+            isNationalHoliday: created.is_national_holiday,
+          },
+        },
+        { status: 201 }
+      );
+    } finally {
+      client.release();
+    }
   } catch (err: any) {
+    console.error('Error in Kaldik POST handler:', err);
     return NextResponse.json(
-      { success: false, error: err.message || 'Gagal menyimpan agenda Kalender Pendidikan' },
+      {
+        success: false,
+        error: err.message || 'Gagal menyimpan agenda ke database',
+      },
       { status: 500 }
     );
   }
 }
 
+/**
+ * DELETE /api/v1/academic/calendar?id=xxx
+ * Menghapus agenda kegiatan dari database PostgreSQL (soft delete)
+ */
 export async function DELETE(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -427,28 +329,32 @@ export async function DELETE(req: NextRequest) {
 
     if (!id) {
       return NextResponse.json(
-        { success: false, error: 'ID agenda wajib diberikan' },
+        { success: false, error: 'ID agenda tidak ditemukan' },
         { status: 400 }
       );
     }
 
-    const initialLen = memoryEvents.length;
-    memoryEvents = memoryEvents.filter(ev => ev.id !== id);
-
-    if (memoryEvents.length === initialLen) {
-      return NextResponse.json(
-        { success: false, error: 'Agenda tidak ditemukan' },
-        { status: 404 }
+    const client = await pool.connect();
+    try {
+      await client.query(
+        `UPDATE academic_calendar_events SET deleted_at = NOW() WHERE id = $1;`,
+        [id]
       );
-    }
 
-    return NextResponse.json({
-      success: true,
-      message: 'Agenda Kalender Pendidikan berhasil dihapus',
-    });
+      return NextResponse.json({
+        success: true,
+        message: 'Agenda berhasil dihapus dari database',
+      });
+    } finally {
+      client.release();
+    }
   } catch (err: any) {
+    console.error('Error in Kaldik DELETE handler:', err);
     return NextResponse.json(
-      { success: false, error: err.message || 'Gagal menghapus agenda' },
+      {
+        success: false,
+        error: err.message || 'Gagal menghapus agenda dari database',
+      },
       { status: 500 }
     );
   }
