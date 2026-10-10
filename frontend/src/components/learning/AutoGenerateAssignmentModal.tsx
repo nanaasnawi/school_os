@@ -147,50 +147,24 @@ export function AutoGenerateAssignmentModal({
         body: JSON.stringify(payload),
       });
 
-      // If Next.js route fails, fallback to direct backend NVIDIA NIM endpoint
-      if (!res.ok) {
-        const endpoint = getApiUrl('/api/v1/ai/generate-content');
-        res = await fetch(endpoint, {
+      let json = await res.json().catch(() => null);
+
+      // If initial request failed, automatically retry once after a short delay
+      if (!res.ok || !json?.success) {
+        await new Promise(r => setTimeout(r, 1500));
+        res = await fetch('/api/v1/learning/auto-generate', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
-          body: JSON.stringify({
-            mode: 'ASSIGNMENT',
-            topic: effectiveTopic,
-            grade_level: gradeLevel,
-            subject_name: currentSubjectObj.name,
-          }),
+          body: JSON.stringify(payload),
         });
-
-        if (res.ok) {
-          const directJson = await res.json().catch(() => null);
-          const aiTask = directJson?.data?.assignment;
-          if (aiTask && aiTask.title) {
-            const fallbackResult = {
-              title: aiTask.title,
-              assignment_type: assignmentFormat,
-              instructions: `${cleanRobotText(aiTask.instructions || '')}\n\nRubrik Penilaian Objektif:\n${cleanRobotText(aiTask.rubric || '')}`,
-              questions: (aiTask.tasks || []).map((t: string, idx: number) => ({
-                id: `task-${idx + 1}-${Date.now()}`,
-                question_text: cleanRobotText(t),
-                question_type: 'ESSAY' as const,
-                points: Math.round(100 / Math.max(1, (aiTask.tasks || []).length)),
-                choices: [],
-                explanation: cleanRobotText(aiTask.rubric || 'Rubrik Penilaian Objektif'),
-              })),
-            };
-            setGeneratedResult(fallbackResult);
-            return;
-          }
-        }
+        json = await res.json().catch(() => null);
       }
 
-      const json = await res.json().catch(() => null);
-
       if (!res.ok || !json?.success) {
-        const message = json?.error || (res.status === 404 ? 'Materi belum tersedia untuk mata pelajaran ini.' : `Gagal menghubungi server AI (${res.status}).`);
+        const message = json?.error || (res.status === 404 ? 'Materi belum tersedia untuk mata pelajaran ini.' : `Gagal menghubungi server AI (${res.status}). Silakan coba kembali.`);
         throw new Error(message);
       }
 
@@ -995,7 +969,9 @@ export function AutoGenerateAssignmentModal({
                   Paket Tugas Terstruktur Berhasil Disusun
                 </span>
                 <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                  {generatedResult.assignment_type === 'HOMEWORK_PR' ? 'Tugas Mandiri (PR)' : `${generatedResult.questions?.length || 0} Soal (${numMcq} PG &amp; ${numEssay} Essay)`}
+                  {generatedResult.assignment_type === 'HOMEWORK_PR'
+                    ? 'Tugas Mandiri (PR)'
+                    : `${generatedResult.questions?.length || 0} Soal (${(generatedResult.questions || []).filter((q: any) => q.question_type === 'MULTIPLE_CHOICE').length} PG & ${(generatedResult.questions || []).filter((q: any) => q.question_type === 'ESSAY').length} Essay)`}
                 </span>
               </div>
 

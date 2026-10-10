@@ -144,30 +144,37 @@ export function AutoGenerateQuizModal({
         }),
       });
 
-      // If Next.js proxy fails, call backend NVIDIA NIM endpoint directly
-      if (!res.ok) {
-        const endpoint = getApiUrl('/api/v1/ai/generate-content');
-        res = await fetch(endpoint, {
+      let json = await res.json().catch(() => null);
+
+      // If initial request failed, automatically retry once after a short delay
+      if (!res.ok || !json?.success) {
+        await new Promise(r => setTimeout(r, 1500));
+        res = await fetch('/api/v1/learning/auto-generate', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
           body: JSON.stringify({
-            mode: 'QUIZ',
-            topic: effectiveTopic,
+            type: isMonthly ? 'EXAM_MONTHLY' : (quizFormat === 'MCQ_ONLY' ? 'QUIZ_MCQ_ONLY' : 'QUIZ_MCQ_ESSAY'),
+            format: quizFormat,
+            subject_id: currentSubjectObj.id,
             subject_name: currentSubjectObj.name,
+            topic: effectiveTopic,
             grade_level: gradeLevel,
-            num_questions: effectiveMcqCount,
+            num_questions: effectiveMcqCount + effectiveEssayCount,
+            num_mcq: effectiveMcqCount,
+            num_essay: effectiveEssayCount,
+            include_images: includeImages,
             difficulty: effectiveDiff,
+            source_mode: isMonthly ? 'PAST_MONTH' : 'LATEST_PUBLISHED',
           }),
         });
+        json = await res.json().catch(() => null);
       }
 
-      const json = await res.json().catch(() => null);
-
       if (!res.ok || !json?.success) {
-        const message = json?.error || (res.status === 404 ? 'Materi belum tersedia untuk mata pelajaran ini.' : `Gagal menghubungi server AI (${res.status}).`);
+        const message = json?.error || (res.status === 404 ? 'Materi belum tersedia untuk mata pelajaran ini.' : `Gagal menghubungi server AI (${res.status}). Silakan coba kembali.`);
         throw new Error(message);
       }
 
@@ -992,7 +999,7 @@ export function AutoGenerateQuizModal({
               {generatedResult.questions?.length > 0 && (
                 <div style={{ marginBottom: '14px' }}>
                   <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                    Daftar Butir Soal CBT ({generatedResult.questions.length} Soal {quizFormat === 'MCQ_AND_ESSAY' ? `• ${numMcq} PG + ${numEssay} Essay` : '• Pilihan Ganda'}):
+                    Daftar Butir Soal CBT ({generatedResult.questions.length} Soal {quizFormat === 'MCQ_AND_ESSAY' ? `• ${(generatedResult.questions || []).filter((q: any) => q.question_type === 'MULTIPLE_CHOICE').length} PG + ${(generatedResult.questions || []).filter((q: any) => q.question_type === 'ESSAY').length} Essay` : '• Pilihan Ganda'}):
                   </span>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '6px' }}>
                     {generatedResult.questions.map((q: any, idx: number) => (
