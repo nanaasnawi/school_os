@@ -35,6 +35,13 @@ function Icon({ name }: { name: string }) {
         <path d="M14 2v3M6 2v3M2 8.5h16" />
       </svg>
     ),
+    calendar: (
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" width="16" height="16">
+        <rect x="2" y="3.5" width="16" height="14" rx="2" />
+        <path d="M14 2v3M6 2v3M2 8.5h16" />
+        <path d="M6 12h2v2H6zM10 12h2v2h-2zM14 12h2v2h-2z" />
+      </svg>
+    ),
     classes: (
       <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" width="16" height="16">
         <path d="M2 3.5h6a3 3 0 013 3V17a2 2 0 00-2-2H2z" />
@@ -203,6 +210,7 @@ const NAV_SECTIONS = [
     label: 'Akademik',
     items: [
       { label: 'Tahun Ajaran', path: '/dashboard/academic-years', icon: 'years' },
+      { label: 'Kalender Pendidikan', path: '/dashboard/academic-years/calendar', icon: 'calendar' },
       { label: 'Kelas', path: '/dashboard/classes', icon: 'classes' },
       { label: 'Presensi & Kehadiran', path: '/dashboard/attendance', icon: 'attendance' },
       { label: 'Siswa', path: '/dashboard/students', icon: 'students' },
@@ -262,6 +270,7 @@ const TEACHER_NAV_SECTIONS = [
     items: [
       { label: 'Action Center', path: '/dashboard/teacher', icon: 'dashboard' },
       { label: 'Presensi & Kehadiran', path: '/dashboard/attendance', icon: 'attendance' },
+      { label: 'Kalender Pendidikan', path: '/dashboard/academic-years/calendar', icon: 'calendar' },
       { label: 'Kelas Saya', path: '/dashboard/teacher/classes', icon: 'classes' },
     ],
   },

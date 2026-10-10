@@ -127,7 +127,18 @@ export default function AcademicYearsPage() {
           </h1>
           <p className={styles.subtitle}>Sinkronisasi otomatis Periode Semester Aktif dari Server Local Bridge Dapodik Kemendikdasmen</p>
         </div>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+          <Link
+            href="/dashboard/academic-years/calendar"
+            className="btn btn-secondary btn-sm"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', borderColor: 'var(--accent)', color: 'var(--accent)', fontWeight: 700 }}
+          >
+            <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8">
+              <rect x="2" y="3.5" width="16" height="14" rx="2" />
+              <path d="M14 2v3M6 2v3M2 8.5h16" />
+            </svg>
+            Kalender Pendidikan (Kaldik)
+          </Link>
           <button className="btn btn-secondary btn-sm" onClick={handleSyncDapodikCalendar}>
             Sync Dapodik Live
           </button>
@@ -152,6 +163,14 @@ export default function AcademicYearsPage() {
 
       {/* Top Action Row (Enterprise Style - Screenshot Match) */}
       <div className="tableActionRow">
+        <Link href="/dashboard/academic-years/calendar" className="tableActionBtn" style={{ color: 'var(--accent)', fontWeight: 700 }}>
+          <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8">
+            <rect x="2" y="3.5" width="16" height="14" rx="2" />
+            <path d="M14 2v3M6 2v3M2 8.5h16" />
+          </svg>
+          <span>Buka Kaldik (MEB)</span>
+        </Link>
+
         <Link href="/dashboard/academic-years/new" className="tableActionBtn">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <line x1="12" y1="5" x2="12" y2="19" />
