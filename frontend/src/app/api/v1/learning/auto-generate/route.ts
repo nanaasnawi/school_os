@@ -18,7 +18,7 @@ export interface SourceMaterial {
 export type AssignmentGenFormat = 'STRUCTURED_QUESTIONS' | 'HOMEWORK_PR';
 export type QuizGenFormat = 'MCQ_ONLY' | 'MCQ_AND_ESSAY';
 
-const NVIDIA_API_KEY = process.env.NVIDIA_API_KEY || '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';
+const NVIDIA_API_KEY = process.env.NVIDIA_API_KEY || '';
 const NVIDIA_MODEL = process.env.NVIDIA_MODEL || 'nvidia/ising-calibration-1.5-31b';
 const NVIDIA_URL = process.env.NVIDIA_API_URL || 'https://integrate.api.nvidia.com/v1/chat/completions';
 
@@ -91,6 +91,10 @@ export function resolveDiagramUrl(prompt: string): string {
  * Calls NVIDIA NIM API directly with model fallback & 120s timeout
  */
 async function callNvidiaNimDirect(messages: Array<{ role: string; content: string }>, maxTokens = 4200): Promise<string> {
+  if (!NVIDIA_API_KEY) {
+    throw new Error('NVIDIA_API_KEY belum dikonfigurasi di environment server. Pastikan variabel lingkungan NVIDIA_API_KEY telah terpasang dengan benar di server.');
+  }
+
   const modelsToTry = [
     NVIDIA_MODEL, // nvidia/ising-calibration-1.5-31b
     'meta/llama-3.2-11b-vision-instruct',
@@ -204,16 +208,17 @@ export async function POST(req: NextRequest) {
       material_data = null,
     } = body;
 
-    if (!subject_id && !material_data?.subject_id) {
+    const effectiveSubjectId = subject_id || material_data?.subject_id;
+    let subjectName = inputSubjectName?.trim() || material_data?.subject_name?.trim();
+
+    if (!effectiveSubjectId && !subjectName) {
       return NextResponse.json(
-        { success: false, error: 'Mata pelajaran (subject_id) wajib dipilih agar tidak terjadi kebocoran antar mapel.' },
+        { success: false, error: 'Mata pelajaran atau nama mapel wajib diisi agar AI dapat menyusun konten secara presisi.' },
         { status: 400 }
       );
     }
 
-    const effectiveSubjectId = subject_id || material_data?.subject_id;
     let materials: SourceMaterial[] = [];
-    let subjectName = inputSubjectName || material_data?.subject_name;
 
     try {
       const pool = getDbPool();
@@ -228,8 +233,9 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      // 2. Fetch or construct source materials based on source_mode
-      if (source_mode === 'CURRENT_UNSAVED' && material_data) {
+      // 2. Fetch or construct source materials based on source_mode (only if effectiveSubjectId is valid)
+      if (effectiveSubjectId) {
+        if (source_mode === 'CURRENT_UNSAVED' && material_data) {
         materials = [
           {
             id: material_data.id || 'temp-material-id',
@@ -286,7 +292,8 @@ export async function POST(req: NextRequest) {
         const res = await pool.query(query, [effectiveSubjectId]);
         materials = res.rows;
       }
-    } catch (dbErr: any) {
+    }
+  } catch (dbErr: any) {
       console.warn('DB query error in auto-generate, falling back to curriculum standards:', dbErr?.message);
     }
 

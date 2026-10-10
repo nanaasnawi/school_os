@@ -46,7 +46,7 @@ export const AiGeneratorModal: React.FC<AiGeneratorModalProps> = ({
   onClose,
   mode,
   initialTopic = '',
-  initialSubject = 'IPA',
+  initialSubject = '',
   initialGrade = 'Kelas 5 SD',
   onGenerated,
 }) => {
@@ -232,7 +232,7 @@ export const AiGeneratorModal: React.FC<AiGeneratorModalProps> = ({
                   className={styles.input}
                   value={subjectName}
                   onChange={(e) => setSubjectName(e.target.value)}
-                  placeholder="Misal: Matematika, IPA"
+                  placeholder="Ketik mapel (misal: Bahasa Cirebon, PAI, IPA, Sejarah)"
                   disabled={isLoading}
                 />
               </div>

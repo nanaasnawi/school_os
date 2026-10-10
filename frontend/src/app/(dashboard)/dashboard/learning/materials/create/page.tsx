@@ -35,7 +35,6 @@ import {
 import styles from './create.module.css';
 import { AiGeneratorModal, AiGeneratorMode } from '@/features/ai';
 
-const YOUTUBE_API_KEY = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY || '';
 
 interface YouTubeVideoItem {
   id: string;
@@ -411,21 +410,13 @@ export default function CreateMaterialPage() {
 
     setIsSearchingYt(true);
     try {
-      const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&maxResults=10&key=${YOUTUBE_API_KEY}`;
-      const res = await fetch(url);
-      if (!res.ok) {
-        throw new Error('Gagal memuat hasil pencarian YouTube API.');
-      }
+      const res = await fetch(`/api/youtube/search?q=${encodeURIComponent(query)}`);
       const data = await res.json();
-      const items: YouTubeVideoItem[] = (data.items || []).map((item: any) => ({
-        id: item.id?.videoId || '',
-        title: unescapeHtml(item.snippet?.title || ''),
-        description: unescapeHtml(item.snippet?.description || ''),
-        thumbnailUrl: item.snippet?.thumbnails?.medium?.url || item.snippet?.thumbnails?.default?.url || '',
-        channelTitle: unescapeHtml(item.snippet?.channelTitle || ''),
-        publishedAt: item.snippet?.publishedAt || ''
-      })).filter((v: YouTubeVideoItem) => Boolean(v.id));
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Gagal memuat hasil pencarian YouTube API.');
+      }
 
+      const items: YouTubeVideoItem[] = data.items || [];
       setYtSearchResults(items);
       if (items.length === 0) {
         showToast('Tidak ada video yang cocok dengan kata kunci.', 'warning');
@@ -2049,7 +2040,7 @@ export default function CreateMaterialPage() {
         onClose={() => setIsAiModalOpen(false)}
         mode={aiModalMode}
         initialTopic={title}
-        initialSubject={subject || 'IPA'}
+        initialSubject={subject || ''}
         initialGrade={targetGrade || 'Kelas 5 SD'}
         onGenerated={handleAiGenerated}
       />
