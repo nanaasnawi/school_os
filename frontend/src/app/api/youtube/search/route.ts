@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const query = searchParams.get('q')?.trim();
-    const maxResults = Math.min(20, Math.max(1, parseInt(searchParams.get('maxResults') || '10', 10)));
+    const maxResults = Math.min(50, Math.max(1, parseInt(searchParams.get('maxResults') || '30', 10)));
 
     if (!query) {
       return NextResponse.json(

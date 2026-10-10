@@ -410,7 +410,7 @@ export default function CreateMaterialPage() {
 
     setIsSearchingYt(true);
     try {
-      const res = await fetch(`/api/youtube/search?q=${encodeURIComponent(query)}`);
+      const res = await fetch(`/api/youtube/search?q=${encodeURIComponent(query)}&maxResults=30`);
       const data = await res.json();
       if (!res.ok || !data.success) {
         throw new Error(data.error || 'Gagal memuat hasil pencarian YouTube API.');
