@@ -1,11 +1,11 @@
 /* ── Executive Analytics & Decision Workspace ── */
 
 .page {
-  padding: 1.25rem 1.5rem;
+  padding: 1rem 1.25rem 2.5rem;
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
-  max-width: 1600px;
+  gap: 1rem;
+  max-width: 1680px;
   margin: 0 auto;
   animation: fadeIn 0.3s ease;
 }

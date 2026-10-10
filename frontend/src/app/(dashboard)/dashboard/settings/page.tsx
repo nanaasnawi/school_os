@@ -218,20 +218,26 @@ export default function SettingsPage() {
 
   return (
     <div className={styles.page}>
-      {/* Header */}
-      <div className={styles.header}>
-        <div className={styles.headerLeft}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '4px' }}>
-            <h1 className={styles.title} style={{ margin: 0 }}>Pengaturan Identitas &amp; Instansi Sekolah</h1>
+      {/* ── Workstation Hero Header ── */}
+      <div className="workstationHero">
+        <div className="workstationHeroContent">
+          <div className="workstationHeroBadge">
+            <span>⚙️ PENGATURAN SISTEM &amp; IDENTITAS</span>
             {statusMessage && (
-              <span className="badge badge-success" style={{ fontSize: '0.68rem', fontWeight: 700 }}>{statusMessage}</span>
+              <span className="badge badge-success" style={{ fontSize: '0.62rem', fontWeight: 700, marginLeft: '0.5rem', padding: '0.15rem 0.5rem' }}>{statusMessage}</span>
             )}
           </div>
-          <p className={styles.subtitle}>Kelola integrasi aplikasi Dapodik, profil instansi sekolah, dan logo resmi sekolah Anda.</p>
+          <h1 className="workstationHeroTitle">Pengaturan Identitas &amp; Instansi Sekolah</h1>
+          <p className="workstationHeroSubtitle">
+            Kelola integrasi aplikasi Dapodik, profil instansi sekolah, dan logo resmi sekolah Anda.
+          </p>
         </div>
-        <button onClick={handleSave} disabled={saving} className="btn btn-primary">
-          {saving ? '⏳ Menyimpan...' : '💾 Simpan Pengaturan'}
-        </button>
+
+        <div className="workstationHeroActions">
+          <button type="button" onClick={handleSave} disabled={saving} className="btn btn-primary btn-sm">
+            {saving ? '⏳ Menyimpan...' : '💾 Simpan Pengaturan'}
+          </button>
+        </div>
       </div>
 
       {/* Toast Notification */}

@@ -1,13 +1,13 @@
 /* ── Timetable Hub & Learning Portal — Modern Design System ── */
 
 .page {
-  padding: 1.25rem 1.75rem 3rem;
-  max-width: 1440px;
+  padding: 1rem 1.25rem 2.5rem;
+  max-width: 1680px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
-  animation: fadeInUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  gap: 1rem;
+  animation: fadeInUp 0.35s var(--ease-out) forwards;
 }
 
 @keyframes fadeInUp {

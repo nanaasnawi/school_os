@@ -184,29 +184,35 @@ export default function NotificationsPage() {
         </div>
       )}
 
-      {/* Header */}
-      <div className={styles.header}>
-        <div className={styles.headerLeft}>
-          <h1 className={styles.title} style={{ margin: 0, fontSize: '1.3rem', fontWeight: 800 }}>
-            Pusat Notifikasi &amp; Broadcast Log
-          </h1>
-          <p className={styles.subtitle}>
-            Riwayat aktivitas akademik, Dapodik, dan mobile push notification{schoolName ? ` di ${schoolName}` : ''} secara real-time.
+      {/* ── Workstation Hero Header ── */}
+      <div className="workstationHero">
+        <div className="workstationHeroContent">
+          <div className="workstationHeroBadge">
+            <span>🔔 PUSAT NOTIFIKASI &amp; LOG SISTEM</span>
+          </div>
+          <h1 className="workstationHeroTitle">Pusat Notifikasi &amp; Broadcast Log</h1>
+          <p className="workstationHeroSubtitle">
+            Riwayat aktivitas akademik, integrasi Dapodik, dan mobile push notification{schoolName ? ` di ${schoolName}` : ''} secara real-time.
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-          <button className="btn btn-secondary btn-sm" onClick={handleMarkAllRead} disabled={unreadCount === 0} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
-            <span>Tandai Dibaca Semua</span>
+
+        <div className="workstationHeroActions">
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            onClick={handleMarkAllRead}
+            disabled={unreadCount === 0}
+          >
+            ✓ Tandai Dibaca Semua
           </button>
-          <button className="btn btn-ghost btn-sm" onClick={handleClearNotifications} style={{ color: '#dc2626', display: 'inline-flex', alignItems: 'center', gap: '6px' }} disabled={notifications.length === 0}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-              <polyline points="3 6 5 6 21 6" />
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-            </svg>
-            <span>Bersihkan Log</span>
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            onClick={handleClearNotifications}
+            style={{ color: '#dc2626' }}
+            disabled={notifications.length === 0}
+          >
+            🗑️ Bersihkan Log
           </button>
         </div>
       </div>

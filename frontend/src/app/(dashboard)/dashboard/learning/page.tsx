@@ -510,50 +510,44 @@ function LearningPortalContent() {
         </div>
       )}
 
-      {/* ── Top Header ── */}
-      <div className={styles.header}>
-        <div className={styles.headerLeft}>
-          <h1 className={styles.title}>
-            <Calendar size={26} color="#0284c7" />
-            <span>Timetable Hub &amp; Portal Pembelajaran</span>
-          </h1>
-          <p className={styles.subtitle}>
-            Hub terpadu yang memetakan jam tatap muka, modul bahan ajar, tugas terstruktur, ujian CBT, dan presensi siswa ke dalam jadwal aktual.
+      {/* ── Workstation Hero Header ── */}
+      <div className="workstationHero">
+        <div className="workstationHeroContent">
+          <div className="workstationHeroBadge">
+            <span>📖 PORTAL &amp; HUB PEMBELAJARAN TERPADU</span>
+          </div>
+          <h1 className="workstationHeroTitle">Timetable Hub &amp; Portal Pembelajaran</h1>
+          <p className="workstationHeroSubtitle">
+            Pemetaan jam tatap muka, modul bahan ajar, penugasan terstruktur, ujian CBT terproteksi, dan presensi rombel aktual.
           </p>
         </div>
 
-        <div className={styles.headerActions}>
+        <div className="workstationHeroActions">
           <Link
             href="/dashboard/learning/materials/create"
             className="btn btn-secondary btn-sm"
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}
           >
-            <Plus size={14} />
-            <span>Upload Materi</span>
+            + Upload Materi
           </Link>
           <Link
             href="/dashboard/learning/assignments/create"
             className="btn btn-secondary btn-sm"
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}
           >
-            <Plus size={14} />
-            <span>Buat Tugas</span>
+            + Buat Tugas
           </Link>
           <Link
             href="/dashboard/learning/quizzes/create"
             className="btn btn-primary btn-sm"
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}
           >
-            <Plus size={14} />
-            <span>Buat CBT Online</span>
+            + Buat CBT Online
           </Link>
           <button
             onClick={loadHubData}
-            className="btn btn-ghost btn-sm"
+            className="btn btn-secondary btn-sm"
             title="Muat ulang data"
-            style={{ padding: '0.4rem' }}
+            style={{ padding: '0.38rem 0.6rem' }}
           >
-            <RefreshCw size={15} />
+            <RefreshCw size={14} />
           </button>
         </div>
       </div>

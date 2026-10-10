@@ -147,34 +147,29 @@ export default function ActivityLogsPage() {
         </div>
       )}
 
-      {/* Header */}
-      <div className={styles.header}>
-        <div className={styles.headerLeft}>
-          <h1 className={styles.title} style={{ margin: 0, fontSize: '1.4rem', fontWeight: 800 }}>
-            Log Aktivitas &amp; Security Audit Trail
-          </h1>
-          <p className={styles.subtitle}>
-            Jejak audit immutable seluruh transaksi Local Bridge Agent, Android Mobile App, Web Portal, dan Rust API Core di {schoolName}
+      {/* ── Workstation Hero Header ── */}
+      <div className="workstationHero">
+        <div className="workstationHeroContent">
+          <div className="workstationHeroBadge">
+            <span>🛡️ AUDIT TRAIL &amp; KEAMANAN SISTEM</span>
+          </div>
+          <h1 className="workstationHeroTitle">Log Aktivitas &amp; Security Audit Trail</h1>
+          <p className="workstationHeroSubtitle">
+            Jejak audit immutable seluruh transaksi Local Bridge Agent, Android Mobile App, Web Portal, dan Rust Core di {schoolName}.
           </p>
         </div>
-      </div>
 
-      {/* Top Action Pills (Reference Design System) */}
-      <div className="tableActionRow">
-        <button type="button" className="tableActionBtn" onClick={exportAuditCsv} disabled={filtered.length === 0}>
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          <span>Ekspor Audit Trail CSV</span>
-        </button>
-
-        <Link href="/dashboard/dapodik" className="tableActionBtn">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-          <span>Cek Integrasi Dapodik Hub</span>
-        </Link>
-
-        <Link href="/dashboard/announcements" className="tableActionBtn">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3zm-8.27 4a2 2 0 0 1-3.46 0"/></svg>
-          <span>Kirim Broadcast Pengumuman</span>
-        </Link>
+        <div className="workstationHeroActions">
+          <button type="button" className="btn btn-secondary btn-sm" onClick={exportAuditCsv} disabled={filtered.length === 0}>
+            📊 Ekspor Audit CSV
+          </button>
+          <Link href="/dashboard/dapodik" className="btn btn-secondary btn-sm">
+            🔄 Dapodik Hub
+          </Link>
+          <Link href="/dashboard/announcements" className="btn btn-primary btn-sm">
+            📢 Broadcast Info
+          </Link>
+        </div>
       </div>
 
       {/* Audit Log Main Table Card */}

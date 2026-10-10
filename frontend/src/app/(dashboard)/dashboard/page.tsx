@@ -526,7 +526,32 @@ export default function DashboardPage() {
 
   return (
     <div className={styles.page}>
-      {/* ── Sub-Bar: Institutional Context, Live Clock & Manual Refresh ── */}
+      {/* ── Workstation Executive Hero Header ── */}
+      <div className={styles.heroHeader}>
+        <div className={styles.heroContent}>
+          <div className={styles.heroBadge}>
+            <span>👑 EXECUTIVE WORKSTATION • KEPALA SEKOLAH &amp; ADMIN</span>
+          </div>
+          <h1 className={styles.heroTitle}>
+            Dashboard Eksekutif Satuan Pendidikan
+          </h1>
+          <p className={styles.heroSubtitle}>
+            Pusat pemantauan terpadu ekosistem sekolah: demografi peserta didik, keaktifan pendidik, sinkronisasi data Dapodik, dan tata kelola pembelajaran.
+          </p>
+        </div>
+        <div className={styles.heroActions}>
+          <button
+            onClick={fetchDashboardData}
+            className={styles.refreshBtn}
+            title="Muat Ulang Data Real-Time"
+          >
+            <RefreshIcon size={13} className={isLoading ? styles.spinning : ''} />
+            <span>{isLoading ? 'Memperbarui...' : 'Segarkan Data'}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* ── Sub-Bar: Institutional Context, Live Clock & Telemetry ── */}
       <div className={styles.subBar}>
         <div className={styles.subBarLeft}>
           <div className={styles.institutionBadge}>
@@ -541,15 +566,6 @@ export default function DashboardPage() {
         </div>
 
         <div className={styles.subBarRight}>
-          <button
-            onClick={fetchDashboardData}
-            className={styles.refreshBtn}
-            title="Muat Ulang Data Real-Time"
-          >
-            <RefreshIcon size={14} className={isLoading ? styles.spinning : ''} />
-            <span>{isLoading ? 'Memperbarui...' : 'Segarkan Data'}</span>
-          </button>
-
           <div className={styles.clockBadge}>
             <CalendarIcon size={14} />
             <span>{currentDateTime || 'Memuat waktu...'}</span>
@@ -668,7 +684,7 @@ export default function DashboardPage() {
             </div>
           ) : (
             <div style={{ width: '100%' }}>
-              <ResponsiveContainer width="100%" height={jenjangData.length * 64 + 20}>
+              <ResponsiveContainer width="100%" height={jenjangData.length * 46 + 15}>
                 <BarChart
                   layout="vertical"
                   data={jenjangData.map((item, idx) => ({

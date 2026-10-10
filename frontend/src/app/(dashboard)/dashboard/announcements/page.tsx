@@ -272,19 +272,23 @@ export default function AnnouncementsPage() {
         </div>
       )}
 
-      {/* Header */}
-      <div className={styles.header}>
-        <div className={styles.headerLeft}>
-          <h1 className={styles.title} style={{ margin: 0, fontSize: '1.3rem', fontWeight: 800 }}>
-            Papan Pengumuman &amp; Broadcast Informasi
-          </h1>
-          <p className={styles.subtitle}>
-            Papan Informasi Digital &amp; Broadcast Push Notification Mobile Android terintegrasi di {schoolName}
+      {/* ── Workstation Hero Header ── */}
+      <div className="workstationHero">
+        <div className="workstationHeroContent">
+          <div className="workstationHeroBadge">
+            <span>📢 PENGUMUMAN &amp; BROADCAST PUSH</span>
+          </div>
+          <h1 className="workstationHeroTitle">Papan Pengumuman &amp; Broadcast Informasi</h1>
+          <p className="workstationHeroSubtitle">
+            Papan informasi digital dan broadcast push notification Mobile Android terintegrasi di {schoolName}.
           </p>
         </div>
-        <button className="btn btn-primary btn-sm" onClick={() => setShowAddModal(true)}>
-          + Buat Pengumuman Baru &amp; Push Android
-        </button>
+
+        <div className="workstationHeroActions">
+          <button type="button" className="btn btn-primary btn-sm" onClick={() => setShowAddModal(true)}>
+            + Buat Pengumuman &amp; Push Android
+          </button>
+        </div>
       </div>
 
       {/* Filter & Search Toolbar */}

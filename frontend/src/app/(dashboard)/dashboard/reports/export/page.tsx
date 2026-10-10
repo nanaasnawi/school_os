@@ -345,14 +345,33 @@ export default function ExportReportsPage() {
         </div>
       )}
 
-      {/* Header */}
-      <div className={styles.header}>
-        <div className={styles.headerLeft}>
-          
-          <h1 className={styles.title} style={{ margin: 0, fontSize: '1.3rem', fontWeight: 800 }}>
-            Ekspor Laporan &amp; Data Center Hub
-          </h1>
-          <p className={styles.subtitle}>Generate &amp; Ekspor Dokumen Laporan Resmi Sekolah dalam Format CSV, Excel, atau PDF</p>
+      {/* ── Workstation Hero Header ── */}
+      <div className="workstationHero">
+        <div className="workstationHeroContent">
+          <div className="workstationHeroBadge">
+            <span>💾 PUSAT DOKUMEN &amp; EKSPOR DATA</span>
+          </div>
+          <h1 className="workstationHeroTitle">Ekspor Laporan &amp; Data Center Hub</h1>
+          <p className="workstationHeroSubtitle">
+            Generate &amp; ekspor dokumen resmi sekolah dalam format CSV, Excel, atau PDF terstruktur.
+          </p>
+        </div>
+
+        <div className="workstationHeroActions">
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            onClick={handleExportDapodik}
+          >
+            📁 Ekspor Master Dapodik
+          </button>
+          <button
+            type="button"
+            className="btn btn-primary btn-sm"
+            onClick={handleExportGradebook}
+          >
+            📊 Ekspor Buku Nilai
+          </button>
         </div>
       </div>
 

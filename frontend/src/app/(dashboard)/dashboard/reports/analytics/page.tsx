@@ -237,18 +237,20 @@ export default function AnalyticsPage() {
         </div>
       )}
 
-      {/* Header */}
-      <div className={styles.header}>
-        <div className={styles.headerLeft}>
-          <h1 className={styles.title} style={{ margin: 0, fontSize: '1.3rem', fontWeight: 800 }}>
-            Executive Dashboard Analitik Akademik &amp; Performa
-          </h1>
-          <p className={styles.subtitle}>
-            Komparasi Rombel, Tren Nilai Rapor Multi-Semester, Presensi Student Mobile, dan Intervensi Remedial terintegrasi di {schoolName}
+      {/* ── Workstation Hero Header ── */}
+      <div className="workstationHero">
+        <div className="workstationHeroContent">
+          <div className="workstationHeroBadge">
+            <span>📈 ANALITIK EKSEKUTIF SEKOLAH</span>
+          </div>
+          <h1 className="workstationHeroTitle">Executive Dashboard Analitik Akademik &amp; Performa</h1>
+          <p className="workstationHeroSubtitle">
+            Komparasi rombel, tren nilai rapor multi-semester, presensi siswa mobile, dan intervensi remedial di {schoolName}.
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <button className="btn btn-primary btn-sm" onClick={handleDownloadReport}>
+
+        <div className="workstationHeroActions">
+          <button type="button" className="btn btn-primary btn-sm" onClick={handleDownloadReport}>
             📊 Unduh Laporan Eksekutif PDF
           </button>
         </div>

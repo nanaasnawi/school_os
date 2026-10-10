@@ -506,18 +506,20 @@ export default function ReportCardsPage() {
         </div>
       )}
 
-      {/* Header */}
-      <div className={styles.header}>
-        <div>
-          <h1 className={styles.title} style={{ margin: 0, fontSize: '1.3rem', fontWeight: 800 }}>
-            Pencetakan &amp; Penerbitan Buku Rapor Digital (Kurikulum Merdeka)
-          </h1>
-          <p className={styles.subtitle}>
-            Generasi Otomatis Buku Rapor Multi-Halaman, Sampul Cover, Satuan Pendidikan, Identitas Siswa, Capaian Akademik, Ekstrakurikuler, dan Verifikasi QR di {schoolInfo.name}
+      {/* ── Workstation Hero Header ── */}
+      <div className="workstationHero">
+        <div className="workstationHeroContent">
+          <div className="workstationHeroBadge">
+            <span>📑 RAPOR KURIKULUM MERDEKA</span>
+          </div>
+          <h1 className="workstationHeroTitle">Penerbitan Buku Rapor Digital Siswa</h1>
+          <p className="workstationHeroSubtitle">
+            Generasi otomatis buku rapor multi-halaman, sampul cover, capaian akademik, ekstrakurikuler, dan verifikasi QR di {schoolInfo.name}.
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <button className="btn btn-primary btn-sm" onClick={handlePrintAll}>
+
+        <div className="workstationHeroActions">
+          <button type="button" className="btn btn-primary btn-sm" onClick={handlePrintAll}>
             🖨️ Cetak Semua Rapor Rombel (PDF)
           </button>
         </div>

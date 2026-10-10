@@ -452,25 +452,26 @@ export default function SubjectsPage() {
         </div>
       )}
 
-      {/* Header & Action Buttons */}
-      <div className={styles.header}>
-        <div className={styles.headerLeft}>
-          <h1 className={styles.title} style={{ margin: 0, fontSize: '1.35rem', fontWeight: 800 }}>
-            Mata Pelajaran &amp; Penjadwalan Rombel
-          </h1>
-          <p className={styles.subtitle}>
-            Pengelolaan kurikulum mata pelajaran, alokasi jam mengajar guru, dan struktur jadwal rombel
+      {/* ── Workstation Hero Header ── */}
+      <div className="workstationHero">
+        <div className="workstationHeroContent">
+          <div className="workstationHeroBadge">
+            <span>📚 KURIKULUM &amp; JADWAL PELAJARAN</span>
+          </div>
+          <h1 className="workstationHeroTitle">Mata Pelajaran &amp; Penjadwalan Rombel</h1>
+          <p className="workstationHeroSubtitle">
+            Pengelolaan kurikulum mata pelajaran, alokasi jam mengajar guru, dan kalender jadwal mingguan rombel terstruktur.
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+        <div className="workstationHeroActions">
           <button
             type="button"
             className="btn btn-secondary btn-sm"
             onClick={handleExportSchedule}
             title="Ekspor Jadwal ke Excel"
           >
-            📊 Ekspor Jadwal (.xlsx)
+            📊 Ekspor Excel
           </button>
           <button
             type="button"
@@ -488,9 +489,9 @@ export default function SubjectsPage() {
               cursor: 'pointer',
             }}
           >
-            📥 Import Jadwal (Excel / PDF)
+            📥 Import Jadwal
           </button>
-          <button className="btn btn-primary btn-sm" onClick={() => setShowAddForm(true)}>
+          <button type="button" className="btn btn-primary btn-sm" onClick={() => setShowAddForm(true)}>
             + Tambah Jadwal Manual
           </button>
         </div>

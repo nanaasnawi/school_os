@@ -19,15 +19,23 @@ export default function AnalyticsPage() {
 
   return (
     <div className={styles.page}>
-      {/* Header & Breadcrumb */}
-      <div className={styles.header}>
-        <div className={styles.headerLeft}>
-          <h1 className={styles.title} style={{ margin: 0, fontSize: '1.3rem', fontWeight: 800 }}>Analisis &amp; Ruang Keputusan Eksekutif</h1>
-          <p className={styles.subtitle}>Simulator intervensi risiko akademik, evaluasi efektivitas mengajar, &amp; eksekusi rekomendasi sistem</p>
+      {/* ── Workstation Hero Header ── */}
+      <div className="workstationHero">
+        <div className="workstationHeroContent">
+          <div className="workstationHeroBadge">
+            <span>📊 ANALISIS &amp; KEPUTUSAN EKSEKUTIF</span>
+          </div>
+          <h1 className="workstationHeroTitle">Analisis &amp; Ruang Keputusan Eksekutif</h1>
+          <p className="workstationHeroSubtitle">
+            Simulator intervensi risiko akademik, evaluasi efektivitas pembelajaran, dan eksekusi rekomendasi sistem.
+          </p>
         </div>
-        <button className="btn btn-primary btn-sm">
-          📊 Unduh Laporan Eksekutif (PDF)
-        </button>
+
+        <div className="workstationHeroActions">
+          <button type="button" className="btn btn-primary btn-sm">
+            📊 Unduh Laporan Eksekutif (PDF)
+          </button>
+        </div>
       </div>
 
       {executedAction && (

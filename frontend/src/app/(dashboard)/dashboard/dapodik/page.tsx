@@ -340,50 +340,44 @@ export default function DapodikHubPage() {
         </div>
       )}
 
-      {/* Clean Simplified Header */}
-      <div className={styles.header}>
-        <div className={styles.headerLeft}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <h1 className={styles.title} style={{ margin: 0, fontSize: '1.4rem', fontWeight: 800 }}>
-              Sinkronisasi Dapodik
-            </h1>
+      {/* ── Workstation Hero Header ── */}
+      <div className="workstationHero">
+        <div className="workstationHeroContent">
+          <div className="workstationHeroBadge">
+            <span>🔄 INTEGRASI KEMENDIKDASMEN DAPODIK</span>
             <span
               className={`badge ${isConnected ? 'badge-success' : 'badge-warning'}`}
-              style={{ fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
+              style={{ fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.35rem', marginLeft: '0.5rem', fontSize: '0.62rem', padding: '0.15rem 0.5rem' }}
             >
               <span>{isConnected ? '●' : '○'}</span>
               {isCheckingHealth ? 'Mengecek...' : isConnected ? 'Dapodik Terhubung' : 'Dapodik Offline'}
             </span>
           </div>
-          <p className={styles.subtitle} style={{ margin: '0.35rem 0 0', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-            Integrasi langsung data peserta didik, guru, dan rombel dari aplikasi Dapodik lokal ke database School OS.
+          <h1 className="workstationHeroTitle">Sinkronisasi Dapodik Hub</h1>
+          <p className="workstationHeroSubtitle">
+            Integrasi langsung data peserta didik, guru, tendik, dan rombel dari aplikasi Dapodik lokal ke database School OS.
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap' }}>
+        <div className="workstationHeroActions">
           <button
             onClick={handleRefreshHealth}
             disabled={isCheckingHealth}
             className="btn btn-secondary btn-sm"
             title="Periksa Ulang Koneksi Dapodik"
-            style={{ fontWeight: 600, fontSize: '0.8rem', padding: '0.45rem 0.75rem' }}
           >
             {isCheckingHealth ? '⏳ Cek...' : '🔄 Tes Koneksi'}
           </button>
-
           <button
             onClick={() => setShowConfigModal(true)}
             className="btn btn-secondary btn-sm"
-            style={{ fontWeight: 700, fontSize: '0.8rem', padding: '0.45rem 0.85rem' }}
           >
             ⚙️ Pengaturan Dapodik
           </button>
-
           <button
             onClick={handlePullData}
             disabled={isPulling}
-            className="btn btn-primary"
-            style={{ fontWeight: 800, fontSize: '0.85rem', padding: '0.5rem 1.1rem' }}
+            className="btn btn-primary btn-sm"
           >
             {isPulling ? '🔄 Sedang Menarik Data...' : '📥 Tarik Data'}
           </button>

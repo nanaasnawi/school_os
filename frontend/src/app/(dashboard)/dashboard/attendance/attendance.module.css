@@ -4,12 +4,12 @@
    ══════════════════════════════════════════════════════════════════ */
 
 .page {
-  padding: 1.25rem 1.5rem;
-  max-width: 1400px;
+  padding: 1rem 1.25rem 2.5rem;
+  max-width: 1680px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1rem;
   animation: fadeIn 0.3s ease;
 }
 

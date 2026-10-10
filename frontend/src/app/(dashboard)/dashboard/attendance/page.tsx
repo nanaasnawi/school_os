@@ -489,16 +489,19 @@ function AttendanceContent() {
         </div>
       )}
 
-      {/* ── 1. Top Header (Standard SchoolOS Enterprise Design) ── */}
-      <div className={styles.header}>
-        <div className={styles.headerLeft}>
-          <h1 className={styles.title}>Presensi &amp; Kehadiran Siswa</h1>
-          <p className={styles.subtitle}>
-            Pusat kelola kehadiran belajar tatap muka, monitoring ketidakhadiran, dan rekapitulasi analitik
+      {/* ── 1. Workstation Hero Header ── */}
+      <div className="workstationHero">
+        <div className="workstationHeroContent">
+          <div className="workstationHeroBadge">
+            <span>📋 PRESENSI &amp; KEHADIRAN SISWA</span>
+          </div>
+          <h1 className="workstationHeroTitle">Presensi &amp; Kehadiran Siswa</h1>
+          <p className="workstationHeroSubtitle">
+            Pencatatan kehadiran belajar tatap muka, monitoring ketidakhadiran, sinkronisasi QR scanner mobile, dan rekapitulasi analitik.
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+        <div className="workstationHeroActions">
           <button
             type="button"
             onClick={() => window.print()}
@@ -528,9 +531,6 @@ function AttendanceContent() {
               </p>
             </div>
           </div>
-          <Link href="/dashboard/learning" className="btn btn-secondary btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-            <span>←</span> Kembali ke Jadwal Pelajaran
-          </Link>
         </div>
       )}
 

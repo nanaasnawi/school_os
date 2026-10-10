@@ -323,16 +323,18 @@ export default function ClassesPage() {
         </div>
       )}
 
-      {/* Header & Breadcrumbs */}
-      <div className={styles.header}>
-        <div className={styles.headerLeft}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-            <h1 className={styles.title} style={{ margin: 0, fontSize: '1.4rem', fontWeight: 800 }}>Data Kelas &amp; Rombongan Belajar</h1>
-            <span className="badge badge-info" style={{ fontWeight: 700 }}>{classesList.length} Rombel Terdaftar</span>
+      {/* ── Workstation Hero Header ── */}
+      <div className="workstationHero">
+        <div className="workstationHeroContent">
+          <div className="workstationHeroBadge">
+            <span>🏫 MANAJEMEN KELAS &amp; ROMBEL</span>
           </div>
-          <p className={styles.subtitle}>Direktori seluruh kelas dan rombongan belajar di institusi Anda.</p>
+          <h1 className="workstationHeroTitle">Data Kelas &amp; Rombongan Belajar</h1>
+          <p className="workstationHeroSubtitle">
+            Direktori {classesList.length} rombongan belajar resmi terdaftar, pembagian wali kelas, dan kapasitas ruang belajar.
+          </p>
         </div>
-        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+        <div className="workstationHeroActions">
           <button className="btn btn-secondary btn-sm" onClick={exportToExcelFile}>
             Ekspor Excel (.xlsx)
           </button>
