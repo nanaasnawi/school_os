@@ -121,60 +121,68 @@ export function AutoGenerateQuizModal({
 
       const token = apiClient.getToken() || (typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('token')) : null);
 
-      // Call Next.js proxy route which delegates strictly to NVIDIA NIM
-      let res = await fetch('/api/v1/learning/auto-generate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          type: isMonthly ? 'EXAM_MONTHLY' : (quizFormat === 'MCQ_ONLY' ? 'QUIZ_MCQ_ONLY' : 'QUIZ_MCQ_ESSAY'),
-          format: quizFormat,
-          subject_id: currentSubjectObj.id,
-          subject_name: currentSubjectObj.name,
-          topic: effectiveTopic,
-          grade_level: gradeLevel,
-          num_questions: effectiveMcqCount + effectiveEssayCount,
-          num_mcq: effectiveMcqCount,
-          num_essay: effectiveEssayCount,
-          include_images: includeImages,
-          difficulty: effectiveDiff,
-          source_mode: isMonthly ? 'PAST_MONTH' : 'LATEST_PUBLISHED',
-        }),
-      });
+      const payload = {
+        type: isMonthly ? 'EXAM_MONTHLY' : (quizFormat === 'MCQ_ONLY' ? 'QUIZ_MCQ_ONLY' : 'QUIZ_MCQ_ESSAY'),
+        format: quizFormat,
+        subject_id: currentSubjectObj.id,
+        subject_name: currentSubjectObj.name,
+        topic: effectiveTopic,
+        grade_level: gradeLevel,
+        num_questions: effectiveMcqCount + effectiveEssayCount,
+        num_mcq: effectiveMcqCount,
+        num_essay: effectiveEssayCount,
+        include_images: includeImages,
+        difficulty: effectiveDiff,
+        source_mode: isMonthly ? 'PAST_MONTH' : 'LATEST_PUBLISHED',
+      };
 
-      let json = await res.json().catch(() => null);
+      // Call Next.js proxy route with fallback resilience
+      const endpoints = ['/api/learning/auto-generate', '/api/v1/learning/auto-generate'];
+      let res: Response | null = null;
+      let json: any = null;
 
-      // If initial request failed, automatically retry once after a short delay
-      if (!res.ok || !json?.success) {
-        await new Promise(r => setTimeout(r, 1500));
-        res = await fetch('/api/v1/learning/auto-generate', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify({
-            type: isMonthly ? 'EXAM_MONTHLY' : (quizFormat === 'MCQ_ONLY' ? 'QUIZ_MCQ_ONLY' : 'QUIZ_MCQ_ESSAY'),
-            format: quizFormat,
-            subject_id: currentSubjectObj.id,
-            subject_name: currentSubjectObj.name,
-            topic: effectiveTopic,
-            grade_level: gradeLevel,
-            num_questions: effectiveMcqCount + effectiveEssayCount,
-            num_mcq: effectiveMcqCount,
-            num_essay: effectiveEssayCount,
-            include_images: includeImages,
-            difficulty: effectiveDiff,
-            source_mode: isMonthly ? 'PAST_MONTH' : 'LATEST_PUBLISHED',
-          }),
-        });
-        json = await res.json().catch(() => null);
+      for (const endpoint of endpoints) {
+        try {
+          res = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            body: JSON.stringify(payload),
+          });
+          json = await res.json().catch(() => null);
+          if (res.ok && json?.success) {
+            break;
+          }
+        } catch (fetchErr) {
+          console.warn(`Attempt on ${endpoint} failed:`, fetchErr);
+        }
       }
 
-      if (!res.ok || !json?.success) {
-        const message = json?.error || (res.status === 404 ? 'Materi belum tersedia untuk mata pelajaran ini.' : `Gagal menghubungi server AI (${res.status}). Silakan coba kembali.`);
+      // If initial attempts failed, retry once after a short delay
+      if (!res?.ok || !json?.success) {
+        await new Promise(r => setTimeout(r, 1200));
+        for (const endpoint of endpoints) {
+          try {
+            res = await fetch(endpoint, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+              },
+              body: JSON.stringify(payload),
+            });
+            json = await res.json().catch(() => null);
+            if (res.ok && json?.success) {
+              break;
+            }
+          } catch {}
+        }
+      }
+
+      if (!res?.ok || !json?.success) {
+        const message = json?.error || (res?.status === 404 ? 'Layanan pembuatan kuis otomatis sedang tidak tersedia (404). Silakan hubungi admin atau coba lagi.' : `Gagal menghubungi server AI (${res?.status || 'network'}). Silakan coba kembali.`);
         throw new Error(message);
       }
 
@@ -317,7 +325,7 @@ export function AutoGenerateQuizModal({
                     letterSpacing: '-0.01em',
                   }}
                 >
-                  Generate Kuis &amp; Ujian CBT (AI NVIDIA)
+                  Generate Kuis &amp; Ujian CBT
                 </h2>
                 <span
                   style={{
@@ -331,7 +339,7 @@ export function AutoGenerateQuizModal({
                     letterSpacing: '0.04em',
                   }}
                 >
-                  NVIDIA NIM
+                  AI Kurikulum Merdeka
                 </span>
               </div>
               <p
@@ -341,7 +349,7 @@ export function AutoGenerateQuizModal({
                   margin: '3px 0 0 0',
                 }}
               >
-                Sintesis paket soal CBT &amp; kisi-kisi evaluasi otomatis menggunakan NVIDIA NIM Llama-3-70B
+                Sintesis paket soal CBT &amp; kisi-kisi evaluasi otomatis berbasis Kurikulum Merdeka
               </p>
             </div>
           </div>
@@ -932,11 +940,11 @@ export function AutoGenerateQuizModal({
               >
                 {isGenerating ? (
                   <>
-                    <Loader2 size={18} className="animate-spin" /> Sedang Menganalisis &amp; Menyusun Ujian (NVIDIA NIM)...
+                    <Loader2 size={18} className="animate-spin" /> Sedang Menganalisis &amp; Menyusun Ujian...
                   </>
                 ) : (
                   <>
-                    <Sparkles size={18} /> Generate Paket Ujian Sekarang (AI NVIDIA)
+                    <Sparkles size={18} /> Generate Paket Ujian Sekarang
                   </>
                 )}
               </button>

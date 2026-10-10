@@ -5,6 +5,16 @@ export function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
 
   if (pathname.startsWith('/api/v1')) {
+    // Bypass proxy rewriting for local Next.js App Router API routes
+    if (
+      pathname.startsWith('/api/v1/learning/auto-generate') ||
+      pathname.startsWith('/api/v1/dapodik') ||
+      pathname.startsWith('/api/v1/gamification') ||
+      pathname.startsWith('/api/v1/teacher/remind')
+    ) {
+      return NextResponse.next();
+    }
+
     const defaultBackend = 'https://schoolosbackend-production.up.railway.app';
     const backendUrl = (process.env.NEXT_PUBLIC_API_URL || defaultBackend).trim();
     const cleanBackendUrl = backendUrl.replace(/\/api\/v1\/?$/, '').replace(/\/+$/, '');

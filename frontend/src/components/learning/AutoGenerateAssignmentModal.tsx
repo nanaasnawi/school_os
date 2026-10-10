@@ -137,34 +137,53 @@ export function AutoGenerateAssignmentModal({
         material_ids: sourceMode === 'HISTORY' && selectedMaterialId ? [selectedMaterialId] : [],
       };
 
-      // Call Next.js proxy route which executes NVIDIA NIM AI strictly
-      let res = await fetch('/api/v1/learning/auto-generate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify(payload),
-      });
+      // Call Next.js proxy route with fallback resilience
+      const endpoints = ['/api/learning/auto-generate', '/api/v1/learning/auto-generate'];
+      let res: Response | null = null;
+      let json: any = null;
 
-      let json = await res.json().catch(() => null);
-
-      // If initial request failed, automatically retry once after a short delay
-      if (!res.ok || !json?.success) {
-        await new Promise(r => setTimeout(r, 1500));
-        res = await fetch('/api/v1/learning/auto-generate', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify(payload),
-        });
-        json = await res.json().catch(() => null);
+      for (const endpoint of endpoints) {
+        try {
+          res = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            body: JSON.stringify(payload),
+          });
+          json = await res.json().catch(() => null);
+          if (res.ok && json?.success) {
+            break;
+          }
+        } catch (fetchErr) {
+          console.warn(`Attempt on ${endpoint} failed:`, fetchErr);
+        }
       }
 
-      if (!res.ok || !json?.success) {
-        const message = json?.error || (res.status === 404 ? 'Materi belum tersedia untuk mata pelajaran ini.' : `Gagal menghubungi server AI (${res.status}). Silakan coba kembali.`);
+      // If both endpoints failed, retry once on the primary route after short delay
+      if (!res?.ok || !json?.success) {
+        await new Promise(r => setTimeout(r, 1200));
+        for (const endpoint of endpoints) {
+          try {
+            res = await fetch(endpoint, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+              },
+              body: JSON.stringify(payload),
+            });
+            json = await res.json().catch(() => null);
+            if (res.ok && json?.success) {
+              break;
+            }
+          } catch {}
+        }
+      }
+
+      if (!res?.ok || !json?.success) {
+        const message = json?.error || (res?.status === 404 ? 'Layanan pembuatan tugas otomatis sedang tidak tersedia (404). Silakan hubungi admin atau coba lagi.' : `Gagal menghubungi server AI (${res?.status || 'network'}). Silakan coba kembali.`);
         throw new Error(message);
       }
 
@@ -278,7 +297,7 @@ export function AutoGenerateAssignmentModal({
                     letterSpacing: '-0.01em',
                   }}
                 >
-                  Generate Tugas Siswa Otomatis (AI NVIDIA)
+                  Generate Tugas Siswa Otomatis
                 </h2>
                 <span
                   style={{
@@ -292,7 +311,7 @@ export function AutoGenerateAssignmentModal({
                     letterSpacing: '0.04em',
                   }}
                 >
-                  NVIDIA NIM
+                  AI Kurikulum Merdeka
                 </span>
               </div>
               <p
@@ -930,11 +949,11 @@ export function AutoGenerateAssignmentModal({
               >
                 {isGenerating ? (
                   <>
-                    <Loader2 size={18} className="animate-spin" /> Sedang Menganalisis &amp; Menyusun Tugas (NVIDIA NIM)...
+                    <Loader2 size={18} className="animate-spin" /> Sedang Menganalisis &amp; Menyusun Tugas...
                   </>
                 ) : (
                   <>
-                    <Sparkles size={18} /> Generate Tugas Otomatis Sekarang (AI NVIDIA)
+                    <Sparkles size={18} /> Generate Tugas Otomatis Sekarang
                   </>
                 )}
               </button>

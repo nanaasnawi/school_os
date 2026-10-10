@@ -212,78 +212,82 @@ export async function POST(req: NextRequest) {
     }
 
     const effectiveSubjectId = subject_id || material_data?.subject_id;
-    const pool = getDbPool();
-
-    // 1. Resolve subject name if not provided
-    let subjectName = inputSubjectName || material_data?.subject_name;
-    if (!subjectName && effectiveSubjectId) {
-      const subRes = await pool.query('SELECT name FROM subjects WHERE id = $1', [effectiveSubjectId]);
-      if (subRes.rows.length > 0) {
-        subjectName = subRes.rows[0].name;
-      } else {
-        subjectName = 'Mata Pelajaran Umum';
-      }
-    }
-
     let materials: SourceMaterial[] = [];
+    let subjectName = inputSubjectName || material_data?.subject_name;
 
-    // 2. Fetch or construct source materials based on source_mode
-    if (source_mode === 'CURRENT_UNSAVED' && material_data) {
-      materials = [
-        {
-          id: material_data.id || 'temp-material-id',
-          title: material_data.title || 'Materi Pembelajaran Baru',
-          subject_id: effectiveSubjectId,
-          subject_name: subjectName,
-          material_type: material_data.material_type || 'document',
-          source_type: material_data.source_type,
-          description: material_data.description || material_data.instructions || '',
-          start_page: material_data.start_page,
-          end_page: material_data.end_page,
-          created_at: new Date().toISOString(),
-        },
-      ];
-    } else if (source_mode === 'PAST_MONTH' || type === 'EXAM_MONTHLY') {
-      const query = `
-        SELECT id, title, description, material_type, source_type, start_page, end_page, created_at, subject_id
-        FROM learning_materials
-        WHERE subject_id = $1 AND is_active = true AND deleted_at IS NULL
-          AND created_at >= NOW() - INTERVAL '30 days'
-        ORDER BY created_at DESC
-      `;
-      const res = await pool.query(query, [effectiveSubjectId]);
+    try {
+      const pool = getDbPool();
 
-      if (res.rows.length === 0) {
-        const fallbackRes = await pool.query(
-          `SELECT id, title, description, material_type, source_type, start_page, end_page, created_at, subject_id
-           FROM learning_materials
-           WHERE subject_id = $1 AND is_active = true AND deleted_at IS NULL
-           ORDER BY created_at DESC LIMIT 5`,
-          [effectiveSubjectId]
-        );
-        materials = fallbackRes.rows;
+      // 1. Resolve subject name if not provided
+      if (!subjectName && effectiveSubjectId) {
+        const subRes = await pool.query('SELECT name FROM subjects WHERE id = $1', [effectiveSubjectId]);
+        if (subRes.rows.length > 0) {
+          subjectName = subRes.rows[0].name;
+        } else {
+          subjectName = 'Mata Pelajaran Umum';
+        }
+      }
+
+      // 2. Fetch or construct source materials based on source_mode
+      if (source_mode === 'CURRENT_UNSAVED' && material_data) {
+        materials = [
+          {
+            id: material_data.id || 'temp-material-id',
+            title: material_data.title || 'Materi Pembelajaran Baru',
+            subject_id: effectiveSubjectId,
+            subject_name: subjectName,
+            material_type: material_data.material_type || 'document',
+            source_type: material_data.source_type,
+            description: material_data.description || material_data.instructions || '',
+            start_page: material_data.start_page,
+            end_page: material_data.end_page,
+            created_at: new Date().toISOString(),
+          },
+        ];
+      } else if (source_mode === 'PAST_MONTH' || type === 'EXAM_MONTHLY') {
+        const query = `
+          SELECT id, title, description, material_type, source_type, start_page, end_page, created_at, subject_id
+          FROM learning_materials
+          WHERE subject_id = $1 AND is_active = true AND deleted_at IS NULL
+            AND created_at >= NOW() - INTERVAL '30 days'
+          ORDER BY created_at DESC
+        `;
+        const res = await pool.query(query, [effectiveSubjectId]);
+
+        if (res.rows.length === 0) {
+          const fallbackRes = await pool.query(
+            `SELECT id, title, description, material_type, source_type, start_page, end_page, created_at, subject_id
+             FROM learning_materials
+             WHERE subject_id = $1 AND is_active = true AND deleted_at IS NULL
+             ORDER BY created_at DESC LIMIT 5`,
+            [effectiveSubjectId]
+          );
+          materials = fallbackRes.rows;
+        } else {
+          materials = res.rows;
+        }
+      } else if (source_mode === 'SELECTED_IDS' && Array.isArray(material_ids) && material_ids.length > 0) {
+        const query = `
+          SELECT id, title, description, material_type, source_type, start_page, end_page, created_at, subject_id
+          FROM learning_materials
+          WHERE id = ANY($1) AND subject_id = $2 AND is_active = true AND deleted_at IS NULL
+          ORDER BY created_at DESC
+        `;
+        const res = await pool.query(query, [material_ids, effectiveSubjectId]);
+        materials = res.rows;
       } else {
+        const query = `
+          SELECT id, title, description, material_type, source_type, start_page, end_page, created_at, subject_id
+          FROM learning_materials
+          WHERE subject_id = $1 AND is_active = true AND deleted_at IS NULL
+          ORDER BY created_at DESC
+          LIMIT 1
+        `;
+        const res = await pool.query(query, [effectiveSubjectId]);
         materials = res.rows;
       }
-    } else if (source_mode === 'SELECTED_IDS' && Array.isArray(material_ids) && material_ids.length > 0) {
-      const query = `
-        SELECT id, title, description, material_type, source_type, start_page, end_page, created_at, subject_id
-        FROM learning_materials
-        WHERE id = ANY($1) AND subject_id = $2 AND is_active = true AND deleted_at IS NULL
-        ORDER BY created_at DESC
-      `;
-      const res = await pool.query(query, [material_ids, effectiveSubjectId]);
-      materials = res.rows;
-    } else {
-      const query = `
-        SELECT id, title, description, material_type, source_type, start_page, end_page, created_at, subject_id
-        FROM learning_materials
-        WHERE subject_id = $1 AND is_active = true AND deleted_at IS NULL
-        ORDER BY created_at DESC
-        LIMIT 1
-      `;
-      const res = await pool.query(query, [effectiveSubjectId]);
-      materials = res.rows;
+    } catch (dbErr: any) {
+      console.warn('DB query error in auto-generate, falling back to curriculum standards:', dbErr?.message);
     }
 
     if (materials.length === 0) {
